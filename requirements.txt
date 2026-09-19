@@ -1,0 +1,4 @@
+# Fase 1 - Fail test (Arduino -> Serial -> Bosgame/Windows -> MCP)
+# Ver docs/diario-de-bordo.md para o estado do roadmap e proximas dependencias.
+mcp
+pyserial

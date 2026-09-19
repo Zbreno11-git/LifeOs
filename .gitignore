@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+.env
+data/*
+!data/.gitkeep
+
+# fork externo (repo git próprio, não faz parte do histórico deste projeto)
+windows-mcp/
+.DS_Store
