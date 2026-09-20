@@ -10,6 +10,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 
+from lifeos import custos
 from lifeos.browser.jev_runner import BrowserResult, run_jev
 from lifeos.browser.mensagens import formatar
 
@@ -48,6 +49,11 @@ def executar_no_navegador(
         fechar=not manter_aberta,
         on_progress=None if silencioso else imprimir_progresso,
     )
+    consumo = custos.do_jev(resultado.usage)
+    custos.SESSAO.navegador = custos.SESSAO.navegador + consumo
+    if not silencioso and consumo.chamadas:
+        # No stderr de propósito: o usuário vê, o modelo não — custo não precisa virar token.
+        print(f"   💸 navegador: {consumo.resumo()} em {consumo.chamadas} chamadas", file=sys.stderr)
     return formatar(resultado)
 
 

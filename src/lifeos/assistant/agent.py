@@ -13,6 +13,7 @@ from datetime import datetime
 from google import genai
 from google.genai import types
 
+from lifeos import custos
 from lifeos.browser import executar_no_navegador
 from lifeos.calendar import (
     apagar_evento_por_id,
@@ -54,30 +55,45 @@ def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> s
     return executar_no_navegador(url, objetivo, manter_aberta=manter_aberta)
 
 
-def criar_lembrete(titulo: str, corpo: str = "", tags: str = "") -> str:
+def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "") -> str:
     """
-    Cria um lembrete ou nota geral (não é um evento de calendário).
+    Cria um lembrete ou nota geral. Não é um evento de calendário: use isto para coisas a fazer
+    ou lembrar, e o calendário para compromissos com hora marcada.
 
     Args:
         titulo: Título curto do lembrete.
         corpo: Detalhes opcionais.
         tags: Tags separadas por vírgula, opcional.
+        quando: Prazo opcional, ISO 8601 (ex.: '2026-09-25' ou '2026-09-25T14:00:00'). Resolva
+            você mesmo expressões como "amanhã" a partir da data de hoje antes de passar aqui.
     """
+    due_at = None
+    if quando.strip():
+        try:
+            due_at = datetime.fromisoformat(quando.strip())
+        except ValueError:
+            return f"Não entendi a data '{quando}'. Use ISO 8601, ex.: 2026-09-25 ou 2026-09-25T14:00."
     reminder = store.add(
         title=titulo,
         body=corpo,
         tags=[t.strip() for t in tags.split(",") if t.strip()],
+        due_at=due_at,
         source="viking-cli",
     )
-    return f"✅ Lembrete #{reminder.id} criado: '{titulo}'."
+    prazo = f" (para {quando.strip()})" if due_at else ""
+    return f"✅ Lembrete #{reminder.id} criado: '{titulo}'{prazo}."
 
 
 def listar_lembretes() -> str:
-    """Lista os lembretes/notas ainda não concluídos."""
+    """Lista os lembretes/notas ainda não concluídos, os com prazo mais próximo primeiro."""
     reminders = store.list_open()
     if not reminders:
         return "Nenhum lembrete pendente."
-    return "\n".join(f"- #{r.id} {r.title}" for r in reminders)
+    linhas = []
+    for r in reminders:
+        prazo = f" [para {r.due_at:%Y-%m-%d %H:%M}]" if r.due_at else ""
+        linhas.append(f"- #{r.id} {r.title}{prazo}")
+    return "\n".join(linhas)
 
 
 def concluir_lembrete(reminder_id: int) -> str:
@@ -172,12 +188,19 @@ navegação web (via Browser Harness) e lembretes/notas gerais.
             continue
         if prompt.lower() in ["sair", "exit", "quit"]:
             print("🤖 Viking: Até logo!")
+            print(custos.SESSAO.total_formatado())
             break
+        if prompt.lower() in ["/custos", "custos"]:
+            print(custos.SESSAO.total_formatado())
+            continue
 
         print("⏳ Pensando...")
         try:
             resposta = chat.send_message(prompt)
             print(f"🤖 Viking: {resposta.text}\n")
+            consumo = custos.do_gemini(getattr(resposta, "usage_metadata", None))
+            custos.SESSAO.gemini = custos.SESSAO.gemini + consumo
+            print(f"   💸 gemini: {consumo.resumo()}", file=sys.stderr)
         except Exception as e:  # noqa: BLE001 - loop de REPL não deve cair por erro de API/tool
             print(f"❌ Erro ao processar a resposta: {e}\n")
 

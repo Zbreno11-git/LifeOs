@@ -139,6 +139,22 @@ def _oscilando(urls):
     return u[4] == u[2] == u[0] and u[3] == u[1]
 
 
+def _uso(state):
+    """Soma o `usage` de toda chamada paga: as decisões (inclusive a última, que não executa ação)
+    e as de geração de texto. Somamos qualquer campo numérico que o provedor mandar, em vez de
+    assumir nomes, porque o endpoint de decisões é alpha e pode mudar o formato."""
+    total = {}
+    chamadas = 0
+    for lista in ("decisions", "text_calls"):
+        for entrada in (state or {}).get(lista) or []:
+            chamadas += 1
+            for chave, valor in (entrada.get("usage") or {}).items():
+                if isinstance(valor, (int, float)) and not isinstance(valor, bool):
+                    total[chave] = total.get(chave, 0) + valor
+    total["chamadas"] = chamadas
+    return total
+
+
 def _pagina(state):
     page = (state or {}).get("page") or {}
     texto = page.get("text") or ""
@@ -242,6 +258,7 @@ def main():
             steps=_passos(state),
             elapsed_ms=(state or {}).get("elapsed_ms"),
             history=_historico(state),
+            usage=_uso(state),
             kept_open=not args.fechar,
             **_pagina(state),
         )
@@ -264,6 +281,7 @@ def main():
             steps=_passos(final),
             elapsed_ms=(final or {}).get("elapsed_ms"),
             history=_historico(final),
+            usage=_uso(final),
             **_pagina(final),
         )
         return EXIT_ERROR

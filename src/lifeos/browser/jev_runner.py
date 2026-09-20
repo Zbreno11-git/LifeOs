@@ -43,6 +43,7 @@ class BrowserResult:
     history: tuple[dict, ...] = field(default_factory=tuple)
     page_text: str | None = None
     kept_open: bool = False
+    usage: dict = field(default_factory=dict)
     error_code: str | None = None
     error_detail: str | None = None
     stderr_tail: str | None = None
@@ -113,6 +114,7 @@ def result_from(
         "history": tuple(final.get("history") or ()),
         "page_text": final.get("page_text") or None,
         "kept_open": bool(final.get("kept_open")),
+        "usage": dict(final.get("usage") or {}),
     }
     if final["type"] == "error":
         return BrowserResult(
