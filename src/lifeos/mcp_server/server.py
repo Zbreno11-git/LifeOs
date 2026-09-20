@@ -7,7 +7,10 @@
 # o FastMCP resolve `from __future__ import annotations` sem problema (schema e chamada de tool
 # funcionam com tipos reais, não strings). A regra "não adicionar" só valeria aqui se uma função
 # deste arquivo também fosse registrada como tool do Gemini, o que hoje não acontece.
+from typing import Any
+
 from fastmcp import FastMCP
+from fastmcp.tools import ToolResult
 
 from lifeos.calendar import (
     apagar_evento_por_id,
@@ -18,7 +21,9 @@ from lifeos.calendar import (
     listar_proximos_eventos,
     reagendar_evento_por_id,
 )
+from lifeos.reminders import service as reminders_service
 from lifeos.reminders import store
+from lifeos.reminders.models import Reminder
 
 mcp = FastMCP(name="viking", instructions="Calendário e lembretes pessoais do Viking (Life OS).")
 
@@ -67,33 +72,73 @@ def viking_reagendar_evento(
     return reagendar_evento_por_id(event_id, titulo_esperado, novo_inicio, novo_fim)
 
 
+def _lembrete_para_dict(reminder: Reminder) -> dict[str, Any]:
+    return {
+        "id": reminder.id,
+        "type": reminder.type,
+        "title": reminder.title,
+        "body": reminder.body,
+        "tags": reminder.tags,
+        "due_at": reminder.due_at.isoformat() if reminder.due_at else None,
+        "completed_at": reminder.completed_at.isoformat() if reminder.completed_at else None,
+        "source": reminder.source,
+        "external_id": reminder.external_id,
+        "metadata": reminder.metadata,
+        "created_at": reminder.created_at.isoformat() if reminder.created_at else None,
+        "updated_at": reminder.updated_at.isoformat() if reminder.updated_at else None,
+    }
+
+
 @mcp.tool()
-def viking_criar_lembrete(titulo: str, corpo: str = "", tags: str = "") -> str:
-    """Cria um lembrete/nota geral do Viking."""
-    reminder = store.add(
-        title=titulo,
-        body=corpo,
-        tags=[t.strip() for t in tags.split(",") if t.strip()],
-        source="mcp",
+def viking_criar_lembrete(
+    titulo: str, corpo: str = "", tags: str = "", quando: str = ""
+) -> ToolResult:
+    """Cria um lembrete/nota geral do Viking. `quando` é o prazo opcional em ISO 8601
+    ('2026-09-25' ou '2026-09-25T14:00') — mesma regra do assistente de chat.
+    """
+    try:
+        reminder = reminders_service.criar_lembrete(titulo, corpo, tags, quando, source="mcp")
+    except reminders_service.QuandoInvalido:
+        return ToolResult(
+            content=(
+                f"Não entendi a data '{quando}'. Use ISO 8601, ex.: 2026-09-25 ou 2026-09-25T14:00."
+            ),
+            structured_content={"erro": "quando_invalido", "quando": quando},
+            is_error=True,
+        )
+    return ToolResult(
+        content=f"Lembrete #{reminder.id} criado.",
+        structured_content=_lembrete_para_dict(reminder),
     )
-    return f"Lembrete #{reminder.id} criado."
 
 
 @mcp.tool()
-def viking_listar_lembretes() -> str:
+def viking_listar_lembretes() -> ToolResult:
     """Lista lembretes/notas pendentes do Viking."""
     reminders = store.list_open()
-    if not reminders:
-        return "Nenhum lembrete pendente."
-    return "\n".join(f"#{r.id} {r.title}" for r in reminders)
+    if reminders:
+        texto = "\n".join(f"#{r.id} {r.title}" for r in reminders)
+    else:
+        texto = "Nenhum lembrete pendente."
+    return ToolResult(
+        content=texto,
+        structured_content={"lembretes": [_lembrete_para_dict(r) for r in reminders]},
+    )
 
 
 @mcp.tool()
-def viking_concluir_lembrete(reminder_id: int) -> str:
+def viking_concluir_lembrete(reminder_id: int) -> ToolResult:
     """Marca um lembrete do Viking como concluído."""
     reminder = store.complete(reminder_id)
-    return (
-        f"Lembrete #{reminder_id} concluído." if reminder else f"Lembrete #{reminder_id} não encontrado."
+    if not reminder:
+        return ToolResult(
+            content=f"Lembrete #{reminder_id} não encontrado.",
+            structured_content={"erro": "nao_encontrado", "reminder_id": reminder_id},
+            is_error=True,
+        )
+    return ToolResult(
+        content=f"Lembrete #{reminder_id} concluído.",
+        structured_content=_lembrete_para_dict(reminder),
     )
 
 

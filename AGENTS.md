@@ -56,7 +56,8 @@ uma sessão de ~1h30 por vez. Vale ler os três antes de mexer em `browser/` ou 
     `browser-automation-stack.md` (relatório de validação da automação de navegador),
     `wristband-hardware-pausado.md` (arquitetura/roadmap da trilha pausada)
   - `fontes/` — referências técnicas externas curtas (uma página cada): `windows-mcp.md`,
-    `browser-harness.md`, `jev-typesafe.md`, `google-calendar-api.md`, `pluggy-open-finance.md`,
+    `browser-harness.md`, `jev-typesafe.md`, `google-calendar-api.md`, `fastmcp.md`,
+    `pluggy-open-finance.md`,
     `mac-control-mcp-dead-end.md`
 - `archive/` — trilhas pausadas mas preservadas (código real, não só docs). Hoje:
   `wristband-fail-test/` (Arduino Uno R3 → Serial → Windows-MCP, funcional, ver seu próprio README).
@@ -212,6 +213,12 @@ navegador: `time.monotonic() + limite` com `limite=nan` faz toda comparação `<
 `False` para sempre, desligando o próprio timeout que existe pra matar uma tarefa travada. Use
 `config._float_env()`/`_int_env()` (checam `math.isfinite()` e limites) em vez de `float()`/`int()`
 crus em qualquer env numérica nova.
+
+**`fastmcp.tools.ToolResult(is_error=True)` faz `Client.call_tool()` levantar `ToolError`, não
+devolver um resultado.** É o comportamento correto de protocolo (sinaliza falha real da tool para
+quem chama), mas surpreende quem espera inspecionar `is_error`/`structured_content` num teste ou
+código de chamada. Para inspecionar sem `try/except`, passe `raise_on_error=False` em
+`call_tool()`. Ver `docs/fontes/fastmcp.md`.
 
 ## Perguntas em aberto
 

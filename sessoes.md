@@ -68,17 +68,36 @@ Entregue:
 - Testes: `tests/test_config.py` novo (18 testes); `tests/test_reminders_store.py` +6 testes.
   182 testes passando, `ruff check` limpo.
 
-## Sessão 3 — paridade MCP e resultados estruturados
+## Sessão 3 — paridade MCP e resultados estruturados (feita em 2026-09-20, escopo: só lembretes)
 
-- §12.5: `viking_criar_lembrete` (MCP) não aceita `quando`/prazo, diferente de `criar_lembrete`
-  (CLI/Gemini) — mesma lógica duplicada e divergente. Extrair um serviço único, adaptadores finos
-  para Gemini/MCP/CLI.
-- §14: respostas do MCP são texto para humano, não payload estável — considerar
-  `structuredContent` para calendário/lembretes.
-- Primeiro teste chamando o MCP pelo protocolo de verdade (hoje só descobrimos os schemas).
-- O teste do future-import (`test_assistant_tools.py`) só cobre `FERRAMENTAS` (as tools do
-  Gemini) — se um dia `mcp_server/server.py` voltar a registrar alguma dessas funções também como
-  tool do Gemini, nada pega a regressão. Ver se vale um teste dedicado.
+Escopo reduzido a lembretes por decisão do dono (`AskUserQuestion`), confirmada antes de codar —
+calendário compartilha código com o Gemini e não tem objeto de domínio no meio, mais arriscado de
+mexer no tempo de uma sessão. Vira Sessão 3b. Entregue:
+
+- §12.5: novo `reminders/service.py` (`criar_lembrete()`, exceção `QuandoInvalido`) — serviço único
+  usado por `assistant/agent.py` e `mcp_server/server.py`, fechando a divergência (`quando` agora
+  funciona nos dois lados).
+- §14 (parcial, só lembretes): as 3 tools de lembrete do MCP devolvem
+  `fastmcp.tools.ToolResult(content=..., structured_content=...)` — texto humano inalterado + dict
+  estável (id, título, prazo etc.). `quando` inválido e ID inexistente usam `is_error=True`
+  (decisão do dono: erro estruturado de verdade, não só aviso em texto).
+- Primeiro teste chamando o MCP pelo protocolo de verdade: `fastmcp.Client(mcp)` em memória (sem
+  stdio/subprocesso), sem precisar de `pytest-asyncio`. Achado registrado em `AGENTS.md` e
+  `docs/fontes/fastmcp.md` (novo): `ToolResult(is_error=True)` faz `Client.call_tool()` levantar
+  `ToolError` por padrão.
+- Teste do future-import dos dois lados: adiado para o backlog (não há bug real hoje — conferido).
+- Testes novos: `tests/test_reminders_service.py`, `tests/test_mcp_server.py`. 195 testes passando,
+  `ruff check` limpo.
+
+## Sessão 3b — MCP: calendário estruturado
+
+- Aplicar o mesmo desenho da Sessão 3 (`ToolResult` + serviço fino) às 7 tools de calendário do
+  MCP — hoje adiado porque `calendar/tools.py` monta string formatada direto (sem objeto de domínio
+  no meio) e é compartilhado com `assistant/agent.py` (Gemini), então extrair isso com segurança é
+  mais trabalho e mais risco do que lembretes.
+- Decidir se vale um tipo de domínio formal (`EventResult`) para anunciar `output_schema` de
+  verdade no MCP — hoje `ToolResult` genérico não anuncia schema (ver limite documentado em
+  `docs/fontes/fastmcp.md`).
 
 ## Sessão 4 — privacidade e egress do navegador
 
@@ -136,4 +155,6 @@ Entregue:
 Paginação e eventos recorrentes no calendário (§4.5); notas recuperáveis/buscáveis, não só
 criáveis (§12.4); migrations de schema formais (§12.6); decidir se o Viking é só-checkout ou
 pacote instalável de verdade (§9.3); Pluggy (finanças); RAG/busca semântica sobre notas e
-calendário.
+calendário; teste preventivo para o caso de uma função virar tool do Gemini e do MCP ao mesmo
+tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3), só rede de
+segurança para um cenário hipotético.

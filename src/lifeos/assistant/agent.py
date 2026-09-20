@@ -25,6 +25,7 @@ from lifeos.calendar import (
     reagendar_evento_por_id,
 )
 from lifeos.config import GEMINI_API_KEY
+from lifeos.reminders import service as reminders_service
 from lifeos.reminders import store
 
 
@@ -57,20 +58,13 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
     calendário para compromissos com hora marcada. `tags` separadas por vírgula. `quando` é o
     prazo opcional em ISO 8601 ('2026-09-25' ou '2026-09-25T14:00') — resolva "amanhã" você mesmo.
     """
-    due_at = None
-    if quando.strip():
-        try:
-            due_at = datetime.fromisoformat(quando.strip())
-        except ValueError:
-            return f"Não entendi a data '{quando}'. Use ISO 8601, ex.: 2026-09-25 ou 2026-09-25T14:00."
-    reminder = store.add(
-        title=titulo,
-        body=corpo,
-        tags=[t.strip() for t in tags.split(",") if t.strip()],
-        due_at=due_at,
-        source="viking-cli",
-    )
-    prazo = f" (para {quando.strip()})" if due_at else ""
+    try:
+        reminder = reminders_service.criar_lembrete(
+            titulo, corpo, tags, quando, source="viking-cli"
+        )
+    except reminders_service.QuandoInvalido:
+        return f"Não entendi a data '{quando}'. Use ISO 8601, ex.: 2026-09-25 ou 2026-09-25T14:00."
+    prazo = f" (para {quando.strip()})" if reminder.due_at else ""
     return f"✅ Lembrete #{reminder.id} criado: '{titulo}'{prazo}."
 
 

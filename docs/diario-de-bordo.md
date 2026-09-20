@@ -420,3 +420,44 @@ Gemini, que já existiam em `config.py` mas não apareciam lá.
 
 **Não validado ao vivo:** mesma ressalva da sessão anterior — VPS sem Chrome/chaves, tudo abaixo é
 teste automatizado offline.
+
+### 2026-09-20 — Sessão 3: paridade de lembretes no MCP + respostas estruturadas
+
+Terceira rodada, seguindo `sessoes.md`. Escopo reduzido a lembretes (não calendário) por decisão
+explícita, confirmada com o dono antes de codar — calendário fica para a Sessão 3b, porque
+`calendar/tools.py` é compartilhado com o Gemini e não tem um objeto de domínio no meio (só string
+formatada), tornando a mesma mudança mais arriscada ali.
+
+- **§12.5 — CLI e MCP divergiram:** `viking_criar_lembrete` do MCP não aceitava `quando`/prazo,
+  diferente de `criar_lembrete` do assistente de chat — a mesma lógica estava escrita duas vezes e
+  só uma cópia foi atualizada. Extraído um serviço único, `reminders/service.py`
+  (`criar_lembrete()`, exceção `QuandoInvalido`), consumido pelos dois adaptadores. As duas portas
+  de entrada agora têm a mesma capacidade.
+- **§14 — MCP retorna texto, não payload estável:** as 3 tools de lembrete do MCP passam a
+  devolver `fastmcp.tools.ToolResult(content=..., structured_content=...)` — texto humano
+  inalterado + um dict estável (id, título, prazo, etc.) para quem consumir programaticamente.
+  Calendário fica de fora nesta sessão (Sessão 3b).
+- **Erro estruturado de verdade:** `quando` inválido e ID de lembrete inexistente agora usam
+  `is_error=True` no MCP — decisão confirmada com o dono, porque muda a experiência de quem chama
+  (o protocolo sinaliza falha de execução, não só um aviso em texto).
+- **Achado ao investigar antes de codar:** `ToolResult(is_error=True)` faz `Client.call_tool()` do
+  FastMCP levantar `ToolError` por padrão, em vez de devolver um resultado inspecionável — testado
+  ao vivo antes de decidir a semântica de erro com o dono. Registrado em `AGENTS.md` e
+  `docs/fontes/fastmcp.md` (novo).
+- **Primeiro teste de protocolo MCP real:** `fastmcp.Client(mcp)` conecta em memória (sem stdio nem
+  subprocesso) e permite `list_tools()`/`call_tool()` de ponta a ponta; até esta sessão só
+  conferíamos os schemas descobertos, nunca uma chamada de verdade. Não precisou de
+  `pytest-asyncio`/`pytest-anyio` — `asyncio.run()` dentro de teste síncrono comum já basta,
+  inclusive reusando o mesmo `mcp` (singleton do módulo) entre testes diferentes sem erro de loop.
+- **Adiado por decisão de escopo:** structuredContent + paridade de serviço para calendário
+  (Sessão 3b, criada em `sessoes.md`); teste preventivo de uma função virar tool do Gemini e do MCP
+  ao mesmo tempo (backlog — não há bug real hoje, `mcp_server/server.py` não tem o future-import).
+
+**Testes:** `tests/test_reminders_service.py` (novo, 5 testes) e `tests/test_mcp_server.py` (novo,
+8 testes, primeiro cobrindo o protocolo MCP de verdade). `tests/test_assistant_tools.py` continuou
+passando sem alteração — assinatura e docstring de `criar_lembrete` ficaram idênticas. 195 testes
+passando, `ruff check` limpo.
+
+**Não validado ao vivo:** mesma ressalva das sessões anteriores — VPS sem Chrome/chaves; além
+disso, as tools de calendário do MCP não foram exercitadas nesta sessão (exigem OAuth, que também
+não existe neste ambiente) — só as de lembrete, que são as tocadas aqui.
