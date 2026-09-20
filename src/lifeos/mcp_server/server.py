@@ -2,8 +2,9 @@
 (Claude Desktop, Gemini CLI, etc.). Ver docs/arquitetura/viking-visao-e-arquitetura.md, seção 4.4.
 """
 
-from __future__ import annotations
-
+# NÃO adicionar `from __future__ import annotations` aqui: o google-genai valida os argumentos
+# das tools com isinstance(valor, anotação), e o future import transforma as anotações em strings,
+# quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
 from fastmcp import FastMCP
 
 from lifeos.calendar import (

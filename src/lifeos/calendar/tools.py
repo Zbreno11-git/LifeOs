@@ -4,8 +4,9 @@ Portado de `calendar-bot/calendar_tools.py` sem mudanças de lógica — só o i
 `get_calendar_service` passou a ser absoluto (`lifeos.calendar.oauth`).
 """
 
-from __future__ import annotations
-
+# NÃO adicionar `from __future__ import annotations` aqui: o google-genai valida os argumentos
+# das tools com isinstance(valor, anotação), e o future import transforma as anotações em strings,
+# quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
 from datetime import UTC, date, datetime, timedelta
 
 from lifeos.calendar.oauth import get_calendar_service

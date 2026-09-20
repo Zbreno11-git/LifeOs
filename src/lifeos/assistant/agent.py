@@ -4,9 +4,11 @@ Generalizado a partir do protótipo `calendar-bot/agent.py` (Gemini function-cal
 registrava ferramentas de calendário.
 """
 
-from __future__ import annotations
-
+# NÃO adicionar `from __future__ import annotations` aqui: o google-genai valida os argumentos
+# das tools com isinstance(valor, anotação), e o future import transforma as anotações em strings,
+# quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
 import sys
+from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -79,6 +81,23 @@ def concluir_lembrete(reminder_id: int) -> str:
     return f"✅ Lembrete #{reminder_id} concluído."
 
 
+_DIAS = (
+    "segunda-feira",
+    "terça-feira",
+    "quarta-feira",
+    "quinta-feira",
+    "sexta-feira",
+    "sábado",
+    "domingo",
+)
+
+
+def _hoje() -> str:
+    """Data corrente para o system_instruction: sem isso o modelo não resolve 'amanhã'."""
+    agora = datetime.now().astimezone()
+    return f"{agora:%Y-%m-%d} ({_DIAS[agora.weekday()]}, {agora:%H:%M %Z})"
+
+
 def _build_client() -> genai.Client:
     if not GEMINI_API_KEY:
         print("❌ ERRO: GEMINI_API_KEY não encontrada no .env!")
@@ -86,25 +105,31 @@ def _build_client() -> genai.Client:
     return genai.Client(api_key=GEMINI_API_KEY)
 
 
+# Registradas no Gemini como function-calling. Constante no módulo para que os testes possam
+# verificar as assinaturas sem subir o assistente.
+FERRAMENTAS = [
+    listar_proximos_eventos,
+    listar_eventos_por_data,
+    criar_evento,
+    criar_evento_dia_inteiro,
+    deletar_evento_por_termo,
+    reagendar_evento,
+    navegar_e_executar,
+    criar_lembrete,
+    listar_lembretes,
+    concluir_lembrete,
+]
+
+
 def iniciar_assistente() -> None:
     client = _build_client()
-    ferramentas = [
-        listar_proximos_eventos,
-        listar_eventos_por_data,
-        criar_evento,
-        criar_evento_dia_inteiro,
-        deletar_evento_por_termo,
-        reagendar_evento,
-        navegar_e_executar,
-        criar_lembrete,
-        listar_lembretes,
-        concluir_lembrete,
-    ]
 
     config = types.GenerateContentConfig(
-        tools=ferramentas,
-        system_instruction="""Você é o Viking, um assistente pessoal que administra Google Calendar,
+        tools=FERRAMENTAS,
+        system_instruction=f"""Você é o Viking, um assistente pessoal que administra Google Calendar,
 navegação web (via Browser Harness) e lembretes/notas gerais.
+- Hoje é {_hoje()}. Resolva você mesmo referências como "amanhã", "semana que vem" ou "sexta" a
+  partir dessa data, sem perguntar a data ao usuário.
 - Para perguntas sobre uma data específica, use a ferramenta de busca por data.
 - Para criar eventos sem horário exato, use a ferramenta de dia inteiro.
 - Para tarefas que exigem abrir/usar um site, use a ferramenta de navegador.
