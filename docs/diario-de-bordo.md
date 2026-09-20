@@ -370,3 +370,53 @@ sessão futura cabe em ~1h30, com o § correspondente da auditoria para rastrear
 offline; falta o dono confirmar no Mac que "o que eu tenho amanhã?" responde a data certa, que um
 evento de dia inteiro ocupa só um dia no Google, e que a linha de custo do navegador aparece maior
 e mais honesta que antes.
+
+### 2026-09-20 — Sessão 2: config previsível + lembretes no fuso certo
+
+Segunda rodada de correções da auditoria, seguindo `sessoes.md`. Antes de codar, investiguei o
+código de verdade (não só o resumo do `sessoes.md`) e isso mudou o desenho em pontos concretos:
+
+- **`Path("/base") / Path("/absoluto")`** em pathlib descarta o lado esquerdo quando o direito já
+  é absoluto (comportamento documentado do operador `/`) — então `_path_env` podia virar um
+  `.resolve()` único, sem precisar de um `if caminho.is_absolute()`.
+- **Ordem importa: `expanduser()` tem que rodar antes do join com `REPO_ROOT`.** Testei os dois
+  jeitos: `REPO_ROOT / Path("~/pasta")` (join primeiro) dá um caminho com `~` literal dentro,
+  errado; `REPO_ROOT / Path("~/pasta").expanduser()` dá a pasta pessoal real, certo. Registrado em
+  `AGENTS.md`.
+- **`float("nan")` e `float("inf")` não levantam `ValueError`.** A auditoria (§9.2) já citava isso
+  de passagem; testei o mecanismo exato — em `jev_runner.py`, `time.monotonic() + limite` com
+  `limite=nan` faz `restante <= 0` devolver `False` para sempre, desligando o timeout que existe
+  *especificamente* para matar uma tarefa de navegador travada.
+
+**`config.py`:** `_path_env` agora ancora caminhos relativos em `REPO_ROOT` (medido:
+`VIKING_DB_PATH=./x.db` rodado de `/tmp` antes apontava para `/tmp/x.db`; agora aponta para dentro
+do repo). Duas funções novas, `_float_env`/`_int_env`, substituem `float()`/`int()` crus nas 4
+variáveis numéricas (`VIKING_BROWSER_TIMEOUT_S`, `VIKING_BROWSER_MAX_ACOES`,
+`VIKING_PRECO_GEMINI_ENTRADA`/`_SAIDA`) — mensagem de erro cita a variável, e NaN/infinito/valores
+não-positivos são recusados antes de virarem configuração ativa.
+
+**`reminders/store.py`:** `due_at` é normalizado para UTC na escrita (naive é tratado como estando
+no `TIMEZONE` configurado — o mesmo que o calendário usa desde a Sessão 1) e convertido de volta ao
+`TIMEZONE` na leitura. Fecha o achado §12.1: medido no sqlite que `"08:00+00:00"` (=08:00Z) ordenava
+como texto antes de `"09:00+02:00"` (=07:00Z, o horário real mais cedo); com tudo normalizado pra
+UTC na escrita, a ordenação textual passa a coincidir sempre com a cronológica. Migração automática
+e idempotente via `PRAGMA user_version` (nativo do SQLite, não uma flag em memória do processo —
+que vazaria entre bancos diferentes nos testes) normaliza registros gravados antes deste fix, sem
+comando manual. Índice em `due_at` adicionado; efeito prático quase nulo no volume de dados de uma
+pessoa só, incluído porque já estava no escopo.
+
+Efeito colateral bom, de graça: um lembrete "só com data" (sem hora) virava meia-noite ingênua
+(§12.2); agora vira meia-noite no `TIMEZONE` configurado — uma âncora real em vez de um vácuo.
+
+**Testes:** `tests/test_config.py` é novo (18 testes: `_path_env`, `_float_env`/`_int_env`, e um
+teste de integração via subprocesso provando que uma env inválida derruba o import com mensagem
+clara). `tests/test_reminders_store.py` ganhou 6 testes (normalização, ordenação cross-fuso,
+migração de registro legado, idempotência, índice). 182 testes passando, `ruff check` limpo.
+
+**Docs:** `AGENTS.md` ganhou duas armadilhas novas (ordem do `expanduser()`; `nan`/`inf` em
+`float()`/`int()`) e uma nota na seção de env vars sobre o ancoramento em `REPO_ROOT`.
+`.env.example` passou a documentar `VIKING_DB_PATH`, `VIKING_BROWSER_MAX_ACOES` e os preços do
+Gemini, que já existiam em `config.py` mas não apareciam lá.
+
+**Não validado ao vivo:** mesma ressalva da sessão anterior — VPS sem Chrome/chaves, tudo abaixo é
+teste automatizado offline.

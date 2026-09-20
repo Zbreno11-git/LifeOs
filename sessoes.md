@@ -44,18 +44,29 @@ fuso da máquina, sem tratar DST); exclusão por igualdade normalizada, sem toke
 duas fases por enquanto; a Chrome pessoal continua sendo a que o Viking dirige — privacidade do
 navegador é decisão adiada, não recusada.
 
-## Sessão 2 — config previsível + lembretes com instante correto
+## Sessão 2 — config previsível + lembretes com instante correto (feita em 2026-09-20)
 
-- §9.1: caminho relativo de env (`VIKING_DB_PATH` etc.) resolve contra o `cwd`, não contra
-  `REPO_ROOT` — medido: rodar de pastas diferentes usa bancos diferentes. Ancorar em `REPO_ROOT`.
-- §9.2: valor numérico inválido numa env (`VIKING_BROWSER_TIMEOUT_S=abc`) derruba qualquer
-  comando do Viking no import, não só o navegador — validar com mensagem específica.
-- `.env.example` ainda não documenta `VIKING_DB_PATH`, `VIKING_BROWSER_MAX_ACOES` e os preços do
-  Gemini (o `VIKING_TIMEZONE` novo da Sessão 1 já foi documentado).
-- §12.1: `list_open()` ordena `due_at` como texto — medido no sqlite, `08:00+00:00` (=08:00Z) veio
-  antes de `09:00+02:00` (=07:00Z), que é o horário real mais cedo. Normalizar para UTC na escrita
-  + migração dos registros existentes. §12.2: data sem horário vira meia-noite ingênua.
-- Índice em `due_at` (`reminders/store.py`) — hoje toda listagem varre a tabela inteira.
+Entregue:
+
+- §9.1: `config._path_env()` ancora caminho relativo de env em `REPO_ROOT`, não no `cwd` — medido
+  antes e depois (`VIKING_DB_PATH=./x.db` de `/tmp` apontava pra `/tmp/x.db`, agora aponta pra
+  dentro do repo). Achado extra na investigação: `expanduser()` precisa rodar antes do join com
+  `REPO_ROOT`, senão `~` vira caractere literal no caminho — registrado em `AGENTS.md`.
+- §9.2: `config._float_env()`/`_int_env()` substituem `float()`/`int()` crus nas 4 variáveis
+  numéricas — mensagem de erro cita a variável, e NaN/infinito/valores não-positivos são
+  recusados. Achado extra: `float("nan")`/`float("inf")` não levantam erro no Python puro, e um
+  timeout `nan` desliga silenciosamente o próprio deadline do navegador (comparação com NaN nunca
+  é verdadeira) — registrado em `AGENTS.md`.
+- `.env.example` agora documenta `VIKING_DB_PATH`, `VIKING_BROWSER_MAX_ACOES` e os preços do
+  Gemini.
+- §12.1: `due_at` é normalizado para UTC na escrita (`reminders/store.py`) e convertido de volta
+  ao `TIMEZONE` configurado na leitura — fecha a ordenação por texto que misturava fusos. Migração
+  automática e idempotente via `PRAGMA user_version`, sem comando manual. §12.2: efeito colateral
+  bom — lembrete sem hora agora vira meia-noite no fuso configurado, não mais meia-noite ingênua.
+- Índice em `due_at` adicionado (efeito prático quase nulo no volume de uma pessoa só, incluído
+  porque já estava no escopo).
+- Testes: `tests/test_config.py` novo (18 testes); `tests/test_reminders_store.py` +6 testes.
+  182 testes passando, `ruff check` limpo.
 
 ## Sessão 3 — paridade MCP e resultados estruturados
 

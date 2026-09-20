@@ -134,8 +134,10 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   `VIKING_GOOGLE_CREDENTIALS_PATH`/`VIKING_GOOGLE_TOKEN_PATH`/`VIKING_DB_PATH`/`VIKING_UV_BIN`/
   `VIKING_BROWSER_TIMEOUT_S` (180s)/`VIKING_BROWSER_MAX_ACOES` (30)/`VIKING_PRECO_GEMINI_ENTRADA`
   e `_SAIDA` (tarifas da estimativa de custo, US$ por 1M tokens)/`VIKING_TIMEZONE` (zona IANA usada
-  para resolver "amanhã" e montar janelas de dia no calendário; sem ela, usa o offset fixo da
-  máquina — não acompanha horário de verão). Copiar de `.env.example`.
+  para resolver "amanhã" e montar janelas de dia no calendário e o instante de lembretes com
+  prazo; sem ela, usa o offset fixo da máquina — não acompanha horário de verão). Copiar de
+  `.env.example`. Caminhos relativos (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em
+  `REPO_ROOT`, não no diretório de onde `viking` foi chamado.
 - As chaves do **Jev** (`OPENROUTER_API_KEY`, `TEXT_MODEL_*`) ficam no `.env` do próprio clone do
   Jev, não no do Viking — o Viking só guarda o ponteiro `VIKING_JEV_DIR`. Não duplicar a chave nos
   dois arquivos (armadilha de rotação).
@@ -196,6 +198,20 @@ o documentado.
 
 **Comandos para o terminal do dono não levam comentário `#` na mesma linha.** O zsh interativo não
 trata `#` como comentário e passa como argumento (`git log -1 # commit` vira erro).
+
+**`expanduser()` tem que rodar antes de juntar um caminho com `REPO_ROOT`.** `REPO_ROOT /
+Path("~/pasta")` (join primeiro) dá `REPO_ROOT/~/pasta` — um caractere `~` literal dentro do
+caminho do repo, não a pasta pessoal. `REPO_ROOT / Path("~/pasta").expanduser()` (expandir antes)
+dá o caminho certo. `config._path_env()` segue essa ordem; qualquer caminho novo vindo de env
+precisa seguir também.
+
+**`float()`/`int()` do Python aceitam `nan`/`inf`/infinito sem levantar erro.** Configuração
+numérica lida direto com `float(os.getenv(...))` passa por essa checagem silenciosamente, e um
+valor não-finito quebra comparações a jusante sem aviso — o exemplo real é o deadline do
+navegador: `time.monotonic() + limite` com `limite=nan` faz toda comparação `<= 0` devolver
+`False` para sempre, desligando o próprio timeout que existe pra matar uma tarefa travada. Use
+`config._float_env()`/`_int_env()` (checam `math.isfinite()` e limites) em vez de `float()`/`int()`
+crus em qualquer env numérica nova.
 
 ## Perguntas em aberto
 

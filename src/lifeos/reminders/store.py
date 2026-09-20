@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
-from lifeos.config import REMINDERS_DB_PATH
+from lifeos.config import REMINDERS_DB_PATH, TIMEZONE
 from lifeos.reminders.models import Reminder
 
 _SCHEMA = """
@@ -27,6 +27,41 @@ CREATE TABLE IF NOT EXISTS reminders (
     updated_at TEXT NOT NULL
 );
 """
+_INDEX_DUE_AT = "CREATE INDEX IF NOT EXISTS idx_reminders_due_at ON reminders (due_at)"
+
+
+def _para_utc_isoformato(dt: datetime) -> str:
+    """Normaliza um datetime pra UTC antes de gravar. Sem isso, `due_at` ordenava como TEXTO puro:
+    "08:00+00:00" (=08:00Z) vinha antes de "09:00+02:00" (=07:00Z, que é o horário real mais cedo).
+    Datetime sem fuso (naive) é tratado como estando no fuso configurado do Viking (o mesmo que o
+    calendário usa) — é a mesma suposição que `criar_lembrete` já faz implicitamente hoje.
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=TIMEZONE)
+    return dt.astimezone(UTC).isoformat()
+
+
+def _migrar_due_at_para_utc(conn: sqlite3.Connection) -> None:
+    linhas = conn.execute("SELECT id, due_at FROM reminders WHERE due_at IS NOT NULL").fetchall()
+    for row in linhas:
+        try:
+            dt = datetime.fromisoformat(row["due_at"])
+        except ValueError:
+            continue  # registro corrompido — não é esta migração que deve consertar isso
+        normalizado = _para_utc_isoformato(dt)
+        if normalizado != row["due_at"]:
+            conn.execute("UPDATE reminders SET due_at = ? WHERE id = ?", (normalizado, row["id"]))
+
+
+def _migrar(conn: sqlite3.Connection) -> None:
+    """Migrations por versão, guiadas por PRAGMA user_version (nativo do SQLite) — cada uma roda
+    no máximo uma vez por arquivo de banco, sem precisar de tabela de controle própria nem de
+    estado em memória do processo Python (que se perderia entre reinícios, ou pior, vazaria entre
+    testes que usam bancos diferentes)."""
+    versao = conn.execute("PRAGMA user_version").fetchone()[0]
+    if versao < 1:
+        _migrar_due_at_para_utc(conn)
+        conn.execute("PRAGMA user_version = 1")
 
 
 @contextmanager
@@ -35,6 +70,8 @@ def _session():
     conn = sqlite3.connect(REMINDERS_DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute(_SCHEMA)
+    conn.execute(_INDEX_DUE_AT)
+    _migrar(conn)
     try:
         yield conn
         conn.commit()
@@ -43,13 +80,14 @@ def _session():
 
 
 def _row_to_reminder(row: sqlite3.Row) -> Reminder:
+    due_at = datetime.fromisoformat(row["due_at"]).astimezone(TIMEZONE) if row["due_at"] else None
     return Reminder(
         id=row["id"],
         type=row["type"],
         title=row["title"],
         body=row["body"],
         tags=json.loads(row["tags"]),
-        due_at=datetime.fromisoformat(row["due_at"]) if row["due_at"] else None,
+        due_at=due_at,
         completed_at=datetime.fromisoformat(row["completed_at"]) if row["completed_at"] else None,
         source=row["source"],
         external_id=row["external_id"],
@@ -82,7 +120,7 @@ def add(
                 title,
                 body,
                 json.dumps(tags or []),
-                due_at.isoformat() if due_at else None,
+                _para_utc_isoformato(due_at) if due_at else None,
                 source,
                 external_id,
                 json.dumps(metadata or {}),
