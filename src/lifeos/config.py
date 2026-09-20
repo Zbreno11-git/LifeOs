@@ -6,7 +6,9 @@ Ponto único de `load_dotenv()` — nenhum outro módulo deve chamar isso direta
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dotenv import load_dotenv
 
@@ -21,6 +23,26 @@ def _path_env(name: str, default: Path) -> Path:
     value = os.getenv(name)
     return Path(value).expanduser() if value else default
 
+
+def _timezone():
+    """Fuso civil usado para resolver "amanhã" e montar janelas de dia no calendário.
+
+    Sem `VIKING_TIMEZONE` usamos o offset local da máquina. Repare que isso é um offset **fixo**,
+    não uma zona IANA: basta para o Brasil de hoje (sem horário de verão), mas não acompanha
+    transições de DST. Quem precisar disso deve setar `VIKING_TIMEZONE=America/Sao_Paulo`.
+    """
+    nome = os.getenv("VIKING_TIMEZONE")
+    if not nome:
+        return datetime.now().astimezone().tzinfo
+    try:
+        return ZoneInfo(nome)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError(
+            f"VIKING_TIMEZONE={nome!r} não é uma zona IANA válida (ex.: America/Sao_Paulo)."
+        ) from exc
+
+
+TIMEZONE = _timezone()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GOOGLE_CREDENTIALS_PATH = _path_env(
@@ -38,3 +60,9 @@ BROWSER_TIMEOUT_S = float(os.getenv("VIKING_BROWSER_TIMEOUT_S", "180"))
 # Teto de ações por tarefa. Abaixo do teto de 60 do próprio Jev: limita o custo do pior caso
 # (uma tarefa em loop) sem cortar tarefas legítimas, que raramente passam de 15 passos.
 BROWSER_MAX_ACOES = int(os.getenv("VIKING_BROWSER_MAX_ACOES", "30"))
+
+# Contabilidade de custo do Gemini: US$ por 1 milhão de tokens. Moram aqui, e não em `custos.py`,
+# porque este é o único módulo que roda `load_dotenv()` — lidos lá, os overrides do .env chegavam
+# tarde demais e eram silenciosamente ignorados.
+PRECO_GEMINI_ENTRADA = float(os.getenv("VIKING_PRECO_GEMINI_ENTRADA", "0.30"))
+PRECO_GEMINI_SAIDA = float(os.getenv("VIKING_PRECO_GEMINI_SAIDA", "2.50"))

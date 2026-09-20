@@ -3,6 +3,14 @@
 Escrito em 2026-09-20 por uma sessão do Claude Code, para o Codex assumir e **auditar** este
 repositório. Assume que você não viu nada daqui antes.
 
+> **Atualização (2026-09-20, mesmo dia):** o Codex fez a auditoria pedida abaixo —
+> `auditoria_codex_1.md`. Uma sessão seguinte do Claude corrigiu a primeira leva de achados P0/P1
+> (exclusão/reagendamento de calendário, contagem de custo do Gemini, vazamentos do runner do
+> navegador) — ver `docs/diario-de-bordo.md`, entrada "primeira rodada de correções da auditoria".
+> Em particular, o risco nº1 abaixo (trava de exclusão por substring) **já está corrigido**. O que
+> ficou de fora dessa rodada está organizado em `sessoes.md`. O corpo deste documento abaixo foi
+> mantido como escrito originalmente — não reescrevi para refletir as correções.
+
 Antes de mais nada: leia `AGENTS.md` (guia canônico, compartilhado entre nós dois — o `CLAUDE.md` só
 o importa) e `docs/diario-de-bordo.md` (log datado; a última entrada tem o detalhe cronológico de
 tudo que descrevo aqui). Este documento não repete nenhum dos dois — ele te diz **o que eu fiz, o que

@@ -15,6 +15,7 @@ _COM_DETALHE = {
     "runner_crash",
     "bad_output",
     "harness_ipc",
+    "spawn_failed",
     "unknown",
 }
 
@@ -70,6 +71,7 @@ MENSAGENS: dict[str, str] = {
     ),
     "bad_output": "O executor do navegador devolveu uma saída que não consegui interpretar.",
     "runner_crash": "O executor do navegador falhou de um jeito inesperado.",
+    "spawn_failed": "Não consegui nem iniciar o executor do navegador. Nenhuma ação foi executada.",
 }
 
 _GENERICA = "O executor do navegador falhou."

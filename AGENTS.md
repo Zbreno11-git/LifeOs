@@ -21,7 +21,9 @@ que este `AGENTS.md` sincroniza sozinho com esses dois — reconfira a cada sess
 
 `HANDOFF.md` na raiz é uma passagem de bastão escrita em 2026-09-20 para auditoria: diz o que foi
 construído, o que está verificado ao vivo, o que nunca rodou, e onde o autor suspeita que está
-errado. Vale ler antes de mexer em `browser/` ou na exclusão de eventos.
+errado. Tem uma nota de atualização no topo — leia essa nota antes do resto. `auditoria_codex_1.md`
+é a auditoria que resultou desse handoff; `sessoes.md` organiza o que dela ainda não foi corrigido,
+uma sessão de ~1h30 por vez. Vale ler os três antes de mexer em `browser/` ou em calendário.
 
 ## Não sugerir de novo
 
@@ -72,10 +74,10 @@ errado. Vale ler antes de mexer em `browser/` ou na exclusão de eventos.
 
 ```bash
 source .venv/bin/activate
-pip install -e ".[dev]"        # editable install + pytest/ruff + deps do Viking
+python -m pip install -e ".[dev]"   # editable install + pytest/ruff + deps do Viking
 
-pytest                         # roda os testes (testpaths = tests/)
-ruff check .                   # lint (line-length 100, src+tests)
+python -m pytest               # roda os testes (testpaths = tests/)
+python -m ruff check .         # lint (line-length 100, src+tests)
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
                                # dentro dele: /custos mostra o gasto da sessão
@@ -131,7 +133,9 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
 - `.env` (raiz, gitignored) — `GEMINI_API_KEY`, `VIKING_JEV_DIR` e, se necessário, overrides de
   `VIKING_GOOGLE_CREDENTIALS_PATH`/`VIKING_GOOGLE_TOKEN_PATH`/`VIKING_DB_PATH`/`VIKING_UV_BIN`/
   `VIKING_BROWSER_TIMEOUT_S` (180s)/`VIKING_BROWSER_MAX_ACOES` (30)/`VIKING_PRECO_GEMINI_ENTRADA`
-  e `_SAIDA` (tarifas da estimativa de custo, US$ por 1M tokens). Copiar de `.env.example`.
+  e `_SAIDA` (tarifas da estimativa de custo, US$ por 1M tokens)/`VIKING_TIMEZONE` (zona IANA usada
+  para resolver "amanhã" e montar janelas de dia no calendário; sem ela, usa o offset fixo da
+  máquina — não acompanha horário de verão). Copiar de `.env.example`.
 - As chaves do **Jev** (`OPENROUTER_API_KEY`, `TEXT_MODEL_*`) ficam no `.env` do próprio clone do
   Jev, não no do Viking — o Viking só guarda o ponteiro `VIKING_JEV_DIR`. Não duplicar a chave nos
   dois arquivos (armadilha de rotação).

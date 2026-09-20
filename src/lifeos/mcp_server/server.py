@@ -2,9 +2,11 @@
 (Claude Desktop, Gemini CLI, etc.). Ver docs/arquitetura/viking-visao-e-arquitetura.md, seção 4.4.
 """
 
-# NÃO adicionar `from __future__ import annotations` aqui: o google-genai valida os argumentos
-# das tools com isinstance(valor, anotação), e o future import transforma as anotações em strings,
-# quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
+# Nota corrigida (achado da auditoria de 2026-09-20): ao contrário de `assistant/agent.py` e
+# `calendar/tools.py`, este módulo é consumido pelo FastMCP, não pelo google-genai — e testamos que
+# o FastMCP resolve `from __future__ import annotations` sem problema (schema e chamada de tool
+# funcionam com tipos reais, não strings). A regra "não adicionar" só valeria aqui se uma função
+# deste arquivo também fosse registrada como tool do Gemini, o que hoje não acontece.
 from fastmcp import FastMCP
 
 from lifeos.calendar import (
@@ -14,7 +16,7 @@ from lifeos.calendar import (
     criar_evento_dia_inteiro,
     listar_eventos_por_data,
     listar_proximos_eventos,
-    reagendar_evento,
+    reagendar_evento_por_id,
 )
 from lifeos.reminders import store
 
@@ -58,9 +60,11 @@ def viking_apagar_evento(event_id: str, titulo_esperado: str) -> str:
 
 
 @mcp.tool()
-def viking_reagendar_evento(termo_busca: str, novo_inicio: str, novo_fim: str) -> str:
-    """Reagenda um evento existente do Google Calendar."""
-    return reagendar_evento(termo_busca, novo_inicio, novo_fim)
+def viking_reagendar_evento(
+    event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
+) -> str:
+    """Reagenda UM evento pelo ID. Irreversível: busque e confirme com o usuário antes."""
+    return reagendar_evento_por_id(event_id, titulo_esperado, novo_inicio, novo_fim)
 
 
 @mcp.tool()

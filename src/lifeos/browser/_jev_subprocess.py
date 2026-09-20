@@ -251,6 +251,12 @@ def main():
                 kind=historico[-1]["kind"] if historico else None,
                 url=(state.get("page") or {}).get("url"),
             )
+            # Estado terminal vence os guardas abaixo: concluir exatamente na ação-limite, ou
+            # num estado que por acaso fecha um ciclo de assinaturas, é sucesso — não
+            # step_budget nem loop_detected. Cair fora do laço aqui reusa o emit de "result"
+            # de sucesso logo depois dele, com o mesmo kept_open/usage que o caminho normal.
+            if state.get("status") in {"done", "blocked"}:
+                break
             url_passo = (state.get("page") or {}).get("url")
             ultimo = historico[-1] if historico else {}
             assinaturas.append((url_passo, ultimo.get("action")))
@@ -267,6 +273,7 @@ def main():
                     elapsed_ms=state.get("elapsed_ms"),
                     history=historico,
                     usage=_uso(state),
+                    kept_open=not args.fechar,
                     **_pagina(state),
                 )
                 return EXIT_ERROR
@@ -280,6 +287,8 @@ def main():
                     steps=_passos(state),
                     elapsed_ms=state.get("elapsed_ms"),
                     history=historico,
+                    usage=_uso(state),
+                    kept_open=not args.fechar,
                     **_pagina(state),
                 )
                 return EXIT_ERROR
@@ -293,6 +302,8 @@ def main():
                     steps=_passos(state),
                     elapsed_ms=state.get("elapsed_ms"),
                     history=historico,
+                    usage=_uso(state),
+                    kept_open=not args.fechar,
                     **_pagina(state),
                 )
                 return EXIT_INTERRUPTED
@@ -329,6 +340,9 @@ def main():
             elapsed_ms=(final or {}).get("elapsed_ms"),
             history=_historico(final),
             usage=_uso(final),
+            # Só há aba pra manter aberta se um Agent chegou a ser construído (ex.: o health
+            # check pode falhar antes disso, e aí não existe nenhuma aba).
+            kept_open=agent is not None and not args.fechar,
             **_pagina(final),
         )
         return EXIT_ERROR

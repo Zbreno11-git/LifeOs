@@ -285,3 +285,88 @@ o Viking passou a saber a data de hoje, antes ele perguntava.
 prazo em SQLite (`data/viking.db`, criado na primeira gravação), navegador abrindo e mantendo aba,
 busca+clique no primeiro resultado, Ctrl-C matando o subprocesso limpo, recuperação do daemon do
 Browser Harness (o `doctor` reportou 0 conexões e a tarefa seguinte funcionou, reatando).
+
+### 2026-09-20 — auditoria independente do Codex
+
+- Auditoria somente leitura concluída sobre código, testes, configuração, documentação e os contratos
+  consumidos do clone `jev-ultrafast`; nenhum código funcional foi alterado.
+- Verificações: `111` testes passando, `ruff check` passando, `pip check` sem requisitos quebrados,
+  CLI importável e servidor MCP iniciando em `stdio` com 10 tools descobertas. O format check apontou
+  10 arquivos fora do formato, sem erro de sintaxe.
+- Achados prioritários: trava de exclusão atravessável por título vazio/substrings; consulta de um dia
+  abrangendo quase dois; fim inválido de evento de dia inteiro; reagendamento ambíguo pelo primeiro
+  resultado; confirmação sensível apenas no prompt; egress de conteúdo autenticado do navegador para
+  modelos externos; subcontagem de custo Gemini; e lacunas no ciclo de vida do subprocesso.
+- Relatório/handoff detalhado criado em `auditoria_codex_1.md`, escrito como prompt para uma futura
+  sessão do Claude confirmar, priorizar e só então implementar com autorização do usuário.
+
+### 2026-09-20 — primeira rodada de correções da auditoria (calendário, custos, runner)
+
+Antes de corrigir qualquer achado, medi em vez de confiar no relatório — mesma régua da sessão
+anterior (custo do navegador). Confirmados com evidência reproduzida: `titulo_esperado=""` e
+`"   "` apagavam qualquer evento (substring vazia casa com tudo); a janela de "um dia" ia até
+`timeMax=2026-09-21T23:59:59Z` em UTC fixo; a doc do Google confirma que `end` é exclusivo, então
+`end.date == start.date` no dia inteiro estava errado; `reagendar_evento` pegava `events[0]` sem
+checar título; o SDK do Gemini (`google-genai` 2.24.0) reatribui `response` a cada volta do laço de
+function-calling automático e só a última sobrevive no `usage_metadata` visível — um turno com
+ferramenta subcontava todas as chamadas anteriores; `thoughts_token_count` existe no metadata e não
+entrava na conta; `custos.py` lia as tarifas do `.env` antes do `load_dotenv` de `config.py` rodar,
+então um override na raiz era ignorado sem aviso.
+
+Dois achados do relatório eram menos graves do que descrito: o teste
+`test_aceita_titulo_parcial` não cristalizava substring de verdade (só diferença de caixa,
+`"dentista"` vs `"Dentista"`), e `navegar_e_executar` nunca esteve exposto no servidor MCP.
+
+**Calendário.** `apagar_evento_por_id` e o novo `reagendar_evento_por_id` (substituiu
+`reagendar_evento`, que escolhia por termo) exigem igualdade de título normalizada
+(Unicode NFC + `casefold()` + espaços colapsados) em vez de substring, e recusam ID ou título
+vazios. `listar_eventos_por_data` ganhou `_janela()`: monta os limites no fuso civil configurado
+por `VIKING_TIMEZONE` (nova env; padrão = offset fixo da máquina, **não** acompanha horário de
+verão) e `data_fim` passou a ser inclusiva de verdade, sem o dia extra. `criar_evento_dia_inteiro`
+usa `end.date` no dia seguinte. `criar_evento` e o novo reagendamento validam fim > início antes de
+chamar a API.
+
+**Custos.** `PRECO_GEMINI_ENTRADA`/`_SAIDA` mudaram para `config.py` (onde o `.env` já é carregado)
+— resolve a leitura tardia. `do_gemini()` agora soma `thoughts_token_count` (saída) e
+`tool_use_prompt_token_count` (entrada). `custos.instrumentar(client)` intercepta
+`client.models._generate_content` — o método de baixo nível chamado dentro do laço de AFC — e
+contabiliza toda chamada real, não só a que o chat devolve; é acoplamento consciente a um atributo
+privado do SDK, com teste dedicado que avisa se ele sumir numa versão futura. `Sessao` ganhou
+`iniciar_turno()`/`turno()`, e a linha de custo no REPL foi para um `finally`: uma chamada que já
+custou aparece mesmo se a chamada seguinte do mesmo turno falhar.
+
+**Runner do navegador.** Em `_jev_subprocess.py`, checar `status in {"done","blocked"}` antes dos
+guardas de limite/loop resolve o caso em que concluir exatamente na ação-limite virava
+`step_budget` por engano. `usage` e `kept_open` passaram a ir em todo evento de erro
+(`step_budget`, `loop_detected`, `timeout`, e o `except` final), não só nalguns — o custo
+acontecia e sumia do resultado. Em `jev_runner.py`, um `on_progress` que levanta agora é engolido
+(`_avisar`) em vez de escapar do laço e deixar o subprocesso órfão dirigindo a Chrome; todo o
+trecho pós-`Popen` ganhou um `try/finally` que garante matar o processo em qualquer saída; um
+`Popen` que falha vira `spawn_failed` em vez de propagar `OSError` — o contrato "devolve sempre um
+`BrowserResult`" agora é verdadeiro de fato.
+
+**Testes:** `tests/test_calendar_tools.py` substitui `test_calendar_apagar.py` (35 casos, incluindo
+o buraco medido: `titulo_esperado="com"` contra "Reunião com o time"). `tests/test_custos.py` ganhou
+os testes de `instrumentar()` com um `client.models` falso. `tests/test_jev_subprocess_main.py` é
+novo: roda `_jev_subprocess.main()` de ponta a ponta injetando `jev_ultrafast` e
+`browser_harness.{admin,helpers}` falsos via `sys.modules`, já que este ambiente não tem (nem deve
+ter) o ambiente real do Jev instalado. 158 testes passando, `ruff check` limpo; `ruff format --check`
+segue com os mesmos 10 arquivos pré-existentes que a auditoria encontrou (não mexidos agora, de
+propósito, para não misturar formatação com correção de bug — vira Sessão 7 em `sessoes.md`).
+
+**Docs:** corrigidos `docs/fontes/browser-harness.md` e `google-calendar-api.md` (não somos mais
+cliente MCP; delete/reagendar são por ID), `.gitignore` (o `origin` do clone do Jev é o fork
+pessoal, o upstream fica em `upstream`), `README.md`/`AGENTS.md` (`python -m pip`/`python -m
+pytest`, hoje o próprio AGENTS.md se contradizia). O comentário do `from __future__ import
+annotations` em `mcp_server/server.py` citava o google-genai por engano — testei ao vivo e o
+FastMCP resolve esse future import sem problema (schema e chamada de tool com tipos reais), então a
+regra não vale para esse arquivo hoje.
+
+**Escopo restante da auditoria** (privacidade do navegador, confirmação em duas fases, lock
+interprocesso, lockfile/CI etc.) foi organizado em `sessoes.md`, novo doc de planejamento — cada
+sessão futura cabe em ~1h30, com o § correspondente da auditoria para rastrear.
+
+**Não validado ao vivo** (VPS sem Chrome e sem as chaves): tudo acima passou em teste automatizado
+offline; falta o dono confirmar no Mac que "o que eu tenho amanhã?" responde a data certa, que um
+evento de dia inteiro ocupa só um dia no Google, e que a linha de custo do navegador aparece maior
+e mais honesta que antes.

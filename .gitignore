@@ -18,9 +18,10 @@ secrets/*
 # fork externo (repo git próprio, não faz parte do histórico deste projeto)
 windows-mcp/
 
-# clone externo (repo git próprio, origin aponta direto pro upstream browser-use/jev-ultrafast,
-# não é um fork pessoal — não faz parte do histórico deste projeto); stack de automação de
-# navegador (Jev + Browser Harness) — ver docs/fontes/browser-harness.md e docs/fontes/jev-typesafe.md
+# clone externo (repo git próprio; origin aponta pro fork pessoal Zbreno11-git/jev-ultrafast, que
+# carrega o patch do endpoint OpenRouter — o upstream browser-use/jev-ultrafast fica no remote
+# "upstream"); não faz parte do histórico deste projeto. Stack de automação de navegador (Jev +
+# Browser Harness) — ver docs/fontes/browser-harness.md e docs/fontes/jev-typesafe.md
 jev-ultrafast/
 
 .DS_Store

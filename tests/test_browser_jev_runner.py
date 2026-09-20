@@ -290,3 +290,45 @@ def test_build_command_manda_teto_de_acoes(jev_falso):
     cmd = build_command("u", ["g"], timeout_s=1)
     assert "--max-acoes" in cmd
     assert int(cmd[cmd.index("--max-acoes") + 1]) > 0
+
+
+def test_spawn_failed_quando_popen_nao_consegue_iniciar(monkeypatch, jev_falso):
+    """Achado da auditoria: `run_jev` prometia devolver sempre um BrowserResult, mas um Popen que
+    falhasse (binário sem permissão de execução, por exemplo) escapava como exceção."""
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+
+    def _falha(*args, **kwargs):
+        raise OSError("Permission denied")
+
+    monkeypatch.setattr(jev_runner.subprocess, "Popen", _falha)
+    r = run_jev("https://x.com", ["g"])
+    assert r.status == "error" and r.error_code == "spawn_failed"
+
+
+def test_callback_que_levanta_nao_impede_o_resultado_nem_vaza_processo(monkeypatch, jev_falso):
+    """Achado da auditoria: um `on_progress` que levanta (ex.: stderr fechado) escapava do laço
+    principal, e o `finally` só soltava o lock — o processo ficava rodando sem supervisão."""
+    script = (
+        "import json,sys\n"
+        "print(json.dumps({'schema':1,'type':'step','n':1,'elapsed_ms':10}));sys.stdout.flush()\n"
+        "print(json.dumps({'schema':1,'type':'result','status':'done','steps':1,'url':'u'}))\n"
+    )
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+    monkeypatch.setattr(jev_runner, "build_command", lambda *a, **k: _fake_cmd(script))
+
+    capturado = {}
+    real_popen = subprocess.Popen
+
+    def espiao(*args, **kwargs):
+        proc = real_popen(*args, **kwargs)
+        capturado["proc"] = proc
+        return proc
+
+    monkeypatch.setattr(jev_runner.subprocess, "Popen", espiao)
+
+    def callback_ruim(evento):
+        raise RuntimeError("stderr fechado, por exemplo")
+
+    r = run_jev("https://x.com", ["g"], timeout_s=10, on_progress=callback_ruim)
+    assert r.status == "done" and r.steps == 1
+    assert capturado["proc"].poll() is not None, "processo nao pode ficar orfao"

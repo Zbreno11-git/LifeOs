@@ -8,7 +8,7 @@ visão de produto.
 
 ```bash
 source .venv/bin/activate
-pip install -e ".[dev]"
+python -m pip install -e ".[dev]"   # python -m evita resolver pro conda no Mac (ver AGENTS.md)
 cp .env.example .env   # preencher GEMINI_API_KEY
 # credenciais do Google Calendar em secrets/ — ver docs/fontes/google-calendar-api.md
 ```

@@ -5,7 +5,7 @@ from lifeos.calendar.tools import (
     criar_evento_dia_inteiro,
     listar_eventos_por_data,
     listar_proximos_eventos,
-    reagendar_evento,
+    reagendar_evento_por_id,
 )
 
 __all__ = [
@@ -15,5 +15,5 @@ __all__ = [
     "criar_evento_dia_inteiro",
     "listar_eventos_por_data",
     "listar_proximos_eventos",
-    "reagendar_evento",
+    "reagendar_evento_por_id",
 ]
