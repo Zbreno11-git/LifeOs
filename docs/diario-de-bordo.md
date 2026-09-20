@@ -159,5 +159,58 @@ fundadoras nunca documentadas neste repo — **Viking** (marca do assistente pes
   `python -c "from lifeos.calendar import tools"` e `viking --help` confirmados funcionando a partir da
   raiz do repo, sem depender da pasta `calendar-bot/` original.
 - Pendente/recomendado, não feito nesta sessão: criar um fork pessoal de `jev-ultrafast` (hoje o
-  `origin` aponta direto pro upstream `browser-use/jev-ultrafast`, sem remote próprio para os 3 commits
-  locais, incluindo o patch de fallback pra OpenRouter) — ver `docs/fontes/jev-typesafe.md`.
+  `origin` aponta direto pro upstream `browser-use/jev-ultrafast`, sem remote próprio para o patch de
+  fallback pra OpenRouter) — ver `docs/fontes/jev-typesafe.md`.
+  > **Correção (2026-09-21):** esta linha dizia "os 3 commits locais, incluindo o patch". Era falso —
+  > os 3 commits eram todos do upstream e o patch existia **apenas como modificação não commitada**.
+  > O risco era portanto maior do que o registrado. Resolvido na sessão seguinte (ver abaixo).
+
+### 2026-09-21
+
+**MVP: calendário e navegador funcionando juntos no `viking chat`.** Até aqui a ferramenta de
+navegador era um stub declarado (`browser_goal` abria uma aba e ignorava o objetivo). Agora o Viking
+executa tarefas de verdade num Chrome real, via Jev.
+
+- **Fork do Jev criado e patch protegido** (era a pendência mais urgente): `Zbreno11-git/jev-ultrafast`,
+  branch `viking-openrouter`, commit `afbee69`. O clone local passou a ter `origin` = fork e
+  `upstream` = `browser-use/jev-ultrafast`. Antes disso, o patch que troca o endpoint da TypeSafe pelo
+  de decisões da OpenRouter — a única razão pela qual a chave disponível funciona — existia só como
+  modificação não salva numa pasta gitignorada; qualquer `git checkout` o apagaria.
+- **Decisão de arquitetura: subprocesso, não import.** O Viking chama o Jev com
+  `uv run --directory <VIKING_JEV_DIR>`, no ambiente do próprio Jev, e lê um protocolo JSONL do
+  stdout. Motivo: o Jev não tem timeout de wall-clock nem cancelamento (os limites internos levantam
+  exceção e só dá pra parar entre passos), então in-process uma tarefa travada congelaria o REPL sem
+  recuperação. Como processo separado, temos prazo e kill de verdade. De quebra, o pin
+  `browser-harness==0.1.13` (que rebaixaria `websockets` 16.1.1→15.0.1) fica fora da venv do Viking, e
+  o setup do Jev que já funciona no Mac é reaproveitado intacto.
+- **Descoberta que mudou o desenho:** o Jev **não** usa MCP — ele fala CDP direto via `browser_harness`
+  e sobe o próprio daemon. O caminho MCP que tínhamos (`browser/client.py` + `supervisor.py`, via
+  `uvx browser-harness-mcp`) era redundante e, pior, competiria pelo mesmo daemon (`BU_NAME=default`) e
+  pela mesma Chrome. Ambos os arquivos foram deletados.
+- **Supervisão do daemon implementada** (`preparar_navegador()` em `_jev_subprocess.py`), atendendo ao
+  incidente já registrado em `browser-automation-stack.md` §10-11 (`daemon vivo != navegador pronto`,
+  `_IPCResponseTimeout` após 5s com 0 conexões ativas): probe CDP real via `page_info()` — que é o que
+  reata a conexão —, depois tentativa de reattach, e no limite um `restart_daemon()`. Retentativas
+  limitadas de propósito, sem laço infinito. O runner emite um evento `health` e o Viking avisa no
+  terminal quando precisou reatar/reiniciar.
+- **Novos módulos:** `browser/jev_runner.py` (spawn, prazo, kill em grupo de processo, trava de
+  execução única, parsing do JSONL), `browser/_jev_subprocess.py` (roda sob o interpretador do Jev; só
+  stdlib + `jev_ultrafast`), `browser/mensagens.py` (traduz os códigos de erro para português). Todo
+  erro diz explicitamente que nada do que já foi feito na página foi desfeito; `timeout`,
+  `step_budget` e afins avisam que a tarefa pode ter ficado pela metade, para que ninguém (nem o
+  modelo) reexecute às cegas.
+- **Novo subcomando `viking browser`** (`--url`, `--goal` repetível, `--timeout`, `--json`, `--quiet`,
+  `--doctor`): executa o stack inteiro sem passar pelo Gemini, então uma falha ali é inequivocamente do
+  navegador e não da ligação com o modelo. `--doctor` repassa o `browser-harness doctor` do próprio
+  fornecedor.
+- **Config:** `VIKING_JEV_DIR`, `VIKING_JEV_ENV_FILE`, `VIKING_UV_BIN`, `VIKING_BROWSER_TIMEOUT_S`
+  (padrão 180s). As chaves do Jev continuam no `.env` **dele** — o Viking guarda só o ponteiro, para
+  não duplicar a mesma chave OpenRouter em dois arquivos (armadilha de rotação).
+- **Testes:** 47 passando, incluindo prazo que de fato mata o processo filho, parsing de saída
+  corrompida, `uv`/pasta do Jev ausentes sem spawnar nada, e o evento de recuperação do daemon. Dois
+  bugs reais foram achados pelos próprios testes: o timeout era mascarado como `runner_crash`, e um
+  código de erro desconhecido engolia o detalhe técnico.
+- **Pendente:** validar no Mac (ver checklist no plano). Nada disso foi executado contra uma Chrome de
+  verdade — este ambiente é Linux sem tela, e o Browser Harness pede um clique humano em "Allow remote
+  debugging" na primeira vez. O risco não verificado mais importante segue sendo o endpoint alpha de
+  decisões da OpenRouter aceitar o corpo no formato TypeSafe.

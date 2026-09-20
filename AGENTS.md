@@ -30,10 +30,11 @@ que este `AGENTS.md` sincroniza sozinho com esses dois — reconfira a cada sess
 ## Estrutura do repo
 
 - `src/lifeos/` — pacote Python do Viking:
-  - `cli.py` — entrypoint `viking` (`chat`, `mcp-server`)
+  - `cli.py` — entrypoint `viking` (`chat`, `browser`, `mcp-server`)
   - `config.py` — carga única de `.env` + caminhos (`secrets/`, `data/`)
   - `calendar/` — Google Calendar (OAuth + operações), portado de um protótipo já validado
-  - `browser/` — cliente MCP do Browser Harness (as "mãos" do Viking) + supervisor de saúde
+  - `browser/` — as "mãos" do Viking: chama o executor Jev por subprocesso, com supervisão de
+    saúde do Browser Harness (`_jev_subprocess.py`) e tradução dos erros para português
   - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools)
@@ -53,9 +54,10 @@ que este `AGENTS.md` sincroniza sozinho com esses dois — reconfira a cada sess
 - `secrets/` — gitignored (exceto `.gitkeep`): credenciais OAuth reais (`google_credentials.json`,
   `google_token.json`). Nunca commitar.
 - `data/` — local, gitignored exceto `.gitkeep`; inclui `viking.db` (SQLite de lembretes) em runtime.
-- `jev-ultrafast/` — clone externo (gitignored, próprio `.git`, origin = upstream
-  `browser-use/jev-ultrafast`) do agente de automação de navegador "Jev". Não é fork pessoal — ver risco
-  em `docs/fontes/jev-typesafe.md`.
+- `jev-ultrafast/` — clone externo (gitignored, próprio `.git`) do agente de automação de navegador
+  "Jev". `origin` = fork pessoal `Zbreno11-git/jev-ultrafast` (branch `viking-openrouter`, que carrega
+  o patch do endpoint OpenRouter), `upstream` = `browser-use/jev-ultrafast`. Ver
+  `docs/fontes/jev-typesafe.md`.
 - `windows-mcp/` — clone externo/fork (gitignored, próprio `.git`) do servidor MCP de controle do
   Windows. Pausado junto com a trilha de hardware.
 
@@ -70,12 +72,16 @@ ruff check .                   # lint (line-length 100, src+tests)
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
 viking mcp-server               # servidor MCP do Viking
+viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
+viking browser --doctor         # diagnostica o Browser Harness (Chrome/daemon/conexão)
 ```
 
-Depende do Browser Harness rodando localmente (`uvx --python 3.12 --from 'browser-harness[mcp]'
-browser-harness-mcp` — ver `docs/fontes/browser-harness.md`) para as ferramentas de navegador
-funcionarem, e de credenciais OAuth em `secrets/` para as de calendário (ver
-`docs/fontes/google-calendar-api.md`).
+As ferramentas de navegador exigem `uv` no PATH e o clone do Jev (`VIKING_JEV_DIR`); o Viking o
+roda como subprocesso no ambiente dele — **não** instale `jev-ultrafast` nem `browser-harness` na
+venv do Viking. As de calendário exigem credenciais OAuth em `secrets/` (ver
+`docs/fontes/google-calendar-api.md`). Quando algo de navegador falhar, comece por
+`viking browser --doctor` e depois por rodar o Jev sozinho — o subcomando existe justamente para
+isolar a falha sem gastar token de modelo.
 
 Trilha de hardware arquivada, roda só no Bosgame (PC Windows) — ver
 `archive/wristband-fail-test/README.md` para os comandos específicos (`pip install .[hardware]` cobre
@@ -86,7 +92,7 @@ a dependência `pyserial`).
 Resumo curto; detalhe completo em `docs/arquitetura/viking-visao-e-arquitetura.md`:
 
 `viking chat` → `assistant/agent.py` (loop de function-calling) → tools de `calendar/` (Google Calendar),
-`browser/` (cliente MCP do Browser Harness, com Jev como decisor rápido de clique/digitação — ver
+`browser/` (executor Jev por subprocesso, dirigindo uma Chrome real via Browser Harness/CDP — ver
 `docs/arquitetura/browser-automation-stack.md`), e `reminders/` (SQLite). Em paralelo, `mcp_server/`
 expõe calendário + lembretes como um servidor MCP próprio, para outras ferramentas chamarem o Viking.
 
@@ -102,7 +108,7 @@ não reescritos). Código funcional em `archive/wristband-fail-test/`.
 
 ## Roadmap
 
-1. **Assistente CLI (atual)** — calendário + navegador (MCP) + lembretes, unificados em `viking chat`.
+1. **Assistente CLI (atual)** — calendário + navegador + lembretes, unificados em `viking chat`.
 2. **Servidor MCP do Viking** — expor calendário/lembretes para outras ferramentas externas.
 3. **Revival do hardware (futuro)** — retomar o dispositivo de pulso, se/quando fizer sentido.
 4. **Finanças via Pluggy (futuro)** — ingestão automática de transações, sem entrada manual. Ver
@@ -114,8 +120,12 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
 
 ## Segredos e variáveis de ambiente
 
-- `.env` (raiz, gitignored) — `GEMINI_API_KEY` e, se necessário, overrides de
-  `VIKING_GOOGLE_CREDENTIALS_PATH`/`VIKING_GOOGLE_TOKEN_PATH`/`VIKING_DB_PATH`. Copiar de `.env.example`.
+- `.env` (raiz, gitignored) — `GEMINI_API_KEY`, `VIKING_JEV_DIR` e, se necessário, overrides de
+  `VIKING_GOOGLE_CREDENTIALS_PATH`/`VIKING_GOOGLE_TOKEN_PATH`/`VIKING_DB_PATH`/`VIKING_UV_BIN`/
+  `VIKING_BROWSER_TIMEOUT_S`. Copiar de `.env.example`.
+- As chaves do **Jev** (`OPENROUTER_API_KEY`, `TEXT_MODEL_*`) ficam no `.env` do próprio clone do
+  Jev, não no do Viking — o Viking só guarda o ponteiro `VIKING_JEV_DIR`. Não duplicar a chave nos
+  dois arquivos (armadilha de rotação).
 - `secrets/` (gitignored exceto `.gitkeep`) — `google_credentials.json` e `google_token.json` (OAuth
   real do Google Calendar).
 - **Regra fixa:** nunca commitar nada em `secrets/`, o `.env` da raiz, ou qualquer chave/token real.

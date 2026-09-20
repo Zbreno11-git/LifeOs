@@ -38,7 +38,7 @@ uma limitação técnica, é uma escolha de sequenciamento.
 ## 3. Estado atual (milestone corrente)
 
 O milestone corrente é o **assistente de chat CLI unificado**: calendário (Google Calendar) + automação
-de navegador (Jev/Browser Harness via MCP) + lembretes gerais. Ver `docs/diario-de-bordo.md` para o
+de navegador (executor Jev via Browser Harness) + lembretes gerais. Ver `docs/diario-de-bordo.md` para o
 status vivo de implementação — este documento descreve a arquitetura-alvo, não necessariamente o que já
 está construído em cada momento.
 
@@ -56,10 +56,10 @@ está construído em cada momento.
                     ▼               ▼                ▼
             ┌───────────────┐ ┌───────────┐  ┌──────────────┐
             │  calendar/     │ │ browser/  │  │ reminders/   │
-            │  (Google Cal.) │ │ (cliente  │  │ (SQLite,     │
-            │                │ │ MCP →     │  │  schema      │
-            │                │ │ Browser   │  │  RAG-ready)  │
-            │                │ │ Harness)  │  │              │
+            │  (Google Cal.) │ │ (subproc. │  │ (SQLite,     │
+            │                │ │ → Jev →   │  │  schema      │
+            │                │ │ Harness → │  │  RAG-ready)  │
+            │                │ │ Chrome)   │  │              │
             └───────────────┘ └───────────┘  └──────────────┘
 
                          ┌──────────────────────┐
@@ -76,16 +76,26 @@ de listar/criar/deletar/reagendar eventos via `googleapiclient`. Ver `docs/fonte
 
 ### 4.2 Automação de navegador — as "mãos" do Viking
 
-O Viking é **cliente MCP** do servidor do Browser Harness (`browser-harness-mcp`), que dirige um Chrome
-real via CDP. Para decisões rápidas de clique/digitação/scroll, o stack usa o modelo **Jev** (TypeSafe,
-via OpenRouter Decisions API) — ver `docs/arquitetura/browser-automation-stack.md` para o relatório
-completo de validação e `docs/fontes/browser-harness.md` / `docs/fontes/jev-typesafe.md` para detalhes.
-Este é agora o mecanismo **padrão** de execução de ações — substitui o controle local de PC via
-Windows-MCP, que fica pausado (seção 5).
+O Viking chama o **Jev** (`jev-ultrafast`) como **subprocesso**, rodando no ambiente do próprio Jev
+(`uv run --directory <VIKING_JEV_DIR>`), e conversa com ele por um protocolo JSONL no stdout. O Jev
+dirige uma Chrome real via Browser Harness/CDP.
 
-Princípios herdados da validação: nunca depender da "aba ativa atual" (cada tarefa cria seu próprio
-target/aba), checagem de saúde antes de agir (`daemon vivo != navegador pronto`), perfil de Chrome
-dedicado para uso não supervisionado.
+Por que subprocesso e não import: o Jev não tem timeout de wall-clock nem cancelamento — seus
+limites internos levantam exceção e a única parada limpa é entre passos. Como processo separado,
+ganhamos prazo e kill de verdade (um objetivo travado não congela o chat), e o pin
+`browser-harness==0.1.13` fica fora da venv do Viking.
+
+Antes de qualquer tarefa, o runner faz a supervisão de saúde que o relatório de validação exige —
+`daemon vivo != navegador pronto`: probe CDP real, tentativa de reattach, e no limite um restart do
+daemon, com retentativas limitadas. Ver `docs/fontes/browser-harness.md`.
+
+Isto substitui o controle local de PC via Windows-MCP como caminho padrão de execução. Detalhes do
+stack e do incidente do daemon: `docs/arquitetura/browser-automation-stack.md`;
+referências: `docs/fontes/browser-harness.md` e `docs/fontes/jev-typesafe.md`.
+
+Princípios herdados da validação: cada tarefa cria sua própria aba (nunca reaproveita "a aba ativa
+atual"); `done` do executor não é prova de sucesso; nunca reexecutar uma mutação de navegador
+automaticamente após erro/timeout.
 
 ### 4.3 Lembretes e notas
 
@@ -95,7 +105,7 @@ prontos para indexação futura — **não** implica embeddings ou busca semânt
 
 ### 4.4 Servidor MCP do Viking
 
-Além de consumir o MCP do Browser Harness, o Viking expõe seu **próprio** servidor MCP
+O Viking expõe seu **próprio** servidor MCP
 (`src/lifeos/mcp_server/`), com calendário e lembretes como tools. Isso permite que outras ferramentas
 (Claude Desktop, Gemini CLI, etc.) chamem o Viking como um serviço, e não só o contrário.
 
@@ -136,7 +146,7 @@ navegação. Isso é fase futura — ver roadmap (seção 9).
 
 ## 9. Roadmap
 
-1. **Assistente CLI (atual)** — calendário + navegador (MCP) + lembretes, unificados em `viking chat`.
+1. **Assistente CLI (atual)** — calendário + navegador + lembretes, unificados em `viking chat`.
 2. **Servidor MCP do Viking** — expor calendário/lembretes para outras ferramentas.
 3. **Revival do hardware (futuro)** — retomar o dispositivo de pulso como interface física, se/quando
    fizer sentido.

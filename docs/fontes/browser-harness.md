@@ -16,3 +16,25 @@
   aba/target, nunca reaproveita "a aba ativa atual".
 - **Custo/licença:** não verificado neste repo além do necessário para os testes já feitos — conferir
   antes de uso em produção.
+
+## Supervisão de saúde (implementada)
+
+O achado de `daemon vivo != navegador pronto` está implementado em
+`src/lifeos/browser/_jev_subprocess.py` (`preparar_navegador()`), que roda **antes** de qualquer
+`Agent`, dentro do ambiente do Jev onde `browser_harness` é importável:
+
+1. `ensure_daemon()`;
+2. probe CDP real via `helpers.page_info()` — essa chamada é a que **reata** a conexão quando o
+   daemon está de pé mas solto;
+3. se falhar, checa `admin.daemon_browser_ready()` e faz um segundo probe (tentativa de reattach);
+4. se ainda falhar, `admin.restart_daemon()` + `ensure_daemon()` + probe final;
+5. se ainda assim falhar, levanta `browser-not-ready` → o usuário recebe uma mensagem clara em vez
+   de um `_IPCResponseTimeout` cru.
+
+Retentativas são **limitadas de propósito** (no máximo um reattach e um restart, sem laço infinito),
+como o próprio relatório de validação recomenda. O runner emite um evento `health` com o estado
+(`ok` / `reatado` / `reiniciado`); quando não é `ok`, o Viking avisa no terminal — assim uma partida
+lenta tem explicação visível.
+
+`_IPCResponseTimeout` herda de `TimeoutError`, então falhas de IPC no meio da tarefa (não no
+preflight) caem no código de erro `harness_ipc`.

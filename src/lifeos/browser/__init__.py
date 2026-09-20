@@ -1,32 +1,52 @@
-from lifeos.browser.client import connect, new_tab, page_info
-from lifeos.browser.supervisor import BrowserUnavailableError, ensure_ready
+"""Automação de navegador do Viking — as "mãos" do assistente.
+
+O trabalho real é feito pelo Jev (jev-ultrafast) rodando como subprocesso no ambiente dele; ver
+`jev_runner` para o porquê, e docs/arquitetura/browser-automation-stack.md para a validação do
+stack (Browser Harness + CDP + Chrome).
+"""
+
+from __future__ import annotations
+
+import sys
+from collections.abc import Sequence
+
+from lifeos.browser.jev_runner import BrowserResult, run_jev
+from lifeos.browser.mensagens import formatar
+
+_SAUDE = {
+    "reatado": "   ↳ conexão com o Chrome tinha caído; reatei e segui.",
+    "reiniciado": "   ↳ daemon do Browser Harness estava travado; reiniciei antes de começar.",
+}
 
 
-async def browser_goal(url: str, goal: str) -> str:
-    """
-    Abre `url` e reporta o estado inicial da página para um objetivo em linguagem natural.
-
-    Implementação parcial: garante que o Browser Harness está pronto (ver `supervisor.ensure_ready`),
-    abre a aba e retorna o estado inicial. O loop de decisão via Jev (clicar/digitar/rolar até o
-    `goal` ser atingido — ver docs/arquitetura/browser-automation-stack.md) ainda não está integrado
-    aqui; é o próximo passo deste módulo, não deste milestone de estrutura.
-    """
-    async with connect() as client:
-        await ensure_ready(client)
-        await new_tab(client, url)
-        info = await page_info(client)
-        return (
-            f"Aba aberta em {url}. Estado inicial: {info}\n"
-            f"(objetivo '{goal}' ainda não é perseguido automaticamente — loop de decisão via Jev "
-            "pendente, ver docs/arquitetura/browser-automation-stack.md)"
-        )
+def imprimir_progresso(evento: dict) -> None:
+    """Escreve o progresso no stderr — nunca volta pro modelo, então não custa token."""
+    if evento.get("type") == "health":
+        aviso = _SAUDE.get(evento.get("state", ""))
+        if aviso:
+            print(aviso, file=sys.stderr)
+        return
+    acao = evento.get("last_action") or evento.get("status") or ""
+    segundos = (evento.get("elapsed_ms") or 0) / 1000
+    print(f"   ↳ {evento.get('n', 0)} ações · {segundos:.1f}s · {acao}", file=sys.stderr)
 
 
-__all__ = [
-    "BrowserUnavailableError",
-    "browser_goal",
-    "connect",
-    "ensure_ready",
-    "new_tab",
-    "page_info",
-]
+def executar_no_navegador(
+    url: str,
+    objetivo: str | Sequence[str],
+    *,
+    timeout_s: float | None = None,
+    silencioso: bool = False,
+) -> str:
+    """Persegue um objetivo em linguagem natural num navegador real e resume o que aconteceu."""
+    objetivos = [objetivo] if isinstance(objetivo, str) else list(objetivo)
+    resultado = run_jev(
+        url,
+        objetivos,
+        timeout_s=timeout_s,
+        on_progress=None if silencioso else imprimir_progresso,
+    )
+    return formatar(resultado)
+
+
+__all__ = ["BrowserResult", "executar_no_navegador", "formatar", "imprimir_progresso", "run_jev"]

@@ -28,3 +28,10 @@ GOOGLE_CREDENTIALS_PATH = _path_env(
 )
 GOOGLE_TOKEN_PATH = _path_env("VIKING_GOOGLE_TOKEN_PATH", SECRETS_DIR / "google_token.json")
 REMINDERS_DB_PATH = _path_env("VIKING_DB_PATH", DATA_DIR / "viking.db")
+
+# Automação de navegador: o Viking chama o Jev por subprocesso, no ambiente do próprio Jev.
+# As chaves do Jev (OPENROUTER_API_KEY, TEXT_MODEL_*) ficam no .env DELE — aqui só o ponteiro.
+JEV_DIR = _path_env("VIKING_JEV_DIR", REPO_ROOT / "jev-ultrafast")
+JEV_ENV_FILE = _path_env("VIKING_JEV_ENV_FILE", JEV_DIR / ".env")
+UV_BIN = os.getenv("VIKING_UV_BIN", "uv")
+BROWSER_TIMEOUT_S = float(os.getenv("VIKING_BROWSER_TIMEOUT_S", "180"))
