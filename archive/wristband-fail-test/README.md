@@ -1,5 +1,10 @@
 # Life OS Arduino Fail Test
 
+> **STATUS: PAUSADO (2026-09-20).** Esta trilha (dispositivo de pulso, controle local de PC) não é a
+> prioridade atual do projeto — foi substituída pela automação de navegador como mecanismo principal de
+> execução. Código preservado como está; ver `docs/arquitetura/wristband-hardware-pausado.md` e
+> `docs/arquitetura/viking-visao-e-arquitetura.md` para o contexto completo.
+
 O botão no Arduino Uno R3 envia `BUTTON` pela Serial USB. Um script no Bosgame
 (mini PC Windows 11) recebe esse evento e chama a ferramenta MCP local
 `PowerShell` (do servidor Windows-MCP), alternando o mute do sistema. Não há
