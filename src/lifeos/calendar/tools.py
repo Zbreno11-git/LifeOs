@@ -130,12 +130,20 @@ def criar_evento_dia_inteiro(summary: str, data: str, description: str = "") -> 
     return f"✅ Evento de dia inteiro '{summary}' criado para a data {data}!"
 
 
-def deletar_evento_por_termo(termo_busca: str) -> str:
+def _quando(evento: dict) -> str:
+    inicio = evento.get("start", {})
+    return inicio.get("dateTime") or inicio.get("date") or "sem data"
+
+
+def buscar_eventos_por_termo(termo_busca: str) -> str:
     """
-    Busca um evento pelo nome/termo e o exclui do calendário.
+    Busca eventos futuros que casem com um termo e devolve os candidatos com seus IDs.
+
+    Use isto ANTES de apagar qualquer coisa: é daqui que sai o ID exigido por
+    `apagar_evento_por_id`, e é isto que você mostra ao usuário para ele confirmar qual evento é.
 
     Args:
-        termo_busca: Palavra-chave ou título do evento que deseja apagar.
+        termo_busca: Palavra-chave ou título a procurar.
     """
     service = get_calendar_service()
     agora = datetime.now(UTC).isoformat()
@@ -148,14 +156,43 @@ def deletar_evento_por_termo(termo_busca: str) -> str:
 
     events = events_result.get("items", [])
     if not events:
-        return f"Não encontrei nenhum evento futuro com o termo '{termo_busca}' para apagar."
+        return f"Nenhum evento futuro encontrado com o termo '{termo_busca}'."
 
-    evento_alvo = events[0]
-    event_id = evento_alvo["id"]
-    summary = evento_alvo.get("summary", "Sem título")
+    linhas = [f"{len(events)} evento(s) com o termo '{termo_busca}':"]
+    for event in events:
+        titulo = event.get("summary", "Sem título")
+        linhas.append(f"- [{_quando(event)}] {titulo} (ID: {event.get('id')})")
+    return "\n".join(linhas)
 
+
+def apagar_evento_por_id(event_id: str, titulo_esperado: str) -> str:
+    """
+    Apaga UM evento específico do Google Calendar, identificado pelo ID.
+
+    Ação irreversível. Só chame depois de ter buscado o evento e o usuário ter confirmado
+    explicitamente qual apagar. O `titulo_esperado` é conferido contra o título real do evento e a
+    exclusão é recusada se não baterem — é uma trava contra apagar o evento errado.
+
+    Args:
+        event_id: ID exato do evento, vindo de uma busca ou listagem.
+        titulo_esperado: Título que você e o usuário acreditam que esse evento tem.
+    """
+    service = get_calendar_service()
+    try:
+        evento = service.events().get(calendarId="primary", eventId=event_id).execute()
+    except Exception as exc:  # noqa: BLE001 - erro da API vira resposta legível para o modelo
+        return f"Não encontrei o evento de ID '{event_id}': {exc}"
+
+    titulo_real = evento.get("summary", "Sem título")
+    if titulo_esperado.strip().lower() not in titulo_real.lower():
+        return (
+            f"NÃO apaguei nada. O evento {event_id} se chama '{titulo_real}', "
+            f"não '{titulo_esperado}'. Confirme com o usuário qual é o evento certo."
+        )
+
+    quando = _quando(evento)
     service.events().delete(calendarId="primary", eventId=event_id).execute()
-    return f"🗑️ O evento '{summary}' foi excluído com sucesso do seu calendário."
+    return f"🗑️ Evento '{titulo_real}' ([{quando}]) foi apagado."
 
 
 def reagendar_evento(termo_busca: str, novo_inicio: str, novo_fim: str) -> str:

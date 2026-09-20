@@ -8,9 +8,10 @@
 from fastmcp import FastMCP
 
 from lifeos.calendar import (
+    apagar_evento_por_id,
+    buscar_eventos_por_termo,
     criar_evento,
     criar_evento_dia_inteiro,
-    deletar_evento_por_termo,
     listar_eventos_por_data,
     listar_proximos_eventos,
     reagendar_evento,
@@ -45,9 +46,15 @@ def viking_criar_evento_dia_inteiro(summary: str, data: str, description: str = 
 
 
 @mcp.tool()
-def viking_deletar_evento(termo_busca: str) -> str:
-    """Busca e exclui um evento do Google Calendar pelo termo."""
-    return deletar_evento_por_termo(termo_busca)
+def viking_buscar_eventos(termo_busca: str) -> str:
+    """Busca eventos futuros por termo e devolve os candidatos com seus IDs."""
+    return buscar_eventos_por_termo(termo_busca)
+
+
+@mcp.tool()
+def viking_apagar_evento(event_id: str, titulo_esperado: str) -> str:
+    """Apaga UM evento pelo ID. Irreversível: busque e confirme com o usuário antes."""
+    return apagar_evento_por_id(event_id, titulo_esperado)
 
 
 @mcp.tool()
