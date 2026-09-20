@@ -121,22 +121,34 @@ def preparar_navegador():
     return "reiniciado"
 
 
-def _oscilando(urls):
-    """Detecta ping-pong A→B→A→B entre duas páginas.
+def _oscilando(assinaturas, periodos=(2, 3, 4)):
+    """Detecta ciclo A→B→A→B (período 2) ou mais longo (3, 4 estados) se repetindo.
 
-    O guard do próprio Jev só pega o caso oposto — página que NÃO muda. Aqui a página muda a cada
-    ação, mas sempre entre os mesmos dois endereços, o que é o sintoma clássico de um objetivo que
-    nenhuma ação satisfaz (o caso típico: uma pergunta passada como objetivo). Sem isso o executor
-    roda até o teto de 60 ações queimando tempo e chamadas de modelo. Observado ao vivo em
-    2026-09-21 com "abra X e me diga qual é o link principal".
+    O guard do próprio Jev só pega o caso oposto — página que NÃO muda 3 vezes seguidas. Aqui a
+    página muda a cada ação, mas entre um conjunto pequeno e fixo de estados, o que é o sintoma de
+    um objetivo que nenhuma ação satisfaz. Sem isso o executor roda até o teto de 60 ações queimando
+    tempo e chamadas de modelo.
+
+    Assinatura de estado = (url, ação) em vez de só a URL: digitar num campo de busca costuma não
+    mudar a URL, então URL sozinha não distingue "digitando" de "clicando resultado" — sem a ação
+    junto, um ciclo período-3 real pode parecer período-1 (mesma URL sempre) e não ser detectado.
+
+    Exige 3 repetições completas do ciclo antes de cortar (não 2), para não confundir com uma
+    sequência legítima que por acaso revisita os mesmos poucos estados uma vez.
+
+    Casos observados ao vivo em 2026-09-21: período 2 ("abra X e me diga o link principal", vira
+    pergunta-como-objetivo) e período 3 (busca no YouTube reiniciando a cada tentativa de clicar um
+    resultado que ainda não carregou).
     """
-    if len(urls) < 5:
-        return False
-    u = urls[-5:]
-    for i in range(4):
-        if u[i] == u[i + 1]:
-            return False
-    return u[4] == u[2] == u[0] and u[3] == u[1]
+    for p in periodos:
+        precisa = p * 3
+        if len(assinaturas) < precisa:
+            continue
+        janela = assinaturas[-precisa:]
+        ciclos = [tuple(janela[i * p : (i + 1) * p]) for i in range(3)]
+        if ciclos[0] == ciclos[1] == ciclos[2] and len(set(ciclos[0])) > 1:
+            return True
+    return False
 
 
 def _uso(state):
@@ -207,7 +219,7 @@ def main():
     prazo = time.monotonic() + args.timeout
     agent = None
     state = None
-    urls = []
+    assinaturas = []
 
     try:
         emit(type="health", state=preparar_navegador())
@@ -224,13 +236,13 @@ def main():
                 kind=historico[-1]["kind"] if historico else None,
                 url=(state.get("page") or {}).get("url"),
             )
-            urls.append((state.get("page") or {}).get("url"))
-            if _oscilando(urls):
+            assinaturas.append(((state.get("page") or {}).get("url"), historico[-1]["action"] if historico else None))
+            if _oscilando(assinaturas):
                 emit(
                     type="error",
                     code="loop_detected",
                     exception="LoopDetected",
-                    message=f"ping-pong entre {urls[-1]} e {urls[-2]}",
+                    message=f"ciclo detectado, ultimos estados: {assinaturas[-3:]}",
                     steps=_passos(state),
                     elapsed_ms=state.get("elapsed_ms"),
                     history=historico,

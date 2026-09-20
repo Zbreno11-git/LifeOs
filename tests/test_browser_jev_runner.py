@@ -206,14 +206,37 @@ def test_result_from_propaga_aba_aberta():
     assert result_from(eventos, 0, None, ["g"]).kept_open is True
 
 
-def test_detector_de_pingpong():
-    """A→B→A→B→A é ping-pong; A→A→A (mesma página) não é."""
+def test_detector_de_ciclo_periodo_2():
+    """A→B→A→B→A→B (3 ciclos completos) é loop; A repetido sozinho não é ciclo (é o guard do
+    próprio Jev que cuida de página parada); poucas repetições não bastam (evita falso positivo)."""
     from lifeos.browser import _jev_subprocess as runner
 
-    assert runner._oscilando(["a", "b", "a", "b", "a"]) is True
-    assert runner._oscilando(["a", "a", "a", "a", "a"]) is False
-    assert runner._oscilando(["a", "b", "c", "d", "e"]) is False
-    assert runner._oscilando(["a", "b", "a"]) is False
+    assert runner._oscilando(["a", "b"] * 3) is True
+    assert runner._oscilando(["a", "b", "a", "b"]) is False  # só 2 ciclos, não corta ainda
+    assert runner._oscilando(["a"] * 6) is False
+    assert runner._oscilando(["a", "b", "c", "d", "e", "f"]) is False
+
+
+def test_detector_de_ciclo_periodo_3():
+    """Reproduz o loop real observado em 2026-09-21: busca no YouTube reiniciando a cada tentativa
+    de clicar um resultado ainda não carregado — 3 estados se repetindo, não 2."""
+    from lifeos.browser import _jev_subprocess as runner
+
+    ciclo3 = [
+        (None, "Search"),
+        (None, "spider man ambience"),
+        ("https://youtube.com/watch?v=x", "with great power comes great responsibility"),
+    ]
+    assert runner._oscilando(ciclo3 * 3) is True
+    assert runner._oscilando(ciclo3 * 2) is False  # só 2 ciclos
+
+
+def test_detector_exige_pelo_menos_dois_estados_distintos():
+    """Um "ciclo" de um estado só (A,A,A repetindo) não é ciclo — é o caso que o guard do Jev
+    (página não muda) já cobre; contá-lo aqui também geraria falso positivo com histórico curto."""
+    from lifeos.browser import _jev_subprocess as runner
+
+    assert runner._oscilando([("a", "x")] * 9) is False
 
 
 def test_historico_registra_o_texto_digitado():
