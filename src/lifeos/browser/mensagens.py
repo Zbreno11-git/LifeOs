@@ -54,6 +54,11 @@ MENSAGENS: dict[str, str] = {
         "Estourei o limite de ações sem concluir o objetivo. Tente um objetivo mais estreito ou "
         "parta a tarefa em etapas."
     ),
+    "loop_detected": (
+        "O executor entrou em looping entre duas páginas e eu o parei. Isso costuma significar que "
+        "o objetivo não é alcançável clicando — se era uma pergunta sobre a página, peça só para "
+        "abrir a página: o conteúdo dela volta no resultado."
+    ),
     "page_unstable": "A página mudou ou recarregou rápido demais para eu agir com segurança.",
     "harness_ipc": "Perdi a comunicação com o Browser Harness no meio da tarefa.",
     "timeout": "A tarefa passou do tempo limite e foi interrompida.",
@@ -70,7 +75,14 @@ MENSAGENS: dict[str, str] = {
 _GENERICA = "O executor do navegador falhou."
 
 # Erros onde a tarefa pode ter ficado pela metade — o modelo não pode reexecutar às cegas.
-_PARCIAL = {"timeout", "timeout_terminated", "step_budget", "page_unstable", "harness_ipc"}
+_PARCIAL = {
+    "timeout",
+    "timeout_terminated",
+    "step_budget",
+    "page_unstable",
+    "harness_ipc",
+    "loop_detected",
+}
 
 _NAO_DESFEITO = "Nada do que já foi feito na página foi desfeito."
 _PODE_ESTAR_PARCIAL = (
@@ -107,6 +119,10 @@ def _acoes(result: BrowserResult) -> str:
     return "Ações: " + " → ".join(rotulos) if rotulos else ""
 
 
+def _aba(result: BrowserResult) -> str:
+    return "A aba ficou aberta no navegador do usuário." if result.kept_open else ""
+
+
 def _trecho(result: BrowserResult) -> str:
     if not result.page_text:
         return ""
@@ -121,7 +137,7 @@ def formatar(result: BrowserResult) -> str:
             f"✅ Objetivo concluído em {_segundos(result.elapsed_ms)}s e {result.steps} ações. "
             f"{_pagina_final(result)}".strip()
         )
-        partes += [_acoes(result), _DONE_NAO_E_PROVA, _trecho(result)]
+        partes += [_acoes(result), _aba(result), _DONE_NAO_E_PROVA, _trecho(result)]
     elif result.status == "blocked":
         partes.append(
             f"🚧 O executor parou sem concluir após {result.steps} ações "

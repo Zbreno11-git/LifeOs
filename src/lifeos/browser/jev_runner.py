@@ -42,6 +42,7 @@ class BrowserResult:
     elapsed_ms: int = 0
     history: tuple[dict, ...] = field(default_factory=tuple)
     page_text: str | None = None
+    kept_open: bool = False
     error_code: str | None = None
     error_detail: str | None = None
     stderr_tail: str | None = None
@@ -52,6 +53,7 @@ def build_command(
     goals: Sequence[str],
     *,
     timeout_s: float,
+    fechar: bool = False,
     jev_dir: Path | None = None,
     env_file: Path | None = None,
     uv_bin: str | None = None,
@@ -65,6 +67,8 @@ def build_command(
     for goal in goals:
         cmd += ["--goal", goal]
     cmd += ["--timeout", str(timeout_s)]
+    if fechar:
+        cmd.append("--fechar")
     return cmd
 
 
@@ -108,6 +112,7 @@ def result_from(
         "elapsed_ms": final.get("elapsed_ms") or 0,
         "history": tuple(final.get("history") or ()),
         "page_text": final.get("page_text") or None,
+        "kept_open": bool(final.get("kept_open")),
     }
     if final["type"] == "error":
         return BrowserResult(
@@ -183,6 +188,7 @@ def run_jev(
     goals: Sequence[str],
     *,
     timeout_s: float | None = None,
+    fechar: bool = False,
     on_progress: Callable[[dict], None] | None = None,
 ) -> BrowserResult:
     """Roda um objetivo no navegador. Bloqueia; devolve sempre um `BrowserResult`."""
@@ -197,7 +203,7 @@ def run_jev(
         if not (Path(JEV_DIR) / "pyproject.toml").is_file():
             return _erro("jev_dir_missing", str(JEV_DIR), goals)
 
-        cmd = build_command(url, goals, timeout_s=limite)
+        cmd = build_command(url, goals, timeout_s=limite, fechar=fechar)
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,

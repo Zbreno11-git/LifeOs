@@ -109,3 +109,9 @@ def test_blocked_avisa_que_pode_ter_dado_certo():
         _resultado(status="blocked", steps=1, url="https://www.iana.org/help/example-domains")
     )
     assert "não é prova de fracasso" in texto
+
+
+def test_sucesso_avisa_que_a_aba_ficou_aberta():
+    texto = formatar(_resultado(status="done", steps=1, kept_open=True, url="https://youtube.com"))
+    assert "aba ficou aberta" in texto
+    assert "aba ficou aberta" not in formatar(_resultado(status="done", steps=1, kept_open=False))

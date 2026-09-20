@@ -38,6 +38,7 @@ def _browser(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
         args.url,
         args.goals,
         timeout_s=args.timeout,
+        fechar=args.fechar,
         on_progress=None if args.quiet else imprimir_progresso,
     )
 
@@ -74,6 +75,9 @@ def main() -> None:
         type=float,
         default=None,
         help="Segundos até interromper (padrão: VIKING_BROWSER_TIMEOUT_S, 180)",
+    )
+    navegador.add_argument(
+        "--fechar", action="store_true", help="Fecha a aba ao terminar (padrão: deixa aberta)"
     )
     navegador.add_argument("--json", action="store_true", help="Imprime o resultado bruto em JSON")
     navegador.add_argument(

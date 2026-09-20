@@ -36,6 +36,7 @@ def executar_no_navegador(
     objetivo: str | Sequence[str],
     *,
     timeout_s: float | None = None,
+    manter_aberta: bool = True,
     silencioso: bool = False,
 ) -> str:
     """Persegue um objetivo em linguagem natural num navegador real e resume o que aconteceu."""
@@ -44,6 +45,7 @@ def executar_no_navegador(
         url,
         objetivos,
         timeout_s=timeout_s,
+        fechar=not manter_aberta,
         on_progress=None if silencioso else imprimir_progresso,
     )
     return formatar(resultado)

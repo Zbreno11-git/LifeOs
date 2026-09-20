@@ -121,6 +121,24 @@ def preparar_navegador():
     return "reiniciado"
 
 
+def _oscilando(urls):
+    """Detecta ping-pong A→B→A→B entre duas páginas.
+
+    O guard do próprio Jev só pega o caso oposto — página que NÃO muda. Aqui a página muda a cada
+    ação, mas sempre entre os mesmos dois endereços, o que é o sintoma clássico de um objetivo que
+    nenhuma ação satisfaz (o caso típico: uma pergunta passada como objetivo). Sem isso o executor
+    roda até o teto de 60 ações queimando tempo e chamadas de modelo. Observado ao vivo em
+    2026-09-21 com "abra X e me diga qual é o link principal".
+    """
+    if len(urls) < 5:
+        return False
+    u = urls[-5:]
+    for i in range(4):
+        if u[i] == u[i + 1]:
+            return False
+    return u[4] == u[2] == u[0] and u[3] == u[1]
+
+
 def _pagina(state):
     page = (state or {}).get("page") or {}
     texto = page.get("text") or ""
@@ -159,6 +177,7 @@ def main():
     parser.add_argument("--url", required=True)
     parser.add_argument("--goal", action="append", dest="goals", required=True)
     parser.add_argument("--timeout", type=float, default=180.0)
+    parser.add_argument("--fechar", action="store_true", help="fecha a aba ao terminar")
     args = parser.parse_args()
 
     signal.signal(signal.SIGTERM, _on_signal)
@@ -171,6 +190,7 @@ def main():
     prazo = time.monotonic() + args.timeout
     agent = None
     state = None
+    urls = []
 
     try:
         emit(type="health", state=preparar_navegador())
@@ -187,6 +207,20 @@ def main():
                 kind=historico[-1]["kind"] if historico else None,
                 url=(state.get("page") or {}).get("url"),
             )
+            urls.append((state.get("page") or {}).get("url"))
+            if _oscilando(urls):
+                emit(
+                    type="error",
+                    code="loop_detected",
+                    exception="LoopDetected",
+                    message=f"ping-pong entre {urls[-1]} e {urls[-2]}",
+                    steps=_passos(state),
+                    elapsed_ms=state.get("elapsed_ms"),
+                    history=historico,
+                    **_pagina(state),
+                )
+                return EXIT_ERROR
+
             if _interrompido or time.monotonic() >= prazo:
                 emit(
                     type="error",
@@ -208,6 +242,7 @@ def main():
             steps=_passos(state),
             elapsed_ms=(state or {}).get("elapsed_ms"),
             history=_historico(state),
+            kept_open=not args.fechar,
             **_pagina(state),
         )
         return EXIT_DONE if status == "done" else EXIT_BLOCKED
@@ -235,10 +270,21 @@ def main():
 
     finally:
         if agent is not None:
-            try:
-                agent.close()
-            except Exception as exc:  # noqa: BLE001 - fechar a aba e best-effort
-                print(f"jev-runner: falha ao fechar a aba: {exc}", file=sys.stderr)
+            if args.fechar:
+                try:
+                    agent.close()
+                except Exception as exc:  # noqa: BLE001 - fechar a aba e best-effort
+                    print(f"jev-runner: falha ao fechar a aba: {exc}", file=sys.stderr)
+            else:
+                # O Jev abre a aba em segundo plano e a fecharia ao sair. Num assistente que dirige
+                # o navegador do próprio usuário isso é o avesso do esperado: ele pede "abre o
+                # YouTube" e a aba some. Por padrão mantemos a aba e a trazemos para a frente.
+                try:
+                    from browser_harness.helpers import cdp
+
+                    cdp("Target.activateTarget", targetId=agent.browser.target)
+                except Exception as exc:  # noqa: BLE001 - best-effort
+                    print(f"jev-runner: nao consegui focar a aba: {exc}", file=sys.stderr)
 
 
 if __name__ == "__main__":

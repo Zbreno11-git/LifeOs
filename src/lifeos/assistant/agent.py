@@ -26,20 +26,31 @@ from lifeos.config import GEMINI_API_KEY
 from lifeos.reminders import store
 
 
-def navegar_e_executar(url: str, objetivo: str) -> str:
+def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> str:
     """
     Abre uma URL num navegador real do usuário e persegue um objetivo em linguagem natural,
     executando cliques e digitação de verdade na página. Pode levar de segundos a alguns minutos.
 
-    Use um objetivo estreito e verificável ("buscar X e abrir o primeiro resultado"), não uma
-    tarefa aberta. Se a ferramenta relatar erro, timeout ou parada sem concluir, NÃO chame de novo
-    com o mesmo objetivo sem confirmar com o usuário: ações já executadas não são desfeitas.
+    O objetivo tem que ser uma AÇÃO de navegação ("abrir X", "buscar Y e abrir o primeiro
+    resultado", "preencher o campo Z"). NUNCA passe uma pergunta como objetivo: o executor só sabe
+    clicar, digitar, rolar e esperar — ele não tem como "responder" nada, e um objetivo que só uma
+    resposta satisfaria faz ele rodar em círculo até estourar o limite.
+
+    Para responder perguntas sobre uma página, peça só a navegação: o conteúdo da página volta no
+    resultado desta ferramenta e você mesmo o interpreta. Ex.: para "qual o link principal do
+    site X", chame com objetivo "abrir o site X" e leia o trecho devolvido.
+
+    Use um objetivo estreito e verificável, não uma tarefa aberta. Se a ferramenta relatar erro,
+    timeout ou parada sem concluir, NÃO chame de novo com o mesmo objetivo sem confirmar com o
+    usuário: ações já executadas não são desfeitas.
 
     Args:
         url: Endereço a abrir.
-        objetivo: O que fazer/encontrar nessa página, em linguagem natural.
+        objetivo: O que fazer nessa página, em linguagem natural. Sempre uma ação, nunca pergunta.
+        manter_aberta: Deixa a aba aberta e em foco no navegador do usuário (padrão). Passe False
+            quando a navegação for só para você ler algo e a página não interessar ao usuário.
     """
-    return executar_no_navegador(url, objetivo)
+    return executar_no_navegador(url, objetivo, manter_aberta=manter_aberta)
 
 
 def criar_lembrete(titulo: str, corpo: str = "", tags: str = "") -> str:
@@ -132,7 +143,9 @@ navegação web (via Browser Harness) e lembretes/notas gerais.
   partir dessa data, sem perguntar a data ao usuário.
 - Para perguntas sobre uma data específica, use a ferramenta de busca por data.
 - Para criar eventos sem horário exato, use a ferramenta de dia inteiro.
-- Para tarefas que exigem abrir/usar um site, use a ferramenta de navegador.
+- Para tarefas que exigem abrir/usar um site, use a ferramenta de navegador — passando uma ação
+  de navegação como objetivo, nunca uma pergunta. O conteúdo da página volta no resultado e é
+  você quem responde a partir dele.
 - Para lembretes que não são eventos de calendário (ex.: 'lembre-me de revisar isso depois'), use as
   ferramentas de lembrete.
 - Antes de agir em sites autenticados (e-mail, banco, GitHub) ou fazer qualquer ação irreversível
@@ -149,7 +162,9 @@ navegação web (via Browser Harness) e lembretes/notas gerais.
     print("Digite 'sair' para encerrar.\n")
 
     while True:
-        prompt = input("Você: ")
+        prompt = input("Você: ").strip()
+        if not prompt:
+            continue
         if prompt.lower() in ["sair", "exit", "quit"]:
             print("🤖 Viking: Até logo!")
             break

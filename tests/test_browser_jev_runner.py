@@ -194,3 +194,23 @@ def test_falha_de_preflight_vira_codigo_proprio():
     ]
     r = result_from(eventos, 2, None, ["g"])
     assert r.error_code == "browser_not_ready"
+
+
+def test_build_command_so_manda_fechar_quando_pedido(jev_falso):
+    assert "--fechar" not in build_command("u", ["g"], timeout_s=1)
+    assert "--fechar" in build_command("u", ["g"], timeout_s=1, fechar=True)
+
+
+def test_result_from_propaga_aba_aberta():
+    eventos = [{"type": "result", "status": "done", "steps": 1, "kept_open": True}]
+    assert result_from(eventos, 0, None, ["g"]).kept_open is True
+
+
+def test_detector_de_pingpong():
+    """A→B→A→B→A é ping-pong; A→A→A (mesma página) não é."""
+    from lifeos.browser import _jev_subprocess as runner
+
+    assert runner._oscilando(["a", "b", "a", "b", "a"]) is True
+    assert runner._oscilando(["a", "a", "a", "a", "a"]) is False
+    assert runner._oscilando(["a", "b", "c", "d", "e"]) is False
+    assert runner._oscilando(["a", "b", "a"]) is False
