@@ -369,7 +369,9 @@ sessão futura cabe em ~1h30, com o § correspondente da auditoria para rastrear
 **Não validado ao vivo** (VPS sem Chrome e sem as chaves): tudo acima passou em teste automatizado
 offline; falta o dono confirmar no Mac que "o que eu tenho amanhã?" responde a data certa, que um
 evento de dia inteiro ocupa só um dia no Google, e que a linha de custo do navegador aparece maior
-e mais honesta que antes.
+e mais honesta que antes. **Atualização 2026-09-20:** confirmado ao vivo (calendário, custos,
+runner) — ver "Validação ao vivo das Sessões 1-3" mais abaixo; só a checagem visual do evento de
+dia inteiro no Google Calendar em si ficou pendente.
 
 ### 2026-09-20 — Sessão 2: config previsível + lembretes no fuso certo
 
@@ -419,7 +421,8 @@ migração de registro legado, idempotência, índice). 182 testes passando, `ru
 Gemini, que já existiam em `config.py` mas não apareciam lá.
 
 **Não validado ao vivo:** mesma ressalva da sessão anterior — VPS sem Chrome/chaves, tudo abaixo é
-teste automatizado offline.
+teste automatizado offline. **Atualização 2026-09-20:** confirmado ao vivo (config e lembretes) —
+ver "Validação ao vivo das Sessões 1-3" mais abaixo.
 
 ### 2026-09-20 — Sessão 3: paridade de lembretes no MCP + respostas estruturadas
 
@@ -461,3 +464,38 @@ passando, `ruff check` limpo.
 **Não validado ao vivo:** mesma ressalva das sessões anteriores — VPS sem Chrome/chaves; além
 disso, as tools de calendário do MCP não foram exercitadas nesta sessão (exigem OAuth, que também
 não existe neste ambiente) — só as de lembrete, que são as tocadas aqui.
+
+### 2026-09-20 — Validação ao vivo das Sessões 1-3, no Mac do dono
+
+As ressalvas "não validado ao vivo" acima ficam resolvidas: o dono rodou o roteiro completo no Mac
+(`git pull` até `ac2b84f`, `.venv` ativado corretamente) e confirmou, com saída real colada:
+
+- **Sessão 2 — config:** `VIKING_DB_PATH=./x.db` rodado de `/tmp` resolveu para dentro do repo
+  (`/Users/luanabreno/LifeOs/x.db`); `VIKING_BROWSER_TIMEOUT_S=nan` derrubou o import com
+  `ValueError` citando a variável.
+- **Sessão 2 — lembretes:** criados via `viking chat` (com e sem prazo) saíram de `list_open()` na
+  ordem certa — prazo mais próximo primeiro, sem prazo por último.
+- **Sessão 1 — calendário:** criar evento de dia inteiro e apagá-lo pediu confirmação explícita
+  antes de executar, como desenhado; só apagou depois do "sim" do dono.
+- **Sessão 1 — custos:** os 7 valores impressos por turno somaram **exatamente** os 34628 tokens
+  do `/custos` final — confirma que a contabilidade por turno não perde nem duplica chamada
+  nenhuma (o furo que a auditoria original tinha achado).
+- **Sessão 1 — runner do navegador:** `viking browser --url ... --goal ...` completou, trouxe o
+  texto da página e manteve a aba aberta (`kept_open`), sem travar.
+- **Sessão 3 — MCP:** `viking_criar_lembrete` via `fastmcp.Client` aceitou `quando` e devolveu
+  `structured_content` com `due_at` preenchido; `quando` inválido devolveu `is_error: True` com
+  `{"erro": "quando_invalido", ...}`.
+
+**Ainda não validado ao vivo:** as 7 tools de calendário do MCP (nunca exercitadas — ficam pra
+quando a Sessão 3b mexer nelas) e o caso em que um evento de dia inteiro é conferido visualmente no
+Google Calendar antes de ser apagado (o dono apagou o evento de teste na mesma conversa em que
+criou; a lógica de data exclusiva já tem cobertura determinística em `test_calendar_tools.py`, mas
+ninguém olhou a UI do Google ainda).
+
+**Achado à parte, sem relação com o código:** o primeiro `python -m pytest` do dono falhou inteiro
+com `ModuleNotFoundError: No module named 'lifeos'` porque o terminal estava com o conda `base`
+ativo e o `.venv` do projeto nunca tinha sido ativado nessa sessão de shell — `which python`
+apontava pro Python do conda, não pro do projeto. Resolvido com `source .venv/bin/activate` (já
+documentado em `AGENTS.md`/`CLAUDE.md` como comportamento esperado do setup do Mac); não é um bug
+desta base de código, só reforça que `.venv` precisa ser reativado a cada terminal novo antes de
+`python -m pytest`/`python -m ruff`.
