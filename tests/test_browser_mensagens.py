@@ -101,3 +101,11 @@ def test_classificacao_de_preflight_no_runner():
     origem = SCRIPT_PATH.read_text()
     assert '"browser_not_ready"' in origem
     assert "browser-not-ready" in origem
+
+
+def test_blocked_avisa_que_pode_ter_dado_certo():
+    """Validado ao vivo: o executor devolveu 'blocked' numa tarefa que na verdade funcionou."""
+    texto = formatar(
+        _resultado(status="blocked", steps=1, url="https://www.iana.org/help/example-domains")
+    )
+    assert "não é prova de fracasso" in texto
