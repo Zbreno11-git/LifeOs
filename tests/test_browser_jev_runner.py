@@ -218,7 +218,7 @@ def test_detector_de_ciclo_periodo_2():
 
 
 def test_detector_de_ciclo_periodo_3():
-    """Reproduz o loop real observado em 2026-09-21: busca no YouTube reiniciando a cada tentativa
+    """Reproduz o loop real observado em 2026-09-20: busca no YouTube reiniciando a cada tentativa
     de clicar um resultado ainda não carregado — 3 estados se repetindo, não 2."""
     from lifeos.browser import _jev_subprocess as runner
 
@@ -240,7 +240,7 @@ def test_detector_exige_pelo_menos_dois_estados_distintos():
 
 
 def test_historico_registra_o_texto_digitado():
-    """Sem o texto digitado não dá para diagnosticar 'buscou X mas abriu Y' (visto em 2026-09-21)."""
+    """Sem o texto digitado não dá para diagnosticar 'buscou X mas abriu Y' (visto em 2026-09-20)."""
     eventos = [
         {
             "type": "result",
@@ -254,7 +254,7 @@ def test_historico_registra_o_texto_digitado():
 
 
 def test_detector_pega_loop_estrutural_com_alvos_sempre_diferentes():
-    """Rastro real de 2026-09-21: "abre o SEGUNDO resultado" no YouTube.
+    """Rastro real de 2026-09-20: "abre o SEGUNDO resultado" no YouTube.
 
     O executor clicava um vídeo diferente a cada volta (Brand New Day, Spiderman Ambience,
     10 Hours of Heavy Rain, Spider Man 2002...), então a assinatura exata nunca se repetia e o

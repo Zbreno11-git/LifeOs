@@ -13,7 +13,7 @@ def test_anotacoes_sao_tipos_reais(fn):
     """`from __future__ import annotations` transforma anotações em strings e o google-genai
     valida argumentos com isinstance() — com string vira
     `isinstance() arg 2 must be a type...` em toda chamada que passe argumento.
-    Bug real observado em 2026-09-21; este teste existe para ele não voltar.
+    Bug real observado em 2026-09-20; este teste existe para ele não voltar.
     """
     for nome, p in inspect.signature(fn).parameters.items():
         assert not isinstance(p.annotation, str), (
@@ -46,7 +46,7 @@ def test_hoje_tem_dia_da_semana_valido():
 # bug real observado em uso. Comprimir a descrição é bem-vindo; perder estas regras não é.
 _REGRAS = {
     "navegar_e_executar": [
-        # objetivo-pergunta fazia o executor rodar em círculo (27 ações de ping-pong, 2026-09-21)
+        # objetivo-pergunta fazia o executor rodar em círculo (27 ações de ping-pong, 2026-09-20)
         ["AÇÃO", "nunca uma\n    pergunta"],
         # sem isto o modelo não sabe que pode responder a partir do texto devolvido
         ["conteúdo dela volta no resultado"],
@@ -80,7 +80,7 @@ def test_regras_de_comportamento_sobrevivem_a_compressao(nome):
 
 
 def test_regra_de_ordinais_esta_na_ferramenta_de_navegador():
-    """"Abre o segundo resultado" fez o executor tentar 5 vídeos diferentes sem parar (2026-09-21):
+    """"Abre o segundo resultado" fez o executor tentar 5 vídeos diferentes sem parar (2026-09-20):
     ele escolhe entre elementos, não conta posições."""
     fn = next(f for f in FERRAMENTAS if f.__name__ == "navegar_e_executar")
     doc = " ".join((inspect.getdoc(fn) or "").split())

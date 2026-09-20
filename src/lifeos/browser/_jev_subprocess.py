@@ -126,7 +126,7 @@ def _normalizar(url):
 
     Sem isso, um executor que alterna entre a página de resultados e um vídeo *diferente* a cada
     volta nunca repete a assinatura exata — e o detector de ciclo não enxerga o loop. Foi
-    exatamente o que aconteceu com "abre o segundo resultado" em 2026-09-21: cinco vídeos
+    exatamente o que aconteceu com "abre o segundo resultado" em 2026-09-20: cinco vídeos
     distintos, mesma estrutura busca→vídeo→busca→vídeo.
     """
     if not url:
@@ -149,7 +149,7 @@ def _oscilando(assinaturas, periodos=(2, 3, 4)):
     Exige 3 repetições completas do ciclo antes de cortar (não 2), para não confundir com uma
     sequência legítima que por acaso revisita os mesmos poucos estados uma vez.
 
-    Casos observados ao vivo em 2026-09-21: período 2 ("abra X e me diga o link principal", vira
+    Casos observados ao vivo em 2026-09-20: período 2 ("abra X e me diga o link principal", vira
     pergunta-como-objetivo) e período 3 (busca no YouTube reiniciando a cada tentativa de clicar um
     resultado que ainda não carregou).
     """

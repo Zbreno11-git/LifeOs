@@ -101,7 +101,7 @@ necessidade comprovada.
 - Pendente: rodar de fato no Bosgame (clonar o fork lá, `uv run windows-mcp serve`, testar com o Arduino) —
   não é possível validar isso neste ambiente Linux.
 
-### 2026-09-20
+### 2026-09-20 — reorganização do repo em torno do Viking
 
 **Brainstorm de produto e reorganização completa do repositório**, feito interativamente com o usuário
 (perguntas e respostas registradas na sessão) para reconciliar peças que tinham surgido em paralelo sem
@@ -161,11 +161,11 @@ fundadoras nunca documentadas neste repo — **Viking** (marca do assistente pes
 - Pendente/recomendado, não feito nesta sessão: criar um fork pessoal de `jev-ultrafast` (hoje o
   `origin` aponta direto pro upstream `browser-use/jev-ultrafast`, sem remote próprio para o patch de
   fallback pra OpenRouter) — ver `docs/fontes/jev-typesafe.md`.
-  > **Correção (2026-09-21):** esta linha dizia "os 3 commits locais, incluindo o patch". Era falso —
+  > **Correção (2026-09-20):** esta linha dizia "os 3 commits locais, incluindo o patch". Era falso —
   > os 3 commits eram todos do upstream e o patch existia **apenas como modificação não commitada**.
   > O risco era portanto maior do que o registrado. Resolvido na sessão seguinte (ver abaixo).
 
-### 2026-09-21
+### 2026-09-20 — MVP: calendário e navegador juntos na CLI
 
 **MVP: calendário e navegador funcionando juntos no `viking chat`.** Até aqui a ferramenta de
 navegador era um stub declarado (`browser_goal` abria uma aba e ignorava o objetivo). Agora o Viking
@@ -214,3 +214,74 @@ executa tarefas de verdade num Chrome real, via Jev.
   verdade — este ambiente é Linux sem tela, e o Browser Harness pede um clique humano em "Allow remote
   debugging" na primeira vez. O risco não verificado mais importante segue sendo o endpoint alpha de
   decisões da OpenRouter aceitar o corpo no formato TypeSafe.
+
+### 2026-09-20 — endurecimento após o primeiro uso real no Mac
+
+Primeira vez que o Viking rodou contra um Chrome de verdade, na máquina do dono. Tudo abaixo saiu de
+falha observada em uso, não de revisão de código. Ordem cronológica dos consertos:
+
+**Bring-up no Mac.** `pip` resolvia para o conda em vez do venv (conda base ativo junto), deixando o
+`lifeos` fora do ambiente e o `pytest` falhando com `ModuleNotFoundError`. `python -m pip` resolveu.
+Registrado porque vai acontecer de novo em qualquer máquina com conda.
+
+**`from __future__ import annotations` quebrou todo function-calling.** Toda tool chamada *com
+argumento* falhava com `isinstance() arg 2 must be a type...`. O future import transforma anotações
+em strings e o google-genai valida argumentos com `isinstance(valor, anotação)`. Só chamadas sem
+argumento escapavam, o que mascarou o problema (`listar_proximos_eventos` funcionava). Removido dos
+três módulos que expõem tools, com comentário no topo de cada um e teste por tool que falha se
+voltar. Foi regressão minha na migração do `calendar-bot`, que não tinha o import.
+
+**`blocked` não é prova de fracasso.** Uma tarefa que funcionou (clicou o link, navegou para o
+destino) voltou como `blocked`, porque na página nova não sobrava ação rumo à meta. A mensagem lia
+como fracasso puro e teria feito o assistente reportar erro numa tarefa bem-sucedida.
+
+**A aba sumia.** O Jev cria a aba em segundo plano e a fechava ao sair: "abre o YouTube pra mim"
+abria e fechava. Fechar virou opt-in; por padrão a aba fica e é trazida para a frente
+(`Target.activateTarget`).
+
+**Exclusão de evento ganhou trava estrutural.** Apagar exigia só um termo e apagava o primeiro que
+casasse, sem mostrar qual — com dois eventos de mesmo nome, o usuário não sabia qual sumiu. Agora
+`apagar_evento_por_id` exige o ID (que só sai de `buscar_eventos_por_termo`) e confere o título
+esperado contra o real, recusando se divergirem.
+
+**Custos visíveis.** O Jev já guardava `usage` de toda chamada paga; agora isso é agregado e
+mostrado. Números reais medidos: ~US$0,0008 por turno de chat; uma tarefa de navegador em site
+simples ~US$0,0001; **uma no YouTube: 24.507 tokens em 6 chamadas (US$0,00096)** — muito mais que a
+estimativa que eu vinha usando, porque o Jev manda até 6000 caracteres de texto de página ao modelo
+de decisão a cada passo, e `example.com` tem uma fração disso. Em dólar segue barato (a rota do
+modelo de decisão sai a ~US$0,04/milhão de tokens), mas **não** é "ordens de grandeza mais barato"
+que o Gemini em sites complexos — naquele turno o navegador custou mais que o Gemini.
+
+**Descrições das tools comprimidas: 1782 → 1305 tokens (-26,8%), medido.** A inspeção da
+`FunctionDeclaration` mostrou que o bloco `Args:` inteiro entra como prosa na `description`, com os
+parâmetros do schema ficando com `description=None` — ou seja, metade do texto era redundante com o
+schema e cobrada em toda mensagem. Teste garante que as regras de comportamento sobreviveram ao
+corte. `navegar_e_executar` continua sendo a mais cara sozinha (332 dos 1305).
+
+**Três loops distintos do executor, três consertos.** Nenhum é pego pelo guard do próprio Jev, que
+só detecta página que *não* muda:
+
+1. *Objetivo-pergunta* ("abra X e me diga qual é o link principal"): nenhuma ação satisfaz a meta,
+   27 ações em ping-pong. Conserto: a descrição da tool proíbe pergunta como objetivo e explica que
+   o conteúdo da página volta no resultado.
+2. *Ciclo período 3* (busca no YouTube reiniciando a cada tentativa de clicar resultado ainda não
+   carregado). Meu detector só cobria período 2. Generalizado para 2–4, com assinatura `(url, ação)`
+   em vez de só URL — digitar num campo não muda a URL.
+3. *Loop estrutural* ("abre o **segundo** resultado"): cinco vídeos diferentes, nenhuma repetição
+   literal. Conserto: assinatura ampla com URL normalizada (sem query) + tipo da ação, rodando em
+   paralelo à exata. Teto próprio de 30 ações como rede final.
+
+Causa raiz do caso 3, que **não** tem conserto na nossa camada: ordinais além do primeiro não
+funcionam porque o Jev escolhe entre elementos da página, não conta posições. Virou regra na
+descrição da tool. "Primeiro resultado" funciona; "segundo" não. Se isso virar necessidade real, o
+caminho é uma ferramenta nossa que leia a lista de resultados e devolva as URLs.
+
+**Também corrigido:** texto digitado passou a constar no histórico devolvido (sem ele o diagnóstico
+do caso 3 dependia de adivinhação); `criar_lembrete` ganhou prazo (`quando`, ISO 8601) — antes "me
+lembra amanhã de X" salvava sem o "amanhã"; REPL ignora entrada vazia, que gerava `Viking: None`; e
+o Viking passou a saber a data de hoje, antes ele perguntava.
+
+**Validado ao vivo, funcionando:** calendário (listar, criar, apagar com confirmação), lembretes com
+prazo em SQLite (`data/viking.db`, criado na primeira gravação), navegador abrindo e mantendo aba,
+busca+clique no primeiro resultado, Ctrl-C matando o subprocesso limpo, recuperação do daemon do
+Browser Harness (o `doctor` reportou 0 conexões e a tarefa seguinte funcionou, reatando).
