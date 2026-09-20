@@ -21,7 +21,13 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from lifeos.config import BROWSER_TIMEOUT_S, JEV_DIR, JEV_ENV_FILE, UV_BIN
+from lifeos.config import (
+    BROWSER_MAX_ACOES,
+    BROWSER_TIMEOUT_S,
+    JEV_DIR,
+    JEV_ENV_FILE,
+    UV_BIN,
+)
 
 SCRIPT_PATH = Path(__file__).with_name("_jev_subprocess.py")
 GRACE_S = 20.0
@@ -67,7 +73,7 @@ def build_command(
     cmd += ["python", str(SCRIPT_PATH), "--url", url]
     for goal in goals:
         cmd += ["--goal", goal]
-    cmd += ["--timeout", str(timeout_s)]
+    cmd += ["--timeout", str(timeout_s), "--max-acoes", str(BROWSER_MAX_ACOES)]
     if fechar:
         cmd.append("--fechar")
     return cmd

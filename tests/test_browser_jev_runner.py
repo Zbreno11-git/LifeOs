@@ -251,3 +251,42 @@ def test_historico_registra_o_texto_digitado():
     ]
     r = result_from(eventos, 0, None, ["g"])
     assert r.history[0]["text"] == "spider man ambience"
+
+
+def test_detector_pega_loop_estrutural_com_alvos_sempre_diferentes():
+    """Rastro real de 2026-09-21: "abre o SEGUNDO resultado" no YouTube.
+
+    O executor clicava um vídeo diferente a cada volta (Brand New Day, Spiderman Ambience,
+    10 Hours of Heavy Rain, Spider Man 2002...), então a assinatura exata nunca se repetia e o
+    detector não via loop. Normalizando a URL (sem query) e usando o TIPO da ação em vez do rótulo,
+    o vaivém busca↔vídeo vira um ciclo período-2 visível.
+    """
+    from lifeos.browser import _jev_subprocess as runner
+
+    exatas, amplas = [], []
+    for video in ("brand-new-day", "spiderman-ambience", "heavy-rain", "music-2002", "great-power"):
+        # clica um resultado (ação feita NA página de resultados)
+        exatas.append(("https://www.youtube.com/results?search_query=spider+man", video))
+        amplas.append((runner._normalizar("https://www.youtube.com/results?search_query=spider+man"), "click"))
+        # volta pra busca (ação feita NA página do vídeo)
+        exatas.append((f"https://www.youtube.com/watch?v={video}", "Search"))
+        amplas.append((runner._normalizar(f"https://www.youtube.com/watch?v={video}"), "click"))
+
+    assert runner._oscilando(exatas) is False, "assinatura exata não vê o loop — era o bug"
+    assert runner._oscilando(amplas) is True, "assinatura ampla precisa ver"
+
+
+def test_normalizar_url():
+    from lifeos.browser._jev_subprocess import _normalizar
+
+    assert _normalizar("https://x.com/watch?v=A") == _normalizar("https://x.com/watch?v=B")
+    assert _normalizar("https://x.com/a/") == "https://x.com/a"
+    assert _normalizar("https://x.com/a#frag") == "https://x.com/a"
+    assert _normalizar(None) is None
+    assert _normalizar("https://x.com/a") != _normalizar("https://x.com/b")
+
+
+def test_build_command_manda_teto_de_acoes(jev_falso):
+    cmd = build_command("u", ["g"], timeout_s=1)
+    assert "--max-acoes" in cmd
+    assert int(cmd[cmd.index("--max-acoes") + 1]) > 0

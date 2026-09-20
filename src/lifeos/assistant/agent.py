@@ -36,6 +36,10 @@ def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> s
     satisfaria o faz rodar em círculo. Para responder algo sobre uma página, mande só abri-la — o
     conteúdo dela volta no resultado e você interpreta.
 
+    Ordinais além do primeiro ("o segundo resultado") não funcionam: o executor escolhe entre
+    elementos da página, não conta posições — ele tenta um, outro, outro, sem parar. Peça o
+    primeiro, ou identifique o alvo pelo nome.
+
     Prefira uma URL que já leve ao estado desejado em vez de mandar digitar e clicar: para buscas,
     monte a URL de resultados do site (ex.: youtube.com/results?search_query=termo+aqui). Digitar e
     submeter é a parte mais frágil, porque a página pode ainda não ter trocado quando o executor

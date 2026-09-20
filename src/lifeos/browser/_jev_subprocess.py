@@ -121,6 +121,19 @@ def preparar_navegador():
     return "reiniciado"
 
 
+def _normalizar(url):
+    """Reduz a URL a esquema+host+caminho: /watch?v=A e /watch?v=B viram o mesmo estado.
+
+    Sem isso, um executor que alterna entre a página de resultados e um vídeo *diferente* a cada
+    volta nunca repete a assinatura exata — e o detector de ciclo não enxerga o loop. Foi
+    exatamente o que aconteceu com "abre o segundo resultado" em 2026-09-21: cinco vídeos
+    distintos, mesma estrutura busca→vídeo→busca→vídeo.
+    """
+    if not url:
+        return None
+    return url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+
+
 def _oscilando(assinaturas, periodos=(2, 3, 4)):
     """Detecta ciclo A→B→A→B (período 2) ou mais longo (3, 4 estados) se repetindo.
 
@@ -207,6 +220,7 @@ def main():
     parser.add_argument("--goal", action="append", dest="goals", required=True)
     parser.add_argument("--timeout", type=float, default=180.0)
     parser.add_argument("--fechar", action="store_true", help="fecha a aba ao terminar")
+    parser.add_argument("--max-acoes", type=int, default=30, dest="max_acoes")
     args = parser.parse_args()
 
     signal.signal(signal.SIGTERM, _on_signal)
@@ -220,6 +234,7 @@ def main():
     agent = None
     state = None
     assinaturas = []
+    amplas = []
 
     try:
         emit(type="health", state=preparar_navegador())
@@ -236,8 +251,27 @@ def main():
                 kind=historico[-1]["kind"] if historico else None,
                 url=(state.get("page") or {}).get("url"),
             )
-            assinaturas.append(((state.get("page") or {}).get("url"), historico[-1]["action"] if historico else None))
-            if _oscilando(assinaturas):
+            url_passo = (state.get("page") or {}).get("url")
+            ultimo = historico[-1] if historico else {}
+            assinaturas.append((url_passo, ultimo.get("action")))
+            # A lista ampla pega o loop "estrutural": mesmo vaivém entre tipos de página, ainda que
+            # o alvo clicado mude toda vez.
+            amplas.append((_normalizar(url_passo), ultimo.get("kind")))
+            if _passos(state) >= args.max_acoes:
+                emit(
+                    type="error",
+                    code="step_budget",
+                    exception="LimiteDeAcoes",
+                    message=f"parei em {args.max_acoes} ações sem concluir",
+                    steps=_passos(state),
+                    elapsed_ms=state.get("elapsed_ms"),
+                    history=historico,
+                    usage=_uso(state),
+                    **_pagina(state),
+                )
+                return EXIT_ERROR
+
+            if _oscilando(assinaturas) or _oscilando(amplas):
                 emit(
                     type="error",
                     code="loop_detected",

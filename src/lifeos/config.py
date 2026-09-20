@@ -35,3 +35,6 @@ JEV_DIR = _path_env("VIKING_JEV_DIR", REPO_ROOT / "jev-ultrafast")
 JEV_ENV_FILE = _path_env("VIKING_JEV_ENV_FILE", JEV_DIR / ".env")
 UV_BIN = os.getenv("VIKING_UV_BIN", "uv")
 BROWSER_TIMEOUT_S = float(os.getenv("VIKING_BROWSER_TIMEOUT_S", "180"))
+# Teto de ações por tarefa. Abaixo do teto de 60 do próprio Jev: limita o custo do pior caso
+# (uma tarefa em loop) sem cortar tarefas legítimas, que raramente passam de 15 passos.
+BROWSER_MAX_ACOES = int(os.getenv("VIKING_BROWSER_MAX_ACOES", "30"))
