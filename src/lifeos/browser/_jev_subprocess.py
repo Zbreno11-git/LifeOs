@@ -178,6 +178,7 @@ def _historico(state):
             "step": e.get("step"),
             "action": _rotulo(e),
             "kind": e.get("kind"),
+            "text": (e.get("text") or "")[:80] or None,
             "url": e.get("url"),
         }
         for e in entradas[-MAX_HISTORY:]

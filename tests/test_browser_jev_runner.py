@@ -214,3 +214,17 @@ def test_detector_de_pingpong():
     assert runner._oscilando(["a", "a", "a", "a", "a"]) is False
     assert runner._oscilando(["a", "b", "c", "d", "e"]) is False
     assert runner._oscilando(["a", "b", "a"]) is False
+
+
+def test_historico_registra_o_texto_digitado():
+    """Sem o texto digitado não dá para diagnosticar 'buscou X mas abriu Y' (visto em 2026-09-21)."""
+    eventos = [
+        {
+            "type": "result",
+            "status": "done",
+            "steps": 2,
+            "history": [{"action": "Pesquisar", "kind": "type", "text": "spider man ambience"}],
+        }
+    ]
+    r = result_from(eventos, 0, None, ["g"])
+    assert r.history[0]["text"] == "spider man ambience"
