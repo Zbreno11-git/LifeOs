@@ -13,11 +13,7 @@ from lifeos.calendar.oauth import get_calendar_service
 
 
 def listar_proximos_eventos(max_results: int = 10) -> str:
-    """
-    Lista os próximos eventos agendados no Google Calendar a partir do momento atual.
-
-    Args:
-        max_results: Quantidade máxima de eventos a retornar (padrão 10).
+    """Lista os próximos eventos do calendário a partir de agora.
     """
     service = get_calendar_service()
     agora = datetime.now(UTC).isoformat()
@@ -48,12 +44,8 @@ def listar_proximos_eventos(max_results: int = 10) -> str:
 
 
 def listar_eventos_por_data(data_inicio: str, data_fim: str | None = None) -> str:
-    """
-    Lista eventos de um dia específico ou dentro de um intervalo de datas.
-
-    Args:
-        data_inicio: Data de início no formato YYYY-MM-DD (ex: '2026-09-23').
-        data_fim: Data de término opcional no formato YYYY-MM-DD. Se omitido, busca apenas no dia_inicio.
+    """Lista eventos de um dia ou intervalo. Datas em YYYY-MM-DD. Sem `data_fim`, busca só o dia de
+    `data_inicio`.
     """
     service = get_calendar_service()
 
@@ -90,14 +82,8 @@ def listar_eventos_por_data(data_inicio: str, data_fim: str | None = None) -> st
 
 
 def criar_evento(summary: str, start_time: str, end_time: str, description: str = "") -> str:
-    """
-    Cria um evento com horário marcado no Google Calendar.
-
-    Args:
-        summary: Título do evento.
-        start_time: Data/hora de início no formato ISO 8601 (ex: '2026-09-23T10:00:00-03:00').
-        end_time: Data/hora de término no formato ISO 8601 (ex: '2026-09-23T11:00:00-03:00').
-        description: Descrição opcional.
+    """Cria um evento com horário marcado. `start_time` e `end_time` em ISO 8601 com fuso
+    (ex.: '2026-09-23T10:00:00-03:00').
     """
     service = get_calendar_service()
     evento = {
@@ -111,13 +97,7 @@ def criar_evento(summary: str, start_time: str, end_time: str, description: str 
 
 
 def criar_evento_dia_inteiro(summary: str, data: str, description: str = "") -> str:
-    """
-    Cria um evento de dia inteiro no Google Calendar (sem horário específico).
-
-    Args:
-        summary: Título do evento.
-        data: Data do evento no formato YYYY-MM-DD (ex: '2026-09-23').
-        description: Descrição opcional.
+    """Cria um evento de dia inteiro, sem horário. `data` em YYYY-MM-DD.
     """
     service = get_calendar_service()
     evento = {
@@ -136,14 +116,8 @@ def _quando(evento: dict) -> str:
 
 
 def buscar_eventos_por_termo(termo_busca: str) -> str:
-    """
-    Busca eventos futuros que casem com um termo e devolve os candidatos com seus IDs.
-
-    Use isto ANTES de apagar qualquer coisa: é daqui que sai o ID exigido por
-    `apagar_evento_por_id`, e é isto que você mostra ao usuário para ele confirmar qual evento é.
-
-    Args:
-        termo_busca: Palavra-chave ou título a procurar.
+    """Busca eventos futuros por termo e devolve os candidatos com seus IDs. Use antes de apagar
+    qualquer coisa: é daqui que sai o ID, e é isto que você mostra ao usuário para ele confirmar.
     """
     service = get_calendar_service()
     agora = datetime.now(UTC).isoformat()
@@ -166,16 +140,9 @@ def buscar_eventos_por_termo(termo_busca: str) -> str:
 
 
 def apagar_evento_por_id(event_id: str, titulo_esperado: str) -> str:
-    """
-    Apaga UM evento específico do Google Calendar, identificado pelo ID.
-
-    Ação irreversível. Só chame depois de ter buscado o evento e o usuário ter confirmado
-    explicitamente qual apagar. O `titulo_esperado` é conferido contra o título real do evento e a
-    exclusão é recusada se não baterem — é uma trava contra apagar o evento errado.
-
-    Args:
-        event_id: ID exato do evento, vindo de uma busca ou listagem.
-        titulo_esperado: Título que você e o usuário acreditam que esse evento tem.
+    """Apaga UM evento do calendário. Irreversível: só chame após buscar o evento e o usuário
+    confirmar qual. `titulo_esperado` é conferido contra o título real e a exclusão é recusada se
+    divergirem. `event_id` vem de uma busca ou listagem, nunca de chute.
     """
     service = get_calendar_service()
     try:
@@ -196,13 +163,7 @@ def apagar_evento_por_id(event_id: str, titulo_esperado: str) -> str:
 
 
 def reagendar_evento(termo_busca: str, novo_inicio: str, novo_fim: str) -> str:
-    """
-    Muda o horário de um evento existente.
-
-    Args:
-        termo_busca: Nome do evento para encontrar.
-        novo_inicio: Nova data/hora inicial (ISO 8601).
-        novo_fim: Nova data/hora final (ISO 8601).
+    """Muda o horário de um evento achado por termo. Novos horários em ISO 8601.
     """
     service = get_calendar_service()
     agora = datetime.now(UTC).isoformat()

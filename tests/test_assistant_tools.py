@@ -40,3 +40,40 @@ def test_hoje_tem_dia_da_semana_valido():
     texto = _hoje()
     assert any(dia in texto for dia in _DIAS)
     assert "domingo-feira" not in texto and "sábado-feira" not in texto
+
+
+# Regras de comportamento que as docstrings PRECISAM continuar carregando: cada uma nasceu de um
+# bug real observado em uso. Comprimir a descrição é bem-vindo; perder estas regras não é.
+_REGRAS = {
+    "navegar_e_executar": [
+        # objetivo-pergunta fazia o executor rodar em círculo (27 ações de ping-pong, 2026-09-21)
+        ["AÇÃO", "nunca uma\n    pergunta"],
+        # sem isto o modelo não sabe que pode responder a partir do texto devolvido
+        ["conteúdo dela volta no resultado"],
+        # ações de navegador não são desfeitas: repetir às cegas é perigoso
+        ["não repita sem confirmar"],
+    ],
+    "apagar_evento_por_id": [
+        ["Irreversível"],
+        ["confirmar"],
+        ["recusada"],
+    ],
+    "buscar_eventos_por_termo": [
+        ["antes de apagar"],
+        ["IDs"],
+    ],
+    "criar_lembrete": [
+        ["ISO 8601"],
+        ["Não é evento de calendário"],
+    ],
+}
+
+
+@pytest.mark.parametrize("nome", sorted(_REGRAS))
+def test_regras_de_comportamento_sobrevivem_a_compressao(nome):
+    fn = next(f for f in FERRAMENTAS if f.__name__ == nome)
+    doc = inspect.getdoc(fn) or ""
+    for alternativas in _REGRAS[nome]:
+        assert any(a.replace("\n    ", " ") in " ".join(doc.split()) or a in doc for a in alternativas), (
+            f"{nome}: a docstring perdeu a regra {alternativas!r}"
+        )

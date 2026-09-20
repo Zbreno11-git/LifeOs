@@ -29,43 +29,24 @@ from lifeos.reminders import store
 
 
 def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> str:
-    """
-    Abre uma URL num navegador real do usuário e persegue um objetivo em linguagem natural,
-    executando cliques e digitação de verdade na página. Pode levar de segundos a alguns minutos.
+    """Executa cliques e digitação num navegador real do usuário. Leva de segundos a minutos.
 
-    O objetivo tem que ser uma AÇÃO de navegação ("abrir X", "buscar Y e abrir o primeiro
-    resultado", "preencher o campo Z"). NUNCA passe uma pergunta como objetivo: o executor só sabe
-    clicar, digitar, rolar e esperar — ele não tem como "responder" nada, e um objetivo que só uma
-    resposta satisfaria faz ele rodar em círculo até estourar o limite.
+    `objetivo` é sempre uma AÇÃO ("abrir X", "buscar Y e abrir o primeiro resultado"), nunca uma
+    pergunta: o executor só clica, digita, rola e espera, e um objetivo que só uma resposta
+    satisfaria o faz rodar em círculo. Para responder algo sobre uma página, mande só abri-la — o
+    conteúdo dela volta no resultado e você interpreta.
 
-    Para responder perguntas sobre uma página, peça só a navegação: o conteúdo da página volta no
-    resultado desta ferramenta e você mesmo o interpreta. Ex.: para "qual o link principal do
-    site X", chame com objetivo "abrir o site X" e leia o trecho devolvido.
-
-    Use um objetivo estreito e verificável, não uma tarefa aberta. Se a ferramenta relatar erro,
-    timeout ou parada sem concluir, NÃO chame de novo com o mesmo objetivo sem confirmar com o
-    usuário: ações já executadas não são desfeitas.
-
-    Args:
-        url: Endereço a abrir.
-        objetivo: O que fazer nessa página, em linguagem natural. Sempre uma ação, nunca pergunta.
-        manter_aberta: Deixa a aba aberta e em foco no navegador do usuário (padrão). Passe False
-            quando a navegação for só para você ler algo e a página não interessar ao usuário.
+    Após erro, timeout ou parada sem concluir, não repita sem confirmar com o usuário: o que já
+    foi executado não é desfeito. `manter_aberta` deixa a aba aberta e em foco (padrão); use False
+    quando a página interessar só a você.
     """
     return executar_no_navegador(url, objetivo, manter_aberta=manter_aberta)
 
 
 def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "") -> str:
-    """
-    Cria um lembrete ou nota geral. Não é um evento de calendário: use isto para coisas a fazer
-    ou lembrar, e o calendário para compromissos com hora marcada.
-
-    Args:
-        titulo: Título curto do lembrete.
-        corpo: Detalhes opcionais.
-        tags: Tags separadas por vírgula, opcional.
-        quando: Prazo opcional, ISO 8601 (ex.: '2026-09-25' ou '2026-09-25T14:00:00'). Resolva
-            você mesmo expressões como "amanhã" a partir da data de hoje antes de passar aqui.
+    """Cria um lembrete ou nota. Não é evento de calendário: use isto para coisas a fazer, e o
+    calendário para compromissos com hora marcada. `tags` separadas por vírgula. `quando` é o
+    prazo opcional em ISO 8601 ('2026-09-25' ou '2026-09-25T14:00') — resolva "amanhã" você mesmo.
     """
     due_at = None
     if quando.strip():
@@ -85,7 +66,7 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
 
 
 def listar_lembretes() -> str:
-    """Lista os lembretes/notas ainda não concluídos, os com prazo mais próximo primeiro."""
+    """Lista os lembretes não concluídos, prazo mais próximo primeiro."""
     reminders = store.list_open()
     if not reminders:
         return "Nenhum lembrete pendente."
@@ -97,11 +78,7 @@ def listar_lembretes() -> str:
 
 
 def concluir_lembrete(reminder_id: int) -> str:
-    """
-    Marca um lembrete como concluído.
-
-    Args:
-        reminder_id: ID do lembrete (retornado ao criar ou listar).
+    """Marca um lembrete como concluído. `reminder_id` vem da listagem.
     """
     reminder = store.complete(reminder_id)
     if not reminder:
