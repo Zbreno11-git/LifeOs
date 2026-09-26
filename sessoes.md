@@ -16,8 +16,6 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Antes de abrir a próxima:** a Gmail 2 foi escrita e testada no VPS em 2026-09-26 e falta
-  **validar no Mac** (roteiro em `PROGRESSO.md`; o login do Gmail vai ser pedido de novo).
 - **Sessão:** Pluggy — finanças, só leitura (decisão do dono: logo depois da Gmail 2).
 - **Primeiro passo:** o da seção da Sessão Pluggy abaixo (do dono: IDs das conexões no `.env`).
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/pluggy-open-finance.md`,
@@ -192,7 +190,7 @@ Validado no Mac do dono em 2026-09-26: 528 testes, login real (token 600), não 
 na caixa real (formato bateu com o fake; achado e consertado o enchimento invisível das prévias).
 Perguntas no `viking chat` também validadas. Não medida: a latência do raio-x.
 
-## Sessão Gmail 2 — limpar a caixa (feita no VPS em 2026-09-26; falta validar no Mac)
+## ✅ Sessão Gmail 2 — limpar a caixa (feita e validada no Mac em 2026-09-26)
 
 **Entregue:** `viking chat` → "arquiva tudo do X" → a tool `preparar_limpeza` imprime no terminal
 a lista exata e um código de 4 dígitos (nunca devolvido ao Gemini) → o dono digita
@@ -323,3 +321,7 @@ de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
 `docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN não é normalizado;
 o clique destrutivo num site não bloqueado (§5.2) foi feito na Sessão 4b; ficou de fora, por
 decisão do dono, "publicar em seu nome" (postar, enviar mensagem).
+
+Da Gmail 2 (vistos no Mac, 2026-09-26, só texto): "vamos arquivar esses e-mails" depois de uma
+busca faz o Gemini pedir o remetente de novo; a instrução para um código vivo digitado sem verbo
+podia dizer o que aquele código foi (limpeza de quando, quantos e-mails).

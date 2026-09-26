@@ -856,3 +856,17 @@ sorteio preso (laço infinito); matei só o `pytest` filho, o arquivo voltou (co
 passou a sortear códigos diferentes depois do primeiro. Portões: `631 passed`; mutações
 `52 · mortas pelo teste esperado: 52`. **Falta:** o `desfaz` de verdade no Mac.
 
+### 2026-09-26 — Gmail 2 fechada: validada no Mac
+
+**Medido (saída colada pelo dono, `2316f25`).** `631 passed in 11.24s`. No `viking chat`: "desfaz
+8768 do gmail" → "Devolvi 71 e-mail(s)", sem chamar o Gemini; "o que era o 8768 você lembra?" →
+a instrução, sem chamar o Gemini (código vivo sem verbo); "confirma 8768" → "já foi usado"; busca
+pelo remetente → 10 achados; "arquivar e-mails de [remetente]" → a espera de cota apareceu uma vez
+e a lista (71 saem, 2 importantes ficam); "confirma 1737" → "Arquivei 71". O Gemini falou em
+segunda pessoa e em nenhum momento recebeu um código.
+
+**Observado, sem conserto agora:** "vamos arquivar esses e-mails", logo depois da busca, fez o
+Gemini pedir o nome do remetente em vez de entender "esses" — a regra "só o que o usuário disser"
+está mais estrita do que precisa; e a instrução para código vivo sem verbo não diz o que o código
+foi. Os dois são de texto, não de segurança; anotados no backlog.
+

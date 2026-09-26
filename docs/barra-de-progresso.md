@@ -7,13 +7,12 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-26 (Sessão Gmail 2, antes do teste no Mac).**
+**Última atualização: 2026-09-26 (Sessão Gmail 2, testada no seu Mac).**
 
-`███████████░░░░░░░░░ 5 de 12 sessões fechadas + 3 parciais (= 6,5 de 12)`
+`████████████░░░░░░░░ 6 de 12 sessões fechadas + 2 parciais (= 7 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b e Gmail; parciais 4, 3b e Gmail 2 (feita, falta
-testar no Mac); na fila Pluggy, 5, 6 e 7 (a do Pluggy entrou hoje, a seu pedido). Cada parcial
-vale meio bloco na barra.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail e Gmail 2; parciais 4 e 3b; na fila
+Pluggy, 5, 6 e 7. Cada parcial vale meio bloco na barra.
 
 ## 2026-09-26 — limpar a caixa, com você aprovando
 
@@ -34,12 +33,15 @@ alguém escrever código que use. No login, a tela do Google vai descrever essa 
 minuto (o Viking relia cada e-mail duas vezes). Consertado: ele agora anda no ritmo que o Google
 permite, espera quando é recusado, e confirma sem reler. Nada se perdeu naquele teste.
 
-**Como sabemos:** 612 testes passando no VPS, inclusive um "Gemini de mentira" tentando aprovar
-sozinho e um Gmail de mentira que cobra a cota como o real, e 46 proteções quebradas de propósito, todas pegas pelo teste certo. **Falta:** rodar no
-seu Mac, na sua caixa de verdade.
+**No seu Mac, no fim:** 71 arquivados, devolvidos com `desfaz` e arquivados de novo, e o Gemini
+nunca recebeu um código.
+
+**Como sabemos:** 631 testes passando no VPS e no seu Mac, inclusive um "Gemini de mentira"
+tentando aprovar sozinho e um Gmail de mentira que cobra a cota como o real, e 52 proteções
+quebradas de propósito, todas pegas pelo teste certo.
 
 **Finanças (Pluggy):** medi hoje — para uso pessoal é de graça (até 5 bancos). Suas credenciais
-funcionam. É a próxima sessão, depois deste teste.
+funcionam. É a próxima sessão.
 
 ## 2026-09-26 — o Viking lê o seu Gmail (e só lê)
 
