@@ -5,23 +5,72 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, entre sessões (Sessão Gmail fechada)
+## ▶️ RETOMAR AQUI — 2026-09-26, entre sessões — antes de um compact
 
-**Estado:** Sessão Gmail validada no Mac do dono, inclusive as perguntas no `viking chat` (ver
-diário). Execuções em background: nenhuma. Travas: nenhuma.
+**Estado do repositório:** árvore limpa · HEAD `6cfa269` antes deste checkpoint (o commit de
+checkpoint vem logo depois; conferir com `git log -1`) · igual ao remoto · travas: nenhuma
+(`.mutacao.lock` ausente) · execuções em background: nenhuma.
 
-**Próximo passo exato:** abrir a Sessão Gmail 2 (`sessoes.md`) — rodada de perguntas ao dono
-sobre como escolher o que arquivar, antes do plano.
+**Estado do mundo (Mac do dono, medido pela saída colada em 2026-09-26):** código até `9841595`
+puxado e validado (528 testes; Gmail real lido; chat ok). Os commits `520a404` e `6cfa269`
+(enchimento das prévias, frase do raio-x) **ainda não foram puxados no Mac** — entram no próximo
+`git pull`, sem validação ao vivo pendente além de rodar a suíte.
 
-**Não esquecer:**
-- O repo é **público**: nem o `project_id` do OAuth nem nome de remetente da caixa do dono entram
-  em doc nenhum.
-- Baseline do `ruff format --check`: 7 arquivos pré-existentes. Formatar **só os arquivos
-  editados** (`docs/erros.md`, classe 8).
-- Roteiro para o Mac começa com `git pull && git log --oneline -1` e só segue com o commit certo
-  (`docs/erros.md`, classe 1).
+**Objetivo em curso:** nenhum código em andamento. Sessão Gmail 2 (limpar a caixa) **aberta só
+com as perguntas**: o dono respondeu e pediu para **não começar ainda** ("mas calma não começa
+ainda").
 
-> O plano da Sessão Gmail fica abaixo como registro até a próxima sessão abrir o dela.
+**Próximo passo exato:** esperar o dono dizer para começar a Gmail 2. Quando disser: escrever o
+plano no formato de `.claude/skills/software-build/referencia/plano-de-sessao.md` a partir de
+`sessoes.md` → "Sessão Gmail 2" (respostas + desenho proposto), perguntar o teto de e-mails por
+aprovação, e só então codar.
+
+**Reler, nesta ordem:**
+1. `CLAUDE.md` e `AGENTS.md` — regras, fronteiras, armadilhas.
+2. Este bloco.
+3. `sessoes.md`, seção "Sessão Gmail 2" — as respostas do dono e o desenho proposto.
+4. `docs/decisoes.md` (D21–D27) e `docs/erros.md` (índice).
+5. Skills `software-build` (abrir/planejar), `seguranca` (ação irreversível, injeção) e
+   `testes-que-provam`.
+6. `src/lifeos/gmail/service.py`, `gmail/tools.py`, `google_auth.py` — onde a limpeza encaixa.
+
+**Decisões desta conversa (e onde ficaram escritas):**
+- Freio de cliques: sair/conta/dinheiro, para e avisa, sem liberação até a Sessão 5 — dono — D18,
+  `sessoes.md` (4b e 5).
+- Gmail só no chat, redação das páginas, plano pago do Gemini — dono — D21, D22.
+- Limpeza: sessão própria, só arquivar, lista aprovada — dono — D23.
+- Limpeza por remetente, todos da caixa, proteções estrela/importante/anexo — dono — D25.
+- Aprovação digitando código fora do Gemini; desfazer por 7 dias — dono — D26, D27.
+
+**Não pode ser esquecido (só existe aqui ou é fácil de perder):**
+- O repo é **público**: nem o `project_id` do OAuth nem nome de remetente/assunto da caixa do
+  dono entram em doc ou commit.
+- O app OAuth aparece no Google como **"n8n"** — o alerta de segurança de login é o nosso.
+- Baseline do `ruff format --check`: 7 arquivos pré-existentes (2026-09-26). Formatar **só os
+  arquivos editados** (`docs/erros.md`, classe 8).
+- Roteiro para o Mac começa com `git pull && git log --oneline -1` e só segue com o commit
+  certo (classe 1).
+- Escape Unicode em parâmetro de ferramenta vira caractere literal (classe 5, 3 ocorrências):
+  gerar por script com `chr()`.
+- Números de 2026-09-26 no VPS: `530 passed`; mutações `28` (26 na última rodada completa + 2
+  reprovadas isoladas depois); raio-x real do dono: 200 e-mails (piso) de 91 remetentes em 30 dias.
+
+**Depende do dono:**
+- O "pode começar" da Gmail 2.
+- No plano: o teto de e-mails por aprovação (o que muda: uma aprovação grande limpa tudo de uma
+  vez; uma pequena obriga várias rodadas, mas cada lista é lida inteira).
+- Opcional: renomear o app OAuth "n8n" para "Viking" na tela de marca do Google Cloud.
+
+**Riscos do próximo passo:** a Gmail 2 é a primeira escrita na conta do dono pelo Viking. É
+reversível (arquivar e desfazer), mas exige o login novo com `gmail.modify` e cuidado com
+injeção: o código de aprovação nunca pode passar pelo Gemini.
+
+**Antes de confiar neste bloco, confira:**
+- `git status --short` vazio e `git log --oneline -1` = o commit de checkpoint deste bloco;
+- `ls .mutacao.lock` → não existe;
+- `python -m pytest -q` → `530 passed`.
+
+> O plano da Sessão Gmail (leitura) fica abaixo como registro até a Gmail 2 abrir o dela.
 
 ## Plano — Sessão Gmail: leitura via API
 

@@ -189,7 +189,7 @@ Validado no Mac do dono em 2026-09-26: 528 testes, login real (token 600), não 
 na caixa real (formato bateu com o fake; achado e consertado o enchimento invisível das prévias).
 Perguntas no `viking chat` também validadas. Não medida: a latência do raio-x.
 
-## Sessão Gmail 2 — limpar a caixa (próxima depois da leitura)
+## Sessão Gmail 2 — limpar a caixa (próxima; perguntas respondidas, plano ainda não escrito)
 
 Pedida pelo dono em 2026-09-26 ("recebo anúncio e jornal que não abro nunca"); separada da
 leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
@@ -202,6 +202,30 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
   raio-x) e só arquiva depois do ok do dono, **naquela lista**; e-mail que chegar depois não entra
   sem nova aprovação. É o primeiro uso real da confirmação em duas etapas (Sessão 5) — desenhar
   para ser reaproveitado lá.
+- **Respostas do dono na abertura (2026-09-26, antes do compact):**
+  - Escolha **por remetente** (a partir do raio-x), não por regra do Gmail.
+  - Do remetente escolhido saem **todos** os e-mails da caixa de entrada, lidos ou não.
+  - **Nunca** arquivar: com estrela, marcados como importantes, com anexo. Somado: o Gmail às
+    vezes marca newsletter como importante, então parte de um remetente escolhido fica — a lista
+    tem de dizer quantos ficaram e por quê ("3 protegidos: importantes").
+  - Aprovação **digitando um código** que o Viking mostra direto no terminal, sem passar pelo
+    Gemini ("confirma 4821"): um e-mail malicioso não consegue fazer o Gemini aprovar sozinho.
+  - **Desfazer por 7 dias:** o Viking guarda quais e-mails arquivou e devolve exatamente esses.
+- **Desenho técnico proposto (meu, ainda não apresentado ao dono como plano):**
+  - Escopo `gmail.modify` no lugar de `gmail.readonly`, no mesmo `google_token_gmail.json`: a
+    conferência de escopo de `google_auth` já força o login novo (uma vez, no Mac).
+  - Seleção: `from:<endereço> in:inbox -is:starred -is:important -has:attachment`; a contagem dos
+    protegidos sai da consulta complementar.
+  - Confirmação mecânica reaproveitável pela Sessão 5 (ex.: `lifeos/confirmacao.py`, SQLite em
+    `data/viking.db`): código curto aleatório ligado à ação, ao conjunto exato de IDs e a uma
+    expiração; consumido uma vez. O código vai para o terminal do dono, não para o Gemini.
+  - Na confirmação, refazer a seleção e **intersectar** com os IDs aprovados: o que ganhou estrela
+    depois sai; e-mail novo não entra.
+  - Execução por `users.messages.batchModify` (até 1000 IDs por chamada) tirando `INBOX`;
+    desfazer = recolocar `INBOX` nos mesmos IDs; registro local do que foi pedido, aprovado e
+    executado (cobre parte do §7 da Sessão 5).
+  - Só no `viking chat` (como a leitura) + `viking gmail --arquivar` para validar no Mac.
+  - Em aberto (perguntar ao dono no plano): teto de e-mails por aprovação.
 - **Base medida (raio-x real, 2026-09-26):** 200 e-mails (piso) de 91 remetentes nos últimos 30
   dias; nos 15 maiores, praticamente tudo sem abrir, e a maioria com sinal de newsletter. Nomes de
   remetente não entram neste repo (é público).

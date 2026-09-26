@@ -35,6 +35,9 @@
 | D22 | E-mail passa pela redação das páginas: somem CPF/CNPJ/cartão/chaves e o token de links; endereços de e-mail e códigos de verificação ficam | o dono quer poder perguntar "qual o código que chegou?" | dono, 2026-09-26 | redigir também códigos; não redigir nada | — | `docs/fontes/gmail-api.md` |
 | D23 | Limpar a caixa = só **arquivar**, numa sessão própria, sempre com a lista exata aprovada pelo dono | o Viking nunca tem mais permissão do que usa (`gmail.readonly` agora, `gmail.modify` só na limpeza); arquivar é sempre reversível | dono, 2026-09-26 | lixeira, marcar como lido, descadastrar; regra automática; tudo nesta sessão | — | `sessoes.md`, Sessão Gmail 2 |
 | D24 | Token do Gmail em arquivo próprio, fluxo de login compartilhado (`google_auth.py`) | falha ou revogação do Gmail não derruba o calendário | agente, 2026-09-26 | um token com os dois escopos | o dono preferir um login só | `docs/fontes/gmail-api.md` |
+| D25 | Limpeza escolhida **por remetente**; saem todos os e-mails dele da caixa de entrada (lidos ou não); nunca saem os com estrela, importantes ou com anexo | previsível; arquivar é reversível | dono, 2026-09-26 (abertura da Gmail 2) | por regra do Gmail; só não lidos; proteger os de hoje | — | `sessoes.md`, Sessão Gmail 2 |
+| D26 | Aprovação da limpeza **digitando um código** mostrado direto no terminal, fora do Gemini | e-mail com prompt injection não consegue fazer o Gemini se autoaprovar | dono, 2026-09-26 | "sim" no chat | — | `sessoes.md`, Sessão Gmail 2 |
+| D27 | **Desfazer** um arquivamento por 7 dias, devolvendo exatamente os mesmos e-mails | — | dono, 2026-09-26 | depender só de "Todos os e-mails" | — | `sessoes.md`, Sessão Gmail 2 |
 
 ## Formato de um gatilho bom
 
