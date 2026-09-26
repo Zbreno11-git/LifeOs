@@ -274,7 +274,7 @@ ferramenta gravou o caractere bidi literal no código-fonte (Trojan Source). O `
 
 Do milestone atual (assistente CLI): ver `docs/arquitetura/viking-visao-e-arquitetura.md`, seção 10
 (generalização do Jev além de GitHub/Google Flights, quando o planejador deve interromper o Jev, quais
-ações de navegador precisam de confirmação humana, custo real do Pluggy, modelo de auth do servidor MCP
+ações de navegador precisam de confirmação humana, modelo de auth do servidor MCP
 do Viking para clientes externos).
 
 Da trilha de hardware (pausada): ver `docs/arquitetura/wristband-hardware-pausado.md`.

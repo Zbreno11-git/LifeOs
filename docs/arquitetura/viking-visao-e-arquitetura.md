@@ -136,8 +136,8 @@ para ações que precisem rodar localmente no dispositivo/PC (algo que um navega
 Administração financeira continua sendo um objetivo core do Life OS a longo prazo, mas **não via entrada
 manual** — o dono do projeto já observou que adicionar gastos manualmente (texto ou voz) não é
 consistente o suficiente para ser confiável. A direção é integrar com a **Pluggy**
-(agregador de open finance brasileiro, pluggy.ai) — já existe uma conta conectada lá; falta avaliar
-custo/viabilidade de puxar dados sem pagar a API completa, ou pagando pouco. Ver
+(agregador de open finance brasileiro, pluggy.ai) — já existe uma conta conectada lá; medido em
+2026-09-26: uso pessoal é gratuito pelo Meu Pluggy (até 5 conexões), sessão em `sessoes.md`. Ver
 `docs/fontes/pluggy-open-finance.md`. Nenhum código de finanças existe ainda; o gancho de compatibilidade
 é o schema genérico de `reminders/models.py` (campos `type`/`source`/`external_id`), que permite uma
 linha `type="finance_transaction", source="pluggy"` no futuro sem migração de schema.
@@ -175,7 +175,8 @@ Herdadas de `docs/arquitetura/browser-automation-stack.md` (ainda relevantes):
 - Quais ações de navegador precisam de confirmação humana explícita?
 
 Novas, da definição do Viking:
-- Qual o custo real de acessar dados via Pluggy sem (ou com pouco) pagamento pela API?
+- ~~Qual o custo real de acessar dados via Pluggy sem (ou com pouco) pagamento pela API?~~
+  Respondida em 2026-09-26: gratuito para uso pessoal pelo Meu Pluggy (`docs/fontes/pluggy-open-finance.md`).
 - Qual modelo de autenticação o servidor MCP do Viking deve ter para aceitar clientes externos?
 - Vale a pena portar `oauth.py`/`calendar_tools.py` como estão, ou já refatorar para suportar múltiplas
   contas Google no futuro?

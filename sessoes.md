@@ -230,6 +230,32 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
   dias; nos 15 maiores, praticamente tudo sem abrir, e a maioria com sinal de newsletter. Nomes de
   remetente não entram neste repo (é público).
 
+## Sessão Pluggy — finanças, só leitura (medida em 2026-09-26; posição na fila a confirmar)
+
+Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
+`docs/fontes/pluggy-open-finance.md`. O essencial:
+
+- **Custo:** uso pessoal é **gratuito** pelo Meu Pluggy (até 5 conexões do mesmo titular). A
+  pergunta aberta de D5 está respondida.
+- **Credenciais:** `PLUGGY_CLIENT_ID`/`PLUGGY_CLIENT_SECRET` já estão no `.env` da raiz; `/auth`
+  respondeu 200 e o conector MeuPluggy (id 200) está disponível. Falta o **ID de cada conexão**
+  (a listagem vem desligada: 403) — sai do Dashboard.
+- **Primeiro passo (do dono, fora do código, ~10 min):** conferir os bancos em `meu.pluggy.ai`;
+  no Dashboard, conectar o MeuPluggy uma vez **por banco**; anotar o ID de cada item (vai para o
+  `.env` como `PLUGGY_ITEM_IDS`, nunca para commit).
+- **Entrega proposta (1 sessão de ~1h30–2h):** `lifeos/financas/` com cliente **só `GET`** por
+  construção (a mesma chave alcança PIX e apagar item — ver a fonte), chave de 2 h em cache,
+  contas e transações por período (`/v2/transactions`, cursor); tools no chat para saldo, gastos
+  do período por categoria e busca de transação; `viking financas` para validar no Mac sem o
+  Gemini; descrição de transação como **não confiável** (quem manda um PIX escreve a descrição) e
+  redigida; toda resposta diz de quando é o dado (sincroniza a cada 24 h, sem atualização
+  manual).
+- **Perguntas ao dono na abertura:** quais bancos/cartões; só no chat ou também no MCP; o que
+  pode ir ao Gemini (valores e descrições são necessários para responder); consultar ao vivo ou
+  guardar cópia local (pesa para RAG depois, mas deixa dado financeiro em disco).
+- **Fica para depois:** categorização/recorrências pela Enrichment API, alertas de gasto, cópia
+  local para RAG. Webhook não serve (o Viking não tem servidor público).
+
 ## Sessão 5 — confirmação mecânica
 
 - **Primeiro passo (adiado da 4b por decisão do dono, 2026-09-26):** a liberação do freio de
@@ -277,7 +303,7 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
 
 Paginação e eventos recorrentes no calendário (§4.5); notas recuperáveis/buscáveis, não só
 criáveis (§12.4); migrations de schema formais (§12.6); decidir se o Viking é só-checkout ou
-pacote instalável de verdade (§9.3); Pluggy (finanças); RAG/busca semântica sobre notas e
+pacote instalável de verdade (§9.3); RAG/busca semântica sobre notas e
 calendário; teste preventivo para o caso de uma função virar tool do Gemini e do MCP ao mesmo
 tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3), só rede de
 segurança para um cenário hipotético. Residuais da Sessão 4: o objetivo, os rótulos/valores
