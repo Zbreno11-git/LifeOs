@@ -6,7 +6,7 @@ Guia técnico canônico deste repositório para qualquer agente de codificação
 ## O que este projeto é
 
 **Viking** é a marca de um assistente pessoal unificado: chat (CLI hoje, web possivelmente depois) que
-administra Google Calendar, navegação web e lembretes/notas gerais — com finanças (via Pluggy) e memória
+administra Google Calendar, navegação web, lembretes/notas gerais e lê o Gmail — com finanças (via Pluggy) e memória
 de longo prazo (RAG) como direções futuras. **Life OS** é o codinome técnico interno; o pacote Python
 continua se chamando `lifeos`, o comando instalado é `viking`.
 
@@ -40,7 +40,12 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `cli.py` — entrypoint `viking` (`chat`, `browser`, `mcp-server`)
   - `config.py` — carga única de `.env` + caminhos (`secrets/`, `data/`) e knobs do navegador
   - `custos.py` — contabilidade de uso dos modelos (real para o Jev, estimada para o Gemini)
+  - `google_auth.py` — login OAuth do Google compartilhado pelo calendário e pelo Gmail (confere o
+    escopo gravado no token; grava com permissão 600)
+  - `nao_confiavel.py` — o bloco delimitado de conteúdo de terceiros (página, e-mail) para o modelo
   - `calendar/` — Google Calendar (OAuth + operações), portado de um protótipo já validado
+  - `gmail/` — Gmail **só leitura** pela API (buscar, ler, não lidos de hoje, raio-x da caixa);
+    só o `viking chat` registra essas tools, o MCP não (decisão do dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
@@ -69,13 +74,13 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `browser-automation-stack.md` (relatório de validação da automação de navegador),
     `wristband-hardware-pausado.md` (arquitetura/roadmap da trilha pausada)
   - `fontes/` — referências técnicas externas curtas (uma página cada): `windows-mcp.md`,
-    `browser-harness.md`, `jev-typesafe.md`, `google-calendar-api.md`, `fastmcp.md`,
+    `browser-harness.md`, `jev-typesafe.md`, `google-calendar-api.md`, `gmail-api.md`, `fastmcp.md`,
     `pluggy-open-finance.md`,
     `mac-control-mcp-dead-end.md`
 - `archive/` — trilhas pausadas mas preservadas (código real, não só docs). Hoje:
   `wristband-fail-test/` (Arduino Uno R3 → Serial → Windows-MCP, funcional, ver seu próprio README).
 - `secrets/` — gitignored (exceto `.gitkeep`): credenciais OAuth reais (`google_credentials.json`,
-  `google_token.json`). Nunca commitar.
+  `google_token.json`, `google_token_gmail.json`). Nunca commitar.
 - `data/` — local, gitignored exceto `.gitkeep`; inclui `viking.db` (SQLite de lembretes) em runtime.
 - `jev-ultrafast/` — clone externo (gitignored, próprio `.git`) do agente de automação de navegador
   "Jev". `origin` = fork pessoal `Zbreno11-git/jev-ultrafast` (branch `viking-openrouter`, que carrega
@@ -100,6 +105,9 @@ viking chat                    # assistente de chat (calendário + navegador + l
 viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
 viking browser --doctor         # diagnostica o Browser Harness (Chrome/daemon/conexão)
+viking gmail --login            # faz/confere o login do Gmail (só leitura) e sai
+viking gmail --raio-x           # Gmail sem o Gemini (também --buscar Q, --ler ID;
+                               # sem opção: não lidos de hoje)
 ```
 
 As ferramentas de navegador exigem `uv` no PATH e o clone do Jev (`VIKING_JEV_DIR`); o Viking o
@@ -118,6 +126,7 @@ a dependência `pyserial`).
 Resumo curto; detalhe completo em `docs/arquitetura/viking-visao-e-arquitetura.md`:
 
 `viking chat` → `assistant/agent.py` (loop de function-calling) → tools de `calendar/` (Google Calendar),
+`gmail/` (leitura do Gmail, só no chat),
 `browser/` (executor Jev por subprocesso, dirigindo uma Chrome real via Browser Harness/CDP — ver
 `docs/arquitetura/browser-automation-stack.md`), e `reminders/` (SQLite). Em paralelo, `mcp_server/`
 expõe calendário + lembretes como um servidor MCP próprio, para outras ferramentas chamarem o Viking.
@@ -148,12 +157,13 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
 
 - `.env` (raiz, gitignored) — `GEMINI_API_KEY`, `VIKING_JEV_DIR` e, se necessário, overrides de
   `VIKING_GOOGLE_CREDENTIALS_PATH`/`VIKING_GOOGLE_TOKEN_PATH`/`VIKING_DB_PATH`/`VIKING_UV_BIN`/
-  `VIKING_BROWSER_TIMEOUT_S` (180s)/`VIKING_BROWSER_MAX_ACOES` (30)/`VIKING_PRECO_GEMINI_ENTRADA`
-  e `_SAIDA` (tarifas da estimativa de custo, US$ por 1M tokens)/`VIKING_TIMEZONE` (zona IANA usada
-  para resolver "amanhã" e montar janelas de dia no calendário e o instante de lembretes com
-  prazo; sem ela, usa o offset fixo da máquina — não acompanha horário de verão). Copiar de
-  `.env.example`. Caminhos relativos (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em
-  `REPO_ROOT`, não no diretório de onde `viking` foi chamado.
+  `VIKING_GMAIL_TOKEN_PATH` (token próprio do Gmail)/`VIKING_BROWSER_TIMEOUT_S`
+  (180s)/`VIKING_BROWSER_MAX_ACOES` (30)/`VIKING_PRECO_GEMINI_ENTRADA` e `_SAIDA` (tarifas da
+  estimativa de custo, US$ por 1M tokens)/`VIKING_TIMEZONE` (zona IANA usada para resolver "amanhã"
+  e montar janelas de dia no calendário e o instante de lembretes com prazo; sem ela, usa o offset
+  fixo da máquina — não acompanha horário de verão). Copiar de `.env.example`. Caminhos relativos
+  (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
+  `viking` foi chamado.
 - Navegador: banco e e-mail são **bloqueados por padrão** (lista em `config._BLOQUEADOS_PADRAO`,
   casa domínio e subdomínios). `VIKING_BROWSER_BLOQUEADOS` acrescenta domínios e
   `VIKING_BROWSER_LIBERADOS` remove entradas exatas da lista (ambos separados por vírgula).

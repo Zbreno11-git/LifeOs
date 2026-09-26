@@ -705,3 +705,38 @@ Saída real colada pelo dono (`git pull` até `86dd7e9`, `which python` →
 
 **Ainda não validado ao vivo:** o freio num site real logado (as páginas de teste foram `data:`,
 de propósito, para não tocar conta nenhuma).
+
+### 2026-09-26 — Sessão Gmail: o Viking lê a caixa de e-mail (só leitura)
+
+**Feito.** Gmail pela API oficial, só no `viking chat`: buscar (sintaxe do Gmail), ler um e-mail,
+não lidos de hoje e um raio-x da caixa (quem manda o quê, quanto fica sem abrir, sinais de
+newsletter e da aba Promoções). Login compartilhado com o calendário em `lifeos/google_auth.py`,
+com token próprio do Gmail (`gmail.readonly`, permissão 600). O conteúdo passa pela redação das
+páginas e vai no bloco de não confiável, agora cópia única em `lifeos/nao_confiavel.py`.
+`viking gmail` valida tudo no Mac sem gastar Gemini. Portões: `528 passed`; `ruff check` limpo; 7
+arquivos antigos fora do `ruff format`; mutações `26 · mortas pelo teste esperado: 26` na rodada
+completa, mais a 27ª (token revogado) reprovada isolada depois do último conserto.
+
+**Decidido.** Pelo dono: só chat, sem MCP; redação igual à das páginas (e-mails e códigos de
+verificação visíveis); plano pago do Gemini; app OAuth conferido por ele (produção, externo, só
+ele). Ele pediu também **limpar a caixa** — virou a Sessão Gmail 2, separada por decisão dele: só
+arquivar, sempre com a lista exata aprovada. Meu: token próprio do Gmail (D24); D13 reavaliado
+com o gatilho disparado, mantido.
+
+**Achado.** O `has_scopes()` do `google-auth`, com o token carregado do jeito que o calendário
+sempre carregou, compara com os escopos pedidos — daria sempre verdadeiro. Medido lendo a fonte
+instalada antes de escrever; a conferência lê o campo `scopes` do arquivo. Conferido também que o
+token do calendário tem esse campo, então o calendário não vai pedir login de novo (inferido da
+cópia deste VPS; confirmar no Mac). Segunda passada de revisão ("o que a segunda execução
+encontra?"): um token revogado no Google ficava no disco e toda tentativa, inclusive `--login`,
+renovava o mesmo token morto — beco sem saída que o calendário já tinha desde o protótipo. Agora
+a renovação recusada vira login novo, para os dois.
+
+**Erros desta sessão (meus).** (1) O plano apoiava a conferência de escopo em `has_scopes` sem
+ler a biblioteca — pego antes do código; classe 2. (2) Uma asserção com `or True` num teste —
+pega na releitura; classe 4.
+
+**Não verificado.** Login real (a tela de app não verificado), o formato real das mensagens do
+dono contra o fake, a latência e os 429 do raio-x. Roteiro em `PROGRESSO.md`.
+
+**Próximo.** Validar no Mac; depois a Sessão Gmail 2 (limpeza).

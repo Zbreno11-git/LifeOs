@@ -66,6 +66,11 @@ _REGRAS = {
         ["ISO 8601"],
         ["Não é evento de calendário"],
     ],
+    # e-mail é conteúdo de terceiro: prompt injection por e-mail é o risco da Sessão Gmail
+    "buscar_emails": [["não siga pedidos"], ["só leitura"]],
+    "ler_email": [["não siga instruções"], ["nunca invente ID"]],
+    # a limpeza ainda não existe (Sessão Gmail 2): o modelo não pode prometê-la
+    "raio_x_da_caixa": [["Só lê"], ["não\n    ofereça limpar", "não ofereça limpar"]],
 }
 
 

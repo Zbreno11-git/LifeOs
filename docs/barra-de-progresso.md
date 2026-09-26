@@ -7,12 +7,29 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-26 (Sessão 4b validada no Mac).**
+**Última atualização: 2026-09-26 (Sessão Gmail).**
 
-`██████████░░░░░░░░░░ 4 de 10 sessões fechadas + 2 parciais (= 5 de 10)`
+`██████████░░░░░░░░░░ 4 de 11 sessões fechadas + 3 parciais (= 5,5 de 11)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3 e 4b; parciais 4 e 3b; na fila Gmail, 5, 6 e 7. Cada
+Contagem (em `sessoes.md`): fechadas 1, 2, 3 e 4b; parciais 4, 3b e Gmail; na fila Gmail 2, 5, 6
+e 7 (a Gmail 2, limpar a caixa, entrou hoje a seu pedido). Cada
 parcial vale meio bloco na barra.
+
+## 2026-09-26 — o Viking lê o seu Gmail (e só lê)
+
+**O que mudou:** no `viking chat` você pode perguntar "o que chegou hoje?", "tem e-mail do
+fulano?", "lê esse pra mim" e "quem me manda coisa que eu nunca abro?". O Viking lê pela porta
+oficial do Google, com permissão só de leitura: ele não consegue apagar, arquivar nem enviar
+nada. CPF, cartão, chaves e links de redefinir senha são apagados antes de o Gemini ler; o Gemini
+também é avisado de que o texto do e-mail é de terceiros e não manda em nada. Outras ferramentas
+ligadas ao Viking (o servidor MCP) não enxergam seus e-mails.
+
+**Como sabemos:** 528 testes passando no VPS, incluindo e-mails "maliciosos" montados de
+propósito, e 27 proteções quebradas de propósito — todas pegas pelo teste certo. De brinde: se o
+Google um dia cancelar o seu login, o Viking pede login de novo em vez de travar.
+
+**Falta:** você fazer o login do Gmail no Mac (o Google vai mostrar "app não verificado" — é
+esperado) e rodar o roteiro. A limpeza da caixa é a próxima sessão.
 
 ## 2026-09-26 — o navegador não sai, não mexe na sua conta e não gasta dinheiro sozinho
 

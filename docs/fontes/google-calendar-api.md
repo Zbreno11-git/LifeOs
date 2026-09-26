@@ -2,7 +2,9 @@
 
 - **API:** Google Calendar API v3, via `googleapiclient` (`google-api-python-client`)
 - **Auth:** OAuth 2.0 via `google-auth-oauthlib` — fluxo `InstalledAppFlow.from_client_secrets_file`
-  com servidor local para o redirect; token cacheado em disco e renovado automaticamente.
+  com servidor local para o redirect; token cacheado em disco e renovado automaticamente. Desde a
+  Sessão Gmail o fluxo mora em `lifeos/google_auth.py`, compartilhado com o Gmail (que tem token
+  próprio) — ver `docs/fontes/gmail-api.md`, "Login compartilhado".
 - **Escopo usado:** operações sobre `calendarId='primary'` — listar próximos eventos, listar por
   data/intervalo (no fuso civil configurado por `VIKING_TIMEZONE`), criar evento (com hora ou dia
   inteiro), deletar por ID (com conferência de título), reagendar por ID (idem).

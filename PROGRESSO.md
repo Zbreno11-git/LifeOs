@@ -5,75 +5,102 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, entre sessões (4b fechada)
+## ▶️ RETOMAR AQUI — 2026-09-26, Sessão Gmail commitada, falta o Mac (C8)
 
-**Estado:** Sessão 4b validada no Mac do dono (444 testes, 16/16 mutações, freio recusando na
-Chrome real — ver diário). Execuções em background: nenhuma. Travas: nenhuma.
+**Estado:** código da Sessão Gmail commitado e no GitHub (conferir com `git log -1`: "Sessão
+Gmail: ..."). Execuções em background: nenhuma. Travas: nenhuma (`.mutacao.lock` ausente).
 
-**Próximo passo exato:** Sessão Gmail (`sessoes.md`, bloco ▶️) — o primeiro passo é do dono:
-conferir no Google Cloud Console se o app OAuth está em "Testing" ou "In production".
+**Próximo passo exato:** o dono roda o roteiro abaixo no Mac e cola a saída. Depois: Sessão
+Gmail 2 (limpeza), que parte do raio-x real.
+
+**Roteiro para o Mac (C8):**
+
+```bash
+cd ~/LifeOs
+git pull
+source .venv/bin/activate
+which python
+python -m pytest -q
+viking gmail --login
+ls -l secrets/
+viking gmail
+viking gmail --raio-x
+viking chat
+```
+
+Esperado:
+- testes verdes, nenhum pulado;
+- `--login` abre o navegador no Google: aparece "O Google não verificou este app" → **Avançado**
+  → **Acessar (não seguro)** → deixar marcada a permissão de **ler e-mails** → no terminal,
+  `✅ Login do Gmail ok (só leitura): <seu e-mail>, N mensagens`;
+- `ls -l secrets/` mostra `google_token_gmail.json` com `-rw-------` (só nomes e permissões, sem
+  conteúdo);
+- no `viking chat`: "o que eu tenho amanhã?" **sem** pedir login do calendário de novo; depois
+  "o que chegou de e-mail hoje?" e "quem mais me manda e-mail que eu não abro?".
+
+**Privacidade ao colar:** a saída de `viking gmail` e do raio-x tem remetentes e assuntos reais.
+Se preferir, cole só as linhas de resumo (as que começam com ✅, ⚠️ ou "Raio-x") e diga se o resto
+pareceu certo.
 
 **Não esquecer:**
-- O repo é **público**. Citar a Altiva está liberado pelo dono (2026-09-26).
-- Baseline do `ruff format --check`: 7 arquivos pré-existentes (2026-09-26). Formatar só os
-  arquivos editados (`docs/erros.md`, classe 8).
+- O repo é **público**: o `project_id` do OAuth não entra em doc nenhum.
+- Baseline do `ruff format --check`: 7 arquivos pré-existentes. Formatar **só os arquivos
+  editados** (`docs/erros.md`, classe 8).
 
-> O plano da 4b fica abaixo como registro até a próxima sessão abrir o dela.
+## Plano — Sessão Gmail: leitura via API
 
-## Plano — Sessão 4b: freio de ação que age sobre a conta + mutações curadas
+**Entrega (verificável):** no `viking chat`, o dono pergunta "o que chegou hoje?", "busca e-mail
+do X", "lê esse" e "quem mais me manda coisa que eu não abro?", e o Viking responde lendo o Gmail
+pela API, com o conteúdo redigido e delimitado como não confiável. Nada muda na caixa.
 
-**Entrega (verificável):** um clique do Jev em "Sair", em mexer na conta ou em gastar dinheiro é
-recusado **antes** de acontecer, com código `acao_sensivel`, e `scripts/mutacoes.py` prova que os
-testes das regras de apagar/acessar/egress caem quando a regra some.
-
-**Não faz:** liberar alguma categoria (decisão do dono: só pela confirmação em duas etapas da
-Sessão 5, já escrita lá); "publicar em seu nome" (recusado pelo dono: alarme falso demais).
+**Não faz:** limpar/arquivar (→ Sessão Gmail 2, já escrita no `sessoes.md`); expor e-mail pelo
+MCP (decisão do dono); anexos; enviar e-mail.
 
 **Respostas do dono (2026-09-26):**
 | Pergunta | Resposta | Consequência |
 |---|---|---|
-| O que o freio recusa | Sair; mexer na conta; dinheiro | 3 categorias; "Enviar/Publicar" fica livre |
-| Reação | Para e avisa | `RuntimeError` no envelope → erro classificado, aba aberta, rótulo na mensagem |
-| Liberação | Não, só Sessão 5 | nenhuma env nova; até lá o Viking não compra sozinho |
+| Por onde lê | só `viking chat` | tools só em `FERRAMENTAS`; teste prova que o MCP não as expõe |
+| Redação | regra das páginas | `_redacao.redigir` + URLs do corpo por `redigir_url`; e-mails e códigos 2FA visíveis |
+| Ferramentas | buscar, ler, não lidos de hoje + limpar | limpar vira a Sessão Gmail 2; aqui, raio-x só leitura |
+| Limpeza | sessão própria; só arquivar; lista aprovada | escrito no `sessoes.md` |
+| Plano do Gemini | pago | conteúdo não é usado para treino (termos do Google, não verificado por mim) |
+| App OAuth | produção, externo, só ele | login não vence em 7 dias; aviso "app não verificado" no login é esperado |
 
-**Medido na abertura (2026-09-26, lendo o clone `afbee69`):**
-- `choose()` devolve `{"choice": "<id>"}`; `act()` executa `next(a for a in page["actions"] if
-  a["id"] == selected)` → o envelope vê a ação antes do clique.
-- `act()` não aperta Enter após digitar; no `select` dispara `input`/`change` (corrigido na
-  revisão: o plano dizia que só `click` enviava).
-- `page["guards"][str(node)]` = lista de 14 itens (`snapshot.js`, `cache.guard`): [12] = `href`,
-  [13] = texto do contêiner (form/dialog/li...). Link só com ícone chega com rótulo `"link"`.
+**Medido na abertura (2026-09-26):**
+- `calendar/oauth.py`: `SCOPES` só de calendário e **nenhuma** conferência de escopo no token
+  salvo — um token sem a permissão pedida passaria como válido.
+- `googleapiclient` instalado traz `gmail.v1.json`: sem dependência nova.
+- `tests/conftest.py` só trava o Google **Calendar** de verdade.
 
 **Decisões técnicas minhas:**
 | Decisão | Por quê | O que me faria mudar |
 |---|---|---|
-| Freio em `choose_protegido`, depois do `choose` | único caminho até o clique | o Jev passar a executar sem passar por `choose` (teste de contrato pega) |
-| Módulo irmão `_acoes_sensiveis.py`, só stdlib | roda dentro do ambiente do Jev, como `_redacao` | — |
-| `click` e `select` são freados; `fill` não | o `select` dispara `change`, que o site pode usar para enviar; o `fill` não aperta Enter | o Jev passar a submeter no `fill` |
-| Três sinais: rótulo, `href` (sair) e texto do contêiner para botões genéricos ("Excluir", "Confirmar") | "Tem certeza? [Excluir]" passaria só pelo rótulo | alarme falso medido alto |
-| Freio ligado desde já, sem fase de observação | falso positivo custa uma tarefa parada; falso negativo, a conta | — |
-| Layout de `guards` diferente do esperado → `protecao_indisponivel` | fecha em falha, como o envelope | — |
+| Token do Gmail em arquivo próprio (`google_token_gmail.json`) | falha ou revogação do Gmail não derruba o calendário (raio da falha) | o dono preferir um login só para os dois |
+| `lifeos/google_auth.py` compartilhado pelo calendário e pelo Gmail, conferindo `has_scopes` e gravando o token com permissão 600 | segundo consumidor do mesmo fluxo; um token sem o escopo vira login novo, não erro 403 mudo | — |
+| Pacote `lifeos/gmail/` (não `email/`, que colide com a stdlib) | — | — |
+| `lifeos/nao_confiavel.py` com `neutralizar`/`bloco`, usado pelo navegador e pelo Gmail | a regra do delimitador passaria a ter duas cópias | — |
+| `_redacao` continua em `browser/` (D13: o gatilho, terceiro consumidor, disparou; reavaliado) | ele precisa ser vizinho do subprocesso do Jev, que o importa pelo caminho | uma forma de o subprocesso importá-lo sem `lifeos` e sem mexer em `sys.path` |
+| Raio-x lê metadados em lotes (`new_batch_http_request`), teto de 200 e-mails, 1 nova tentativa para quem falhar | 200 chamadas uma a uma seriam lentas; teto e falha aparecem no texto como "piso"/"incompleto" | latência ou 429 medidos no Mac |
+| `viking gmail --login/--buscar/--raio-x` | validar no Mac sem gastar Gemini, como o `viking browser` | — |
 
 **Checkpoints:**
 | C | Fecha quando | Estado |
 |---|---|---|
-| C1 | `_acoes_sensiveis.py` + `tests/test_acoes_sensiveis.py` verdes (`pytest tests/test_acoes_sensiveis.py`) — 93 passed | ✅ |
-| C2 | freio no envelope + `classificar` + testes em `test_jev_subprocess_main.py`, incluindo contrato com o Jev real (`agent.py` e `snapshot.js`) — 29 passed; contrato cai em 3 quebras | ✅ |
-| C3 | mensagem `acao_sensivel` em `mensagens.py` + teste — 58 passed + frase na tool do Gemini | ✅ |
-| C4 | `scripts/mutacoes.py` roda todas as mutações e cada uma derruba o teste esperado — 16/16 mortas (1 viva achou teste faltando) | ✅ |
-| C5 | suíte inteira, `ruff check`, `ruff format --check` (baseline 7), varredura de controles — 444 passed, ruff limpo, format 7, 0 controles | ✅ |
-| C6 | docs (jev-typesafe, AGENTS, decisoes, erros, sessoes, diário, barra) + revisão em duas passadas + commit + push | ✅ |
-| C7 | validado no Mac — saída colada pelo dono, ver diário | ✅ |
+| C1 | `google_auth.py` + calendário delegando + `tests/test_google_auth.py` verdes — 10 passed, suíte 454 | ✅ |
+| C2 | `nao_confiavel.py` + `mensagens.py` usando; suíte do navegador igual — 454, mutação do delimitador morta no endereço novo | ✅ |
+| C3 | `gmail/service.py` (buscar, ler, não lidos de hoje, raio-x) + `tests/test_gmail_service.py` — 33 passed | ✅ |
+| C4 | `gmail/tools.py` + registro no chat + testes de segurança (injeção, redação, controles, MCP sem Gmail) — 20 passed | ✅ |
+| C5 | `viking gmail` na CLI + trava do `conftest` para o Gmail — 5 testes de CLI; trava ampliada; suíte 527 | ✅ |
+| C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles — 26/26 + a 27ª isolada; suíte 528; ruff limpo; baseline 7 | ✅ |
+| C7 | docs + revisão em duas passadas + commit + push | ✅ |
+| C8 | Mac: login (aviso de não verificado), `--raio-x`, pergunta no chat | ⬜ |
 
 **🐞 Previsto → Depurar:**
-- Os testes antigos do envelope quebram porque o `choose` falso devolve `None` → o falso passa a
-  devolver `{"choice": "wait"}` (classe 4 de `docs/erros.md`: fixture sem o que o código novo exige).
-- Rótulo com caractere invisível escapando do freio (`Sa` + zero-width + `ir`) → normalizar tirando
-  a categoria Unicode `Cf` antes de casar.
-- Mutação inerte por âncora que casa em comentário → o script compara os tokens sem comentário.
-- Um escape Unicode escrito em parâmetro de ferramenta vira caractere literal (classe 5,
-  3 ocorrências) → nos testes, gerar por `chr()`.
-
-**Não esquecer:**
-- O repo é **público**. Citar a Altiva está liberado pelo dono (2026-09-26).
-- Baseline do `ruff format --check`: 7 arquivos pré-existentes (2026-09-26).
+- Teste do calendário quebrando depois de mover o OAuth → a trava do `conftest` mira
+  `lifeos.calendar.oauth.get_calendar_service`; manter esse nome.
+- Corpo do e-mail ilegível: `body.data` é base64url **sem padding** e nos bytes do charset da
+  parte → completar `=` e decodificar pelo `charset` do `Content-Type`, com `replace`.
+- E-mail só em HTML → texto por `html.parser` da stdlib, sem `<script>`/`<style>`.
+- `snippet` vem com entidade HTML (`&#39;`) → `html.unescape`.
+- 429 no lote do raio-x → contar e dizer "incompleto", nunca devolver menos sem avisar.
+- Escape Unicode em parâmetro de ferramenta vira caractere literal (classe 5) → `chr()`.

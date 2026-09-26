@@ -17,9 +17,9 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 4 | caminho real `~/LifeOs`, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 5 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 6 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 3 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar |
-| 4 | Teste que não separava o certo do errado | 4 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso |
+| 4 | Teste que não separava o certo do errado | 5 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso |
 | 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 2 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 3 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -70,6 +70,13 @@ de ler o `browser.py` do Jev, que dispara `change` ao escolher a opção — e s
 nesse evento. Pego na segunda passada de revisão, com a pergunta "por onde mais se chega lá?"
 (skill `seguranca` §2). O que tem de novo: a afirmação contradizia um arquivo lido minutos antes.
 
+**2026-09-26 — "`has_scopes` confere o token" (Sessão Gmail).** O plano dizia que o login
+compartilhado conferiria o escopo com `has_scopes()`. Antes de escrever, li a fonte do
+`google-auth` instalado: carregado com `from_authorized_user_file(caminho, scopes)`, ele compara
+com os escopos **pedidos** e daria sempre verdadeiro. Pego antes do código, lendo a biblioteca; a
+conferência lê o campo `scopes` do arquivo. O que tem de novo: era um nome de método que parecia
+dizer o que faz.
+
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
 
@@ -112,6 +119,10 @@ garante: remover a primeira trava deixava tudo verde. O único caso em que só e
 cujo título no Google é só espaço, que normaliza igual a `""` — não tinha teste. Pego pela
 primeira rodada de `scripts/mutacoes.py`; teste novo
 `test_titulo_vazio_nao_apaga_evento_de_titulo_em_branco`.
+
+**2026-09-26 — asserção que sempre passa (Sessão Gmail).** Escrevi
+`assert not busca.mais is False or True` num teste do Gmail — o `or True` torna a linha
+verdadeira em qualquer caso. Pego na releitura antes de rodar a suíte; removida.
 
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 

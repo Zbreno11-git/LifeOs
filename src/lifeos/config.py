@@ -146,6 +146,8 @@ GOOGLE_CREDENTIALS_PATH = _path_env(
     "VIKING_GOOGLE_CREDENTIALS_PATH", SECRETS_DIR / "google_credentials.json"
 )
 GOOGLE_TOKEN_PATH = _path_env("VIKING_GOOGLE_TOKEN_PATH", SECRETS_DIR / "google_token.json")
+# Token próprio do Gmail: um login do Gmail que falhe ou seja revogado não derruba o calendário.
+GMAIL_TOKEN_PATH = _path_env("VIKING_GMAIL_TOKEN_PATH", SECRETS_DIR / "google_token_gmail.json")
 REMINDERS_DB_PATH = _path_env("VIKING_DB_PATH", DATA_DIR / "viking.db")
 
 # Automação de navegador: o Viking chama o Jev por subprocesso, no ambiente do próprio Jev.

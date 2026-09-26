@@ -7,6 +7,7 @@ usuário mora aqui.
 from __future__ import annotations
 
 from lifeos.browser.jev_runner import BrowserResult
+from lifeos.nao_confiavel import bloco, neutralizar
 
 # Códigos onde o detalhe técnico bruto ajuda o usuário a agir; nos outros ele só polui.
 _COM_DETALHE = {
@@ -119,12 +120,6 @@ def _segundos(ms: int | None) -> str:
     return f"{(ms or 0) / 1000:.1f}".replace(".", ",")
 
 
-def _neutralizar(texto: str) -> str:
-    """A página não pode fechar o delimitador sozinha: um `»` no texto dela encerraria o bloco
-    de não confiável e o que viesse depois pareceria instrução do sistema."""
-    return texto.replace("«", "‹").replace("»", "›")
-
-
 def _pagina_final(result: BrowserResult) -> str:
     if not result.url:
         return ""
@@ -149,10 +144,7 @@ def _bloco_da_pagina(result: BrowserResult, *, acoes: bool = True, trecho: bool 
         linhas.append(_acoes(result))
     if trecho and result.page_text:
         linhas.append(f"Trecho: {result.page_text}")
-    conteudo = "\n".join(linha for linha in linhas if linha)
-    if not conteudo:
-        return ""
-    return f"{_DADOS_DA_PAGINA}\n«{_neutralizar(conteudo)}»"
+    return bloco(_DADOS_DA_PAGINA, "\n".join(linha for linha in linhas if linha))
 
 
 def _botao_recusado(result: BrowserResult) -> str:
@@ -161,7 +153,7 @@ def _botao_recusado(result: BrowserResult) -> str:
     categoria, _, rotulo = resto.partition(": ")
     if not rotulo:
         return ""
-    return f"Botão recusado ({categoria}), texto da página: «{_neutralizar(rotulo)}»."
+    return f"Botão recusado ({categoria}), texto da página: «{neutralizar(rotulo)}»."
 
 
 def formatar(result: BrowserResult) -> str:
@@ -189,7 +181,7 @@ def formatar(result: BrowserResult) -> str:
         # Código desconhecido nunca pode engolir o detalhe: é a única pista que sobra.
         # O detalhe pode ser corpo de erro do provedor — texto de terceiro, delimitado também.
         if (codigo in _COM_DETALHE or codigo not in MENSAGENS) and result.error_detail:
-            texto = f"{texto} Detalhe técnico: «{_neutralizar(result.error_detail)}»"
+            texto = f"{texto} Detalhe técnico: «{neutralizar(result.error_detail)}»"
         partes.append(f"❌ {texto}")
         if codigo == "acao_sensivel":
             partes += [_botao_recusado(result), _aba(result)]

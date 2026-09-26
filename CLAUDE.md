@@ -14,7 +14,7 @@ significa que há uma classe inteira de coisas que **não dá para validar aqui*
 - qualquer chamada ao Gemini ou ao OpenRouter (as chaves vivem no Mac do dono);
 - qualquer coisa que toque um Chrome de verdade (o Browser Harness exige um clique humano em "Allow
   remote debugging" na primeira vez, e aqui não há display);
-- o fluxo OAuth do Google Calendar.
+- o fluxo OAuth do Google (Calendar e Gmail).
 
 O ciclo real é: escrever e testar aqui o que é testável (lógica pura, parsing, timeout, mensagens) →
 commitar e dar push → o dono faz `git pull` no Mac e roda. **Por isso "terminei" só é verdade depois

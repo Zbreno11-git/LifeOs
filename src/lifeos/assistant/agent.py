@@ -25,6 +25,12 @@ from lifeos.calendar import (
     reagendar_evento_por_id,
 )
 from lifeos.config import GEMINI_API_KEY
+from lifeos.gmail.tools import (
+    buscar_emails,
+    emails_nao_lidos_de_hoje,
+    ler_email,
+    raio_x_da_caixa,
+)
 from lifeos.reminders import service as reminders_service
 from lifeos.reminders import store
 
@@ -131,6 +137,10 @@ FERRAMENTAS = [
     criar_lembrete,
     listar_lembretes,
     concluir_lembrete,
+    buscar_emails,
+    emails_nao_lidos_de_hoje,
+    ler_email,
+    raio_x_da_caixa,
 ]
 
 

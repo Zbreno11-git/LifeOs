@@ -38,6 +38,16 @@ def test_teste_esperado_existe_no_arquivo():
 def test_lista_cobre_as_regras_de_apagar_acessar_e_egress():
     """Piso derivado da própria lista: encolher sem querer reprova."""
     nomes = " ".join(m.nome for m in _script().MUTACOES)
-    for tema in ("calendário", "mcp", "bloqueio", "envelope", "freio", "delimitador", "redação"):
+    temas = (
+        "calendário",
+        "mcp",
+        "bloqueio",
+        "envelope",
+        "freio",
+        "delimitador",
+        "redação",
+        "gmail",
+    )
+    for tema in temas:
         assert tema in nomes, tema
-    assert len(_script().MUTACOES) >= 15
+    assert len(_script().MUTACOES) >= 26

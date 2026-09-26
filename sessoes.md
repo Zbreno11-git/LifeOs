@@ -16,13 +16,13 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** Gmail — leitura via API.
-- **Primeiro passo:** o dono confere, no Google Cloud Console do projeto OAuth do calendário, se o
-  app está em "Testing" ou "In production" (muda validade do login e exigência para escopos do
-  Gmail). Não verificado ainda.
+- **Antes dela:** validar a Sessão Gmail (leitura) no Mac — roteiro em `PROGRESSO.md`.
+- **Sessão:** Gmail 2 — limpar a caixa (só arquivar, lista aprovada).
+- **Primeiro passo:** o da seção da Sessão Gmail 2 abaixo (escopo `gmail.modify`).
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/google-calendar-api.md`,
   skills `integracoes` e `seguranca` (conteúdo de e-mail é dado de terceiro).
-- **Depende do dono:** sim — o status do app OAuth, e quais tools de e-mail (listar, buscar, ler).
+- **Depende do dono:** sim — a saída do roteiro do Mac, e o raio-x real, que é de onde sai a
+  primeira lista de limpeza.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão.
@@ -168,15 +168,39 @@ Validado no Mac do dono em 2026-09-26: 444 testes, 16/16 mutações, "Sair" e o 
 diálogo de excluir conta recusados na Chrome real, "Buscar" concluído. Não testado num site real
 logado (as páginas de teste foram `data:` de propósito).
 
-## Sessão Gmail — leitura via API (nova, pedida pelo dono em 2026-09-26)
+## Sessão Gmail — leitura via API (feita em 2026-09-26)
 
-- Conectar o Gmail pela API oficial, reaproveitando o OAuth do calendário com um escopo de leitura
-  (`gmail.readonly`) — o dono refaz o login uma vez no Mac. Dado estruturado, permissão mínima, e
-  nada passa pelo OpenRouter (diferente de abrir o Gmail no navegador, que segue bloqueado).
-- Conferir antes de codar: status do app OAuth no Google Cloud ("Testing" pode limitar a validade
-  do login e exigir passo extra para escopos do Gmail) — não verificado ainda.
-- Tools: listar/buscar/ler e-mails; conteúdo de e-mail é dado não confiável (mesmo tratamento de
-  página: delimitado, sem obedecer instruções).
+Decisões do dono (2026-09-26): só no `viking chat`, não pelo MCP (sem autenticação ainda);
+redação igual à das páginas (CPF/CNPJ/cartão/chaves/links com token somem; e-mails e códigos de
+verificação ficam); ferramentas buscar, ler, não lidos de hoje e um raio-x da caixa que **só lê**;
+plano do Gemini é o pago. App OAuth conferido pelo dono: **em produção, externo, só ele de
+usuário** — o login não vence em 7 dias; o Gmail é escopo restrito, então o login mostra "app não
+verificado" (esperado, não bloqueia). Entregue:
+
+- `lifeos/google_auth.py`: login compartilhado com o calendário, token próprio do Gmail (600),
+  escopo conferido no arquivo do token e permissão desmarcada falhando alto.
+- `lifeos/gmail/`: buscar, ler, não lidos de hoje e raio-x (lotes, teto de 200 = piso, falhas
+  contadas); 4 tools no chat, nenhuma no MCP; `viking gmail --login/--buscar/--ler/--raio-x`.
+- `lifeos/nao_confiavel.py`: o delimitador virou cópia única (navegador e Gmail).
+- 27 mutações curadas (11 novas: Gmail e login), todas mortas.
+- Login revogado no Google agora vira login novo — antes, calendário incluso, o token morto
+  ficava no disco e só apagando o arquivo à mão (achado na segunda passada de revisão).
+
+Não validado ao vivo: login real, formato real das mensagens, latência/429 do raio-x.
+
+## Sessão Gmail 2 — limpar a caixa (próxima depois da leitura)
+
+Pedida pelo dono em 2026-09-26 ("recebo anúncio e jornal que não abro nunca"); separada da
+leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
+
+- **Primeiro passo:** trocar o escopo do login do Gmail de `gmail.readonly` para `gmail.modify`
+  (o dono refaz o login uma vez no Mac).
+- **Ação:** só **arquivar** (tirar da caixa de entrada; continua em "Todos os e-mails"). Lixeira,
+  marcar como lido e descadastrar ficaram de fora por decisão do dono.
+- **Aprovação:** o Viking mostra a lista exata (ex.: "47 e-mails de 6 remetentes", a partir do
+  raio-x) e só arquiva depois do ok do dono, **naquela lista**; e-mail que chegar depois não entra
+  sem nova aprovação. É o primeiro uso real da confirmação em duas etapas (Sessão 5) — desenhar
+  para ser reaproveitado lá.
 
 ## Sessão 5 — confirmação mecânica
 

@@ -50,6 +50,29 @@ def _browser(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     return {"done": 0, "blocked": 1}.get(resultado.status, 2)
 
 
+def _gmail(args: argparse.Namespace) -> int:
+    """Gmail sem passar pelo Gemini: o texto impresso é o mesmo que o chat entrega ao modelo."""
+    from lifeos.gmail import service, tools
+
+    if args.login:
+        try:
+            endereco, total = service.perfil()
+        except service.ErroGmail as exc:
+            print(f"❌ {tools.mensagem_de_erro(exc)}", file=sys.stderr)
+            return 2
+        print(f"✅ Login do Gmail ok (só leitura): {endereco}, {total} mensagens na conta.")
+        return 0
+    if args.buscar is not None:
+        print(tools.buscar_emails(args.buscar, args.max))
+    elif args.ler:
+        print(tools.ler_email(args.ler))
+    elif args.raio_x is not None:
+        print(tools.raio_x_da_caixa(args.raio_x))
+    else:
+        print(tools.emails_nao_lidos_de_hoje())
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="viking")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -87,6 +110,18 @@ def main() -> None:
         "--doctor", action="store_true", help="Diagnostica o Browser Harness e sai"
     )
 
+    gmail = subparsers.add_parser(
+        "gmail", help="Lê o Gmail pela API, sem o Gemini (padrão: não lidos de hoje)"
+    )
+    acao = gmail.add_mutually_exclusive_group()
+    acao.add_argument("--login", action="store_true", help="Faz/confere o login do Gmail e sai")
+    acao.add_argument("--buscar", metavar="CONSULTA", help='Busca do Gmail, ex.: "is:unread"')
+    acao.add_argument("--ler", metavar="ID", help="Lê um e-mail pelo ID de uma busca")
+    acao.add_argument(
+        "--raio-x", type=int, nargs="?", const=30, metavar="DIAS", help="Raio-x da caixa"
+    )
+    gmail.add_argument("--max", type=int, default=10, help="Máximo de resultados da busca")
+
     args = parser.parse_args()
 
     if args.command == "chat":
@@ -99,6 +134,8 @@ def main() -> None:
         run_server()
     elif args.command == "browser":
         sys.exit(_browser(args, navegador))
+    elif args.command == "gmail":
+        sys.exit(_gmail(args))
 
 
 if __name__ == "__main__":
