@@ -5,127 +5,119 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, entre sessões — antes de um compact
+## ▶️ RETOMAR AQUI — 2026-09-26, Sessão Gmail 2 aberta (plano escrito, código não começado)
 
-**Estado do repositório:** árvore limpa · HEAD `6cfa269` antes deste checkpoint (o commit de
-checkpoint vem logo depois; conferir com `git log -1`) · igual ao remoto · travas: nenhuma
-(`.mutacao.lock` ausente) · execuções em background: nenhuma.
+**Estado do repositório:** HEAD `0114556` (medição do Pluggy) + o commit deste plano · travas:
+nenhuma · execuções em background: nenhuma.
 
-**Estado do mundo (Mac do dono, medido pela saída colada em 2026-09-26):** código até `9841595`
-puxado e validado (528 testes; Gmail real lido; chat ok). Os commits `520a404` e `6cfa269`
-(enchimento das prévias, frase do raio-x) **ainda não foram puxados no Mac** — entram no próximo
-`git pull`, sem validação ao vivo pendente além de rodar a suíte.
+**Próximo passo exato:** com o teto respondido pelo dono, fechar C0 (resposta no plano) e
+começar a Etapa 1.1 (escopo `gmail.modify` em `src/lifeos/gmail/oauth.py`); esperado
+`python -m pytest -q` → 530 passed antes de qualquer teste novo.
 
-**Objetivo em curso:** nenhum código em andamento. Sessão Gmail 2 (limpar a caixa) **aberta só
-com as perguntas**: o dono respondeu e pediu para **não começar ainda** ("mas calma não começa
-ainda").
+**Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
+`python -m pytest -q` → `530 passed`.
 
-**Próximo passo exato:** esperar o dono dizer para começar a Gmail 2. Quando disser: escrever o
-plano no formato de `.claude/skills/software-build/referencia/plano-de-sessao.md` a partir de
-`sessoes.md` → "Sessão Gmail 2" (respostas + desenho proposto), perguntar o teto de e-mails por
-aprovação, e só então codar.
+**Não pode ser esquecido:** repo público (nada de remetente real nem `project_id`); formatar só os
+arquivos editados (baseline 7); roteiro do Mac começa com `git pull && git log --oneline -1`;
+escapes Unicode por `chr()`; o código de aprovação **nunca** entra no texto que volta ao Gemini
+nem passa por ele (a linha "confirma NNNN" é interceptada antes do `send_message`).
 
-**Reler, nesta ordem:**
-1. `CLAUDE.md` e `AGENTS.md` — regras, fronteiras, armadilhas.
-2. Este bloco.
-3. `sessoes.md`, seção "Sessão Gmail 2" — as respostas do dono e o desenho proposto.
-4. `docs/decisoes.md` (D21–D27) e `docs/erros.md` (índice).
-5. Skills `software-build` (abrir/planejar), `seguranca` (ação irreversível, injeção) e
-   `testes-que-provam`.
-6. `src/lifeos/gmail/service.py`, `gmail/tools.py`, `google_auth.py` — onde a limpeza encaixa.
+## Plano — Sessão Gmail 2: limpar a caixa (só arquivar, lista aprovada)
 
-**Decisões desta conversa (e onde ficaram escritas):**
-- Freio de cliques: sair/conta/dinheiro, para e avisa, sem liberação até a Sessão 5 — dono — D18,
-  `sessoes.md` (4b e 5).
-- Gmail só no chat, redação das páginas, plano pago do Gemini — dono — D21, D22.
-- Limpeza: sessão própria, só arquivar, lista aprovada — dono — D23.
-- Limpeza por remetente, todos da caixa, proteções estrela/importante/anexo — dono — D25.
-- Aprovação digitando código fora do Gemini; desfazer por 7 dias — dono — D26, D27.
+### O que entrega (verificável)
+No `viking chat`, o dono pede "arquiva tudo do remetente X e Y"; o Viking imprime **direto no
+terminal** a lista exata (quantos de cada remetente, quantos protegidos e por quê) e um código;
+o dono digita `confirma NNNN` e só então os e-mails saem da caixa de entrada. `desfaz NNNN`
+devolve exatamente os mesmos por 7 dias. O Gemini nunca vê o código e não tem ferramenta que
+arquive.
 
-**Não pode ser esquecido (só existe aqui ou é fácil de perder):**
-- O repo é **público**: nem o `project_id` do OAuth nem nome de remetente/assunto da caixa do
-  dono entram em doc ou commit.
-- O app OAuth aparece no Google como **"n8n"** — o alerta de segurança de login é o nosso.
-- Baseline do `ruff format --check`: 7 arquivos pré-existentes (2026-09-26). Formatar **só os
-  arquivos editados** (`docs/erros.md`, classe 8).
-- Roteiro para o Mac começa com `git pull && git log --oneline -1` e só segue com o commit
-  certo (classe 1).
-- Escape Unicode em parâmetro de ferramenta vira caractere literal (classe 5, 3 ocorrências):
-  gerar por script com `chr()`.
-- Números de 2026-09-26 no VPS: `530 passed`; mutações `28` (26 na última rodada completa + 2
-  reprovadas isoladas depois); raio-x real do dono: 200 e-mails (piso) de 91 remetentes em 30 dias.
+### O que NÃO faz
+- Lixeira, apagar, marcar como lido, descadastrar → fora por decisão do dono (D23).
+- Regra automática / filtro do Gmail → fora (D25: por remetente).
+- Expor pelo MCP → fora (D21).
+- Liberar o freio de cliques e o token de exclusão do calendário → Sessão 5 (já escrito lá); esta
+  sessão entrega o mecanismo de confirmação que a Sessão 5 reaproveita.
 
-**Depende do dono:**
-- O "pode começar" da Gmail 2.
-- No plano: o teto de e-mails por aprovação (o que muda: uma aprovação grande limpa tudo de uma
-  vez; uma pequena obriga várias rodadas, mas cada lista é lida inteira).
-- Opcional: renomear o app OAuth "n8n" para "Viking" na tela de marca do Google Cloud.
-
-**Riscos do próximo passo:** a Gmail 2 é a primeira escrita na conta do dono pelo Viking. É
-reversível (arquivar e desfazer), mas exige o login novo com `gmail.modify` e cuidado com
-injeção: o código de aprovação nunca pode passar pelo Gemini.
-
-**Antes de confiar neste bloco, confira:**
-- `git status --short` vazio e `git log --oneline -1` = o commit de checkpoint deste bloco;
-- `ls .mutacao.lock` → não existe;
-- `python -m pytest -q` → `530 passed`.
-
-> O plano da Sessão Gmail (leitura) fica abaixo como registro até a Gmail 2 abrir o dela.
-
-## Plano — Sessão Gmail: leitura via API
-
-**Entrega (verificável):** no `viking chat`, o dono pergunta "o que chegou hoje?", "busca e-mail
-do X", "lê esse" e "quem mais me manda coisa que eu não abro?", e o Viking responde lendo o Gmail
-pela API, com o conteúdo redigido e delimitado como não confiável. Nada muda na caixa.
-
-**Não faz:** limpar/arquivar (→ Sessão Gmail 2, já escrita no `sessoes.md`); expor e-mail pelo
-MCP (decisão do dono); anexos; enviar e-mail.
-
-**Respostas do dono (2026-09-26):**
+### Respostas do dono
 | Pergunta | Resposta | Consequência |
 |---|---|---|
-| Por onde lê | só `viking chat` | tools só em `FERRAMENTAS`; teste prova que o MCP não as expõe |
-| Redação | regra das páginas | `_redacao.redigir` + URLs do corpo por `redigir_url`; e-mails e códigos 2FA visíveis |
-| Ferramentas | buscar, ler, não lidos de hoje + limpar | limpar vira a Sessão Gmail 2; aqui, raio-x só leitura |
-| Limpeza | sessão própria; só arquivar; lista aprovada | escrito no `sessoes.md` |
-| Plano do Gemini | pago | conteúdo não é usado para treino (termos do Google, não verificado por mim) |
-| App OAuth | produção, externo, só ele | login não vence em 7 dias; aviso "app não verificado" no login é esperado |
+| Como escolher | por remetente, a partir do raio-x | tool recebe endereços exatos, não consulta livre |
+| O que sai | todos da caixa de entrada, lidos ou não | seleção `from:X in:inbox`, sem filtro de data |
+| O que nunca sai | estrela, importante, anexo | filtrado na consulta **e** conferido de novo no cliente |
+| Como aprovar | digitando código mostrado no terminal, fora do Gemini | interceptação da linha no laço do chat; nenhuma tool de confirmar |
+| Desfazer | sim, por 7 dias | registro local dos IDs arquivados |
+| Teto por aprovação | **pergunta aberta (C0)** | tamanho da proposta e do lote |
 
-**Medido na abertura (2026-09-26):**
-- `calendar/oauth.py`: `SCOPES` só de calendário e **nenhuma** conferência de escopo no token
-  salvo — um token sem a permissão pedida passaria como válido.
-- `googleapiclient` instalado traz `gmail.v1.json`: sem dependência nova.
-- `tests/conftest.py` só trava o Google **Calendar** de verdade.
-
-**Decisões técnicas minhas:**
+### Decisões técnicas minhas
 | Decisão | Por quê | O que me faria mudar |
 |---|---|---|
-| Token do Gmail em arquivo próprio (`google_token_gmail.json`) | falha ou revogação do Gmail não derruba o calendário (raio da falha) | o dono preferir um login só para os dois |
-| `lifeos/google_auth.py` compartilhado pelo calendário e pelo Gmail, conferindo `has_scopes` e gravando o token com permissão 600 | segundo consumidor do mesmo fluxo; um token sem o escopo vira login novo, não erro 403 mudo | — |
-| Pacote `lifeos/gmail/` (não `email/`, que colide com a stdlib) | — | — |
-| `lifeos/nao_confiavel.py` com `neutralizar`/`bloco`, usado pelo navegador e pelo Gmail | a regra do delimitador passaria a ter duas cópias | — |
-| `_redacao` continua em `browser/` (D13: o gatilho, terceiro consumidor, disparou; reavaliado) | ele precisa ser vizinho do subprocesso do Jev, que o importa pelo caminho | uma forma de o subprocesso importá-lo sem `lifeos` e sem mexer em `sys.path` |
-| Raio-x lê metadados em lotes (`new_batch_http_request`), teto de 200 e-mails, 1 nova tentativa para quem falhar | 200 chamadas uma a uma seriam lentas; teto e falha aparecem no texto como "piso"/"incompleto" | latência ou 429 medidos no Mac |
-| `viking gmail --login/--buscar/--raio-x` | validar no Mac sem gastar Gemini, como o `viking browser` | — |
+| Escopo `gmail.modify` no lugar de `readonly`, mesmo token | modify cobre leitura; a conferência de escopo de `google_auth` já força o login novo | — |
+| Nunca `https://mail.google.com/` (acesso total, apaga de vez) | o Viking não precisa apagar | — |
+| `lifeos/confirmacao.py` genérico (SQLite em `viking.db`, tabela `confirmacoes`): código de 4 dígitos (`secrets`), ligado à ação + dados, expira em 10 min, consumido uma vez; proposta nova invalida as abertas | é o mecanismo que a Sessão 5 reaproveita; uma proposta nova no meio do turno não deixa um código velho valer para outra lista | o dono querer várias propostas abertas |
+| A tool `preparar_limpeza` imprime a lista e o código **no terminal** e devolve ao Gemini só a contagem e "o usuário confirma no terminal" | e-mail com injeção pode fazer o Gemini propor, nunca aprovar | — |
+| `confirma NNNN` / `desfaz NNNN` interceptados no laço do chat **antes** do Gemini, executados localmente; o resultado vai ao Gemini como nota no próximo turno, sem o código | não existe caminho do Gemini até a escrita | — |
+| Endereço validado por regex estrita antes de montar a consulta; e o remetente de cada e-mail conferido **igual** ao endereço no cliente | a busca `from:` do Gmail casa por pedaço; `a@b.com OR in:anywhere` ampliaria a seleção | — |
+| Proteções conferidas duas vezes: `-is:starred -is:important -has:attachment` na consulta + rótulos `STARRED`/`IMPORTANT` e a lista de `has:attachment` no cliente | uma camada falhar não arquiva o protegido | — |
+| Na confirmação, refazer a seleção e **intersectar** com os IDs aprovados | ganhou estrela depois → fica; chegou depois → não entra | — |
+| `users.messages.batchModify` com **só** `removeLabelIds: ["INBOX"]`, em lotes de ≤ 1000; desfazer = `addLabelIds: ["INBOX"]` nos IDs registrados | é o "arquivar" do Gmail; reversível | — |
+| `viking gmail --arquivar END[,END]` (pede o código no próprio terminal) e `--desfazer CODIGO` | validar no Mac sem o Gemini | — |
+| A lista impressa mostra, por remetente: quantos saem, quantos ficam e por quê, e até 3 assuntos recentes | o dono lê a lista inteira sem ler 500 linhas | o dono pedir linha por e-mail |
 
-**Checkpoints:**
+### Medido na abertura (2026-09-26)
+| O quê | Como | Resultado | Consequência |
+|---|---|---|---|
+| Laço do chat | `assistant/agent.py:182-200` | toda linha vai para `chat.send_message` | a interceptação entra antes da linha 194 |
+| Fake do Gmail | `tests/conftest.py:150` | `list` ignora `q` | o fake ganha um avaliador mínimo (`from:`, `in:inbox`, `has:attachment`, `is:starred`, `is:important`, negação) e `batchModify` |
+| Escopo atual | `gmail/oauth.py:12` | `gmail.readonly` | troca na Etapa 1.1 |
+| Caixa real | raio-x no Mac | 200 (piso) de 91 remetentes em 30 dias | a primeira limpeza real sai dessa lista |
+
+### Mapa de checkpoints
 | C | Fecha quando | Estado |
 |---|---|---|
-| C1 | `google_auth.py` + calendário delegando + `tests/test_google_auth.py` verdes — 10 passed, suíte 454 | ✅ |
-| C2 | `nao_confiavel.py` + `mensagens.py` usando; suíte do navegador igual — 454, mutação do delimitador morta no endereço novo | ✅ |
-| C3 | `gmail/service.py` (buscar, ler, não lidos de hoje, raio-x) + `tests/test_gmail_service.py` — 33 passed | ✅ |
-| C4 | `gmail/tools.py` + registro no chat + testes de segurança (injeção, redação, controles, MCP sem Gmail) — 20 passed | ✅ |
-| C5 | `viking gmail` na CLI + trava do `conftest` para o Gmail — 5 testes de CLI; trava ampliada; suíte 527 | ✅ |
-| C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles — 26/26 + a 27ª isolada; suíte 528; ruff limpo; baseline 7 | ✅ |
-| C7 | docs + revisão em duas passadas + commit + push | ✅ |
-| C8 | Mac: login (aviso de não verificado), `--raio-x`, pergunta no chat — tudo validado, ver diário | ✅ |
+| C0 | teto respondido e escrito aqui e em `docs/decisoes.md` | ⬜ |
+| C1 | escopo `modify` + textos "só leitura" ajustados; suíte 530+ verde | ⬜ |
+| C2 | `confirmacao.py` + `tests/test_confirmacao.py` (código único, expira, consumido uma vez, proposta nova invalida a velha) | ⬜ |
+| C3 | `service.selecionar/arquivar/desfazer` + fake com consulta e `batchModify` + `tests/test_gmail_limpeza.py` | ⬜ |
+| C4 | tool `preparar_limpeza` + interceptação no chat + testes de segurança (código nunca no texto do Gemini; injeção no remetente; nada sai sem código) | ⬜ |
+| C5 | `viking gmail --arquivar/--desfazer` + testes de CLI | ⬜ |
+| C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles | ⬜ |
+| C7 | docs + revisão em duas passadas + commit + push | ⬜ |
+| C8 | Mac: login novo com modify, arquivar um remetente escolhido pelo dono, conferir no Gmail, desfazer, e o mesmo pelo chat | ⬜ |
 
-**🐞 Previsto → Depurar:**
-- Teste do calendário quebrando depois de mover o OAuth → a trava do `conftest` mira
-  `lifeos.calendar.oauth.get_calendar_service`; manter esse nome.
-- Corpo do e-mail ilegível: `body.data` é base64url **sem padding** e nos bytes do charset da
-  parte → completar `=` e decodificar pelo `charset` do `Content-Type`, com `replace`.
-- E-mail só em HTML → texto por `html.parser` da stdlib, sem `<script>`/`<style>`.
-- `snippet` vem com entidade HTML (`&#39;`) → `html.unescape`.
-- 429 no lote do raio-x → contar e dizer "incompleto", nunca devolver menos sem avisar.
-- Escape Unicode em parâmetro de ferramenta vira caractere literal (classe 5) → `chr()`.
+### Fase 1 — escopo e confirmação
+**1.1** `gmail/oauth.py` → `gmail.modify`; `cli.py` e docstrings deixam de dizer "só leitura";
+tool `raio_x_da_caixa` deixa de dizer "não ofereça limpar". ✅ suíte verde; teste novo
+`SCOPES == [gmail.modify]` e nenhum `mail.google.com`. 🐞 teste de login antigo falha por texto
+"só leitura" → ajustar a mensagem, não o teste de escopo (classe 4).
+
+**1.2** `lifeos/confirmacao.py`: `propor(acao, dados) -> Proposta(codigo, expira)`,
+`consumir(codigo, acao) -> dados` (erros `CodigoInvalido`/`Expirado`/`JaUsado`),
+`registrar(codigo, resultado)`, `buscar_executada(codigo)` para o desfazer. ✅
+`test_confirmacao.py` verde. 🐞 relógio: injetar `agora` nos testes, nunca `sleep`.
+
+### Fase 2 — serviço
+**2.1** `service.selecionar(enderecos) -> Selecao(por_remetente, protegidos por motivo, ids)`:
+valida endereços, uma consulta por remetente, metadados em lote (reaproveita `_metadados`,
+`Email` ganha `estrela`/`importante`), remetente exato, lista de `has:attachment`.
+**2.2** `service.arquivar(ids)` / `service.desfazer(ids)` via `batchModify`, em lotes de ≤ 1000;
+falha no meio → diz quantos foram e quantos não (nunca "arquivei" parcial em silêncio).
+✅ `test_gmail_limpeza.py` verde. 🐞 fake ignorando a consulta faria o teste de proteção passar
+à toa → o fake avalia a consulta e o teste confere o corpo de cada `batchModify` (classe 4).
+
+### Fase 3 — chat e CLI
+**3.1** `tools.preparar_limpeza(remetentes: str)` (sem future import) → imprime a proposta e o
+código; devolve a contagem sem o código. **3.2** `agent.py`: `confirma NNNN`/`desfaz NNNN` antes
+do `send_message`. **3.3** `viking gmail --arquivar/--desfazer`. ✅ testes de segurança e de CLI.
+🐞 print da tool indo para o Gemini: não vai (AFC só lê o retorno), mas o teste prova com um
+código sentinela ausente do retorno e presente no stdout.
+
+### Riscos e o que é irreversível
+- Arquivar é reversível (desfazer por 7 dias e, depois disso, "Todos os e-mails"). Nada apaga.
+- É a primeira escrita do Viking na conta do dono: a validação no Mac começa com **um**
+  remetente de newsletter escolhido por ele, conferido no Gmail antes do chat.
+- Login novo com permissão maior. **Medido em 2026-09-26** na descrição `gmail.v1.json` instalada:
+  `gmail.modify` é descrito como "Read, compose, and send emails from your Gmail account" e
+  autoriza `send`, `trash`, `import`, `insert` e `drafts.send`; não autoriza `delete` nem
+  `batchDelete` (apagar de vez). Não há escopo menor que tire e-mail da caixa. O Viking não chama
+  nada disso: a Etapa 1.1 ganha um teste que lê o código de `gmail/` e falha se aparecer chamada
+  a `send`, `trash`, `import`, `insert`, `delete` ou `drafts`. Dizer isso ao dono antes do login.
