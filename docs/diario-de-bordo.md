@@ -601,3 +601,19 @@ do `conftest` não estava no plano.
 
 **Não validado ao vivo:** tools de calendário do MCP contra o Google real (continua exigindo o
 OAuth do Mac); `viking chat` → "o que eu tenho amanhã?" no Mac confirma que o Gemini segue igual.
+
+### 2026-09-26 — Validação ao vivo das Sessões 4 e 3b, no Mac do dono
+
+Saída real colada pelo dono (`git pull` até `df109ad`, `which python` no `.venv`):
+
+- **324 testes passando no Mac**, inclusive `test_contrato_com_o_jev_real` rodando contra o clone
+  do Jev de lá (nenhum teste pulado em `test_jev_subprocess_main.py`).
+- **Bloqueio:** `viking browser --url https://www.itau.com.br` recusado na hora, sem abrir aba nem
+  subprocesso, com a mensagem de `dominio_bloqueado`.
+- **Envelope no ambiente real do Jev:** `example.com` concluiu (0 ações, 1,1s). Concluir exige uma
+  decisão do modelo, que passa pelo `choose` envolvido — então a proteção encaixou no Jev de
+  verdade (senão teria saído `protecao_indisponivel`). Esta era a lacuna que o VPS não cobria.
+- **Formato novo:** título, URL e trecho chegaram dentro do bloco `«…»` de conteúdo não confiável.
+
+**Ainda não validado ao vivo:** tools de calendário do MCP contra o Google real; conferência
+visual de um evento de dia inteiro no Google Calendar; redação com dado sensível numa página real.
