@@ -16,7 +16,7 @@
 
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
-| 1 | Comando para o Mac que não roda como escrito | 4 | caminho real `~/LifeOs`, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
+| 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 6 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 3 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar |
 | 4 | Teste que não separava o certo do errado | 5 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso |
@@ -40,11 +40,18 @@ argumento (`git log -1 # commit` deu erro).
 **2026-09-20 — sem `which python`.** O primeiro `pytest` do roteiro rodou no Python do conda
 (`ModuleNotFoundError: No module named 'lifeos'`), porque o `.venv` não estava ativo naquele shell.
 
+**2026-09-26 — roteiro sem `&&` depois do `git pull` (Sessão Gmail).** O `git pull` falhou por
+rede (`SSL_ERROR_SYSCALL`) e o resto do roteiro rodou sobre o código antigo: `444 passed` no lugar
+de 528, `viking gmail` "não existe" e um chat da versão velha aberto. A falha de rede não era
+minha; a cascata era. O que tem de novo: é a armadilha "comandos sem `&&`" da skill `depuracao`,
+que eu tinha lido hoje.
+
 > **Um comando para o dono é código que roda numa máquina que eu não vejo.** Ele tem de funcionar
 > colado sem edição, no zsh com conda ativo.
 
-**O antídoto, concreto:** todo roteiro começa com `cd ~/LifeOs`, `source .venv/bin/activate` e
-`which python`; `python -m pip`/`python -m pytest`; nenhum `#` na linha; nenhum `cat` de arquivo
+**O antídoto, concreto:** todo roteiro começa com `cd ~/LifeOs`, depois
+`git pull && git log --oneline -1` (o dono confere o commit esperado antes de seguir),
+`source .venv/bin/activate` e `which python`; `python -m pip`/`python -m pytest`; nenhum `#` na linha; nenhum `cat` de arquivo
 com segredo.
 
 ### 2. Afirmei sem abrir o lugar onde estaria

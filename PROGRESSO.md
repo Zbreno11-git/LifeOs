@@ -17,7 +17,12 @@ Gmail 2 (limpeza), que parte do raio-x real.
 
 ```bash
 cd ~/LifeOs
-git pull
+git pull && git log --oneline -1
+```
+
+Só siga se o commit for `81035f5` (ou mais novo). Então:
+
+```bash
 source .venv/bin/activate
 which python
 python -m pytest -q
