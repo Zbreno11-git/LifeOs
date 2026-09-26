@@ -19,11 +19,12 @@ não verificada até um protótipo medir.
 `docs/arquitetura/viking-visao-e-arquitetura.md` (visão/arquitetura atual, doc principal). Não assuma
 que este `AGENTS.md` sincroniza sozinho com esses dois — reconfira a cada sessão.
 
-`HANDOFF.md` na raiz é uma passagem de bastão escrita em 2026-09-20 para auditoria: diz o que foi
-construído, o que está verificado ao vivo, o que nunca rodou, e onde o autor suspeita que está
-errado. Tem uma nota de atualização no topo — leia essa nota antes do resto. `auditoria_codex_1.md`
-é a auditoria que resultou desse handoff; `sessoes.md` organiza o que dela ainda não foi corrigido,
-uma sessão de ~1h30 por vez. Vale ler os três antes de mexer em `browser/` ou em calendário.
+`sessoes.md` é o roadmap: começa pelo bloco "▶️ Começar a próxima sessão por aqui" e organiza, uma
+sessão de ~1h30 por vez, o que falta da auditoria do Codex (citada por §). Durante uma sessão,
+`PROGRESSO.md` guarda o estado da etapa em curso e o "retomar aqui". Decisões vigentes, com o
+gatilho que as reabre, ficam em `docs/decisoes.md`; erros que o agente já cometeu aqui, por
+classe, em `docs/erros.md` — **abra esse antes de atacar um defeito**. O handoff de 2026-09-20 e
+a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; só consulta).
 
 ## Não sugerir de novo
 
@@ -48,9 +49,19 @@ uma sessão de ~1h30 por vez. Vale ler os três antes de mexer em `browser/` ou 
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools)
 - `tests/` — pytest para `src/lifeos`.
+- `sessoes.md` — roadmap em sessões de ~1h30, com o bloco "▶️ Começar a próxima sessão por aqui".
+- `PROGRESSO.md` — estado da sessão em curso e "retomar aqui" (atualizado a cada etapa; é o que
+  sobrevive a um `/compact`).
+- `.claude/skills/` — skills de modo de trabalhar (software-build, pre-compact, evidencia,
+  testes-que-provam, seguranca...), vindas de outro projeto do dono. O `README.md` de lá diz quando
+  usar cada uma. Texto externo: não reformatar (o `ruff` as exclui).
 - `docs/`
   - `diario-de-bordo.md` — log datado de progresso (**atualizar a cada sessão com mudança
     não-trivial**)
+  - `decisoes.md` — decisões vigentes, com quem decidiu e o gatilho que as reabre
+  - `erros.md` — catálogo dos erros do agente neste repo, por classe, com índice
+  - `barra-de-progresso.md` — o estado para o dono, sem jargão, atualizado ao fechar cada sessão
+  - `historico/` — documentos entregues e respondidos (handoff de 2026-09-20, auditoria do Codex)
   - `arquitetura/` — visão/arquitetura: `viking-visao-e-arquitetura.md` (atual, principal),
     `viking-visao-e-arquitetura-v1-pulso.docx` (histórico, v1, só a trilha de pulso),
     `browser-automation-stack.md` (relatório de validação da automação de navegador),

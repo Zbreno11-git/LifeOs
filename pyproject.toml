@@ -33,3 +33,5 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
+# As skills são texto de outro projeto, copiado como veio; o ruff reformataria o Python dos `.md`.
+extend-exclude = [".claude"]

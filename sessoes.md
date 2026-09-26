@@ -1,7 +1,7 @@
 # Sessões — planejamento de trabalho
 
-Doc vivo para organizar o que vem depois de `auditoria_codex_1.md` (auditoria do Codex,
-2026-09-20). Cada sessão de trabalho aqui cabe em ~1h30: revisão → implementação → teste →
+Doc vivo para organizar o que vem depois de `docs/historico/auditoria_codex_1.md` (auditoria do
+Codex, 2026-09-20). Cada sessão de trabalho aqui cabe em ~1h30: revisão → implementação → teste →
 commit → push, no mesmo formato da Sessão 1. O que não coube numa sessão vira o começo da
 próxima — nada fica perdido, só adiado.
 
@@ -9,6 +9,22 @@ Como usar: ao abrir uma sessão nova, pega o primeiro item não riscado da fila,
 decisões de produto com o dono se a auditoria deixou isso em aberto (seção 23 dela), implementa,
 testa, atualiza `docs/diario-de-bordo.md`, e marca aqui o que ficou feito e o que precisou ser
 adiado por tempo.
+
+Adiar algo = escrever a etapa **na seção da sessão que a recebe**, como primeiro passo dela. Um
+item que só diz "fica para a sessão N" no backlog, sem estar na seção N, não chega lá (aconteceu
+com o freio de clique destrutivo — ver Sessão 4b).
+
+## ▶️ Começar a próxima sessão por aqui
+
+- **Sessão:** 4b — freio de ação que age sobre a conta + mutações curadas.
+- **Primeiro passo:** ler em `jev-ultrafast/jev_ultrafast/agent.py` o que `choose` devolve (a ação
+  escolhida, antes de ela rodar) — é ali que o freio se encaixa. Não verificado ainda.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, skill `seguranca` (§8, sessão
+  emprestada) e `testes-que-provam` (§3 e `referencia/mutacao.md`).
+- **Depende do dono:** sim — quais ações o freio recusa (ver a lista proposta na Sessão 4b).
+
+> **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
+> dono — o freio de clique era o maior risco aberto e estava sem sessão.
 
 ## Sessão 1 — correção, custos e runner (feita em 2026-09-20)
 
@@ -124,7 +140,31 @@ proteger também o caminho do OpenRouter (feito sem editar o fork). Entregue:
   (integração), envelope e contrato com o Jev real em `test_jev_subprocess_main.py`. Cada teste de
   segurança conferido por mutação (tirar a proteção faz o teste certo falhar).
 
-Não validado ao vivo: bloqueio e redação no Chrome real do Mac (o venv do Jev deste VPS não roda).
+Validado no Mac do dono em 2026-09-26 (saída colada por ele): 324 testes, inclusive o de contrato
+com o clone do Jev; Itaú recusado sem abrir aba; `example.com` concluído passando pelo envelope
+real. Ainda não validado ao vivo: redação numa página real com CPF/cartão/token visível.
+
+## Sessão 4b — freio de ação que age sobre a conta + mutações curadas (próxima)
+
+1. **Freio de clique destrutivo (§5.2, skill `seguranca` §8).** O Jev dirige a Chrome logada do
+   dono; hoje nada impede um clique em "Sair" (desloga em todos os aparelhos), "Excluir conta",
+   "Cancelar assinatura", "Trocar senha" ou "Finalizar compra" num site que não está bloqueado.
+   Encaixe proposto: `choose_protegido` (envelope da Sessão 4) confere a ação **devolvida** por
+   `choose` antes de o Jev executá-la — é o único caminho até o clique. Recusa alta (código novo,
+   com o rótulo na mensagem), nunca silenciosa.
+   - **Decisão do dono na abertura:** a lista de ações recusadas. Proposta: sair/log out/sign
+     out; excluir/apagar/delete conta; cancelar assinatura; trocar/alterar senha; comprar/finalizar
+     compra/pagar/place order; transferir/enviar dinheiro. Comprar e pagar entram? (um dia o
+     Viking pode precisar comprar com confirmação — Sessão 5).
+   - Testes offline adversariais: caixa, acento, forma Unicode, rótulo com texto em volta,
+     rótulo em inglês e português, e a ação vizinha legítima ("Sair do modo tela cheia"?) — medir
+     os falsos positivos antes de a regra cobrar (skill `evidencia` §8).
+2. **Mutações curadas (`scripts/mutacoes.py`, skill `testes-que-provam` §3).** Lista escrita à mão
+   das regras que decidem apagar, acessar e o que sai da máquina — conferência de título antes de
+   apagar/reagendar, bloqueio de domínio, envelope do Jev (redação e checagem), timeout com `nan`,
+   freio novo do item 1. Cada mutação confere que a âncora casa **exatamente uma vez**, exige
+   partida verde, exige que caia **o** teste esperado e restaura byte a byte em `finally`. Roda à
+   mão, não no `pytest`.
 
 ## Sessão Gmail — leitura via API (nova, pedida pelo dono em 2026-09-26)
 
@@ -161,7 +201,8 @@ Não validado ao vivo: bloqueio e redação no Chrome real do Mac (o venv do Jev
 - §15.1: sem lockfile no projeto principal (`uv.lock` ou equivalente).
 - §15.3: sem CI, sem scanner de dependências, sem type checking.
 - §15.4: `ruff format --check` ainda aponta arquivos pré-existentes (de antes da auditoria) —
-  eram 10; cada sessão formata só os arquivos que já está editando, então o número cai aos poucos.
+  eram 10 na auditoria, 7 em 2026-09-26 (`python -m ruff format --check .`); cada sessão formata
+  só os arquivos que já está editando, então o número cai aos poucos.
 - §15.2: `test_assistant_tools.py` usa `_automatic_function_calling_util`, API privada do
   google-genai — acoplamento intencional, mas vale um teste público adicional que não dependa
   disso.
@@ -185,5 +226,4 @@ tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3
 segurança para um cenário hipotético. Residuais da Sessão 4: o objetivo, os rótulos/valores
 de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
 `docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN não é normalizado;
-o Jev ainda pode *clicar* em algo destrutivo num site não bloqueado (§5.2 — detector de ação
-sensível fica para a Sessão 5).
+o clique destrutivo num site não bloqueado (§5.2) saiu daqui e está na Sessão 4b.

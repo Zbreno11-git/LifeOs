@@ -1,6 +1,6 @@
 """Calendário: exclusão e reagendamento são as ações mais destrutivas do Viking — a trava é
 testada, não confiada. Este arquivo também cobre a janela de datas e o fim exclusivo do dia
-inteiro, os outros dois achados P0 da auditoria do Codex (auditoria_codex_1.md)."""
+inteiro, os outros dois achados P0 da auditoria do Codex (docs/historico/auditoria_codex_1.md)."""
 
 from zoneinfo import ZoneInfo
 

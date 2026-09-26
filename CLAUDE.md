@@ -29,6 +29,18 @@ Ele usa zsh no macOS, com conda base ativo junto do venv. Consequências prátic
 `AGENTS.md` ("Armadilhas já pagas"): sem comentário `#` na mesma linha do comando, sempre
 `python -m pip`/`python -m pytest`, e nunca mandar imprimir arquivo de segredo.
 
+## Skills do projeto (`.claude/skills/`)
+
+O `README.md` de lá diz quando usar cada uma. As que valem sempre aqui:
+
+- **`software-build`** ao abrir, planejar e fechar uma sessão de `sessoes.md`. O formato do plano
+  está em `referencia/plano-de-sessao.md`, e a revisão em duas passadas em `referencia/revisao.md`.
+- **`pre-compact`** assim que o dono avisar de um `/compact`, de uma conversa nova ou de parar por
+  hoje: fechar a etapa num ponto seguro, atualizar o bloco de `PROGRESSO.md`, commit e push, e
+  entregar o prompt pós-compact. Logo **depois** de um compact vale a seção "Depois do compact":
+  ler e conferir antes de executar qualquer coisa. O dono usa isso muito.
+- **`evidencia`** e **`testes-que-provam`** antes de escrever um número ou dizer "testado".
+
 ## Memória entre sessões
 
 Há memória em `/root/.claude/projects/-root-LifeOs/memory/` com preferências de trabalho do dono

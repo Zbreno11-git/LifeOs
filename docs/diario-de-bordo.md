@@ -617,3 +617,35 @@ Saída real colada pelo dono (`git pull` até `df109ad`, `which python` no `.ven
 
 **Ainda não validado ao vivo:** tools de calendário do MCP contra o Google real; conferência
 visual de um evento de dia inteiro no Google Calendar; redação com dado sensível numa página real.
+
+### 2026-09-26 — Skills de trabalho instaladas e continuidade escrita no disco
+
+**Feito.** As 11 skills que o dono trouxe (`skills-globais/`, vindas de outro projeto dele)
+foram lidas e instaladas em `.claude/skills/`, sem as 6 menções ao nome do projeto de origem,
+porque o repo é público (`gh repo view` → `PUBLIC`). Avaliação de maturidade pela
+`software-build` (sondas rodadas nesta data: `324 passed in 3.78s`; `ruff check` limpo; 7 arquivos
+pré-existentes fora do `ruff format`; nenhuma leitura de env fora de `config.py`; segredos
+confirmados fora do git por `git check-ignore`). Documentos novos: `docs/decisoes.md` (17
+decisões com gatilho de reabertura), `docs/erros.md` (meus erros em 6 classes, com índice),
+`PROGRESSO.md` (bloco "retomar aqui"), `docs/barra-de-progresso.md` (estado para o dono) e o
+bloco "▶️ Começar a próxima sessão por aqui" no `sessoes.md`. `HANDOFF.md` e
+`auditoria_codex_1.md` foram para `docs/historico/`, com um README dizendo o que saiu e para onde.
+
+**Decidido.** Todas pelo dono, via perguntas: skills commitadas sem o nome de origem; as quatro
+mudanças de documentação; o freio de clique destrutivo vira a Sessão 4b, antes do Gmail; a
+verificação automática no GitHub fica na Sessão 7, junto do lockfile. Não mexi em código: 2.860
+linhas em `src/`, bem divididas, e a skill só autoriza refatorar com motivo concreto.
+
+**Achado.** O freio de clique (§5.2) estava "para a Sessão 5" só no backlog; a seção da Sessão 5
+não o tinha, então ele nunca chegaria lá. Parte das decisões do dono vivia só na memória local do
+Claude neste VPS, que o Codex e o Mac não veem. E a frase "Não validado ao vivo" da Sessão 4 no
+`sessoes.md` já era falsa desde a validação no Mac; corrigida.
+
+**Erros desta sessão (meus).** Ao criar `docs/erros.md`, o escape bidi citado no item da classe 5
+virou o caractere literal — a terceira ocorrência da mesma armadilha, desta vez dentro do texto que
+a descreve. A varredura de caracteres de controle antes do commit pegou (1 achado em 37 arquivos);
+trocado por script e registrado na classe 5.
+
+**Não verificado.** Versões das dependências instaladas no Mac; status "Testing" do app OAuth.
+
+**Próximo.** Sessão 4b — ver `PROGRESSO.md`.
