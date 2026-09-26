@@ -12,15 +12,8 @@ from typing import Any
 from fastmcp import FastMCP
 from fastmcp.tools import ToolResult
 
-from lifeos.calendar import (
-    apagar_evento_por_id,
-    buscar_eventos_por_termo,
-    criar_evento,
-    criar_evento_dia_inteiro,
-    listar_eventos_por_data,
-    listar_proximos_eventos,
-    reagendar_evento_por_id,
-)
+from lifeos.calendar import tools as calendario
+from lifeos.calendar.service import Evento
 from lifeos.reminders import service as reminders_service
 from lifeos.reminders import store
 from lifeos.reminders.models import Reminder
@@ -28,48 +21,79 @@ from lifeos.reminders.models import Reminder
 mcp = FastMCP(name="viking", instructions="Calendário e lembretes pessoais do Viking (Life OS).")
 
 
+def _evento_para_dict(evento: Evento) -> dict[str, Any]:
+    return {
+        "id": evento.id,
+        "title": evento.titulo,
+        "start": evento.inicio,
+        "end": evento.fim,
+        "all_day": evento.dia_inteiro,
+        "link": evento.link,
+    }
+
+
+def _resultado(resposta: calendario.Resposta) -> ToolResult:
+    """Mesmo texto que o Gemini recebe + dados estruturados. Recusa de trava (título divergente,
+    ID vazio...) e falha da API viram erro de verdade (`is_error`), como nos lembretes."""
+    if resposta.erro is not None:
+        return ToolResult(
+            content=resposta.texto,
+            structured_content={"erro": resposta.erro.codigo, **resposta.erro.dados},
+            is_error=True,
+        )
+    if isinstance(resposta.dados, list):
+        dados = {"eventos": [_evento_para_dict(e) for e in resposta.dados]}
+    else:
+        dados = _evento_para_dict(resposta.dados)
+    return ToolResult(content=resposta.texto, structured_content=dados)
+
+
 @mcp.tool()
-def viking_listar_proximos_eventos(max_results: int = 10) -> str:
+def viking_listar_proximos_eventos(max_results: int = 10) -> ToolResult:
     """Lista os próximos eventos do Google Calendar."""
-    return listar_proximos_eventos(max_results)
+    return _resultado(calendario.responder_proximos(max_results))
 
 
 @mcp.tool()
-def viking_listar_eventos_por_data(data_inicio: str, data_fim: str | None = None) -> str:
+def viking_listar_eventos_por_data(data_inicio: str, data_fim: str | None = None) -> ToolResult:
     """Lista eventos do Google Calendar num dia ou intervalo (YYYY-MM-DD)."""
-    return listar_eventos_por_data(data_inicio, data_fim)
+    return _resultado(calendario.responder_por_data(data_inicio, data_fim))
 
 
 @mcp.tool()
-def viking_criar_evento(summary: str, start_time: str, end_time: str, description: str = "") -> str:
+def viking_criar_evento(
+    summary: str, start_time: str, end_time: str, description: str = ""
+) -> ToolResult:
     """Cria um evento com horário marcado no Google Calendar."""
-    return criar_evento(summary, start_time, end_time, description)
+    return _resultado(calendario.responder_criar(summary, start_time, end_time, description))
 
 
 @mcp.tool()
-def viking_criar_evento_dia_inteiro(summary: str, data: str, description: str = "") -> str:
+def viking_criar_evento_dia_inteiro(summary: str, data: str, description: str = "") -> ToolResult:
     """Cria um evento de dia inteiro no Google Calendar."""
-    return criar_evento_dia_inteiro(summary, data, description)
+    return _resultado(calendario.responder_criar_dia_inteiro(summary, data, description))
 
 
 @mcp.tool()
-def viking_buscar_eventos(termo_busca: str) -> str:
+def viking_buscar_eventos(termo_busca: str) -> ToolResult:
     """Busca eventos futuros por termo e devolve os candidatos com seus IDs."""
-    return buscar_eventos_por_termo(termo_busca)
+    return _resultado(calendario.responder_buscar(termo_busca))
 
 
 @mcp.tool()
-def viking_apagar_evento(event_id: str, titulo_esperado: str) -> str:
+def viking_apagar_evento(event_id: str, titulo_esperado: str) -> ToolResult:
     """Apaga UM evento pelo ID. Irreversível: busque e confirme com o usuário antes."""
-    return apagar_evento_por_id(event_id, titulo_esperado)
+    return _resultado(calendario.responder_apagar(event_id, titulo_esperado))
 
 
 @mcp.tool()
 def viking_reagendar_evento(
     event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
-) -> str:
+) -> ToolResult:
     """Reagenda UM evento pelo ID. Irreversível: busque e confirme com o usuário antes."""
-    return reagendar_evento_por_id(event_id, titulo_esperado, novo_inicio, novo_fim)
+    return _resultado(
+        calendario.responder_reagendar(event_id, titulo_esperado, novo_inicio, novo_fim)
+    )
 
 
 def _lembrete_para_dict(reminder: Reminder) -> dict[str, Any]:

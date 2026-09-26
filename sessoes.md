@@ -89,15 +89,19 @@ mexer no tempo de uma sessão. Vira Sessão 3b. Entregue:
 - Testes novos: `tests/test_reminders_service.py`, `tests/test_mcp_server.py`. 195 testes passando,
   `ruff check` limpo.
 
-## Sessão 3b — MCP: calendário estruturado
+## Sessão 3b — MCP: calendário estruturado (feita em 2026-09-26)
 
-- Aplicar o mesmo desenho da Sessão 3 (`ToolResult` + serviço fino) às 7 tools de calendário do
-  MCP — hoje adiado porque `calendar/tools.py` monta string formatada direto (sem objeto de domínio
-  no meio) e é compartilhado com `assistant/agent.py` (Gemini), então extrair isso com segurança é
-  mais trabalho e mais risco do que lembretes.
-- Decidir se vale um tipo de domínio formal (`EventResult`) para anunciar `output_schema` de
-  verdade no MCP — hoje `ToolResult` genérico não anuncia schema (ver limite documentado em
-  `docs/fontes/fastmcp.md`).
+- `calendar/service.py` (novo): lógica e travas do calendário com erros de domínio tipados
+  (`codigo` + `dados`); `calendar/tools.py` virou adaptador de texto (`responder_*` →
+  `Resposta`), com as 7 docstrings/assinaturas do Gemini idênticas às de antes.
+- As 7 tools de calendário do MCP devolvem `ToolResult` (mesmo texto + dados estruturados);
+  travas e falhas da API viram `is_error`. Conserto de brinde: falha da API em criar, reagendar e
+  listar agora vira mensagem clara em vez de exceção crua.
+- Testes: `test_calendar_service.py` (novo), calendário pelo protocolo MCP em `test_mcp_server.py`
+  (fecha "tools de calendário do MCP nunca exercitadas"), e `tests/conftest.py` com o fake
+  compartilhado + trava que impede qualquer teste de tocar o Google de verdade.
+- Ficou para decidir: um `output_schema` formal (hoje `ToolResult` genérico não anuncia schema —
+  ver `docs/fontes/fastmcp.md`).
 
 ## Sessão 4 — privacidade e egress do navegador (feita em 2026-09-26)
 

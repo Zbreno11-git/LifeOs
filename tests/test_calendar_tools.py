@@ -6,71 +6,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from lifeos.calendar import tools
-
-
-class _Exec:
-    def __init__(self, valor):
-        self._valor = valor
-
-    def execute(self):
-        return self._valor
-
-
-class _Events:
-    def __init__(self, evento, estado):
-        self._evento = evento
-        self._estado = estado
-
-    def get(self, calendarId, eventId):
-        if self._evento is None:
-            raise RuntimeError("Not Found")
-        return _Exec(self._evento)
-
-    def delete(self, calendarId, eventId):
-        if self._estado.get("falhar_delete"):
-            raise RuntimeError("API fora do ar")
-        self._estado["apagados"].append(eventId)
-        return _Exec({})
-
-    def patch(self, calendarId, eventId, body):
-        self._estado["patches"].append((eventId, body))
-        return _Exec({"summary": self._evento.get("summary") if self._evento else None})
-
-    def insert(self, calendarId, body):
-        self._estado["enviados"].append(body)
-        return _Exec({"htmlLink": "http://exemplo"})
-
-    def list(self, calendarId, **kwargs):
-        self._estado["consultas"].append(kwargs)
-        return _Exec({"items": []})
-
-
-class _Service:
-    def __init__(self, evento, estado):
-        self._events = _Events(evento, estado)
-
-    def events(self):
-        return self._events
-
-
-@pytest.fixture()
-def calendario(monkeypatch):
-    estado = {
-        "apagados": [],
-        "patches": [],
-        "enviados": [],
-        "consultas": [],
-        "falhar_delete": False,
-        "evento": {"summary": "Dentista", "start": {"date": "2026-10-01"}},
-    }
-
-    def fake_service():
-        return _Service(estado["evento"], estado)
-
-    monkeypatch.setattr(tools, "get_calendar_service", fake_service)
-    return estado
-
+from lifeos.calendar import service, tools
 
 # --- apagar_evento_por_id -----------------------------------------------------------------
 
@@ -213,7 +149,7 @@ def test_reagendar_horario_invalido(calendario):
 
 
 def test_reagendar_aceita_horario_sem_fuso(calendario, monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
     tools.reagendar_evento_por_id(
         "abc123", "Dentista", "2026-10-02T10:00:00", "2026-10-02T11:00:00"
     )
@@ -239,7 +175,7 @@ def test_criar_evento_recusa_horario_invalido(calendario):
 
 
 def test_criar_evento_envia_horario_normalizado(calendario, monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
     tools.criar_evento("Reunião", "2026-10-02T10:00:00", "2026-10-02T11:00:00")
     assert calendario["enviados"][0]["start"]["dateTime"] == "2026-10-02T10:00:00-03:00"
 
@@ -282,34 +218,34 @@ def test_dia_inteiro_recusa_data_invalida(calendario):
 
 
 def test_janela_um_dia_nao_inclui_o_dia_seguinte(monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
-    t_min, t_max = tools._janela("2026-09-20", None)
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    t_min, t_max = service._janela("2026-09-20", None)
     assert t_min == "2026-09-20T00:00:00-03:00"
     assert t_max == "2026-09-21T00:00:00-03:00"
 
 
 def test_janela_intervalo_e_inclusiva(monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
-    t_min, t_max = tools._janela("2026-09-20", "2026-09-22")
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    t_min, t_max = service._janela("2026-09-20", "2026-09-22")
     assert t_min == "2026-09-20T00:00:00-03:00"
     assert t_max == "2026-09-23T00:00:00-03:00"
 
 
 def test_janela_data_fim_anterior_a_inicio_levanta(monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
     with pytest.raises(ValueError):
-        tools._janela("2026-09-20", "2026-09-19")
+        service._janela("2026-09-20", "2026-09-19")
 
 
 def test_janela_respeita_fuso_utc(monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("UTC"))
-    t_min, t_max = tools._janela("2026-09-20", None)
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("UTC"))
+    t_min, t_max = service._janela("2026-09-20", None)
     assert t_min == "2026-09-20T00:00:00+00:00"
     assert t_max == "2026-09-21T00:00:00+00:00"
 
 
 def test_listar_eventos_por_data_usa_a_janela(calendario, monkeypatch):
-    monkeypatch.setattr(tools, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
     tools.listar_eventos_por_data("2026-09-20")
     consulta = calendario["consultas"][0]
     assert consulta["timeMin"] == "2026-09-20T00:00:00-03:00"
@@ -329,8 +265,8 @@ def test_titulo_igual_ignora_forma_unicode():
     # "á" como um único codepoint (NFC) vs "a" + acento combinante (NFD) devem casar.
     nfc = "Reunião"
     nfd = "Reunião"
-    assert tools._titulo_igual(nfc, nfd)
+    assert service._titulo_igual(nfc, nfd)
 
 
 def test_titulo_igual_string_vazia_nao_casa_com_tudo():
-    assert not tools._titulo_igual("", "Qualquer coisa")
+    assert not service._titulo_igual("", "Qualquer coisa")

@@ -560,3 +560,44 @@ formatação pré-existente deles (baseline de arquivos fora do `ruff format` ca
 **Não validado ao vivo:** bloqueio e redação no Chrome real do Mac. O venv do Jev neste VPS não
 executa (`Permission denied` no Python dele), então nem o envelope no ambiente real do Jev pôde
 rodar aqui — só o teste de contrato sobre o código-fonte.
+
+### 2026-09-26 — Sessão 3b: calendário estruturado no MCP
+
+Mesmo desenho da Sessão 3 (lembretes), aplicado às 7 tools de calendário. `calendar/service.py`
+concentra lógica e travas com erros de domínio tipados (`entrada_invalida` com `campo`,
+`nao_encontrado`, `titulo_divergente` com `titulo_real`, `falha_api`); `calendar/tools.py` ficou
+só com o texto (`responder_*` → `Resposta(texto, dados, erro)`), e as tools do Gemini devolvem
+esse texto. O MCP devolve o mesmo texto + dados estruturados, com `is_error` em recusa e falha.
+
+**Como garanti que o Gemini não mudou:** retrato das 7 docstrings e assinaturas antes do refactor,
+comparado caractere a caractere depois (idênticas); e os 30 testes de `test_calendar_tools.py`
+passaram sem nenhuma asserção alterada — só o alvo do `monkeypatch` mudou de `tools` para
+`service`. Por isso deixei o `ruff format` sem tocar as duas docstrings que ele queria reformatar
+(`tools.py` segue na baseline de formatação pré-existente de propósito).
+
+**Conserto de brinde (bug latente):** falha da API em criar, criar dia inteiro, reagendar e
+listar subia como exceção crua pelo laço do Gemini; agora vira mensagem clara.
+
+**Segurança dos próprios testes:** `tests/conftest.py` troca `get_calendar_service` por uma função
+que falha alto em toda a suíte, e o fake entra por cima só onde o teste pede. No Mac o token OAuth
+existe: sem isso, um teste que esquecesse o fake criaria evento na agenda real. Conferido com um
+teste temporário sem fake (falhou alto, como deve).
+
+**Testes:** +32 (324 no total): `test_calendar_service.py` (dados, códigos de erro, falha da API em
+cada operação, título de convite com caractere de controle) e o calendário pelo protocolo MCP em
+`test_mcp_server.py` — incluindo as travas da Sessão 1 valendo igual para um cliente MCP que chama
+a tool destrutiva direto (§5.3). Mutação: voltar a trava de título para substring derruba 5
+testes; tirar o `is_error` do MCP, 9; tirar o `_executar`, 9.
+
+**Erros desta parte (meus):**
+7. Na primeira versão, `_executar()` só envolvia o `.execute()`; a falha pode vir já ao montar a
+   requisição (o fake levanta no `delete(...)`, a biblioteca real também levanta ali com parâmetro
+   inválido). O teste antigo de falha no delete pegou; `_executar` passou a receber a montagem.
+
+**Desvios do plano:** em vez de funções `formatar_*` + `mensagem_de_erro` soltas, uma `Resposta`
+por operação (`responder_*`) — mesma meta (uma frase, um lugar), menos peças. O fake do Google
+saiu de `test_calendar_tools.py` para o `conftest.py`, compartilhado por três arquivos. A trava
+do `conftest` não estava no plano.
+
+**Não validado ao vivo:** tools de calendário do MCP contra o Google real (continua exigindo o
+OAuth do Mac); `viking chat` → "o que eu tenho amanhã?" no Mac confirma que o Gemini segue igual.
