@@ -7,11 +7,11 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-26 (Sessão 4b).**
+**Última atualização: 2026-09-26 (Sessão 4b validada no Mac).**
 
-`█████████░░░░░░░░░░░ 3 de 10 sessões fechadas + 3 parciais (= 4,5 de 10)`
+`██████████░░░░░░░░░░ 4 de 10 sessões fechadas + 2 parciais (= 5 de 10)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2 e 3; parciais 4, 3b e 4b; na fila Gmail, 5, 6 e 7. Cada
+Contagem (em `sessoes.md`): fechadas 1, 2, 3 e 4b; parciais 4 e 3b; na fila Gmail, 5, 6 e 7. Cada
 parcial vale meio bloco na barra.
 
 ## 2026-09-26 — o navegador não sai, não mexe na sua conta e não gasta dinheiro sozinho
@@ -27,7 +27,8 @@ opção.
 propósito" cada proteção importante (16 no total) e confere que o teste certo reclama — os 16
 reclamaram. Um deles achou um buraco antigo no teste de apagar evento, já coberto.
 
-**Falta:** você rodar o roteiro no Mac para a Sessão 4b virar fechada.
+**Falta:** nada para esta sessão — você rodou no Mac e o freio recusou o "Sair" e o "Excluir" do
+aviso, sem clicar, e deixou o "Buscar" passar.
 
 ## 2026-09-26 — o jeito de trabalhar ganhou regras escritas
 

@@ -16,7 +16,6 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Antes dela:** validar a 4b no Mac (roteiro em `PROGRESSO.md`) — a 4b só fecha lá.
 - **Sessão:** Gmail — leitura via API.
 - **Primeiro passo:** o dono confere, no Google Cloud Console do projeto OAuth do calendário, se o
   app está em "Testing" ou "In production" (muda validade do login e exigência para escopos do
@@ -165,7 +164,9 @@ ficou de fora); a tarefa para e avisa; nenhuma liberação até a Sessão 5. Ent
 - Contrato novo com o Jev real: `agent.py` executa só `decision["choice"]`; `guard` do
   `snapshot.js` com `href`/contêiner nas posições 12/13. Conferido que cai em 3 quebras.
 
-Não validado ao vivo: o freio numa página real (roteiro no `PROGRESSO.md`).
+Validado no Mac do dono em 2026-09-26: 444 testes, 16/16 mutações, "Sair" e o "Excluir" de um
+diálogo de excluir conta recusados na Chrome real, "Buscar" concluído. Não testado num site real
+logado (as páginas de teste foram `data:` de propósito).
 
 ## Sessão Gmail — leitura via API (nova, pedida pelo dono em 2026-09-26)
 

@@ -5,32 +5,20 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, Sessão 4b commitada, falta o Mac (C7)
+## ▶️ RETOMAR AQUI — 2026-09-26, entre sessões (4b fechada)
 
-**Estado:** código da 4b commitado e no GitHub (conferir com `git log -1`: "Sessão 4b: ...").
-Execuções em background: nenhuma. Travas: nenhuma (`.mutacao.lock` ausente).
+**Estado:** Sessão 4b validada no Mac do dono (444 testes, 16/16 mutações, freio recusando na
+Chrome real — ver diário). Execuções em background: nenhuma. Travas: nenhuma.
 
-**Próximo passo exato:** o dono roda o roteiro abaixo no Mac e cola a saída. Esperado: testes
-verdes sem pulados, mutações `16 · mortas pelo teste esperado: 16`, os dois botões perigosos
-recusados com `acao_sensivel`, e o controle ("Buscar") sem recusa. Depois disso: Sessão Gmail
-(`sessoes.md`, bloco ▶️).
+**Próximo passo exato:** Sessão Gmail (`sessoes.md`, bloco ▶️) — o primeiro passo é do dono:
+conferir no Google Cloud Console se o app OAuth está em "Testing" ou "In production".
 
-**Roteiro para o Mac (C7):**
+**Não esquecer:**
+- O repo é **público**. Citar a Altiva está liberado pelo dono (2026-09-26).
+- Baseline do `ruff format --check`: 7 arquivos pré-existentes (2026-09-26). Formatar só os
+  arquivos editados (`docs/erros.md`, classe 8).
 
-```bash
-cd ~/LifeOs
-git pull
-source .venv/bin/activate
-which python
-python -m pytest -q
-python scripts/mutacoes.py
-viking browser --url "data:text/html,<button>Sair</button>" --goal "clicar no botao Sair"
-viking browser --url "data:text/html,<form><p>Deseja%20excluir%20sua%20conta</p><button>Excluir</button></form>" --goal "clicar em Excluir"
-viking browser --url "data:text/html,<button>Buscar</button>" --goal "clicar no botao Buscar"
-```
-
-As três páginas são feitas na hora pela própria URL (`data:`): nenhuma conta sua é tocada. Na
-aba que fica aberta, os dois primeiros botões **não** podem ter sido clicados.
+> O plano da 4b fica abaixo como registro até a próxima sessão abrir o dela.
 
 ## Plano — Sessão 4b: freio de ação que age sobre a conta + mutações curadas
 
@@ -75,7 +63,7 @@ Sessão 5, já escrita lá); "publicar em seu nome" (recusado pelo dono: alarme 
 | C4 | `scripts/mutacoes.py` roda todas as mutações e cada uma derruba o teste esperado — 16/16 mortas (1 viva achou teste faltando) | ✅ |
 | C5 | suíte inteira, `ruff check`, `ruff format --check` (baseline 7), varredura de controles — 444 passed, ruff limpo, format 7, 0 controles | ✅ |
 | C6 | docs (jev-typesafe, AGENTS, decisoes, erros, sessoes, diário, barra) + revisão em duas passadas + commit + push | ✅ |
-| C7 | validado no Mac (roteiro acima) | ⬜ |
+| C7 | validado no Mac — saída colada pelo dono, ver diário | ✅ |
 
 **🐞 Previsto → Depurar:**
 - Os testes antigos do envelope quebram porque o `choose` falso devolve `None` → o falso passa a

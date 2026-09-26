@@ -687,3 +687,21 @@ no `git status`, restaurado pelo `git show HEAD:`; classe nova 8.
 **Não verificado.** O freio numa página real, no Mac (roteiro em `PROGRESSO.md`).
 
 **Próximo.** Validar a 4b no Mac; depois a Sessão Gmail.
+
+### 2026-09-26 — Validação ao vivo da Sessão 4b, no Mac do dono
+
+Saída real colada pelo dono (`git pull` até `86dd7e9`, `which python` →
+`/Users/luanabreno/LifeOs/.venv/bin/python`):
+
+- **`444 passed in 7.37s`**, nenhum pulado — inclusive os dois testes de contrato contra o clone
+  do Jev de lá.
+- **`mutações: 16 · mortas pelo teste esperado: 16`** no Python do Mac.
+- **Freio na Chrome real:** página `data:` com `<button>Sair</button>` → `acao_sensivel`,
+  "Botão recusado (sair), texto da página: «Sair»", aba aberta. Diálogo "Deseja excluir sua conta"
+  com `<button>Excluir</button>` → recusado como **conta** — prova ao vivo da regra do contêiner
+  (o rótulo sozinho, "Excluir", passaria).
+- **Controle:** `<button>Buscar</button>` → concluído em 0,8 s com 1 ação; o freio não atrapalhou
+  o clique comum.
+
+**Ainda não validado ao vivo:** o freio num site real logado (as páginas de teste foram `data:`,
+de propósito, para não tocar conta nenhuma).
