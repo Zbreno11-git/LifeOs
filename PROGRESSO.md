@@ -5,12 +5,13 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, Sessão Gmail commitada, falta o Mac (C8)
+## ▶️ RETOMAR AQUI — 2026-09-26, Sessão Gmail validada no Mac, falta só o chat (C8)
 
 **Estado:** código da Sessão Gmail commitado e no GitHub (conferir com `git log -1`: "Sessão
 Gmail: ..."). Execuções em background: nenhuma. Travas: nenhuma (`.mutacao.lock` ausente).
 
-**Próximo passo exato:** o dono roda o roteiro abaixo no Mac e cola a saída. Depois: Sessão
+**Próximo passo exato:** o dono faz no `viking chat` as três perguntas do roteiro (calendário
+sem novo login, "o que chegou hoje?", "quem me manda coisa que eu não abro?"). Depois: Sessão
 Gmail 2 (limpeza), que parte do raio-x real.
 
 **Roteiro para o Mac (C8):**
@@ -98,7 +99,7 @@ MCP (decisão do dono); anexos; enviar e-mail.
 | C5 | `viking gmail` na CLI + trava do `conftest` para o Gmail — 5 testes de CLI; trava ampliada; suíte 527 | ✅ |
 | C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles — 26/26 + a 27ª isolada; suíte 528; ruff limpo; baseline 7 | ✅ |
 | C7 | docs + revisão em duas passadas + commit + push | ✅ |
-| C8 | Mac: login (aviso de não verificado), `--raio-x`, pergunta no chat | ⬜ |
+| C8 | Mac: login (aviso de não verificado), `--raio-x`, pergunta no chat — login, não lidos e raio-x ✅ na caixa real; perguntas no chat ⬜ | 🔵 |
 
 **🐞 Previsto → Depurar:**
 - Teste do calendário quebrando depois de mover o OAuth → a trava do `conftest` mira

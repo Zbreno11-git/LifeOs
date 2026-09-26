@@ -186,7 +186,9 @@ verificado" (esperado, não bloqueia). Entregue:
 - Login revogado no Google agora vira login novo — antes, calendário incluso, o token morto
   ficava no disco e só apagando o arquivo à mão (achado na segunda passada de revisão).
 
-Não validado ao vivo: login real, formato real das mensagens, latência/429 do raio-x.
+Validado no Mac do dono em 2026-09-26: 528 testes, login real (token 600), não lidos e raio-x
+na caixa real (formato bateu com o fake; achado e consertado o enchimento invisível das prévias).
+Ainda não: as perguntas no `viking chat` e a latência do raio-x.
 
 ## Sessão Gmail 2 — limpar a caixa (próxima depois da leitura)
 
@@ -201,6 +203,9 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
   raio-x) e só arquiva depois do ok do dono, **naquela lista**; e-mail que chegar depois não entra
   sem nova aprovação. É o primeiro uso real da confirmação em duas etapas (Sessão 5) — desenhar
   para ser reaproveitado lá.
+- **Base medida (raio-x real, 2026-09-26):** 200 e-mails (piso) de 91 remetentes nos últimos 30
+  dias; nos 15 maiores, praticamente tudo sem abrir, e a maioria com sinal de newsletter. Nomes de
+  remetente não entram neste repo (é público).
 
 ## Sessão 5 — confirmação mecânica
 

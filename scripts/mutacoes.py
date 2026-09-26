@@ -230,6 +230,13 @@ MUTACOES = [
         "tests/test_gmail_service.py::test_raio_x_no_teto_avisa_que_e_piso",
     ),
     Mutacao(
+        "gmail: enchimento invisível da prévia vai para o Gemini",
+        "src/lifeos/gmail/service.py",
+        'if c != "\\u034f" and unicodedata.category(c) != "Cf"',
+        "if True",
+        "tests/test_gmail_service.py::test_enchimento_invisivel_da_previa_some",
+    ),
+    Mutacao(
         "gmail: ID estranho chega na API",
         "src/lifeos/gmail/service.py",
         "    if not _ID.fullmatch(email_id):",

@@ -40,8 +40,13 @@ O token é gravado com permissão 600 (o refresh token dá acesso à conta).
 - "Hoje" é `after:<segundos desde a época>` da meia-noite no fuso do Viking — a data escrita
   (`after:2026/09/26`) o Gmail interpreta num fuso que não é o nosso.
 
-O fake de `tests/conftest.py` (`gmail`) segue este formato. **Não verificado contra payload
-real** até a validação no Mac: o contrato só se prova quando a requisição sai.
+O fake de `tests/conftest.py` (`gmail`) segue este formato. **Conferido contra a caixa real do
+dono em 2026-09-26** (não lidos + raio-x): bateu, com uma exceção que o fake não tinha — prévias
+(`snippet`) de newsletter feitas só de enchimento invisível (ZWNJ U+200C, CGJ U+034F, espaço sem
+quebra), agora removido do trecho e do corpo.
+
+O app OAuth aparece para o Google com o nome **"n8n"** (tela de consentimento e alerta de
+segurança do login) — é o mesmo app, criado antes do Viking.
 
 ## O que chega ao Gemini
 

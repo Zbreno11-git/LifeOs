@@ -103,6 +103,19 @@ def test_texto_de_terceiro_chega_sem_controle(gmail):
     assert RLO not in email.remetente and ESC not in email.assunto and ESC not in email.trecho
 
 
+def test_enchimento_invisivel_da_previa_some(gmail):
+    """Caso real da caixa do dono (2026-09-26): prévia de newsletter feita só de enchimento."""
+    enchimento = (chr(0x200C) + chr(0x034F) + chr(0xA0)) * 40
+    gmail["nova"](
+        "a",
+        trecho=f"Oferta{enchimento}boa {enchimento}",
+        partes=[gmail["parte"]("text/plain", f"Linha 1{enchimento}\n{enchimento}\nLinha 2")],
+    )
+    (email,) = service.buscar("x").emails
+    assert email.trecho == "Oferta boa"
+    assert service.ler("a").corpo == "Linha 1\n\nLinha 2"
+
+
 def test_assunto_codificado_rfc2047_e_decodificado(gmail):
     gmail["nova"]("a", assunto="=?UTF-8?B?UHJvbW/Dp8Ojbw==?=")
     (email,) = service.buscar("x").emails

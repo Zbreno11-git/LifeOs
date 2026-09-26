@@ -740,3 +740,26 @@ pega na releitura; classe 4.
 dono contra o fake, a latência e os 429 do raio-x. Roteiro em `PROGRESSO.md`.
 
 **Próximo.** Validar no Mac; depois a Sessão Gmail 2 (limpeza).
+
+### 2026-09-26 — Validação ao vivo da Sessão Gmail, no Mac do dono
+
+Saída real colada pelo dono (primeiro `git pull` falhou por rede e o roteiro seguiu sobre o código
+antigo — erro meu de roteiro, classe 1; no segundo, `9841595`):
+
+- **`528 passed in 6.01s`** no Mac.
+- **Login:** `✅ Login do Gmail ok (só leitura)`, a conta certa; `google_token_gmail.json` criado
+  com `-rw-------`; o token do calendário ficou intocado (mesma data de antes).
+- **Não lidos de hoje e raio-x** na caixa real: o formato das mensagens bateu com o do fake
+  (remetente, assunto, abas, `List-Unsubscribe`, entidades do `snippet`); o raio-x leu 200 e-mails
+  de 91 remetentes em 30 dias e avisou que é piso. A redação não precisou agir nos trechos vistos
+  (a chave de API citada num alerta já vinha mascarada pelo remetente).
+- **Achado 1 — enchimento invisível:** vários trechos eram só caracteres de enchimento (ZWNJ, CGJ,
+  espaço sem quebra) que newsletters põem na prévia. O fake não tinha isso; consertado no mesmo
+  dia (trecho e corpo), com teste do caso e mutação.
+- **Achado 2 — o app se chama "n8n":** o "Alerta de segurança: você permitiu que o app n8n…" chegou
+  no mesmo minuto do token novo: é o nosso login. O app OAuth do Google Cloud usado pelo Viking
+  tem esse nome — por isso o dono não o achava como "Viking". Renomear é na tela de marca do app
+  (decisão dele).
+
+**Ainda não validado ao vivo:** as perguntas no `viking chat` (Gemini chamando as tools de e-mail)
+e o calendário sem pedir login de novo; latência do raio-x (a saída não mede tempo).

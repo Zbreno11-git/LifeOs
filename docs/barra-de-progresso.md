@@ -28,8 +28,9 @@ ligadas ao Viking (o servidor MCP) não enxergam seus e-mails.
 propósito, e 27 proteções quebradas de propósito — todas pegas pelo teste certo. De brinde: se o
 Google um dia cancelar o seu login, o Viking pede login de novo em vez de travar.
 
-**Falta:** você fazer o login do Gmail no Mac (o Google vai mostrar "app não verificado" — é
-esperado) e rodar o roteiro. A limpeza da caixa é a próxima sessão.
+**Validado no seu Mac:** login feito, e o Viking leu os não lidos de hoje e fez o raio-x da sua
+caixa real (200 e-mails de 91 remetentes em 30 dias). **Falta:** você fazer as perguntas no
+`viking chat`. A limpeza da caixa é a próxima sessão.
 
 ## 2026-09-26 — o navegador não sai, não mexe na sua conta e não gasta dinheiro sozinho
 

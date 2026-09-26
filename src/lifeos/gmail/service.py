@@ -15,6 +15,7 @@ import base64
 import binascii
 import re
 import time
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
 from email.header import decode_header, make_header
@@ -210,6 +211,13 @@ def _cabecalho(cabecalhos: list[dict], nome: str) -> str:
     return ""
 
 
+# Enchimento invisível que newsletter põe na prévia (ZWNJ, ZWJ, BOM, soft hyphen, CGJ) para o
+# cliente de e-mail não mostrar o resto do HTML: medido na caixa real do dono em 2026-09-26, o
+# trecho de vários e-mails era só isso. Gasta token do Gemini e não diz nada.
+def _sem_enchimento(texto: str) -> str:
+    return "".join(c for c in texto if c != "\u034f" and unicodedata.category(c) != "Cf")
+
+
 def _data(interna) -> str:
     try:
         instante = datetime.fromtimestamp(int(interna) / 1000, TIMEZONE)
@@ -228,7 +236,9 @@ def _email_de(mensagem: dict) -> Email:
         endereco=limpar_controles(endereco.lower()),
         assunto=limpar_controles(_cabecalho(cabecalhos, "Subject") or "(sem assunto)"),
         data=_data(mensagem.get("internalDate")),
-        trecho=limpar_controles(unescape(mensagem.get("snippet") or "")),
+        trecho=" ".join(
+            _sem_enchimento(limpar_controles(unescape(mensagem.get("snippet") or ""))).split()
+        ),
         nao_lido="UNREAD" in rotulos,
         categorias=tuple(nome for chave, nome in _CATEGORIAS.items() if chave in rotulos),
         lista=bool(_cabecalho(cabecalhos, "List-Unsubscribe") or _cabecalho(cabecalhos, "List-Id")),
@@ -311,7 +321,7 @@ def _corpo(payload: dict) -> tuple[str, int]:
     texto = "\n".join(planos) if any(p.strip() for p in planos) else ""
     if not texto:
         texto = "\n".join(_html_para_texto(h) for h in htmls)
-    linhas = (" ".join(linha.split()) for linha in texto.splitlines())
+    linhas = (" ".join(linha.split()) for linha in _sem_enchimento(texto).splitlines())
     return re.sub(r"\n{3,}", "\n\n", "\n".join(linhas)).strip(), anexos
 
 
