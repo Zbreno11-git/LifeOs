@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 import re
+import sys
 import time
 import unicodedata
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
 from email.header import decode_header, make_header
@@ -36,8 +39,18 @@ MAX_RESULTADOS = 20  # por busca; a tool não pede mais que isto
 MAX_CORPO = 4000  # caracteres do corpo devolvidos
 MAX_RAIO_X = 200  # e-mails lidos por raio-x; acima disso o resultado é piso
 LOTE = 25  # pedidos por lote; o Gmail recusa (429) lotes grandes demais em rajada
-PAUSA_S = 1.0  # antes da única nova tentativa de quem falhou no lote
-TETO_LIMPEZA = 1000  # e-mails por aprovação (D28); é também o máximo do batchModify
+PAUSA_S = 1.0  # antes da única nova tentativa de quem falhou no lote (falha que não é de cota)
+TETO_LIMPEZA = 250  # e-mails por aprovação (D28, revista: ~1 min de conferência na cota abaixo)
+LOTE_MODIFY = 1000  # máximo de IDs por batchModify
+
+# Cota do Gmail, lida em developers.google.com/workspace/gmail/api/reference/quota (2026-09-26):
+# 6.000 unidades por minuto por usuário; get = 20, list = 5, batchModify = 50. No Mac do dono, no
+# mesmo dia, 207 e-mails lidos duas vezes em menos de um minuto voltaram 403 rateLimitExceeded.
+COTA_POR_MINUTO = 6000
+ORCAMENTO_POR_MINUTO = 4800  # 80%: outro processo do Viking pode estar gastando a mesma cota
+CUSTO_GET, CUSTO_LIST, CUSTO_MODIFY = 20, 5, 50
+ESPERAS_S = (2, 4, 8, 16, 32, 64)  # espera crescente no erro de cota (o Google recomenda ≤ 64 s)
+_MOTIVOS_DE_LIMITE = frozenset({"rateLimitExceeded", "userRateLimitExceeded"})
 MAX_REMETENTES_LIMPEZA = 10  # por proposta
 MAX_LISTAGEM = 5000  # IDs listados por consulta da limpeza; acima disso a contagem é piso
 
@@ -80,6 +93,12 @@ class NaoEncontrado(ErroGmail):
 
 class FalhaDaApi(ErroGmail):
     codigo = "falha_api"
+
+
+class LimiteDoGmail(FalhaDaApi):
+    """A cota por minuto acabou e continuou acabada depois de todas as esperas."""
+
+    codigo = "limite_gmail"
 
 
 @dataclass(frozen=True)
@@ -142,16 +161,93 @@ def _servico():
         raise SemLogin(str(exc)) from exc
 
 
-def _executar(montar):
-    """Toda chamada ao Google passa por aqui (a falha pode vir já ao montar o pedido)."""
+def _relogio() -> float:
+    return time.monotonic()
+
+
+def _dormir(segundos: float) -> None:
+    time.sleep(segundos)
+
+
+def _avisar(texto: str) -> None:
+    """Espera longa aparece no terminal: sem isto, a limpeza parecia travada."""
+    print(texto, file=sys.stderr, flush=True)
+
+
+class _Cota:
+    """Janela de 60 s com o que ESTE processo gastou; antes de passar do orçamento, espera. Não
+    enxerga outro processo (um `--raio-x` rodado logo antes): para isso existe a espera no erro."""
+
+    def __init__(self) -> None:
+        self._gastos: deque[tuple[float, int]] = deque()
+
+    def gastar(self, unidades: int) -> None:
+        while True:
+            agora = _relogio()
+            while self._gastos and self._gastos[0][0] <= agora - 60:
+                self._gastos.popleft()
+            usado = sum(u for _, u in self._gastos)
+            if not self._gastos or usado + unidades <= ORCAMENTO_POR_MINUTO:
+                self._gastos.append((agora, unidades))
+                return
+            espera = self._gastos[0][0] + 60 - agora
+            if espera >= 1:
+                _avisar(f"⏳ Esperando {espera:.0f} s: o Gmail limita as consultas por minuto.")
+            _dormir(max(espera, 0.01))
+
+
+_COTA = _Cota()
+
+
+def _motivos(exc: HttpError) -> set[str]:
     try:
-        return montar().execute()
-    except HttpError as exc:
-        if getattr(exc.resp, "status", None) == 404:
-            raise NaoEncontrado(str(exc)) from exc
-        raise FalhaDaApi(str(exc)) from exc
-    except Exception as exc:  # qualquer outra falha da API vira erro de domínio
-        raise FalhaDaApi(str(exc)) from exc
+        dados = json.loads(exc.content.decode("utf-8"))
+        erros = dados["error"].get("errors") or []
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return set()
+    return {str(e.get("reason")) for e in erros if isinstance(e, dict)}
+
+
+def _eh_limite(exc: BaseException | None) -> bool:
+    if not isinstance(exc, HttpError):
+        return False
+    status = getattr(exc.resp, "status", None)
+    return status == 429 or (status == 403 and bool(_motivos(exc) & _MOTIVOS_DE_LIMITE))
+
+
+def _descrever(exc: BaseException) -> str:
+    """O erro sem o corpo cru do Google, que traz o número do projeto OAuth e iria para o terminal
+    e para o Gemini (visto no Mac do dono, 2026-09-26)."""
+    if isinstance(exc, HttpError):
+        motivos = ", ".join(sorted(_motivos(exc)))
+        status = getattr(exc.resp, "status", "?")
+        return f"HTTP {status}" + (f" ({motivos})" if motivos else "")
+    return limpar_controles(str(exc))[:200]
+
+
+_LIMITE = "o Gmail limitou as consultas por minuto; espere um minuto e tente de novo"
+
+
+def _executar(montar, custo: int = CUSTO_LIST):
+    """Toda chamada ao Google passa por aqui (a falha pode vir já ao montar o pedido). Gasta da
+    cota antes; no erro de cota, espera cada vez mais (`ESPERAS_S`) e tenta de novo."""
+    for espera in (*ESPERAS_S, None):
+        _COTA.gastar(custo)
+        try:
+            return montar().execute()
+        except HttpError as exc:
+            if _eh_limite(exc) and espera is not None:
+                _avisar(f"⏳ O Gmail pediu calma; tentando de novo em {espera} s.")
+                _dormir(espera)
+                continue
+            if _eh_limite(exc):
+                raise LimiteDoGmail(_LIMITE) from exc
+            if getattr(exc.resp, "status", None) == 404:
+                raise NaoEncontrado(_descrever(exc)) from exc
+            raise FalhaDaApi(_descrever(exc)) from exc
+        except Exception as exc:  # qualquer outra falha da API vira erro de domínio
+            raise FalhaDaApi(_descrever(exc)) from exc
+    raise AssertionError("inalcançável")  # pragma: no cover
 
 
 def _ids(service, consulta: str, limite: int) -> tuple[list[str], bool]:
@@ -170,22 +266,26 @@ def _ids(service, consulta: str, limite: int) -> tuple[list[str], bool]:
 
 
 def _metadados(service, ids: list[str]) -> tuple[list[Email], int]:
-    """Metadados em lotes. Quem falhar ganha uma nova tentativa depois de uma pausa; quem falhar
-    de novo é contado e devolvido, nunca descartado em silêncio."""
+    """Metadados em lotes, dentro da cota (cada e-mail custa `CUSTO_GET`). Quem falhar por cota
+    espera cada vez mais e tenta de novo; por outro motivo, uma nova tentativa. Quem sobrar é
+    contado e devolvido, nunca descartado em silêncio."""
     lidos: dict[str, dict] = {}
-    falhas: list[str] = []
+    falhas: dict[str, BaseException | None] = {}
 
     def guardar(request_id, resposta, excecao):
         if excecao is None and isinstance(resposta, dict):
             lidos[request_id] = resposta
         else:
-            falhas.append(request_id)
+            falhas[request_id] = excecao
 
     pendentes = list(dict.fromkeys(ids))
-    for tentativa in range(2):
+    esperas = iter(ESPERAS_S)
+    outra_vez = True
+    while pendentes:
         falhas.clear()
         for inicio in range(0, len(pendentes), LOTE):
             lote_ids = pendentes[inicio : inicio + LOTE]
+            _COTA.gastar(CUSTO_GET * len(lote_ids))
             lote = service.new_batch_http_request(callback=guardar)
             for email_id in lote_ids:
                 pedido = (
@@ -196,13 +296,22 @@ def _metadados(service, ids: list[str]) -> tuple[list[Email], int]:
                 lote.add(pedido, request_id=email_id)
             try:
                 lote.execute()
-            except Exception:  # noqa: BLE001 - lote inteiro caiu: todos dele contam como falha
-                falhas.extend(i for i in lote_ids if i not in lidos)
-        pendentes = [i for i in dict.fromkeys(falhas) if i not in lidos]
+            except Exception as exc:  # noqa: BLE001 - lote inteiro caiu: todos dele são falha
+                falhas.update({i: exc for i in lote_ids if i not in lidos})
+        pendentes = [i for i in falhas if i not in lidos]
         if not pendentes:
             break
-        if tentativa == 0:
-            time.sleep(PAUSA_S)
+        if any(_eh_limite(e) for e in falhas.values()):
+            espera = next(esperas, None)
+            if espera is None:
+                break
+            _avisar(f"⏳ O Gmail pediu calma; {len(pendentes)} e-mail(s) de novo em {espera} s.")
+            _dormir(espera)
+        elif outra_vez:
+            outra_vez = False
+            _dormir(PAUSA_S)
+        else:
+            break
     return [_email_de(lidos[i]) for i in ids if i in lidos], len(pendentes)
 
 
@@ -377,7 +486,8 @@ def ler(email_id: str) -> EmailCompleto:
         raise EntradaInvalida("o ID do e-mail veio vazio ou com caracteres inesperados")
     service = _servico()
     mensagem = _executar(
-        lambda: service.users().messages().get(userId="me", id=email_id, format="full")
+        lambda: service.users().messages().get(userId="me", id=email_id, format="full"),
+        CUSTO_GET,
     )
     corpo, anexos = _corpo(mensagem.get("payload") or {})
     corpo = limpar_controles(corpo)
@@ -489,7 +599,9 @@ def selecionar(remetentes, *, teto: int = TETO_LIMPEZA, somente=None) -> Selecao
     os protegidos. Só lê. Passando do teto, vão os mais antigos de cada remetente, na ordem pedida.
 
     `somente`: na confirmação, restringe aos IDs aprovados — o que ganhou estrela depois fica, e o
-    que chegou depois não entra.
+    que chegou depois não entra. Nesse caminho **não relê e-mail por e-mail** (20 unidades de cota
+    cada; ler duas vezes estourou a cota no Mac do dono): as duas camadas são buscas — a que exclui
+    os protegidos e as que os listam, subtraídas. O remetente exato já foi conferido na proposta.
     """
     enderecos = enderecos_validos(remetentes)
     permitidos = set(somente) if somente is not None else None
@@ -498,11 +610,12 @@ def selecionar(remetentes, *, teto: int = TETO_LIMPEZA, somente=None) -> Selecao
     grupos = []
     for endereco in enderecos:
         base = f"from:{endereco} in:inbox"
-        protegidos, com_anexo, piso = [], set(), False
+        protegidos, com_anexo, todos_protegidos, piso = [], set(), set(), False
         for motivo, filtro in _PROTECOES:
             ids, cheio = _ids(service, f"{base} {filtro}", MAX_LISTAGEM)
             piso |= cheio
             protegidos.append((motivo, len(ids)))
+            todos_protegidos |= set(ids)
             if filtro == "has:attachment":
                 com_anexo = set(ids)
         filtros = " ".join(f"-{f}" for _, f in _PROTECOES)
@@ -511,7 +624,23 @@ def selecionar(remetentes, *, teto: int = TETO_LIMPEZA, somente=None) -> Selecao
         # O Gmail lista do mais novo para o mais velho; os mais antigos saem primeiro.
         candidatos = [i for i in reversed(candidatos) if i not in com_anexo]
         if permitidos is not None:
-            candidatos = [i for i in candidatos if i in permitidos]
+            sai = [i for i in candidatos if i in permitidos and i not in todos_protegidos]
+            sai = sai[:orcamento]
+            orcamento -= len(sai)
+            grupos.append(
+                Grupo(
+                    endereco=endereco,
+                    nome=endereco,
+                    sai=tuple(sai),
+                    sobram=0,
+                    protegidos=tuple((m, n) for m, n in protegidos if n),
+                    assuntos=(),
+                    outro_remetente=0,
+                    falharam=0,
+                    piso=piso,
+                )
+            )
+            continue
         escolhidos = candidatos[:orcamento]
         emails, falharam = _metadados(service, escolhidos)
         sai, outro, nome = [], 0, ""
@@ -544,16 +673,17 @@ def _rotular(ids, corpo: dict) -> Modificacao:
         return Modificacao((), ())
     service = _servico()
     feitos: list[str] = []
-    for inicio in range(0, len(ids), TETO_LIMPEZA):
-        lote = ids[inicio : inicio + TETO_LIMPEZA]
+    for inicio in range(0, len(ids), LOTE_MODIFY):
+        lote = ids[inicio : inicio + LOTE_MODIFY]
         try:
             _executar(
                 lambda lote=lote: (
                     service.users().messages().batchModify(userId="me", body={"ids": lote, **corpo})
-                )
+                ),
+                CUSTO_MODIFY,
             )
         except ErroGmail as exc:
-            return Modificacao(tuple(feitos), tuple(ids[len(feitos) :]), limpar_controles(str(exc)))
+            return Modificacao(tuple(feitos), tuple(ids[len(feitos) :]), str(exc))
         feitos += lote
     return Modificacao(tuple(feitos), ())
 

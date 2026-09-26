@@ -279,6 +279,13 @@ da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se 
 lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza
 também enviar e mover para a lixeira: `test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar`.
 
+**A cota do Gmail é pequena para ler e-mail um por um.** 6.000 unidades por minuto por usuário e
+`messages.get` custa 20 (300 e-mails/min; o raio-x sozinho gasta 4.000). A primeira limpeza relia
+os 207 e-mails na confirmação e levou `403 rateLimitExceeded` no Mac (não é 429). Toda chamada
+passa por `gmail/service._executar`/`_metadados`, que gastam do orçamento `_Cota` e esperam
+(`ESPERAS_S`) na recusa; fluxo novo não relê o que já leu — busca (`list`, 5 unidades) é o que
+se repete. O erro cru do Google traz o número do projeto OAuth: use `_descrever`.
+
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela
 ferramenta gravou o caractere bidi literal no código-fonte (Trojan Source). O `ruff` pega

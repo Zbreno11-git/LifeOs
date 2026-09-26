@@ -18,7 +18,7 @@
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 3 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar |
+| 3 | Estimei em vez de medir | 4 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar |
 | 4 | Teste que não separava o certo do errado | 6 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 2 | *onde mais esta falha pode nascer?* antes de dar por pronto |
@@ -110,6 +110,13 @@ o YouTube gastou 24.507 tokens em 6 chamadas.
 
 **2026-09-20 — comprimento de linha (Sessão 3).** Estimei a largura na indentação errada, quebrei
 uma string, e o `ruff format` juntou de volta.
+
+**2026-09-26 — a cota do Gmail "não medida" (Gmail 2).** Escrevi no plano e na fonte que a
+latência e o 429 dos metadados não estavam medidos — e desenhei assim mesmo uma confirmação que
+relia cada e-mail. O custo (`get` = 20 de 6.000/min) estava numa página da documentação do
+Google. No Mac: 207 e-mails lidos duas vezes num minuto, `403 rateLimitExceeded`, nada
+arquivado. O que tem de novo: marcar "não medido" não é tratar; um limite do terceiro que decide
+o desenho se lê **antes** (skill `integracoes`: limites como constantes).
 
 > **Um número sem comando é hipótese, mesmo quando parece óbvio.**
 

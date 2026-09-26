@@ -347,6 +347,41 @@ MUTACOES = [
         "        _SEM_CODIGO + str(proposta.codigo),\n    ]",
         "tests/test_gmail_aprovacao.py::test_codigo_vai_ao_terminal_e_nunca_ao_gemini",
     ),
+    Mutacao(
+        "cota: sem orçamento local, leva 403",
+        "src/lifeos/gmail/service.py",
+        "            if not self._gastos or usado + unidades <= ORCAMENTO_POR_MINUTO:",
+        "            if True:",
+        "tests/test_gmail_limpeza.py::test_caso_do_mac_raio_x_mais_limpeza_cabe_na_cota_sem_recusa",
+    ),
+    Mutacao(
+        "cota: 403 de cota numa chamada não espera",
+        "src/lifeos/gmail/service.py",
+        "            if _eh_limite(exc) and espera is not None:",
+        "            if False:",
+        "tests/test_gmail_limpeza.py::test_arquivar_recusado_por_cota_tenta_de_novo",
+    ),
+    Mutacao(
+        "cota: 403 de cota nos metadados não espera",
+        "src/lifeos/gmail/service.py",
+        "        if any(_eh_limite(e) for e in falhas.values()):",
+        "        if False:",
+        "tests/test_gmail_limpeza.py::test_recusa_por_cota_espera_cada_vez_mais_e_recupera",
+    ),
+    Mutacao(
+        "cota: confirmação relê e-mail por e-mail",
+        "src/lifeos/gmail/service.py",
+        "        if permitidos is not None:\n            sai = [",
+        "        if False:\n            sai = [",
+        "tests/test_gmail_limpeza.py::test_confirmacao_nao_rele_email_por_email",
+    ),
+    Mutacao(
+        "cota: o erro cru do Google (número do projeto) vai ao texto",
+        "src/lifeos/gmail/service.py",
+        "                raise LimiteDoGmail(_LIMITE) from exc",
+        "                raise LimiteDoGmail(str(exc)) from exc",
+        "tests/test_gmail_limpeza.py::test_cota_que_nunca_volta_vira_frase_sem_o_erro_cru",
+    ),
 ]
 
 

@@ -5,7 +5,8 @@ O fluxo, e onde cada trava mora:
    proposta com os IDs exatos ganha um código (`lifeos/confirmacao.py`). Quem mostra o código é
    o Viking, direto no terminal (`gmail/tools.py`); ele nunca volta no texto do Gemini.
 2. `confirmar(codigo)` — chamado só pelo laço do chat (`assistant/agent.py`, antes do Gemini) ou
-   pela CLI. Refaz a seleção restrita aos IDs aprovados e arquiva o que ainda vale.
+   pela CLI. Refaz a seleção restrita aos IDs aprovados, só com buscas (barato na cota do Gmail),
+   e arquiva o que ainda vale.
 3. `desfazer(codigo)` — por 7 dias (D27), devolve à caixa exatamente os que foram arquivados.
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
@@ -35,7 +36,6 @@ class Execucao:
     codigo: str
     aprovados: int
     fora: int  # aprovados que deixaram de valer (ganharam estrela, saíram da caixa...)
-    nao_conferidos: int  # não deu para reler agora (falha da API): ficaram, e não "mudaram"
     modificacao: service.Modificacao
     desfazer_ate: datetime
 
@@ -69,8 +69,7 @@ def confirmar(codigo: str) -> Execucao:
         raise
     ainda = set(atual.ids)
     ids = [i for i in aprovados if i in ainda]
-    nao_conferidos = sum(g.falharam for g in atual.grupos)
-    fora = len(aprovados) - len(ids) - nao_conferidos
+    fora = len(aprovados) - len(ids)
     modificacao = service.arquivar(ids)
     confirmacao.registrar(
         registro.id,
@@ -78,7 +77,6 @@ def confirmar(codigo: str) -> Execucao:
             "arquivados": list(modificacao.feitos),
             "falharam": list(modificacao.falharam),
             "fora": fora,
-            "nao_conferidos": nao_conferidos,
         },
     )
     quando = registro.consumida_em or datetime.now(UTC)
@@ -86,7 +84,6 @@ def confirmar(codigo: str) -> Execucao:
         codigo=registro.codigo,
         aprovados=len(aprovados),
         fora=fora,
-        nao_conferidos=nao_conferidos,
         modificacao=modificacao,
         desfazer_ate=quando + DESFAZER_POR,
     )

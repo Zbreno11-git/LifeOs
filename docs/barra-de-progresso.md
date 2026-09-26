@@ -23,14 +23,19 @@ marcados como importantes, com anexo nunca saem), e um código de 4 números. S�
 digita `confirma` e o código é que eles saem da caixa de entrada — arquivados, não apagados: ficam
 em "Todos os e-mails". O Gemini nunca vê esse código, então um e-mail malicioso pode no máximo
 fazê-lo *sugerir* uma limpeza, nunca aprová-la. Errou? `desfaz` e o mesmo código, por 7 dias,
-devolve exatamente aqueles e-mails. No máximo 1000 por vez.
+devolve exatamente aqueles e-mails. No máximo 250 por vez: o Google só deixa o Viking conferir
+cerca de 300 e-mails por minuto, e com 250 a lista aparece em mais ou menos um minuto.
 
 **Um aviso honesto:** para arquivar, o Google só oferece uma permissão que, no papel, também
 deixaria enviar e-mail e mandar para a lixeira. O Viking não usa nada disso, e um teste quebra se
 alguém escrever código que use. No login, a tela do Google vai descrever essa permissão maior.
 
-**Como sabemos:** 607 testes passando no VPS, inclusive um "Gemini de mentira" tentando aprovar
-sozinho, e 41 proteções quebradas de propósito, todas pegas pelo teste certo. **Falta:** rodar no
+**Primeiro teste no seu Mac:** não arquivou nada — o Google recusou por excesso de consultas no
+minuto (o Viking relia cada e-mail duas vezes). Consertado: ele agora anda no ritmo que o Google
+permite, espera quando é recusado, e confirma sem reler. Nada se perdeu naquele teste.
+
+**Como sabemos:** 612 testes passando no VPS, inclusive um "Gemini de mentira" tentando aprovar
+sozinho e um Gmail de mentira que cobra a cota como o real, e 46 proteções quebradas de propósito, todas pegas pelo teste certo. **Falta:** rodar no
 seu Mac, na sua caixa de verdade.
 
 **Finanças (Pluggy):** medi hoje — para uso pessoal é de graça (até 5 bancos). Suas credenciais

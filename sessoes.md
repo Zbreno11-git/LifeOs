@@ -197,7 +197,7 @@ Perguntas no `viking chat` também validadas. Não medida: a latência do raio-x
 **Entregue:** `viking chat` → "arquiva tudo do X" → a tool `preparar_limpeza` imprime no terminal
 a lista exata e um código de 4 dígitos (nunca devolvido ao Gemini) → o dono digita
 `confirma NNNN`, lido pelo laço do chat antes do modelo → arquiva; `desfaz NNNN` devolve por 7
-dias. `viking gmail --arquivar/--desfazer` faz o mesmo sem o Gemini. Teto 1000 (D28); escopo
+dias. `viking gmail --arquivar/--desfazer` faz o mesmo sem o Gemini. Teto 250 (D28, revista depois do 403 de cota no Mac); escopo
 `gmail.modify` com teste que proíbe enviar/lixeira/apagar (D29); confirmação mecânica genérica
 em `lifeos/confirmacao.py`, pronta para a Sessão 5. Plano e checkpoints em `PROGRESSO.md`.
 

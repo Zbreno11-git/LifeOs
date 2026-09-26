@@ -8,6 +8,7 @@ um caminho novo que esqueça os dois nomes acima.
 """
 
 import base64
+import json
 
 import httplib2
 import pytest
@@ -124,6 +125,46 @@ def _erro_http(status: int) -> HttpError:
     return HttpError(httplib2.Response({"status": str(status)}), b"erro falso")
 
 
+# Cota do Gmail real (developers.google.com/workspace/gmail/api/reference/quota, 2026-09-26). O
+# fake cobra do mesmo jeito, num relógio falso que só anda quando o serviço "dorme": o 403 que o
+# dono viu no Mac (207 e-mails lidos duas vezes num minuto) vira reproduzível aqui.
+COTA_POR_MINUTO = 6000
+_CUSTOS = {"list": 5, "get": 20, "batchModify": 50, "getProfile": 1}
+
+
+def erro_de_cota() -> HttpError:
+    """Como o Gmail responde quando a cota por minuto acaba (formato do erro visto no Mac; o
+    texto de verdade traz o número do projeto, que não entra aqui)."""
+    corpo = {
+        "error": {
+            "code": 403,
+            "message": "Quota exceeded for quota metric 'Total Query Cost' and limit 'Units per "
+            "minute per user' of service 'gmail.googleapis.com' for consumer "
+            "'project_number:0'.",
+            "errors": [
+                {
+                    "message": "Quota exceeded",
+                    "domain": "usageLimits",
+                    "reason": "rateLimitExceeded",
+                }
+            ],
+            "status": "PERMISSION_DENIED",
+        }
+    }
+    return HttpError(httplib2.Response({"status": "403"}), json.dumps(corpo).encode())
+
+
+def _cobrar(estado: dict, operacao: str) -> None:
+    agora = estado["relogio"]
+    janela = [(t, u) for t, u in estado["gastos"] if t > agora - 60]
+    custo = _CUSTOS[operacao]
+    if sum(u for _, u in janela) + custo > estado["cota_por_minuto"]:
+        estado["recusas_por_cota"] += 1
+        estado["gastos"] = janela
+        raise erro_de_cota()
+    estado["gastos"] = [*janela, (agora, custo)]
+
+
 class _GmailPedido:
     def __init__(self, acao):
         self._acao = acao
@@ -191,6 +232,7 @@ class _GmailMensagens:
         estado = self._estado
 
         def acao():
+            _cobrar(estado, "list")
             estado["consultas"].append(q)
             if estado["falhar_list"]:
                 raise RuntimeError("API fora do ar")
@@ -211,6 +253,7 @@ class _GmailMensagens:
         estado = self._estado
 
         def acao():
+            _cobrar(estado, "get")
             estado["gets"].append((id, format))
             if id in estado["falhar_sempre"]:
                 raise _erro_http(500)
@@ -227,6 +270,7 @@ class _GmailMensagens:
         estado = self._estado
 
         def acao():
+            _cobrar(estado, "batchModify")
             if estado["falhar_modify"]:
                 estado["falhar_modify"] -= 1
                 raise _erro_http(500)
@@ -305,6 +349,12 @@ def gmail(monkeypatch):
         "falhar_sempre": set(),
         "falhar_uma_vez": set(),
         "consulta_frouxa": False,
+        "relogio": 0.0,
+        "gastos": [],  # (instante, unidades) cobrados pelo fake, como o Google
+        "cota_por_minuto": COTA_POR_MINUTO,
+        "recusas_por_cota": 0,
+        "esperas": [],  # cada "dormida" do serviço, em segundos
+        "avisos": [],  # o que o serviço mostrou no terminal enquanto esperava
         "falhar_modify": 0,  # quantas chamadas de batchModify falham antes de funcionar
         "modificacoes": [],  # corpo de cada batchModify que deu certo
     }
@@ -324,4 +374,16 @@ def gmail(monkeypatch):
     estado["nova"], estado["parte"] = nova, parte
     monkeypatch.setattr("lifeos.gmail.service.get_gmail_service", lambda: _GmailServico(estado))
     monkeypatch.setattr("lifeos.gmail.service.PAUSA_S", 0)
+
+    # Relógio falso compartilhado pelo serviço e pelo fake; "dormir" só anda o relógio.
+    def dormir(segundos):
+        estado["esperas"].append(segundos)
+        estado["relogio"] += segundos
+
+    from lifeos.gmail import service
+
+    monkeypatch.setattr(service, "_relogio", lambda: estado["relogio"])
+    monkeypatch.setattr(service, "_dormir", dormir)
+    monkeypatch.setattr(service, "_avisar", estado["avisos"].append)
+    monkeypatch.setattr(service, "_COTA", service._Cota())
     return estado

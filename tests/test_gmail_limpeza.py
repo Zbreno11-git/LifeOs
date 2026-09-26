@@ -131,11 +131,11 @@ def test_arquivar_so_tira_o_rotulo_inbox(gmail):
 
 
 def test_arquivar_em_lotes_de_no_maximo_mil(gmail):
-    ids = [f"m{i}" for i in range(service.TETO_LIMPEZA + 1)]
+    ids = [f"m{i}" for i in range(service.LOTE_MODIFY + 1)]
     for i in ids:
         gmail["nova"](i)
     service.arquivar(ids)
-    assert [len(m["ids"]) for m in gmail["modificacoes"]] == [service.TETO_LIMPEZA, 1]
+    assert [len(m["ids"]) for m in gmail["modificacoes"]] == [service.LOTE_MODIFY, 1]
 
 
 def test_falha_no_arquivar_diz_o_que_nao_foi(gmail):
@@ -192,15 +192,80 @@ def test_confirmacao_so_arquiva_o_que_foi_aprovado_e_ainda_vale(gmail):
     assert _na_caixa(gmail, "novo") and _na_caixa(gmail, "l2")
 
 
-def test_falha_ao_reler_na_confirmacao_nao_se_passa_por_mudanca(gmail):
-    """Um 429 na hora de conferir de novo não é "ganhou estrela": o dono precisa saber que foi
-    falha, porque pedir a lista de novo resolve."""
+def test_confirmacao_nao_rele_email_por_email(gmail):
+    """Ler cada e-mail custa 20 unidades de cota; reler os 207 na confirmação estourou a cota no
+    Mac do dono (2026-09-26). A confirmação só busca."""
     _caixa(gmail)
     proposta = limpeza.preparar(LOJA)
-    gmail["falhar_sempre"].add("l2")
+    lidos_na_proposta = len(gmail["gets"])
+    limpeza.confirmar(proposta.codigo)
+    assert len(gmail["gets"]) == lidos_na_proposta
+
+
+def test_confirmacao_segura_estrela_nova_mesmo_com_consulta_frouxa(gmail):
+    """Sem reler, as duas camadas da confirmação são buscas: a que exclui os protegidos e as que
+    os listam. Com o Gmail ignorando a exclusão, a lista de estrelas ainda segura."""
+    _caixa(gmail)
+    proposta = limpeza.preparar(LOJA)
+    gmail["consulta_frouxa"] = True
+    gmail["mensagens"]["l2"]["labelIds"].append("STARRED")
+    assert limpeza.confirmar(proposta.codigo).modificacao.feitos == ("l1", "l3")
+
+
+# --- cota do Gmail: 6.000 unidades por minuto, get = 20 ---------------------------------------
+
+
+def _loja_grande(gmail, n=207):
+    """O caso do Mac: um remetente com 207 e-mails na caixa (mais novo primeiro)."""
+    for i in range(n, 0, -1):
+        gmail["nova"](f"m{i}", de=f"Loja <{LOJA}>")
+
+
+def test_caso_do_mac_raio_x_mais_limpeza_cabe_na_cota_sem_recusa(gmail):
+    """Raio-x (200 lidos) e proposta de 207 no mesmo minuto passam de 6.000 unidades: o
+    orçamento espera a janela andar em vez de levar 403."""
+    _loja_grande(gmail)
+    service.raio_x(30)
+    proposta = limpeza.preparar(LOJA)
     execucao = limpeza.confirmar(proposta.codigo)
-    assert (execucao.fora, execucao.nao_conferidos) == (0, 1)
-    assert "l2" not in execucao.modificacao.feitos and _na_caixa(gmail, "l2")
+    assert len(execucao.modificacao.feitos) == 207
+    assert gmail["recusas_por_cota"] == 0
+    assert gmail["esperas"] and any("Esperando" in a for a in gmail["avisos"])
+
+
+def test_recusa_por_cota_espera_cada_vez_mais_e_recupera(gmail, monkeypatch):
+    """Outro processo gastou a cota (o orçamento deste não enxerga): o 403 vira espera, não perda."""
+    monkeypatch.setattr(service, "ORCAMENTO_POR_MINUTO", 10**9)  # sem o orçamento local
+    _loja_grande(gmail)
+    service.raio_x(30)
+    grupo = service.selecionar(LOJA).grupos[0]
+    assert len(grupo.sai) == 207 and grupo.falharam == 0
+    assert gmail["recusas_por_cota"] > 0
+    assert gmail["esperas"][0] == service.ESPERAS_S[0]
+
+
+def test_arquivar_recusado_por_cota_tenta_de_novo(gmail, monkeypatch):
+    _caixa(gmail)
+    monkeypatch.setattr(service, "ORCAMENTO_POR_MINUTO", 10**9)
+    gmail["gastos"] = [(0.0, service.COTA_POR_MINUTO)]  # a cota do minuto já foi gasta
+    assert service.arquivar(["l1"]).feitos == ("l1",)
+    # a cota gasta no instante 0 só sai da janela depois de 60 s: 2+4+8+16+32 = 62 s de espera
+    assert gmail["esperas"] == [2, 4, 8, 16, 32]
+    assert gmail["recusas_por_cota"] == 5
+
+
+def test_cota_que_nunca_volta_vira_frase_sem_o_erro_cru(gmail):
+    """O texto cru do Google traz o número do projeto OAuth: não vai ao terminal nem ao Gemini."""
+    from lifeos.gmail import tools
+
+    _caixa(gmail)
+    gmail["cota_por_minuto"] = 0
+    texto = tools.buscar_emails("x")
+    assert "limitou as consultas por minuto" in texto
+    assert "project_number" not in texto and "HttpError" not in texto
+    resultado = service.arquivar(["l1"])
+    assert resultado.falharam == ("l1",)
+    assert "project_number" not in resultado.erro
 
 
 def test_proposta_vazia_invalida_o_codigo_anterior(gmail):

@@ -807,3 +807,24 @@ caminhos — pega na segunda passada; classe 4, segunda vez.
 **Não verificado.** Login novo com `gmail.modify` no Mac; arquivar e desfazer na caixa real;
 latência e 429 dos metadados de 1000 e-mails. Roteiro em `PROGRESSO.md`.
 
+### 2026-09-26 — Gmail 2 no Mac: a cota do Gmail estourou, e o conserto
+
+**Medido no Mac (saída colada pelo dono).** `viking gmail --arquivar` num remetente de 207 e-mails:
+proposta ok; na confirmação, `Arquivei 0`, "135 não puderam ser conferidos" e "72 NÃO foram
+arquivados" com `403 ... Quota exceeded ... 'Units per minute per user'` (`rateLimitExceeded`).
+O texto cru do erro trazia o número do projeto OAuth — não copiado para cá. Nada foi arquivado nem
+perdido; o código foi gasto.
+
+**Causa.** A documentação de cota do Google (lida depois, não antes — erro meu, classe 3): 6.000
+unidades por minuto por usuário, `messages.get` = 20. A proposta leu 207 (≈ 4.100) e a confirmação
+releu os mesmos 207 no mesmo minuto: passou de 6.000. O dono apontou o remédio ("tem que ter um
+sleep entre elas").
+
+**Feito.** Orçamento de 4.800/min por processo antes de cada chamada; espera crescente (2 → 64 s)
+em qualquer recusa de cota, com aviso no terminal; a confirmação só faz buscas (as proteções
+continuam em duas camadas, as duas por busca); o erro vira frase sem o corpo do Google. Teto
+revisto pelo dono de 1000 para **250** (D28): cerca de 1 minuto de conferência. O fake do Gmail
+passou a cobrar a mesma cota num relógio falso, e o caso do Mac (raio-x + 207 no mesmo minuto)
+virou teste. Portões: `612 passed`; `ruff check` limpo; baseline 7; mutações
+`46 · mortas pelo teste esperado: 46` (5 novas de cota).
+

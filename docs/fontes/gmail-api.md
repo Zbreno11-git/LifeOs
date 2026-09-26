@@ -68,9 +68,20 @@ redigido; o objetivo da busca (escrito pelo usuário/Gemini) não é redigido.
 ## Raio-x e lotes
 
 O raio-x lê metadados de até 200 e-mails da caixa de entrada em lotes de 25
-(`new_batch_http_request`). Quem falha (ex.: 429 por rajada) ganha uma nova tentativa depois de
-1 s; quem falha de novo é contado e aparece no texto. Latência e taxa de 429 **não medidas** —
-medir no Mac antes de mexer em `LOTE`/`MAX_RAIO_X`.
+(`new_batch_http_request`), dentro da cota (abaixo). Quem falha por outro motivo ganha uma nova
+tentativa depois de 1 s; quem falha de novo é contado e aparece no texto.
+
+## Cota (lida em 2026-09-26, depois de estourar no Mac)
+
+`developers.google.com/workspace/gmail/api/reference/quota`: **6.000 unidades por minuto por
+usuário**; `messages.get` = **20**, `messages.list` = 5, `batchModify` = 50. Ou seja, no máximo
+300 e-mails lidos por minuto — o raio-x (200) sozinho gasta 4.000. **Medido no Mac:** a primeira
+versão da limpeza leu 207 e-mails na proposta e de novo na confirmação, em menos de um minuto, e
+recebeu `403` com motivo `rateLimitExceeded` (não é 429). Hoje: orçamento de 4.800/min por
+processo (`service._Cota`), espera crescente de 2 a 64 s em qualquer recusa de cota (o orçamento
+não enxerga outro processo), e a confirmação só faz buscas. O fake do `conftest` cobra a mesma
+cota num relógio falso. O corpo do erro traz o número do projeto OAuth: não sai do serviço
+(`_descrever`).
 
 ## Limpeza da caixa (Sessão Gmail 2)
 
@@ -83,6 +94,7 @@ medir no Mac antes de mexer em `LOTE`/`MAX_RAIO_X`.
   conferidas de novo no cliente (rótulos `STARRED`/`IMPORTANT` e a lista de `has:attachment`).
 - **Endereço estrito antes da consulta:** `a@b.com OR in:anywhere` viraria uma busca na conta
   inteira; qualquer pedido fora do formato recusa tudo, sem consultar.
-- **Teto 1000 por aprovação (D28):** acima disso, os mais antigos de cada remetente, na ordem pedida.
-- **Não medido:** latência e 429 dos metadados de 1000 e-mails (40 lotes de 25). Quem falha fica
-  na caixa e aparece contado ("não puderam ser conferidos") — nunca sai sem conferência.
+- **Teto 250 por aprovação (D28):** acima disso, os mais antigos de cada remetente, na ordem pedida.
+  250 conferidos = 5.000 unidades, cerca de 1 minuto na cota.
+- **A confirmação não relê** e-mail por e-mail: refaz as buscas (a que exclui os protegidos e as
+  que os listam) e intersecta com os aprovados. O remetente exato foi conferido na proposta.

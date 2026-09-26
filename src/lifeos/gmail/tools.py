@@ -50,6 +50,8 @@ def mensagem_de_erro(exc: service.ErroGmail) -> str:
         )
     if isinstance(exc, service.EntradaInvalida) and "remetente" in str(exc):
         return f"NÃO preparei nada: {detalhe}."
+    if isinstance(exc, service.LimiteDoGmail):
+        return f"Parei: {detalhe}. Nada foi perdido."
     if isinstance(exc, service.SemLogin):
         return (
             f"Não consegui entrar no Gmail ({detalhe}). No Mac do usuário, "
@@ -260,15 +262,10 @@ def texto_da_execucao(execucao: limpeza.Execucao) -> str:
             f"{execucao.fora} dos aprovados ficaram: mudaram desde a lista (estrela, já "
             "arquivados, marcados como importantes)."
         )
-    if execucao.nao_conferidos:
-        partes.append(
-            f"⚠️ {execucao.nao_conferidos} não puderam ser conferidos agora (falha do Gmail) e "
-            "ficaram na caixa: peça a lista de novo para tentar só esses."
-        )
     if execucao.modificacao.falharam:
         partes.append(
-            f"⚠️ {len(execucao.modificacao.falharam)} NÃO foram arquivados: "
-            f"{execucao.modificacao.erro}"
+            f"⚠️ {len(execucao.modificacao.falharam)} NÃO foram arquivados "
+            f"({execucao.modificacao.erro}); peça a lista de novo para tentar esses."
         )
     if feitos:
         partes.append(f"Para desfazer até {_hora(execucao.desfazer_ate)}: desfaz {execucao.codigo}")
