@@ -17,11 +17,13 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 4 | caminho real `~/LifeOs`, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 3 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 5 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 3 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar |
-| 4 | Teste que não separava o certo do errado | 3 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso |
+| 4 | Teste que não separava o certo do errado | 4 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso |
 | 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 2 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 3 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 8 | Comando que escreve com alcance maior que a mudança | 1 | formatador e afins só nos arquivos que eu editei; conferir com `git status` depois |
 
 ---
 
@@ -58,6 +60,16 @@ do Jev usa `TYPESAFE_MODEL=~typesafe/jev-latest`, e isso estava escrito em `jev-
 valor dos campos faz o Jev repreencher em loop. Nunca foi observado; foi para `jev-typesafe.md`
 como hipótese.
 
+**2026-09-26 — âncora de mutação de memória (Sessão 4b).** Escrevi a âncora do bloqueio de
+subdomínio como `host == d or ...`; no código a variável é `dominio`. O próprio script recusou
+antes de rodar ("âncora casa 0 vez(es)"). O que tem de novo: era código que eu tinha lido na
+Sessão 4 — ter lido não é ter o texto; âncora se copia da fonte na hora.
+
+**2026-09-26 — "`select` não envia nada" (Sessão 4b).** Escrevi isso no plano do freio logo depois
+de ler o `browser.py` do Jev, que dispara `change` ao escolher a opção — e site pode enviar
+nesse evento. Pego na segunda passada de revisão, com a pergunta "por onde mais se chega lá?"
+(skill `seguranca` §2). O que tem de novo: a afirmação contradizia um arquivo lido minutos antes.
+
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
 
@@ -93,6 +105,13 @@ perto do teto de 2 s: num Mac rápido a regressão passaria. Pego pela mutação
 **2026-09-26 — fixture sem o módulo que o código novo exige (Sessão 4).** A fixture `jev_falso`
 não injetava `jev_ultrafast.agent`; todos os testes do subprocesso cairiam em
 `protecao_indisponivel` pelo motivo errado. Previsto no plano e corrigido antes.
+
+**2026-09-26 — a trava de título vazio sem teste próprio (escrita na Sessão 1, achada na 4b).**
+`test_recusa_titulo_vazio` só conferia "nada apagado", e isso a comparação de títulos também
+garante: remover a primeira trava deixava tudo verde. O único caso em que só ela protege — evento
+cujo título no Google é só espaço, que normaliza igual a `""` — não tinha teste. Pego pela
+primeira rodada de `scripts/mutacoes.py`; teste novo
+`test_titulo_vazio_nao_apaga_evento_de_titulo_em_branco`.
 
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 
@@ -134,3 +153,37 @@ também formata o Python dentro dos `.md`. Formatado na Sessão 4.
 
 **O antídoto, concreto:** na revisão, listar todos os pontos por onde a falha entra antes de
 fechar; rodar os portões no repo inteiro, não só nos arquivos que eu lembro de ter tocado.
+
+### 7. Regra de reconhecimento desenhada pelo caso típico
+
+**2026-09-26 — `href` por substring (Sessão 4b).** A primeira versão do freio casava `sair`
+dentro de qualquer caminho: o link de um artigo `/blog/como-sair-da-divida` seria recusado como
+logout. Pego na releitura; virou comparação com o trecho inteiro do caminho.
+
+**2026-09-26 — controle virando espaço (Sessão 4b).** A normalização trocava todo não-alfanumérico
+por espaço, então um NUL no meio de "Sair" partia a palavra e o rótulo escapava. Pego na
+releitura; controles e invisíveis passaram a ser removidos, só espaço de verdade vira espaço.
+
+**2026-09-26 — botão genérico no contexto errado (Sessão 4b).** "Excluir" era julgado também pelo
+contexto de dinheiro: excluir a tarefa "comprar pão" seria recusado. Pego pelo teste de vizinho
+legítimo escrito junto; remover passou a olhar só contexto de conta.
+
+> **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
+> nem o vizinho inocente nem o disfarce.**
+
+**O antídoto, concreto:** antes de escrever a regra, uma lista escrita de vizinhos legítimos e de
+disfarces, virando teste parametrizado dos dois lados (`tests/test_acoes_sensiveis.py` é o modelo).
+
+### 8. Comando que escreve com alcance maior que a mudança
+
+**2026-09-26 — `ruff format` em `src`/`tests` inteiros (Sessão 4b).** Queria formatar os arquivos
+que tinha acabado de editar; o formatador reescreveu também 5 arquivos antigos fora do padrão
+(`agent.py`, `calendar/tools.py`, `custos.py` e dois testes) — em `tools.py`, duas docstrings que
+o Gemini lê e que estavam fora do formato de propósito. Pego no `git status`; restaurado arquivo a
+arquivo com `git show HEAD:`, repondo à mão a única linha minha em `agent.py`.
+
+> **Conferir (`--check`) é no repo inteiro; escrever é só no que eu mudei.**
+
+**O antídoto, concreto:** `ruff format <arquivos que eu editei>`, nunca um diretório; `git status`
+depois de qualquer comando que escreve.
+

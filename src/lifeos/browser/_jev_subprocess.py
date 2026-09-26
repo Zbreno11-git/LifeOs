@@ -1,8 +1,8 @@
 """Runner do Jev, executado DENTRO do ambiente do jev-ultrafast (nunca no do Viking).
 
-Só pode importar stdlib + `jev_ultrafast` + o módulo irmão `_redacao` (também só stdlib). Jamais
-`import lifeos`: o Viking fala com este script por subprocesso, e o único contrato entre os dois é
-o JSONL impresso no stdout.
+Só pode importar stdlib + `jev_ultrafast` + os módulos irmãos `_redacao` e `_acoes_sensiveis`
+(também só stdlib). Jamais `import lifeos`: o Viking fala com este script por subprocesso, e o
+único contrato entre os dois é o JSONL impresso no stdout.
 
 Protocolo (uma linha JSON por evento, stdout; stderr fica para ruído humano):
   {"schema":1,"type":"start",  ...}
@@ -24,9 +24,10 @@ import time
 
 if __package__:
     # Testes: importado como `lifeos.browser._jev_subprocess`.
-    from . import _redacao
+    from . import _acoes_sensiveis, _redacao
 else:
     # Subprocesso: rodando como script, com o diretório dele em sys.path[0].
+    import _acoes_sensiveis
     import _redacao
 
 SCHEMA = 1
@@ -49,6 +50,15 @@ def _on_signal(_signum, _frame):
     _interrompido = True
 
 
+class AcaoSensivel(RuntimeError):
+    """O freio recusou um clique que age sobre a conta. Carrega o `usage` da decisão recusada:
+    ela foi paga e não entra em `state["decisions"]` (o Jev só anexa depois que `choose` volta)."""
+
+    def __init__(self, motivo, usage):
+        super().__init__(f"acao-sensivel: {motivo}")
+        self.usage = usage if isinstance(usage, dict) else {}
+
+
 def emit(**evento):
     sys.stdout.write(json.dumps({"schema": SCHEMA, **evento}, ensure_ascii=False) + "\n")
     sys.stdout.flush()
@@ -57,6 +67,8 @@ def emit(**evento):
 def classificar(exc):
     msg = str(exc)
     nome = type(exc).__name__
+    if msg.startswith("acao-sensivel"):
+        return "acao_sensivel"
     if msg.startswith("dominio-bloqueado"):
         return "dominio_bloqueado"
     if msg.startswith("protecao-indisponivel"):
@@ -144,6 +156,10 @@ def instalar_protecao(bloqueados):
     `choose` roda dentro de `run()` antes do primeiro yield, então um redirecionamento na página
     inicial escaparia de uma checagem no laço.
 
+    O freio de cliques que agem sobre a conta (`_acoes_sensiveis`) também mora aqui: o Jev só
+    executa a ação que `choose` devolveu, então conferir a decisão antes de devolvê-la é o único
+    caminho até o clique.
+
     Fecha em falha: se o Jev mudar e as funções sumirem, recusamos navegar em vez de navegar sem
     redação.
     """
@@ -165,9 +181,30 @@ def instalar_protecao(bloqueados):
         if dominio:
             raise RuntimeError(f"dominio-bloqueado: {dominio}")
 
+    def _frear(page, decisao):
+        escolha = decisao.get("choice") if isinstance(decisao, dict) else None
+        # RuntimeError, não TypeError: o formato do Jev mudou = "proteção indisponível".
+        if not isinstance(escolha, str):
+            raise RuntimeError("protecao-indisponivel: decisão do Jev sem 'choice'")  # noqa: TRY004
+        acoes = (page or {}).get("actions") or []
+        acao = next((x for x in acoes if isinstance(x, dict) and x.get("id") == escolha), None)
+        if acao is None or acao.get("kind") not in _acoes_sensiveis.JULGADAS:
+            return  # DONE/BLOCKED, rolar, esperar, digitar: nada é enviado por aqui
+        guards = (page or {}).get("guards")
+        if not isinstance(guards, dict):
+            raise RuntimeError("protecao-indisponivel: página do Jev sem 'guards'")  # noqa: TRY004
+        try:
+            motivo = _acoes_sensiveis.motivo(acao, guards.get(str(acao.get("node"))))
+        except ValueError as exc:
+            raise RuntimeError(f"protecao-indisponivel: {exc}") from exc
+        if motivo:
+            raise AcaoSensivel(motivo, decisao.get("usage"))
+
     def choose_protegido(page, goal, history):
         _checar(page)
-        return choose(_redacao.pagina(page), goal, history)
+        decisao = choose(_redacao.pagina(page), goal, history)
+        _frear(page, decisao)
+        return decisao
 
     def field_context_protegido(goal, action, page, history):
         _checar(page)
@@ -220,19 +257,20 @@ def _oscilando(assinaturas, periodos=(2, 3, 4)):
     return False
 
 
-def _uso(state):
+def _uso(state, recusada=None):
     """Soma o `usage` de toda chamada paga: as decisões (inclusive a última, que não executa ação)
-    e as de geração de texto. Somamos qualquer campo numérico que o provedor mandar, em vez de
-    assumir nomes, porque o endpoint de decisões é alpha e pode mudar o formato."""
+    e as de geração de texto, mais a decisão que o freio recusou (`recusada`), que o Jev não
+    chegou a registrar. Somamos qualquer campo numérico que o provedor mandar, em vez de assumir
+    nomes, porque o endpoint de decisões é alpha e pode mudar o formato."""
+    entradas = [e for lista in ("decisions", "text_calls") for e in (state or {}).get(lista) or []]
+    if recusada is not None:
+        entradas.append({"usage": recusada})
     total = {}
-    chamadas = 0
-    for lista in ("decisions", "text_calls"):
-        for entrada in (state or {}).get(lista) or []:
-            chamadas += 1
-            for chave, valor in (entrada.get("usage") or {}).items():
-                if isinstance(valor, (int, float)) and not isinstance(valor, bool):
-                    total[chave] = total.get(chave, 0) + valor
-    total["chamadas"] = chamadas
+    for entrada in entradas:
+        for chave, valor in (entrada.get("usage") or {}).items():
+            if isinstance(valor, (int, float)) and not isinstance(valor, bool):
+                total[chave] = total.get(chave, 0) + valor
+    total["chamadas"] = len(entradas)
     return total
 
 
@@ -398,7 +436,7 @@ def main():
             steps=_passos(final),
             elapsed_ms=(final or {}).get("elapsed_ms"),
             history=_historico(final),
-            usage=_uso(final),
+            usage=_uso(final, exc.usage if isinstance(exc, AcaoSensivel) else None),
             # Só há aba pra manter aberta se um Agent chegou a ser construído (ex.: o health
             # check pode falhar antes disso, e aí não existe nenhuma aba).
             kept_open=agent is not None and not args.fechar,

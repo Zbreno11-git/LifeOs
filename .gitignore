@@ -25,3 +25,4 @@ windows-mcp/
 jev-ultrafast/
 
 .DS_Store
+.mutacao.lock

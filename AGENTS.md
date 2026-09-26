@@ -44,7 +44,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
-    `mensagens.py` traduz códigos de erro para português
+    `_redacao.py` e `_acoes_sensiveis.py` (freio de clique que sai da conta, mexe nela ou gasta
+    dinheiro) são módulos irmãos dele, também só stdlib; `mensagens.py` traduz códigos de erro
+    para português
   - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools)
@@ -90,6 +92,8 @@ python -m pip install -e ".[dev]"   # editable install + pytest/ruff + deps do V
 
 python -m pytest               # roda os testes (testpaths = tests/)
 python -m ruff check .         # lint (line-length 100, src+tests)
+python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
+                               # acessar e egress (~40 s, à mão; não editar nada enquanto roda)
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
                                # dentro dele: /custos mostra o gasto da sessão
@@ -245,8 +249,11 @@ ao serializador.
 `_jev_subprocess.instalar_protecao()` troca `jev_ultrafast.agent.choose`/`field_context` — só
 funciona porque o Jev as importa com `from .model import ...` e as chama como globais. Se o
 upstream passar a chamar `model.choose(...)`, o envelope seria contornado em silêncio;
-`test_contrato_com_o_jev_real` lê o código do clone e falha antes. Ao atualizar o Jev, rode a
-suíte **com o clone presente** (sem ele o teste é pulado).
+`test_contrato_com_o_jev_real` lê o código do clone e falha antes. O freio de cliques
+(`_acoes_sensiveis`) tem um segundo contrato: o Jev executar só a ação cujo `id` veio em
+`decision["choice"]`, e o `guard` do `snapshot.js` ter `href`/texto do contêiner nas posições
+12/13 — `test_contrato_do_freio_com_o_jev_real`. Ao atualizar o Jev, rode a suíte **com o clone
+presente** (sem ele os dois testes são pulados).
 
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela

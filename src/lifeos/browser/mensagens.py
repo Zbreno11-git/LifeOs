@@ -77,6 +77,11 @@ MENSAGENS: dict[str, str] = {
         "Não naveguei: a proteção de privacidade não encaixou na versão atual do Jev. Isso é de "
         "propósito — atualize o Viking antes de usar o navegador."
     ),
+    "acao_sensivel": (
+        "Parei antes de um clique que age sobre a conta do usuário (sair, mexer na conta ou gastar "
+        "dinheiro): o navegador do Viking não faz isso sozinho, e nada foi clicado. Não mande "
+        "repetir — ele para no mesmo ponto. Se era isso mesmo, o usuário faz esse clique."
+    ),
 }
 
 _GENERICA = "O executor do navegador falhou."
@@ -150,6 +155,15 @@ def _bloco_da_pagina(result: BrowserResult, *, acoes: bool = True, trecho: bool 
     return f"{_DADOS_DA_PAGINA}\n«{_neutralizar(conteudo)}»"
 
 
+def _botao_recusado(result: BrowserResult) -> str:
+    """O freio manda `acao-sensivel: <categoria>: <rótulo>`; o rótulo vem da página."""
+    _, _, resto = (result.error_detail or "").partition("acao-sensivel: ")
+    categoria, _, rotulo = resto.partition(": ")
+    if not rotulo:
+        return ""
+    return f"Botão recusado ({categoria}), texto da página: «{_neutralizar(rotulo)}»."
+
+
 def formatar(result: BrowserResult) -> str:
     partes: list[str] = []
 
@@ -177,6 +191,8 @@ def formatar(result: BrowserResult) -> str:
         if (codigo in _COM_DETALHE or codigo not in MENSAGENS) and result.error_detail:
             texto = f"{texto} Detalhe técnico: «{_neutralizar(result.error_detail)}»"
         partes.append(f"❌ {texto}")
+        if codigo == "acao_sensivel":
+            partes += [_botao_recusado(result), _aba(result)]
         # Só faz sentido tranquilizar (ou alertar) sobre a página se alguma ação chegou a rodar:
         # falhas de preflight (uv/pasta/daemon/chave) acontecem antes de tocar em qualquer coisa.
         if result.steps:

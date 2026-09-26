@@ -50,10 +50,16 @@ def jev_falso(monkeypatch):
     fake_jev = types.ModuleType("jev_ultrafast")
     fake_jev.Agent = _FakeAgent
 
-    # O que chegaria aos modelos remotos: cada chamada grava a página recebida.
+    # O que chegaria aos modelos remotos: cada chamada grava a página recebida. O `choose` devolve
+    # uma decisão no formato do Jev real (`_FakeAgent.decisao`, trocável pelo teste do freio).
     enviados = {"choose": [], "field_context": []}
     fake_agent_mod = types.ModuleType("jev_ultrafast.agent")
-    fake_agent_mod.choose = lambda page, goal, history: enviados["choose"].append(page)
+
+    def choose_falso(page, goal, history):
+        enviados["choose"].append(page)
+        return _FakeAgent.decisao
+
+    fake_agent_mod.choose = choose_falso
     fake_agent_mod.field_context = lambda goal, action, page, history: enviados[
         "field_context"
     ].append(page)
@@ -75,6 +81,7 @@ def jev_falso(monkeypatch):
     monkeypatch.setitem(sys.modules, "browser_harness.helpers", fake_helpers)
 
     _FakeAgent.proximos_estados = []
+    _FakeAgent.decisao = {"choice": "wait", "usage": {}}
     return _FakeAgent
 
 
@@ -255,6 +262,167 @@ def test_sem_o_modulo_agent_recusa_navegar(jev_falso, monkeypatch, capsys):
     jev_falso.proximos_estados = [_estado("done", 1)]
     _rodar(monkeypatch, "--timeout", "5")
     assert _linhas(capsys)[-1]["code"] == "protecao_indisponivel"
+
+
+# --- freio de cliques que agem sobre a conta (Sessão 4b, §5.2) -----------------------------
+
+
+def _pagina_com_clique(rotulo: str, href: str | None = None, guards=None) -> dict:
+    guard = [None] * 14
+    guard[12] = href
+    return {
+        "url": "https://loja.example/conta",
+        "title": "Minha conta",
+        "text": "texto da página",
+        "actions": [{"id": "e1", "kind": "click", "label": rotulo, "node": 7}],
+        "guards": {"7": guard} if guards is None else guards,
+    }
+
+
+def _rodar_decidindo(jev_falso, monkeypatch, pagina: dict, decisao: dict) -> int:
+    jev_falso.proximos_estados = [{**_estado("done", 0), "page": pagina}]
+    jev_falso.decisao = decisao
+    return _rodar(monkeypatch, "--timeout", "5")
+
+
+def test_clique_em_sair_e_recusado_antes_de_executar(jev_falso, monkeypatch, capsys):
+    """A tarefa para no envelope, antes de o Jev ter o que executar; a aba fica aberta, o rótulo
+    vai na mensagem, e a decisão recusada (paga) entra no custo."""
+    decisao = {"choice": "e1", "usage": {"prompt_tokens": 100}}
+    codigo = _rodar_decidindo(jev_falso, monkeypatch, _pagina_com_clique("Sair"), decisao)
+    eventos = _linhas(capsys)
+    terminal = eventos[-1]
+    assert terminal["code"] == "acao_sensivel"
+    assert terminal["message"] == "acao-sensivel: sair: Sair"
+    assert terminal["kept_open"] is True
+    assert terminal["title"] == "Minha conta"  # não é domínio bloqueado: a página volta
+    assert terminal["usage"] == {"prompt_tokens": 100, "chamadas": 1}
+    assert not any(e["type"] == "step" for e in eventos)
+    assert codigo == runner.EXIT_ERROR
+
+
+@pytest.mark.parametrize(
+    ("rotulo", "href", "categoria"),
+    [
+        ("link", "/logout", "sair"),
+        ("Excluir minha conta", None, "conta"),
+        ("Finalizar compra", None, "dinheiro"),
+    ],
+)
+def test_cada_categoria_para_pelo_envelope(jev_falso, monkeypatch, capsys, rotulo, href, categoria):
+    pagina = _pagina_com_clique(rotulo, href)
+    _rodar_decidindo(jev_falso, monkeypatch, pagina, {"choice": "e1"})
+    terminal = _linhas(capsys)[-1]
+    assert terminal["code"] == "acao_sensivel"
+    assert terminal["message"].startswith(f"acao-sensivel: {categoria}: ")
+
+
+@pytest.mark.parametrize("decisao", [{"choice": "e1"}, {"choice": "DONE"}, {"choice": "wait"}])
+def test_clique_comum_e_controles_seguem(jev_falso, monkeypatch, capsys, decisao):
+    _rodar_decidindo(jev_falso, monkeypatch, _pagina_com_clique("Buscar"), decisao)
+    terminal = _linhas(capsys)[-1]
+    assert terminal["type"] == "result"
+    assert terminal["status"] == "done"
+
+
+@pytest.mark.parametrize("decisao", [None, {}, {"choice": 3}, "e1"])
+def test_decisao_sem_choice_recusa_navegar(jev_falso, monkeypatch, capsys, decisao):
+    """O freio não sabe o que seria clicado: fecha em falha, não deixa passar."""
+    _rodar_decidindo(jev_falso, monkeypatch, _pagina_com_clique("Buscar"), decisao)
+    assert _linhas(capsys)[-1]["code"] == "protecao_indisponivel"
+
+
+@pytest.mark.parametrize("guards", ["sem", {"7": [None] * 13}, {"7": {"href": "/x"}}])
+def test_layout_de_guards_diferente_recusa_navegar(jev_falso, monkeypatch, capsys, guards):
+    pagina = _pagina_com_clique("Buscar", guards=guards)
+    if guards == "sem":
+        del pagina["guards"]
+    _rodar_decidindo(jev_falso, monkeypatch, pagina, {"choice": "e1"})
+    assert _linhas(capsys)[-1]["code"] == "protecao_indisponivel"
+
+
+def _itens_do_array_js(fonte: str, abre: int) -> list[str]:
+    """Itens de nível zero de um array literal de JS que começa em `fonte[abre] == "["`. Conta
+    parênteses/colchetes/chaves e ignora vírgulas dentro de strings — `slice(0,6000)` tem uma."""
+    itens, atual, profundidade, aspas = [], [], 0, None
+    for c in fonte[abre + 1 :]:
+        if aspas:
+            aspas = None if c == aspas else aspas
+        elif c in "'\"`":
+            aspas = c
+        elif c in "([{":
+            profundidade += 1
+        elif c in ")]}":
+            if profundidade == 0:
+                itens.append("".join(atual).strip())
+                return itens
+            profundidade -= 1
+        elif c == "," and profundidade == 0:
+            itens.append("".join(atual).strip())
+            atual = []
+            continue
+        atual.append(c)
+    raise AssertionError("array sem fim")
+
+
+def test_contrato_do_freio_com_o_jev_real():
+    """O freio só vale se (1) o Jev executar exatamente a ação que `choose` devolveu, achada pelo
+    `id` em `page["actions"]`, e (2) `page["guards"][node]` tiver `href` e o texto do contêiner
+    nos índices que `_acoes_sensiveis` lê. Se o upstream mudar qualquer um, o freio seria
+    contornado ou cegado em silêncio — este teste falha antes. Lê o código, sem executar."""
+    import ast
+
+    from lifeos.browser import _acoes_sensiveis
+    from lifeos.config import JEV_DIR
+
+    agente = JEV_DIR / "jev_ultrafast" / "agent.py"
+    snapshot = JEV_DIR / "jev_ultrafast" / "snapshot.js"
+    if not agente.is_file() or not snapshot.is_file():
+        pytest.skip(f"clone do Jev ausente em {JEV_DIR}")
+
+    def chave(no) -> str | None:
+        if isinstance(no, ast.Subscript) and isinstance(no.slice, ast.Constant):
+            return no.slice.value
+        return None
+
+    arvore = ast.parse(agente.read_text())
+    decide = [
+        no
+        for no in ast.walk(arvore)
+        if isinstance(no, ast.Assign)
+        and chave(no.targets[0]) == "decision"
+        and isinstance(no.value, ast.Call)
+        and getattr(no.value.func, "id", None) == "choose"
+    ]
+    assert decide, 'o Jev não faz mais `state["decision"] = choose(...)`'
+    escolhe = [
+        no
+        for no in ast.walk(arvore)
+        if isinstance(no, ast.Assign)
+        and getattr(no.targets[0], "id", None) == "selected"
+        and chave(no.value) == "choice"
+    ]
+    assert escolhe, 'o Jev não lê mais `selected = decision["choice"]`'
+    busca = [
+        gerador
+        for gerador in ast.walk(arvore)
+        if isinstance(gerador, ast.comprehension)
+        and chave(gerador.iter) == "actions"
+        and any(
+            isinstance(cond, ast.Compare)
+            and chave(cond.left) == "id"
+            and getattr(cond.comparators[0], "id", None) == "selected"
+            for cond in gerador.ifs
+        )
+    ]
+    assert busca, 'o Jev não acha mais a ação por `a["id"] == selected` em `page["actions"]`'
+
+    fonte = snapshot.read_text()
+    inicio = fonte.index("cache.guard=")
+    itens = _itens_do_array_js(fonte, fonte.index("return [", inicio) + len("return "))
+    assert len(itens) == _acoes_sensiveis.GUARD_TAMANHO, itens
+    assert "getAttribute('href')" in itens[_acoes_sensiveis.GUARD_HREF]
+    assert "innerText" in itens[_acoes_sensiveis.GUARD_ESCOPO]
 
 
 def test_contrato_com_o_jev_real():

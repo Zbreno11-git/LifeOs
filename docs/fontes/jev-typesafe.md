@@ -71,3 +71,37 @@ escolher um campo que já contém o valor pedido — com o valor redigido, um ca
 preencheu pareceria errado e ele tenderia a repreencher em loop. É consequência direta do
 prompt, **não observada ao vivo**. Banco e e-mail ficam fora por bloqueio de domínio,
 não por redação.
+
+## Freio de cliques que agem sobre a conta (Sessão 4b, 2026-09-26)
+
+O Jev dirige a Chrome **logada** do dono. O mesmo envelope confere a decisão que `choose` devolve
+**antes** de o Jev executá-la: `Agent.command("act")` só executa a ação cujo `id` veio em
+`decision["choice"]`, então é o único caminho até o clique. A regra mora em
+`src/lifeos/browser/_acoes_sensiveis.py` (stdlib pura, módulo irmão do runner).
+
+| Categoria (decisão do dono) | Exemplos recusados |
+|---|---|
+| sair | "Sair", "Log out", "Sign out", link só com ícone para `/logout` |
+| conta | excluir/encerrar conta, cancelar assinatura, trocar senha/e-mail/2FA/telefone |
+| dinheiro | comprar, pagar, finalizar pedido, checkout, transferir, Pix, assinar plano, doar |
+
+- **Três sinais:** o rótulo; o `href` do link (trecho inteiro do caminho ou parâmetro, nunca
+  substring: `/blog/como-sair-da-divida` passa); e o texto do contêiner (`form`/`dialog`/linha)
+  para botões genéricos — "Excluir" num diálogo "deseja excluir sua conta?", "Confirmar" num
+  checkout. Botão de **remover** genérico só olha contexto de conta; o de **confirmar**, conta e
+  dinheiro.
+- **Disfarce:** o rótulo é normalizado antes (sem acento, caixa, forma de largura total,
+  caracteres invisíveis Cf/Cc removidos sem virar espaço).
+- **`click` e `select`:** o `select` porque o Jev dispara `change` ao escolher a opção, e o site
+  pode enviar nesse evento (menu "Ações → Excluir conta"). O `fill` fica de fora: o Jev não
+  aperta Enter depois de digitar, então o envio seria o clique seguinte, que passa pelo freio.
+- **Reação:** a tarefa para (`acao_sensivel`), a aba fica aberta e a mensagem nomeia o botão; o
+  custo da decisão recusada entra no `/custos`. Não há liberação — ela virá da confirmação em duas
+  etapas da Sessão 5.
+- **Falso positivo aceito:** "Sair do modo tela cheia" é recusado (erra para o lado de parar).
+- **Contrato:** `test_contrato_do_freio_com_o_jev_real` confere no clone que o `agent.py` executa
+  `a["id"] == decision["choice"]` e que o `guard` do `snapshot.js` tem 14 itens com `href` no 12 e
+  o texto do contêiner no 13. Layout diferente em tempo de execução → `protecao_indisponivel`.
+
+Não coberto: "publicar em seu nome" (postar, enviar mensagem) — recusado pelo dono por gerar
+alarme falso demais ("Enviar" é o botão de muita busca).

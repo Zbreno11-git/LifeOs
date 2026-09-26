@@ -649,3 +649,41 @@ trocado por script e registrado na classe 5.
 **Não verificado.** Versões das dependências instaladas no Mac; status "Testing" do app OAuth.
 
 **Próximo.** Sessão 4b — ver `PROGRESSO.md`.
+
+### 2026-09-26 — Sessão 4b: o navegador não sai, não mexe na conta e não gasta dinheiro sozinho
+
+**Feito.** Freio de cliques que agem sobre a conta (§5.2), encaixado no envelope da Sessão 4:
+`choose_protegido` confere a ação que o modelo escolheu **antes** de o Jev executá-la — medido no
+clone (`afbee69`): `act()` só executa `next(a for a in page["actions"] if a["id"] == selected)`,
+com `selected = decision["choice"]`; não aperta Enter depois de digitar, mas no `select`
+dispara `change`, que o site pode usar para enviar — então `click` e `select` são freados. A regra
+(`_acoes_sensiveis.py`, stdlib pura) lê três sinais: rótulo normalizado, `href` de logout e o
+texto do contêiner para botões genéricos. Recusa = `acao_sensivel`, aba aberta, botão nomeado na
+mensagem, custo da decisão recusada contado. `scripts/mutacoes.py` com 16 mutações curadas.
+Portões: `444 passed in 4.20s`; `ruff check` limpo; 7 arquivos antigos fora do `ruff format`
+(igual antes); mutações `16 · mortas pelo teste esperado: 16` (rodada completa ~40 s, repetida
+depois da última mudança na regra).
+
+**Decidido.** Pelo dono: sair, mexer na conta e dinheiro (sem "publicar em seu nome"); para e
+avisa; sem liberação até a Sessão 5 — escrito como primeiro item da seção dela. Meu: freio ligado
+desde já (D19) e mutações à mão com âncoras conferidas pela suíte (D20).
+
+**Achado.** A primeira rodada de mutação achou um teste fraco da Sessão 1: remover a trava de
+título vazio deixava tudo verde, porque a comparação de títulos também recusa — exceto num evento
+cujo título é só espaço, que normaliza igual a `""`. Esse caso não tinha teste; tem agora. O
+teste de contrato novo foi conferido quebrando o Jev de três jeitos numa cópia (as três caíram).
+
+**Erros desta sessão (meus).** (1) Âncora de mutação escrita de memória (`d` em vez de
+`dominio`) — o script recusou antes de rodar; classe 2. (2) Três regras do freio desenhadas pelo
+caso típico: `href` por substring barraria `/blog/como-sair-da-divida`; controle virando espaço
+deixaria "Sa"+NUL+"ir" escapar; "Excluir" julgado por contexto de dinheiro recusaria apagar a
+tarefa "comprar pão". Os dois primeiros pegos na releitura, o terceiro pelo teste de vizinho
+legítimo; classe nova 7 em `docs/erros.md`. (3) Escrevi no plano que `select` não envia nada; o
+`browser.py` que eu tinha lido dispara `change` — pego na segunda passada ("por onde mais se chega
+lá?"); classe 2. (4) Rodei o formatador em `src`/`tests` inteiros e ele reescreveu 5 arquivos
+antigos que eu não tinha tocado, inclusive duas docstrings do calendário que o Gemini lê — pego
+no `git status`, restaurado pelo `git show HEAD:`; classe nova 8.
+
+**Não verificado.** O freio numa página real, no Mac (roteiro em `PROGRESSO.md`).
+
+**Próximo.** Validar a 4b no Mac; depois a Sessão Gmail.

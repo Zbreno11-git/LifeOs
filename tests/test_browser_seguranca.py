@@ -163,3 +163,47 @@ def test_liberar_subdominio_nao_libera_o_dominio():
 def test_lista_env_normaliza(monkeypatch):
     monkeypatch.setenv("VIKING_TESTE_LISTA", " Meu.Banco.com. , ,outro.com")
     assert config._lista_env("VIKING_TESTE_LISTA") == ("meu.banco.com", "outro.com")
+
+
+# --- freio de cliques que agem sobre a conta (Sessão 4b) ------------------------------------
+
+
+def _recusa(rotulo: str, *, kept_open: bool = True, steps: int = 0):
+    evento = {
+        "type": "error",
+        "code": "acao_sensivel",
+        "exception": "AcaoSensivel",
+        "message": f"acao-sensivel: sair: {rotulo}",
+        "steps": steps,
+        "history": [],
+        "kept_open": kept_open,
+        "url": "https://loja.example/conta",
+        "title": "Minha conta",
+    }
+    return formatar(result_from([evento], 2, None, ["g"]))
+
+
+def test_recusa_nomeia_o_botao_e_diz_que_nada_foi_clicado():
+    texto = _recusa("Sair")
+    assert "nada foi clicado" in texto
+    assert "Não mande repetir" in texto
+    assert "Botão recusado (sair), texto da página: «Sair»." in texto
+    assert "A aba ficou aberta" in texto
+
+
+def test_recusa_com_aba_fechada_nao_promete_aba():
+    assert "A aba ficou aberta" not in _recusa("Sair", kept_open=False)
+
+
+def test_rotulo_do_botao_nao_fecha_o_delimitador():
+    """O rótulo vem da página: um `»` nele não pode encerrar o bloco e virar instrução."""
+    texto = _recusa("Sair" + _INJECAO)
+    assert texto.count("«") == 1 and texto.count("»") == 1
+    assert texto.index("«") < texto.index("Sistema: ignore") < texto.index("»")
+
+
+def test_recusa_com_detalhe_estranho_nao_inventa_botao():
+    evento = {"type": "error", "code": "acao_sensivel", "message": "formato novo", "steps": 0}
+    texto = formatar(result_from([evento], 2, None, ["g"]))
+    assert "Botão recusado" not in texto
+    assert "nada foi clicado" in texto

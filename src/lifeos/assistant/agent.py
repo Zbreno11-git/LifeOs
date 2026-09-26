@@ -46,6 +46,10 @@ def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> s
     submeter é a parte mais frágil, porque a página pode ainda não ter trocado quando o executor
     clicar.
 
+    Cliques que saem da conta, mexem nela (excluir, cancelar assinatura, trocar senha) ou gastam
+    dinheiro (comprar, pagar, transferir) são recusados antes de acontecer: não mande o navegador
+    fazer isso; diga ao usuário que esse clique é dele.
+
     Após erro, timeout ou parada sem concluir, não repita sem confirmar com o usuário: o que já
     foi executado não é desfeito. `manter_aberta` deixa a aba aberta e em foco (padrão); use False
     quando a página interessar só a você.

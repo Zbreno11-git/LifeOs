@@ -51,6 +51,20 @@ def test_recusa_titulo_vazio(calendario):
     assert "NÃO apaguei" in resposta
 
 
+def test_titulo_vazio_nao_apaga_evento_de_titulo_em_branco(calendario):
+    """Achado pela mutação da Sessão 4b: um evento cujo título é só espaço normaliza igual a um
+    `titulo_esperado` vazio. Aí só a primeira trava (título vazio) segura — a comparação de
+    títulos, sozinha, deixaria apagar."""
+    calendario["evento"] = {"summary": "   ", "start": {"date": "2026-10-01"}}
+    resposta = tools.apagar_evento_por_id("abc123", "")
+    assert calendario["apagados"] == []
+    assert "preciso do título exato" in resposta
+    resposta = tools.reagendar_evento_por_id(
+        "abc123", "", "2026-10-02T10:00:00-03:00", "2026-10-02T11:00:00-03:00"
+    )
+    assert calendario["patches"] == []
+
+
 def test_recusa_titulo_so_espacos(calendario):
     """Substring vazia (após strip) casava com QUALQUER título — o buraco mais grave do achado."""
     resposta = tools.apagar_evento_por_id("abc123", "   ")

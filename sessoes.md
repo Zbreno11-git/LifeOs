@@ -16,12 +16,14 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 4b — freio de ação que age sobre a conta + mutações curadas.
-- **Primeiro passo:** ler em `jev-ultrafast/jev_ultrafast/agent.py` o que `choose` devolve (a ação
-  escolhida, antes de ela rodar) — é ali que o freio se encaixa. Não verificado ainda.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, skill `seguranca` (§8, sessão
-  emprestada) e `testes-que-provam` (§3 e `referencia/mutacao.md`).
-- **Depende do dono:** sim — quais ações o freio recusa (ver a lista proposta na Sessão 4b).
+- **Antes dela:** validar a 4b no Mac (roteiro em `PROGRESSO.md`) — a 4b só fecha lá.
+- **Sessão:** Gmail — leitura via API.
+- **Primeiro passo:** o dono confere, no Google Cloud Console do projeto OAuth do calendário, se o
+  app está em "Testing" ou "In production" (muda validade do login e exigência para escopos do
+  Gmail). Não verificado ainda.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/google-calendar-api.md`,
+  skills `integracoes` e `seguranca` (conteúdo de e-mail é dado de terceiro).
+- **Depende do dono:** sim — o status do app OAuth, e quais tools de e-mail (listar, buscar, ler).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão.
@@ -144,27 +146,26 @@ Validado no Mac do dono em 2026-09-26 (saída colada por ele): 324 testes, inclu
 com o clone do Jev; Itaú recusado sem abrir aba; `example.com` concluído passando pelo envelope
 real. Ainda não validado ao vivo: redação numa página real com CPF/cartão/token visível.
 
-## Sessão 4b — freio de ação que age sobre a conta + mutações curadas (próxima)
+## Sessão 4b — freio de cliques que agem sobre a conta + mutações curadas (feita em 2026-09-26)
 
-1. **Freio de clique destrutivo (§5.2, skill `seguranca` §8).** O Jev dirige a Chrome logada do
-   dono; hoje nada impede um clique em "Sair" (desloga em todos os aparelhos), "Excluir conta",
-   "Cancelar assinatura", "Trocar senha" ou "Finalizar compra" num site que não está bloqueado.
-   Encaixe proposto: `choose_protegido` (envelope da Sessão 4) confere a ação **devolvida** por
-   `choose` antes de o Jev executá-la — é o único caminho até o clique. Recusa alta (código novo,
-   com o rótulo na mensagem), nunca silenciosa.
-   - **Decisão do dono na abertura:** a lista de ações recusadas. Proposta: sair/log out/sign
-     out; excluir/apagar/delete conta; cancelar assinatura; trocar/alterar senha; comprar/finalizar
-     compra/pagar/place order; transferir/enviar dinheiro. Comprar e pagar entram? (um dia o
-     Viking pode precisar comprar com confirmação — Sessão 5).
-   - Testes offline adversariais: caixa, acento, forma Unicode, rótulo com texto em volta,
-     rótulo em inglês e português, e a ação vizinha legítima ("Sair do modo tela cheia"?) — medir
-     os falsos positivos antes de a regra cobrar (skill `evidencia` §8).
-2. **Mutações curadas (`scripts/mutacoes.py`, skill `testes-que-provam` §3).** Lista escrita à mão
-   das regras que decidem apagar, acessar e o que sai da máquina — conferência de título antes de
-   apagar/reagendar, bloqueio de domínio, envelope do Jev (redação e checagem), timeout com `nan`,
-   freio novo do item 1. Cada mutação confere que a âncora casa **exatamente uma vez**, exige
-   partida verde, exige que caia **o** teste esperado e restaura byte a byte em `finally`. Roda à
-   mão, não no `pytest`.
+Decisões do dono: recusar **sair**, **mexer na conta** e **dinheiro** ("publicar em seu nome"
+ficou de fora); a tarefa para e avisa; nenhuma liberação até a Sessão 5. Entregue:
+
+- `browser/_acoes_sensiveis.py` (stdlib pura): rótulo normalizado contra disfarce, `href` de
+  logout por trecho inteiro, texto do contêiner para botões genéricos ("Excluir", "Confirmar").
+- Freio no envelope (`choose_protegido`): confere a decisão **antes** de o Jev executá-la; recusa
+  = `acao_sensivel`, aba aberta, botão nomeado, custo da decisão recusada contado. Formato do Jev
+  diferente → `protecao_indisponivel`. Frase nova na tool do Gemini para ele nem tentar.
+- `scripts/mutacoes.py`: 16 mutações curadas (calendário, MCP, bloqueio, envelope, freio,
+  delimitador, redação, timeout); todas mortas pelo teste esperado. A primeira rodada achou um
+  teste fraco da Sessão 1 (título vazio contra evento de título em branco) — teste novo.
+  `tests/test_mutacoes_ancoras.py` reprova no mesmo dia uma âncora que apodreceu.
+- `select` também é freado: o Jev dispara `change` ao escolher a opção, e o site pode enviar
+  nesse evento (achado na segunda passada de revisão).
+- Contrato novo com o Jev real: `agent.py` executa só `decision["choice"]`; `guard` do
+  `snapshot.js` com `href`/contêiner nas posições 12/13. Conferido que cai em 3 quebras.
+
+Não validado ao vivo: o freio numa página real (roteiro no `PROGRESSO.md`).
 
 ## Sessão Gmail — leitura via API (nova, pedida pelo dono em 2026-09-26)
 
@@ -178,6 +179,9 @@ real. Ainda não validado ao vivo: redação numa página real com CPF/cartão/t
 
 ## Sessão 5 — confirmação mecânica
 
+- **Primeiro passo (adiado da 4b por decisão do dono, 2026-09-26):** a liberação do freio de
+  cliques (`_acoes_sensiveis`) passa por esta mesma confirmação — o dono aprova **aquele** clique
+  (site, botão, categoria), uma vez; não existe chave que desligue uma categoria inteira.
 - §3.5/§5: o fluxo de confirmação em duas fases que ficou de fora da Sessão 1 —
   `preparar_exclusao(event_id)` devolve um token curto ligado a ID+título+data+expiração,
   `confirmar_exclusao(token)` consome uma vez. Valendo igual para Gemini e MCP.
@@ -226,4 +230,5 @@ tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3
 segurança para um cenário hipotético. Residuais da Sessão 4: o objetivo, os rótulos/valores
 de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
 `docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN não é normalizado;
-o clique destrutivo num site não bloqueado (§5.2) saiu daqui e está na Sessão 4b.
+o clique destrutivo num site não bloqueado (§5.2) foi feito na Sessão 4b; ficou de fora, por
+decisão do dono, "publicar em seu nome" (postar, enviar mensagem).
