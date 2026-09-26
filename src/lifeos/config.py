@@ -87,6 +87,60 @@ def _int_env(name: str, default: str, *, minimo: int = 0) -> int:
     return valor
 
 
+def _lista_env(name: str) -> tuple[str, ...]:
+    """Lista separada por vírgula, normalizada como domínio: minúsculas, sem espaço nem ponto final."""
+    bruto = os.getenv(name) or ""
+    return tuple(d for d in (p.strip().lower().rstrip(".") for p in bruto.split(",")) if d)
+
+
+# Sites que o navegador do Viking recusa por padrão (decisão do dono, 2026-09-26): o Jev manda o
+# texto da página ao OpenRouter a cada passo, e numa Chrome logada isso seria o e-mail ou o
+# extrato inteiro. Casa o domínio e qualquer subdomínio dele.
+_BLOQUEADOS_PADRAO = (
+    # e-mail
+    "mail.google.com",
+    "gmail.com",
+    "outlook.live.com",
+    "outlook.office.com",
+    "outlook.office365.com",
+    "mail.yahoo.com",
+    "mail.proton.me",
+    "icloud.com",
+    # bancos e pagamentos — Brasil
+    "itau.com.br",
+    "bb.com.br",
+    "bradesco.com.br",
+    "santander.com.br",
+    "caixa.gov.br",
+    "nubank.com.br",
+    "inter.co",
+    "bancointer.com.br",
+    "c6bank.com.br",
+    "btgpactual.com",
+    "xpi.com.br",
+    "sicoob.com.br",
+    "sicredi.com.br",
+    "mercadopago.com.br",
+    "picpay.com",
+    # bancos e pagamentos — EUA
+    "chase.com",
+    "bankofamerica.com",
+    "wellsfargo.com",
+    "citi.com",
+    "capitalone.com",
+    "americanexpress.com",
+    "paypal.com",
+    "venmo.com",
+)
+
+
+def _dominios_bloqueados(extras: tuple[str, ...], liberados: tuple[str, ...]) -> tuple[str, ...]:
+    """Padrão + extras − liberados. A liberação remove a ENTRADA exata: liberar `www.itau.com.br`
+    não libera `itau.com.br` (que continua casando o `www`)."""
+    vistos = dict.fromkeys((*_BLOQUEADOS_PADRAO, *extras))
+    return tuple(d for d in vistos if d not in liberados)
+
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GOOGLE_CREDENTIALS_PATH = _path_env(
     "VIKING_GOOGLE_CREDENTIALS_PATH", SECRETS_DIR / "google_credentials.json"
@@ -103,6 +157,9 @@ BROWSER_TIMEOUT_S = _float_env("VIKING_BROWSER_TIMEOUT_S", "180")
 # Teto de ações por tarefa. Abaixo do teto de 60 do próprio Jev: limita o custo do pior caso
 # (uma tarefa em loop) sem cortar tarefas legítimas, que raramente passam de 15 passos.
 BROWSER_MAX_ACOES = _int_env("VIKING_BROWSER_MAX_ACOES", "30")
+BROWSER_BLOQUEADOS = _dominios_bloqueados(
+    _lista_env("VIKING_BROWSER_BLOQUEADOS"), _lista_env("VIKING_BROWSER_LIBERADOS")
+)
 
 # Contabilidade de custo do Gemini: US$ por 1 milhão de tokens. Moram aqui, e não em `custos.py`,
 # porque este é o único módulo que roda `load_dotenv()` — lidos lá, os overrides do .env chegavam

@@ -18,10 +18,12 @@ import threading
 import time
 from collections import deque
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from lifeos.browser import _redacao
 from lifeos.config import (
+    BROWSER_BLOQUEADOS,
     BROWSER_MAX_ACOES,
     BROWSER_TIMEOUT_S,
     JEV_DIR,
@@ -74,6 +76,8 @@ def build_command(
     for goal in goals:
         cmd += ["--goal", goal]
     cmd += ["--timeout", str(timeout_s), "--max-acoes", str(BROWSER_MAX_ACOES)]
+    for dominio in BROWSER_BLOQUEADOS:
+        cmd += ["--bloquear", dominio]
     if fechar:
         cmd.append("--fechar")
     return cmd
@@ -90,7 +94,53 @@ def parse_event(linha: str) -> dict | None:
     return evento if isinstance(evento, dict) and "type" in evento else None
 
 
+def _limpo(texto: str | None) -> str | None:
+    return _redacao.limpar_controles(_redacao.redigir(texto))
+
+
+def _url_limpa(url: str | None) -> str | None:
+    return _redacao.limpar_controles(_redacao.redigir_url(url))
+
+
+def _passo_limpo(passo: dict) -> dict:
+    """Só transforma as chaves que o passo já tem — não inventa `text: None` onde não havia."""
+    limpo = dict(passo)
+    rotulo = passo.get("action")
+    if "action" in limpo:
+        limpo["action"] = _limpo(rotulo)
+    if "text" in limpo:
+        digitado = _redacao.mascarar_digitado(rotulo, passo["text"])
+        limpo["text"] = _redacao.limpar_controles(digitado)
+    if "url" in limpo:
+        limpo["url"] = _url_limpa(passo["url"])
+    return limpo
+
+
+def _higienizar(resultado: BrowserResult) -> BrowserResult:
+    """Ponto único por onde passa tudo que veio da página antes de chegar ao Gemini, ao terminal
+    ou ao `--json`: redige documento/cartão/token, esconde o que foi digitado em campo sensível e
+    tira caracteres de controle (`json.dumps(ensure_ascii=False)` escapa C0, mas NÃO C1)."""
+    return replace(
+        resultado,
+        url=_url_limpa(resultado.url),
+        title=_limpo(resultado.title),
+        page_text=_limpo(resultado.page_text),
+        history=tuple(_passo_limpo(p) for p in resultado.history),
+        error_detail=_limpo(resultado.error_detail),
+        stderr_tail=_limpo(resultado.stderr_tail),
+    )
+
+
 def result_from(
+    eventos: Sequence[dict],
+    returncode: int | None,
+    stderr_tail: str | None,
+    goals: Sequence[str],
+) -> BrowserResult:
+    return _higienizar(_montar_resultado(eventos, returncode, stderr_tail, goals))
+
+
+def _montar_resultado(
     eventos: Sequence[dict],
     returncode: int | None,
     stderr_tail: str | None,
@@ -218,6 +268,12 @@ def run_jev(
     """
     goals = list(goals)
     limite = float(timeout_s if timeout_s is not None else BROWSER_TIMEOUT_S)
+
+    # Antes de tudo, inclusive do lock: um site bloqueado nem chega a abrir aba. Redirecionamentos
+    # e links no meio da tarefa são pegos dentro do subprocesso (`instalar_protecao`).
+    bloqueado = _redacao.dominio_bloqueado(url, BROWSER_BLOQUEADOS)
+    if bloqueado:
+        return _erro("dominio_bloqueado", bloqueado, goals)
 
     if not _EXECUCAO.acquire(blocking=False):
         return _erro("busy", "ja existe uma tarefa de navegador em andamento", goals)

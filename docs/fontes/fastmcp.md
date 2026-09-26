@@ -18,9 +18,11 @@ import asyncio
 from fastmcp import Client
 from lifeos.mcp_server.server import mcp
 
+
 async def chamar():
     async with Client(mcp) as client:
         return await client.call_tool("viking_criar_lembrete", {"titulo": "Teste"})
+
 
 resultado = asyncio.run(chamar())
 ```
@@ -38,6 +40,7 @@ humano" de "dado estável para quem consome" (a mesma tool pode servir os dois),
 
 ```python
 from fastmcp.tools import ToolResult
+
 
 @mcp.tool()
 def minha_tool(x: int) -> ToolResult:

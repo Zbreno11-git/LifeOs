@@ -1,7 +1,8 @@
 """Runner do Jev, executado DENTRO do ambiente do jev-ultrafast (nunca no do Viking).
 
-Só pode importar stdlib + `jev_ultrafast`. Jamais `import lifeos`: o Viking fala com este script
-por subprocesso, e o único contrato entre os dois é o JSONL impresso no stdout.
+Só pode importar stdlib + `jev_ultrafast` + o módulo irmão `_redacao` (também só stdlib). Jamais
+`import lifeos`: o Viking fala com este script por subprocesso, e o único contrato entre os dois é
+o JSONL impresso no stdout.
 
 Protocolo (uma linha JSON por evento, stdout; stderr fica para ruído humano):
   {"schema":1,"type":"start",  ...}
@@ -20,6 +21,13 @@ import json
 import signal
 import sys
 import time
+
+if __package__:
+    # Testes: importado como `lifeos.browser._jev_subprocess`.
+    from . import _redacao
+else:
+    # Subprocesso: rodando como script, com o diretório dele em sys.path[0].
+    import _redacao
 
 SCHEMA = 1
 MAX_TEXT = 1200
@@ -49,6 +57,10 @@ def emit(**evento):
 def classificar(exc):
     msg = str(exc)
     nome = type(exc).__name__
+    if msg.startswith("dominio-bloqueado"):
+        return "dominio_bloqueado"
+    if msg.startswith("protecao-indisponivel"):
+        return "protecao_indisponivel"
     if isinstance(exc, KeyError) and ("TYPESAFE_API_KEY" in msg or "OPENROUTER_API_KEY" in msg):
         return "model_key_missing"
     if "browser-not-ready" in msg:
@@ -119,6 +131,50 @@ def preparar_navegador():
             f"browser-not-ready: probe CDP falhou apos reiniciar o daemon: {exc}"
         ) from exc
     return "reiniciado"
+
+
+def instalar_protecao(bloqueados):
+    """Envolve as duas únicas saídas de conteúdo de página do Jev para modelos remotos: `choose`
+    (decisões, OpenRouter) e `field_context` (contexto do modelo de texto — `field_text` recebe o
+    que ela monta). O Jev as chama como globais de `jev_ultrafast.agent`, então trocar o nome ali
+    intercepta toda chamada; `tests/test_jev_subprocess_main.py` confere esse contrato no código
+    real do Jev.
+
+    A checagem de domínio mora aqui, antes de toda saída, e não no laço de passos: o primeiro
+    `choose` roda dentro de `run()` antes do primeiro yield, então um redirecionamento na página
+    inicial escaparia de uma checagem no laço.
+
+    Fecha em falha: se o Jev mudar e as funções sumirem, recusamos navegar em vez de navegar sem
+    redação.
+    """
+    try:
+        import jev_ultrafast.agent as agente
+    except ImportError as exc:
+        raise RuntimeError(f"protecao-indisponivel: sem jev_ultrafast.agent ({exc})") from exc
+
+    choose = getattr(agente, "choose", None)
+    field_context = getattr(agente, "field_context", None)
+    if not callable(choose) or not callable(field_context):
+        # RuntimeError, não TypeError: é o mesmo "proteção indisponível" do ramo acima.
+        raise RuntimeError(  # noqa: TRY004
+            "protecao-indisponivel: jev_ultrafast.agent sem choose/field_context"
+        )
+
+    def _checar(page):
+        dominio = _redacao.dominio_bloqueado((page or {}).get("url") or "", bloqueados)
+        if dominio:
+            raise RuntimeError(f"dominio-bloqueado: {dominio}")
+
+    def choose_protegido(page, goal, history):
+        _checar(page)
+        return choose(_redacao.pagina(page), goal, history)
+
+    def field_context_protegido(goal, action, page, history):
+        _checar(page)
+        return field_context(goal, action, _redacao.pagina(page), history)
+
+    agente.choose = choose_protegido
+    agente.field_context = field_context_protegido
 
 
 def _normalizar(url):
@@ -221,6 +277,7 @@ def main():
     parser.add_argument("--timeout", type=float, default=180.0)
     parser.add_argument("--fechar", action="store_true", help="fecha a aba ao terminar")
     parser.add_argument("--max-acoes", type=int, default=30, dest="max_acoes")
+    parser.add_argument("--bloquear", action="append", default=[], metavar="DOMINIO")
     args = parser.parse_args()
 
     signal.signal(signal.SIGTERM, _on_signal)
@@ -237,6 +294,7 @@ def main():
     amplas = []
 
     try:
+        instalar_protecao(args.bloquear)
         emit(type="health", state=preparar_navegador())
         agent = Agent(args.url, args.goals)
         state = agent.snapshot()
@@ -331,9 +389,10 @@ def main():
                 final = agent.snapshot()
             except Exception:  # noqa: BLE001
                 final = state
+        codigo = classificar(exc)
         emit(
             type="error",
-            code=classificar(exc),
+            code=codigo,
             exception=type(exc).__name__,
             message=str(exc)[:MAX_MESSAGE],
             steps=_passos(final),
@@ -343,7 +402,8 @@ def main():
             # Só há aba pra manter aberta se um Agent chegou a ser construído (ex.: o health
             # check pode falhar antes disso, e aí não existe nenhuma aba).
             kept_open=agent is not None and not args.fechar,
-            **_pagina(final),
+            # A página de um domínio bloqueado não sai deste processo nem pro Viking.
+            **({} if codigo == "dominio_bloqueado" else _pagina(final)),
         )
         return EXIT_ERROR
 

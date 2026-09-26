@@ -46,3 +46,28 @@ tarefa precisa digitar texto.
 - **Risco em aberto:** o endpoint de decisões da OpenRouter é **alpha** e assumimos que ele aceita o
   corpo no formato da TypeSafe. Se falhar, aparece como erro HTTP (código `model_http`) e o primeiro
   suspeito é a string `~typesafe/jev-latest`.
+
+## Egress e redação (Sessão 4, 2026-09-26)
+
+O que sai da máquina quando o Viking navega, e o que é feito em cada caminho:
+
+| Caminho | O que vai | Proteção |
+|---|---|---|
+| Jev → OpenRouter (decisões, `choose`) | URL, título, até 6000 caracteres de texto, elementos, ações recentes, objetivo — a cada passo | `_jev_subprocess.instalar_protecao()` envolve `jev_ultrafast.agent.choose`: página redigida (CPF/CNPJ/cartão/SSN/tokens, parâmetros sensíveis da URL) e domínio bloqueado recusado **antes** da chamada |
+| Jev → modelo de texto (`field_context` → `field_text`) | título + texto da página + objetivo + campo | mesmo envelope em `jev_ultrafast.agent.field_context` |
+| Viking → Gemini / terminal / `--json` | URL, título, até 1200 caracteres, rótulos e texto digitado por ação | `jev_runner._higienizar()` (ponto único em `result_from`) + bloco delimitado em `mensagens.formatar()` |
+
+A regra de redação mora numa cópia só: `src/lifeos/browser/_redacao.py` (stdlib pura, importada
+pelos dois lados). O envelope não edita o fork — troca os nomes globais em `jev_ultrafast.agent`,
+que é de onde `Agent.command()` os chama.
+`tests/test_jev_subprocess_main.py::test_contrato_com_o_jev_real` confere isso no código do clone;
+se o upstream mudar a forma de chamar, o teste falha. Se as funções sumirem, o runner **recusa
+navegar** (`protecao_indisponivel`).
+
+**Residual consciente (não redigido):** o objetivo (escrito pelo usuário/Gemini — redigir
+quebraria a tarefa), rótulos e valores atuais dos campos da página e o histórico de ações que o Jev
+reenvia ao modelo. Por que não o valor dos campos: a regra do Jev (`questions.py`) manda não
+escolher um campo que já contém o valor pedido — com o valor redigido, um campo que ele mesmo
+preencheu pareceria errado e ele tenderia a repreencher em loop. É consequência direta do
+prompt, **não observada ao vivo**. Banco e e-mail ficam fora por bloqueio de domínio,
+não por redação.

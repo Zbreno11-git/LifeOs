@@ -139,6 +139,11 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   prazo; sem ela, usa o offset fixo da máquina — não acompanha horário de verão). Copiar de
   `.env.example`. Caminhos relativos (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em
   `REPO_ROOT`, não no diretório de onde `viking` foi chamado.
+- Navegador: banco e e-mail são **bloqueados por padrão** (lista em `config._BLOQUEADOS_PADRAO`,
+  casa domínio e subdomínios). `VIKING_BROWSER_BLOQUEADOS` acrescenta domínios e
+  `VIKING_BROWSER_LIBERADOS` remove entradas exatas da lista (ambos separados por vírgula).
+  O que sai para OpenRouter/Gemini e o que é redigido: `docs/fontes/jev-typesafe.md`, seção
+  "Egress e redação".
 - As chaves do **Jev** (`OPENROUTER_API_KEY`, `TEXT_MODEL_*`) ficam no `.env` do próprio clone do
   Jev, não no do Viking — o Viking só guarda o ponteiro `VIKING_JEV_DIR`. Não duplicar a chave nos
   dois arquivos (armadilha de rotação).
@@ -219,6 +224,23 @@ devolver um resultado.** É o comportamento correto de protocolo (sinaliza falha
 quem chama), mas surpreende quem espera inspecionar `is_error`/`structured_content` num teste ou
 código de chamada. Para inspecionar sem `try/except`, passe `raise_on_error=False` em
 `call_tool()`. Ver `docs/fontes/fastmcp.md`.
+
+**`json.dumps(..., ensure_ascii=False)` escapa C0, mas deixa C1 cru.** U+0080–U+009F (ex.: `\x9b`,
+o CSI de 8 bits) passam para o terminal no `viking browser --json`. Por isso texto de página é
+limpo antes (`_redacao.limpar_controles`, aplicado em `jev_runner._higienizar`), não confiado
+ao serializador.
+
+**A proteção de privacidade do navegador depende de como o Jev chama duas funções.**
+`_jev_subprocess.instalar_protecao()` troca `jev_ultrafast.agent.choose`/`field_context` — só
+funciona porque o Jev as importa com `from .model import ...` e as chama como globais. Se o
+upstream passar a chamar `model.choose(...)`, o envelope seria contornado em silêncio;
+`test_contrato_com_o_jev_real` lê o código do clone e falha antes. Ao atualizar o Jev, rode a
+suíte **com o clone presente** (sem ele o teste é pulado).
+
+**Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
+de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela
+ferramenta gravou o caractere bidi literal no código-fonte (Trojan Source). O `ruff` pega
+(`PLE2502`); para gravar escapes em arquivo, gere o texto por script.
 
 ## Perguntas em aberto
 

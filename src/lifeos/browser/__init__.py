@@ -11,6 +11,7 @@ import sys
 from collections.abc import Sequence
 
 from lifeos import custos
+from lifeos.browser import _redacao
 from lifeos.browser.jev_runner import BrowserResult, run_jev
 from lifeos.browser.mensagens import formatar
 
@@ -27,7 +28,10 @@ def imprimir_progresso(evento: dict) -> None:
         if aviso:
             print(aviso, file=sys.stderr)
         return
-    acao = evento.get("last_action") or evento.get("status") or ""
+    # Rótulo vindo da página, impresso ao vivo antes de existir `BrowserResult` — por isso a
+    # limpeza aqui também (caracteres de controle mexeriam no terminal).
+    bruto = evento.get("last_action") or evento.get("status") or ""
+    acao = _redacao.limpar_controles(_redacao.redigir(bruto))
     segundos = (evento.get("elapsed_ms") or 0) / 1000
     print(f"   ↳ {evento.get('n', 0)} ações · {segundos:.1f}s · {acao}", file=sys.stderr)
 
@@ -53,7 +57,9 @@ def executar_no_navegador(
     custos.SESSAO.navegador = custos.SESSAO.navegador + consumo
     if not silencioso and consumo.chamadas:
         # No stderr de propósito: o usuário vê, o modelo não — custo não precisa virar token.
-        print(f"   💸 navegador: {consumo.resumo()} em {consumo.chamadas} chamadas", file=sys.stderr)
+        print(
+            f"   💸 navegador: {consumo.resumo()} em {consumo.chamadas} chamadas", file=sys.stderr
+        )
     return formatar(resultado)
 
 

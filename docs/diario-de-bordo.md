@@ -499,3 +499,64 @@ apontava pro Python do conda, não pro do projeto. Resolvido com `source .venv/b
 documentado em `AGENTS.md`/`CLAUDE.md` como comportamento esperado do setup do Mac); não é um bug
 desta base de código, só reforça que `.venv` precisa ser reativado a cada terminal novo antes de
 `python -m pytest`/`python -m ruff`.
+
+### 2026-09-26 — Sessão 4: privacidade e egress do navegador
+
+Decisões do dono antes de codar: banco + e-mail bloqueados por padrão no navegador; e-mails
+visíveis numa página **não** são redigidos (utilidade); proteger também o caminho do OpenRouter —
+feito sem editar o fork do Jev. Nova regra permanente: toda sessão entrega testes offline de
+código **e** de segurança.
+
+**Achados medidos antes de codar (no código real, inclusive o clone do Jev):** o `snapshot.js` do
+Jev já exclui `<input type="password">` das ações — o risco de texto digitado é em campos
+`text`/`tel` (token, 2FA, cartão); o texto digitado nunca chegava ao Gemini (só ao `--json`);
+título, URL e rótulos ficavam fora do aviso de não confiável e um `»` na página fechava o
+delimitador; `imprimir_progresso` imprimia rótulo da página cru no terminal; `json.dumps(
+ensure_ascii=False)` não escapa C1; o Jev chama `choose`/`field_context` como globais de
+`jev_ultrafast.agent` e só captura `StalePage` no `tick` — o que torna o envelope possível e o
+bloqueio impossível de ser engolido; o primeiro `choose` roda antes do primeiro `yield`, então a
+checagem de domínio tinha que morar no envelope, não no laço de passos.
+
+**Entregue:** `browser/_redacao.py` (stdlib, cópia única da regra); envelope
+`instalar_protecao()` no subprocesso (redige e bloqueia antes de toda chamada remota; recusa
+navegar se não encaixar); `_higienizar()` como ponto único em `jev_runner.result_from`;
+`formatar()` com um só bloco delimitado e `«»` neutralizados; preflight de domínio em `run_jev`
+(nem abre aba); `VIKING_BROWSER_BLOQUEADOS`/`_LIBERADOS`. Detalhe em
+`docs/fontes/jev-typesafe.md`, "Egress e redação".
+
+**Testes:** +97 (292 no total): `test_redacao.py` (unitário, adversarial — `usuario@host`,
+sufixo parecido, porta, ponto final, URL sem esquema —, ReDoS), `test_browser_seguranca.py`
+(integração: injeção dentro do bloco, `--json` sem C1, progresso limpo, preflight sem `Popen`) e,
+em `test_jev_subprocess_main.py`, o envelope (zero chamada ao modelo num domínio bloqueado,
+estado original intacto, fecha em falha) e um **teste de contrato** que lê o `agent.py` do clone
+real com `ast`. Cada teste de segurança foi conferido por mutação: removendo `_neutralizar`,
+`_higienizar` ou a limpeza do progresso, 3–5 testes falham; trocando o limite do bloco de chave
+por `.*?`, o teste de ReDoS falha (10,5s contra 0,43s).
+
+**Erros desta sessão (meus):**
+1. Dimensionei o teste de ReDoS pequeno demais (5 mil blocos: 2,6s sem limite, perto do teto de
+   2s — num Mac rápido a regressão passaria). Pego pela checagem de mutação; subi para 10 mil.
+2. Deixei um `cat > arquivo` sem entrada no começo de um comando; ele esperou stdin e travou até o
+   timeout. Refeito sem isso.
+3. Escrevi `"\u202e"` em testes pela ferramenta de escrita, cujo parâmetro é JSON — o escape virou
+   o caractere bidi **literal** no código-fonte (a própria técnica Trojan Source que o teste cobre).
+   O `ruff` pegou (`PLE2502`); troquei por escape via script e registrei em `AGENTS.md`. Reincidi ao
+   escrever este mesmo item no diário (o comando do terminal também é JSON); pego pela varredura
+   de caracteres de controle em todos os arquivos alterados, que passa a rodar antes de cada commit.
+4. Na conversa anterior afirmei que o "Jev" da TypeSafe "quase certamente não é o mesmo" do
+   `jev-ultrafast`. Errado: o `.env` do Jev usa `TYPESAFE_MODEL=~typesafe/jev-latest` — é o
+   modelo de decisão dele, e estava documentado aqui mesmo, em `jev-typesafe.md`. Afirmei sem
+   conferir o repo.
+5. Na Sessão 3 criei `docs/fontes/fastmcp.md` com bloco de código fora do padrão do `ruff format`
+   (que também formata Python dentro de Markdown); só conferi os `.py`. Formatado agora.
+6. Quase registrei em `AGENTS.md`, como "armadilha já paga", que redigir o valor dos campos faria o
+   Jev repreencher em loop — é consequência direta do prompt dele, mas nunca observada. Movi para o
+   doc do Jev marcada como não medida.
+
+**Desvio do plano:** o item "não redigir `current_value`" saiu das armadilhas do `AGENTS.md` (erro
+6). E formatar `browser/__init__.py` e `mensagens.py`, que esta sessão editou, levou junto a
+formatação pré-existente deles (baseline de arquivos fora do `ruff format` caiu de 9 para 7).
+
+**Não validado ao vivo:** bloqueio e redação no Chrome real do Mac. O venv do Jev neste VPS não
+executa (`Permission denied` no Python dele), então nem o envelope no ambiente real do Jev pôde
+rodar aqui — só o teste de contrato sobre o código-fonte.

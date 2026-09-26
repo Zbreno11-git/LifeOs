@@ -99,17 +99,38 @@ mexer no tempo de uma sessão. Vira Sessão 3b. Entregue:
   verdade no MCP — hoje `ToolResult` genérico não anuncia schema (ver limite documentado em
   `docs/fontes/fastmcp.md`).
 
-## Sessão 4 — privacidade e egress do navegador
+## Sessão 4 — privacidade e egress do navegador (feita em 2026-09-26)
 
-- §6: nunca devolver texto digitado em campo de senha/token/cartão para o Gemini ou para o
-  terminal.
-- Redaction de e-mail, documento e outros padrões configuráveis no `page_text` antes de sair do
-  subprocesso do Jev.
-- §6.4: sanitizar caracteres de controle C0/C1 antes de imprimir título/texto de página no
-  terminal (`viking browser` sem `--json`).
-- Teste adversarial de prompt injection (uma página que tenta instruir o modelo via texto).
-- Decisão de produto pendente (perguntar ao dono, seção 23 da auditoria): banco/e-mail devem ser
-  bloqueados por padrão no navegador até existir uma política explícita?
+Decisões do dono: banco + e-mail bloqueados por padrão; e-mails na página não são redigidos;
+proteger também o caminho do OpenRouter (feito sem editar o fork). Entregue:
+
+- `browser/_redacao.py` (stdlib pura, cópia única da regra, usada dos dois lados do subprocesso):
+  CPF/CNPJ/cartão só com dígito verificador (telefone não vira CPF), SSN, tokens por prefixo,
+  chave privada, parâmetros sensíveis de URL (query e fragmento), texto digitado em campo sensível,
+  limpeza de C0/C1/bidi.
+- Caminho OpenRouter: `_jev_subprocess.instalar_protecao()` envolve `jev_ultrafast.agent.choose`
+  e `field_context` — página redigida e domínio bloqueado recusado **antes** de qualquer chamada
+  remota, inclusive redirecionamento na página inicial. Fecha em falha (`protecao_indisponivel`).
+- Caminho Gemini/terminal/`--json`: `jev_runner._higienizar()` como ponto único em `result_from`;
+  `imprimir_progresso` limpo; `formatar()` põe título, URL, rótulos e trecho num único bloco
+  `«…»` não confiável e neutraliza `«»` vindos da página (antes a página fechava o bloco).
+- Bloqueio de domínio: preflight em `run_jev` (nem abre aba) + `--bloquear` no subprocesso;
+  `VIKING_BROWSER_BLOQUEADOS`/`VIKING_BROWSER_LIBERADOS`.
+- Testes: `test_redacao.py` (unitário + adversarial + ReDoS), `test_browser_seguranca.py`
+  (integração), envelope e contrato com o Jev real em `test_jev_subprocess_main.py`. Cada teste de
+  segurança conferido por mutação (tirar a proteção faz o teste certo falhar).
+
+Não validado ao vivo: bloqueio e redação no Chrome real do Mac (o venv do Jev deste VPS não roda).
+
+## Sessão Gmail — leitura via API (nova, pedida pelo dono em 2026-09-26)
+
+- Conectar o Gmail pela API oficial, reaproveitando o OAuth do calendário com um escopo de leitura
+  (`gmail.readonly`) — o dono refaz o login uma vez no Mac. Dado estruturado, permissão mínima, e
+  nada passa pelo OpenRouter (diferente de abrir o Gmail no navegador, que segue bloqueado).
+- Conferir antes de codar: status do app OAuth no Google Cloud ("Testing" pode limitar a validade
+  do login e exigir passo extra para escopos do Gmail) — não verificado ainda.
+- Tools: listar/buscar/ler e-mails; conteúdo de e-mail é dado não confiável (mesmo tratamento de
+  página: delimitado, sem obedecer instruções).
 
 ## Sessão 5 — confirmação mecânica
 
@@ -135,8 +156,8 @@ mexer no tempo de uma sessão. Vira Sessão 3b. Entregue:
 
 - §15.1: sem lockfile no projeto principal (`uv.lock` ou equivalente).
 - §15.3: sem CI, sem scanner de dependências, sem type checking.
-- §15.4: `ruff format --check` ainda aponta 10 arquivos pré-existentes (de antes da auditoria) —
-  não mexidos nesta sessão de propósito, para não misturar formatação com correção de bug.
+- §15.4: `ruff format --check` ainda aponta arquivos pré-existentes (de antes da auditoria) —
+  eram 10; cada sessão formata só os arquivos que já está editando, então o número cai aos poucos.
 - §15.2: `test_assistant_tools.py` usa `_automatic_function_calling_util`, API privada do
   google-genai — acoplamento intencional, mas vale um teste público adicional que não dependa
   disso.
@@ -157,4 +178,8 @@ criáveis (§12.4); migrations de schema formais (§12.6); decidir se o Viking �
 pacote instalável de verdade (§9.3); Pluggy (finanças); RAG/busca semântica sobre notas e
 calendário; teste preventivo para o caso de uma função virar tool do Gemini e do MCP ao mesmo
 tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3), só rede de
-segurança para um cenário hipotético.
+segurança para um cenário hipotético. Residuais da Sessão 4: o objetivo, os rótulos/valores
+de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
+`docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN não é normalizado;
+o Jev ainda pode *clicar* em algo destrutivo num site não bloqueado (§5.2 — detector de ação
+sensível fica para a Sessão 5).
