@@ -124,6 +124,15 @@ def test_raio_x_no_teto_diz_que_e_piso(gmail):
     assert "nada foi arquivado" in texto
 
 
+def test_raio_x_diz_alem_de_quantos_sao_os_outros(gmail):
+    """O Gemini resumiu 5 remetentes e repetiu "outros 76" (eram 76 além de 15)."""
+    for i in range(tools.MAX_REMETENTES + 4):
+        gmail["nova"](f"m{i}", de=f"R{i} <r{i}@x.example>")
+    texto = tools.raio_x_da_caixa()
+    assert f"além destes {tools.MAX_REMETENTES}, mais 4 remetente(s)" in texto
+    assert f"({tools.MAX_REMETENTES + 4} no total)" in texto
+
+
 def test_raio_x_mostra_sinais_de_newsletter(gmail):
     for i in range(3):
         gmail["nova"](

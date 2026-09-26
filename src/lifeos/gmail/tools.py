@@ -132,7 +132,13 @@ def responder_raio_x(dias: int = 30) -> str:
         linhas.append(f"- {r.nome} <{r.endereco}>: {r.total} e-mail(s), {', '.join(sinais)}")
     resto = len(raio.remetentes) - MAX_REMETENTES
     if resto > 0:
-        linhas.append(f"- e mais {resto} remetente(s) com menos e-mails")
+        # Com o total junto: "e mais 76" solto foi lido pelo Gemini como "76 além dos 5 que eu
+        # mostrei", quando eram 76 além destes 15 (caixa real do dono, 2026-09-26).
+        total = len(raio.remetentes)
+        linhas.append(
+            f"- além destes {MAX_REMETENTES}, mais {resto} remetente(s) com menos e-mails "
+            f"({total} no total)"
+        )
     partes.append(_dados("\n".join(linhas)))
     partes.append("Isto só leu a caixa: nada foi arquivado, apagado nem marcado como lido.")
     return "\n".join(partes)

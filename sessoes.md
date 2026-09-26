@@ -16,7 +16,6 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Antes dela:** validar a Sessão Gmail (leitura) no Mac — roteiro em `PROGRESSO.md`.
 - **Sessão:** Gmail 2 — limpar a caixa (só arquivar, lista aprovada).
 - **Primeiro passo:** o da seção da Sessão Gmail 2 abaixo (escopo `gmail.modify`).
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/google-calendar-api.md`,
@@ -168,7 +167,7 @@ Validado no Mac do dono em 2026-09-26: 444 testes, 16/16 mutações, "Sair" e o 
 diálogo de excluir conta recusados na Chrome real, "Buscar" concluído. Não testado num site real
 logado (as páginas de teste foram `data:` de propósito).
 
-## Sessão Gmail — leitura via API (feita em 2026-09-26)
+## ✅ Sessão Gmail — leitura via API (feita e validada em 2026-09-26)
 
 Decisões do dono (2026-09-26): só no `viking chat`, não pelo MCP (sem autenticação ainda);
 redação igual à das páginas (CPF/CNPJ/cartão/chaves/links com token somem; e-mails e códigos de
@@ -188,7 +187,7 @@ verificado" (esperado, não bloqueia). Entregue:
 
 Validado no Mac do dono em 2026-09-26: 528 testes, login real (token 600), não lidos e raio-x
 na caixa real (formato bateu com o fake; achado e consertado o enchimento invisível das prévias).
-Ainda não: as perguntas no `viking chat` e a latência do raio-x.
+Perguntas no `viking chat` também validadas. Não medida: a latência do raio-x.
 
 ## Sessão Gmail 2 — limpar a caixa (próxima depois da leitura)
 

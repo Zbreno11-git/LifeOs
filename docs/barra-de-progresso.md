@@ -9,9 +9,9 @@
 
 **Última atualização: 2026-09-26 (Sessão Gmail).**
 
-`██████████░░░░░░░░░░ 4 de 11 sessões fechadas + 3 parciais (= 5,5 de 11)`
+`███████████░░░░░░░░░ 5 de 11 sessões fechadas + 2 parciais (= 6 de 11)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3 e 4b; parciais 4, 3b e Gmail; na fila Gmail 2, 5, 6
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b e Gmail; parciais 4 e 3b; na fila Gmail 2, 5, 6
 e 7 (a Gmail 2, limpar a caixa, entrou hoje a seu pedido). Cada
 parcial vale meio bloco na barra.
 
@@ -28,9 +28,9 @@ ligadas ao Viking (o servidor MCP) não enxergam seus e-mails.
 propósito, e 27 proteções quebradas de propósito — todas pegas pelo teste certo. De brinde: se o
 Google um dia cancelar o seu login, o Viking pede login de novo em vez de travar.
 
-**Validado no seu Mac:** login feito, e o Viking leu os não lidos de hoje e fez o raio-x da sua
-caixa real (200 e-mails de 91 remetentes em 30 dias). **Falta:** você fazer as perguntas no
-`viking chat`. A limpeza da caixa é a próxima sessão.
+**Validado no seu Mac:** login feito; o Viking leu os não lidos de hoje, fez o raio-x da sua
+caixa real (200 e-mails de 91 remetentes em 30 dias) e respondeu às perguntas no chat — cada uma
+custou menos de meio centavo de dólar. A limpeza da caixa é a próxima sessão.
 
 ## 2026-09-26 — o navegador não sai, não mexe na sua conta e não gasta dinheiro sozinho
 

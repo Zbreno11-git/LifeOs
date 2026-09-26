@@ -761,5 +761,12 @@ antigo — erro meu de roteiro, classe 1; no segundo, `9841595`):
   tem esse nome — por isso o dono não o achava como "Viking". Renomear é na tela de marca do app
   (decisão dele).
 
-**Ainda não validado ao vivo:** as perguntas no `viking chat` (Gemini chamando as tools de e-mail)
-e o calendário sem pedir login de novo; latência do raio-x (a saída não mede tempo).
+**`viking chat`, validado em seguida (saída colada pelo dono):** "o que eu tenho amanhã?"
+respondeu sem pedir login do calendário; "o que chegou de e-mail hoje?" e "quem mais me manda
+e-mail que eu não abro?" chamaram as tools e responderam certo; "esses e-mails eu não abro nunca"
+fez o Gemini dizer que não consegue bloquear nem descadastrar — a regra da descrição segurou a
+promessa. Custo medido pelo `/custos` por mensagem: de ~2,6 mil a ~14,7 mil tokens (US$ 0,001 a
+0,005), crescendo com o histórico da conversa. **Achado:** o Gemini mostrou 5 remetentes e repetiu
+"outros 76" — eram 76 além dos 15 mandados; a linha agora diz "além destes 15 … (91 no total)".
+
+**Não medido:** latência do raio-x (a saída não mede tempo).

@@ -5,53 +5,23 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, Sessão Gmail validada no Mac, falta só o chat (C8)
+## ▶️ RETOMAR AQUI — 2026-09-26, entre sessões (Sessão Gmail fechada)
 
-**Estado:** código da Sessão Gmail commitado e no GitHub (conferir com `git log -1`: "Sessão
-Gmail: ..."). Execuções em background: nenhuma. Travas: nenhuma (`.mutacao.lock` ausente).
+**Estado:** Sessão Gmail validada no Mac do dono, inclusive as perguntas no `viking chat` (ver
+diário). Execuções em background: nenhuma. Travas: nenhuma.
 
-**Próximo passo exato:** o dono faz no `viking chat` as três perguntas do roteiro (calendário
-sem novo login, "o que chegou hoje?", "quem me manda coisa que eu não abro?"). Depois: Sessão
-Gmail 2 (limpeza), que parte do raio-x real.
-
-**Roteiro para o Mac (C8):**
-
-```bash
-cd ~/LifeOs
-git pull && git log --oneline -1
-```
-
-Só siga se o commit for `81035f5` (ou mais novo). Então:
-
-```bash
-source .venv/bin/activate
-which python
-python -m pytest -q
-viking gmail --login
-ls -l secrets/
-viking gmail
-viking gmail --raio-x
-viking chat
-```
-
-Esperado:
-- testes verdes, nenhum pulado;
-- `--login` abre o navegador no Google: aparece "O Google não verificou este app" → **Avançado**
-  → **Acessar (não seguro)** → deixar marcada a permissão de **ler e-mails** → no terminal,
-  `✅ Login do Gmail ok (só leitura): <seu e-mail>, N mensagens`;
-- `ls -l secrets/` mostra `google_token_gmail.json` com `-rw-------` (só nomes e permissões, sem
-  conteúdo);
-- no `viking chat`: "o que eu tenho amanhã?" **sem** pedir login do calendário de novo; depois
-  "o que chegou de e-mail hoje?" e "quem mais me manda e-mail que eu não abro?".
-
-**Privacidade ao colar:** a saída de `viking gmail` e do raio-x tem remetentes e assuntos reais.
-Se preferir, cole só as linhas de resumo (as que começam com ✅, ⚠️ ou "Raio-x") e diga se o resto
-pareceu certo.
+**Próximo passo exato:** abrir a Sessão Gmail 2 (`sessoes.md`) — rodada de perguntas ao dono
+sobre como escolher o que arquivar, antes do plano.
 
 **Não esquecer:**
-- O repo é **público**: o `project_id` do OAuth não entra em doc nenhum.
+- O repo é **público**: nem o `project_id` do OAuth nem nome de remetente da caixa do dono entram
+  em doc nenhum.
 - Baseline do `ruff format --check`: 7 arquivos pré-existentes. Formatar **só os arquivos
   editados** (`docs/erros.md`, classe 8).
+- Roteiro para o Mac começa com `git pull && git log --oneline -1` e só segue com o commit certo
+  (`docs/erros.md`, classe 1).
+
+> O plano da Sessão Gmail fica abaixo como registro até a próxima sessão abrir o dela.
 
 ## Plano — Sessão Gmail: leitura via API
 
@@ -99,7 +69,7 @@ MCP (decisão do dono); anexos; enviar e-mail.
 | C5 | `viking gmail` na CLI + trava do `conftest` para o Gmail — 5 testes de CLI; trava ampliada; suíte 527 | ✅ |
 | C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles — 26/26 + a 27ª isolada; suíte 528; ruff limpo; baseline 7 | ✅ |
 | C7 | docs + revisão em duas passadas + commit + push | ✅ |
-| C8 | Mac: login (aviso de não verificado), `--raio-x`, pergunta no chat — login, não lidos e raio-x ✅ na caixa real; perguntas no chat ⬜ | 🔵 |
+| C8 | Mac: login (aviso de não verificado), `--raio-x`, pergunta no chat — tudo validado, ver diário | ✅ |
 
 **🐞 Previsto → Depurar:**
 - Teste do calendário quebrando depois de mover o OAuth → a trava do `conftest` mira
