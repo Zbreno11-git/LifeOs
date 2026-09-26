@@ -50,10 +50,52 @@ def _browser(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     return {"done": 0, "blocked": 1}.get(resultado.status, 2)
 
 
+def _arquivar(remetentes: str) -> int:
+    """A limpeza sem o Gemini: mostra a proposta e pede o código aqui mesmo."""
+    from lifeos import confirmacao
+    from lifeos.gmail import limpeza, service, tools
+
+    try:
+        proposta = limpeza.preparar(remetentes)
+    except (service.ErroGmail, confirmacao.ErroConfirmacao) as exc:
+        erro = tools.mensagem_de_erro(exc) if isinstance(exc, service.ErroGmail) else str(exc)
+        print(f"❌ {erro}", file=sys.stderr)
+        return 2
+    print(tools.texto_da_proposta(proposta))
+    if not proposta.codigo:
+        return 0
+    digitado = input("Digite o código para arquivar (Enter cancela): ").strip()
+    if not digitado:
+        print("Cancelado: nada foi arquivado.")
+        return 1
+    try:
+        print(tools.texto_da_execucao(limpeza.confirmar(digitado)))
+    except (service.ErroGmail, confirmacao.ErroConfirmacao) as exc:
+        print(f"❌ {tools.mensagem_de_aprovacao(exc)}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _desfazer(codigo: str) -> int:
+    from lifeos import confirmacao
+    from lifeos.gmail import limpeza, service, tools
+
+    try:
+        print(tools.texto_do_desfeito(limpeza.desfazer(codigo)))
+    except (service.ErroGmail, confirmacao.ErroConfirmacao) as exc:
+        print(f"❌ {tools.mensagem_de_aprovacao(exc, desfazendo=True)}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def _gmail(args: argparse.Namespace) -> int:
     """Gmail sem passar pelo Gemini: o texto impresso é o mesmo que o chat entrega ao modelo."""
     from lifeos.gmail import service, tools
 
+    if args.arquivar is not None:
+        return _arquivar(args.arquivar)
+    if args.desfazer is not None:
+        return _desfazer(args.desfazer)
     if args.login:
         try:
             endereco, total = service.perfil()
@@ -120,6 +162,12 @@ def main() -> None:
     acao.add_argument(
         "--raio-x", type=int, nargs="?", const=30, metavar="DIAS", help="Raio-x da caixa"
     )
+    acao.add_argument(
+        "--arquivar",
+        metavar="ENDERECOS",
+        help="Propõe arquivar tudo destes remetentes (vírgula) e pede o código",
+    )
+    acao.add_argument("--desfazer", metavar="CODIGO", help="Desfaz uma limpeza (até 7 dias)")
     gmail.add_argument("--max", type=int, default=10, help="Máximo de resultados da busca")
 
     args = parser.parse_args()

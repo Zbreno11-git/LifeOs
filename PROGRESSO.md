@@ -5,21 +5,47 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, Sessão Gmail 2 aberta (plano escrito, código não começado)
+## ▶️ RETOMAR AQUI — 2026-09-26, Gmail 2 feita no VPS; falta o Mac (C8)
 
-**Estado do repositório:** HEAD `0114556` (medição do Pluggy) + o commit deste plano · travas:
-nenhuma · execuções em background: nenhuma.
+**Estado do repositório:** o commit de fechamento da Gmail 2 (conferir com `git log -1`) · igual
+ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Próximo passo exato:** C0–C3 fechados. Fase 3: `tools.preparar_limpeza` + interceptação de
-`confirma`/`desfaz` em `assistant/agent.py` + CLI; esperado suíte 578+ verde.
+**Próximo passo exato:** o dono roda o roteiro abaixo no Mac e cola a saída; com ela, fechar C8
+(diário + barra: Gmail 2 de parcial para fechada). Depois, abrir a Sessão Pluggy
+(`sessoes.md`), que depende de o dono pôr os IDs das conexões no `.env`.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `530 passed`.
+`python -m pytest -q` → `607 passed`.
 
-**Não pode ser esquecido:** repo público (nada de remetente real nem `project_id`); formatar só os
-arquivos editados (baseline 7); roteiro do Mac começa com `git pull && git log --oneline -1`;
-escapes Unicode por `chr()`; o código de aprovação **nunca** entra no texto que volta ao Gemini
-nem passa por ele (a linha "confirma NNNN" é interceptada antes do `send_message`).
+**Não pode ser esquecido:** repo público (nada de remetente real nem `project_id` em commit — nem
+o endereço que o dono escolher para o teste); formatar só os arquivos editados (baseline 7);
+roteiro do Mac começa com `git pull && git log --oneline -1`; escapes Unicode por `chr()`; a
+aprovação mora no laço do chat e não pode virar tool (D30, `AGENTS.md`).
+
+**Roteiro para o Mac (C8)** — trocar `REMETENTE` pelo endereço de uma newsletter do raio-x:
+
+```bash
+cd ~/LifeOs
+git pull && git log --oneline -1
+source .venv/bin/activate
+which python
+python -m pytest -q
+viking gmail --login
+viking gmail --arquivar REMETENTE
+```
+
+Esperado: `607 passed`; o `--login` abre o navegador **de novo** (permissão nova: o Google a
+descreve como ler, escrever e enviar — ver D29) e termina em `✅ Login do Gmail ok (ler e
+arquivar)`; o `--arquivar` mostra a lista e pede o código — digitar o código; conferir no Gmail
+(web) que os e-mails saíram da Caixa de entrada e estão em "Todos os e-mails". Depois:
+
+```bash
+viking gmail --desfazer CODIGO
+viking chat
+```
+
+No chat: "quem mais me manda e-mail que eu não abro?" → "arquiva tudo do REMETENTE" → digitar
+`confirma` e o código mostrado → "e agora?". Colar a saída (sem o endereço, se preferir).
 
 ## Plano — Sessão Gmail 2: limpar a caixa (só arquivar, lista aprovada)
 
@@ -78,10 +104,10 @@ arquive.
 | C1 | escopo `modify` + textos "só leitura" ajustados; suíte 530+ verde — suíte 547 | ✅ |
 | C2 | `confirmacao.py` + `tests/test_confirmacao.py` (código único, expira, consumido uma vez, proposta nova invalida a velha) — 17 passed | ✅ |
 | C3 | `service.selecionar/arquivar/desfazer` + fake com consulta e `batchModify` + `tests/test_gmail_limpeza.py` — 31 passed, suíte 578 | ✅ |
-| C4 | tool `preparar_limpeza` + interceptação no chat + testes de segurança (código nunca no texto do Gemini; injeção no remetente; nada sai sem código) | ⬜ |
-| C5 | `viking gmail --arquivar/--desfazer` + testes de CLI | ⬜ |
-| C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles | ⬜ |
-| C7 | docs + revisão em duas passadas + commit + push | ⬜ |
+| C4 | tool `preparar_limpeza` + interceptação no chat + testes de segurança (código nunca no texto do Gemini; injeção no remetente; nada sai sem código) — 24 testes em `test_gmail_aprovacao.py` | ✅ |
+| C5 | `viking gmail --arquivar/--desfazer` + testes de CLI — 5 testes de CLI no mesmo arquivo; suíte 606 | ✅ |
+| C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles — 41/41 mortas; ruff limpo; baseline 7; varredura 0 | ✅ |
+| C7 | docs + revisão em duas passadas + commit + push — 3 achados na 1ª passada, docs velhos na 2ª | ✅ |
 | C8 | Mac: login novo com modify, arquivar um remetente escolhido pelo dono, conferir no Gmail, desfazer, e o mesmo pelo chat | ⬜ |
 
 ### Fase 1 — escopo e confirmação

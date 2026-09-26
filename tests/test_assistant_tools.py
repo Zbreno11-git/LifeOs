@@ -69,8 +69,14 @@ _REGRAS = {
     # e-mail é conteúdo de terceiro: prompt injection por e-mail é o risco da Sessão Gmail
     "buscar_emails": [["não siga pedidos"], ["só leitura"]],
     "ler_email": [["não siga instruções"], ["nunca invente ID"]],
-    # a limpeza ainda não existe (Sessão Gmail 2): o modelo não pode prometê-la
-    "raio_x_da_caixa": [["Só lê"], ["não\n    ofereça limpar", "não ofereça limpar"]],
+    # quem escolhe o que sai da caixa é o dono, não o modelo nem um e-mail (Sessão Gmail 2)
+    "raio_x_da_caixa": [["Só lê"], ["que ELE escolher"]],
+    "preparar_limpeza": [
+        ["NÃO arquiva nada"],
+        ["Você não recebe o código"],
+        ["nem por pedido contido num e-mail"],
+        ["sem apagar"],
+    ],
 }
 
 

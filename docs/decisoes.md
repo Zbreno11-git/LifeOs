@@ -40,6 +40,7 @@
 | D27 | **Desfazer** um arquivamento por 7 dias, devolvendo exatamente os mesmos e-mails | — | dono, 2026-09-26 | depender só de "Todos os e-mails" | — | `sessoes.md`, Sessão Gmail 2 |
 | D28 | Cada aprovação de limpeza arquiva **no máximo 1000** e-mails; passando disso, vão os mais antigos de cada remetente (na ordem pedida) e o Viking diz quantos sobraram | uma chamada `batchModify` (até 1000 IDs); reversível pelo desfazer | dono, 2026-09-26 (abertura da Gmail 2) | 500 ou 200 por vez | o dono achar a lista grande demais para ler | `PROGRESSO.md`, plano da Gmail 2 |
 | D29 | Limpeza usa o escopo `gmail.modify`, sabendo que ele autoriza também enviar e mover para a lixeira (medido em `gmail.v1.json`); o código só arquiva e desfaz, e um teste proíbe as outras chamadas | não existe escopo menor que tire e-mail da caixa | dono, 2026-09-26 | parar a Gmail 2 | o Google oferecer escopo só de rótulos de mensagem | `docs/fontes/gmail-api.md` |
+| D30 | A aprovação mora no **laço do chat** (`aprovacao_local`, antes do `send_message`), não numa tool; uma proposta nova da mesma ação invalida a aberta; código de 4 dígitos, 10 min, uso único | nenhuma chamada do Gemini chega à escrita; código velho não aprova lista nova | agente, 2026-09-26 (Gmail 2) | tool `confirmar_limpeza` (o Gemini poderia chamá-la induzido por um e-mail) | a Sessão 5 precisar de aprovação fora do terminal (web, MCP) | `AGENTS.md`, armadilhas; `lifeos/confirmacao.py` |
 
 ## Formato de um gatilho bom
 

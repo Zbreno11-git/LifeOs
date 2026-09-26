@@ -770,3 +770,40 @@ promessa. Custo medido pelo `/custos` por mensagem: de ~2,6 mil a ~14,7 mil toke
 "outros 76" — eram 76 além dos 15 mandados; a linha agora diz "além destes 15 … (91 no total)".
 
 **Não medido:** latência do raio-x (a saída não mede tempo).
+
+### 2026-09-26 — Pluggy medido, e Sessão Gmail 2: limpar a caixa com aprovação por código
+
+**Pluggy (medição, sem código).** Pelo MCP de documentação da Pluggy e pelo guia do Meu Pluggy: uso
+pessoal é **gratuito** (até 5 conexões do mesmo titular) — responde a pergunta aberta de D5. Com as
+credenciais que o dono pôs no `.env`: `/auth` → 200 e o conector MeuPluggy (id 200) disponível;
+listar conexões → 403 (recurso desligado), então os IDs saem do Dashboard. A mesma chave alcança
+PIX e apagar conexão: a sessão exige cliente só `GET`. Tudo em `docs/fontes/pluggy-open-finance.md`;
+sessão escrita no `sessoes.md`, logo depois da Gmail 2 (decisão do dono).
+
+**Gmail 2, feito.** O Gemini só **propõe** (`preparar_limpeza`): a lista exata e um código de 4
+dígitos vão direto para o terminal; o dono digita `confirma NNNN`, que o laço do chat trata antes
+do modelo; `desfaz NNNN` devolve por 7 dias. Seleção por remetente exato, proteções (estrela,
+importante, anexo) na consulta **e** nos metadados, teto 1000, mais antigos primeiro; na
+confirmação, só o que foi aprovado e ainda vale. `viking gmail --arquivar/--desfazer` para o Mac.
+Portões: `607 passed`; `ruff check` limpo; 7 arquivos antigos fora do `ruff format`; mutações
+`41 · mortas pelo teste esperado: 41` (13 novas) na rodada completa, rodada de novo depois das
+correções da revisão; as 3 correções têm teste próprio.
+
+**Decidido.** Pelo dono: teto 1000 (D28); seguir com `gmail.modify` sabendo, **medido** no
+`gmail.v1.json`, que ele autoriza também enviar e lixeira (D29); Pluggy logo depois da Gmail 2.
+Meu: aprovação no laço do chat, não numa tool (D30).
+
+**Achado na revisão.** (1) Primeira passada: um e-mail que falhasse ao ser relido na confirmação
+(ex.: 429) seria contado como "mudou desde a lista" — agora aparece como "não pôde ser conferido";
+(2) a mensagem de erro do desfazer dizia "o código foi gasto", falso no desfazer; (3) duas chamadas
+da tool no mesmo turno se anulam — a descrição pede uma só. Segunda passada ("o que ficou falso?"):
+`AGENTS.md`, `gmail-api.md` e `sessoes.md` ainda diziam "só leitura".
+
+**Erros desta sessão (meus).** (1) `\d` do Python casa dígitos Unicode, e eu afirmei que não —
+pego pelo próprio teste; classe 2. (2) Texto da tela de consentimento escrito de memória no plano —
+pego na releitura, conferido no `gmail.v1.json`; classe 2. (3) Asserção com `or` aceitando dois
+caminhos — pega na segunda passada; classe 4, segunda vez.
+
+**Não verificado.** Login novo com `gmail.modify` no Mac; arquivar e desfazer na caixa real;
+latência e 429 dos metadados de 1000 e-mails. Roteiro em `PROGRESSO.md`.
+

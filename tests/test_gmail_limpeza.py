@@ -192,6 +192,17 @@ def test_confirmacao_so_arquiva_o_que_foi_aprovado_e_ainda_vale(gmail):
     assert _na_caixa(gmail, "novo") and _na_caixa(gmail, "l2")
 
 
+def test_falha_ao_reler_na_confirmacao_nao_se_passa_por_mudanca(gmail):
+    """Um 429 na hora de conferir de novo não é "ganhou estrela": o dono precisa saber que foi
+    falha, porque pedir a lista de novo resolve."""
+    _caixa(gmail)
+    proposta = limpeza.preparar(LOJA)
+    gmail["falhar_sempre"].add("l2")
+    execucao = limpeza.confirmar(proposta.codigo)
+    assert (execucao.fora, execucao.nao_conferidos) == (0, 1)
+    assert "l2" not in execucao.modificacao.feitos and _na_caixa(gmail, "l2")
+
+
 def test_proposta_vazia_invalida_o_codigo_anterior(gmail):
     _caixa(gmail)
     anterior = limpeza.preparar(LOJA)

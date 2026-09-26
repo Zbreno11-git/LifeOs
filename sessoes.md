@@ -16,12 +16,14 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** Gmail 2 — limpar a caixa (só arquivar, lista aprovada).
-- **Primeiro passo:** o da seção da Sessão Gmail 2 abaixo (escopo `gmail.modify`).
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/google-calendar-api.md`,
-  skills `integracoes` e `seguranca` (conteúdo de e-mail é dado de terceiro).
-- **Depende do dono:** sim — a saída do roteiro do Mac, e o raio-x real, que é de onde sai a
-  primeira lista de limpeza.
+- **Antes de abrir a próxima:** a Gmail 2 foi escrita e testada no VPS em 2026-09-26 e falta
+  **validar no Mac** (roteiro em `PROGRESSO.md`; o login do Gmail vai ser pedido de novo).
+- **Sessão:** Pluggy — finanças, só leitura (decisão do dono: logo depois da Gmail 2).
+- **Primeiro passo:** o da seção da Sessão Pluggy abaixo (do dono: IDs das conexões no `.env`).
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/pluggy-open-finance.md`,
+  skills `integracoes` e `seguranca` (a chave da Pluggy alcança PIX: cliente só `GET`).
+- **Depende do dono:** sim — conectar os bancos no Meu Pluggy/Dashboard e as perguntas da
+  abertura escritas na seção.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -190,7 +192,16 @@ Validado no Mac do dono em 2026-09-26: 528 testes, login real (token 600), não 
 na caixa real (formato bateu com o fake; achado e consertado o enchimento invisível das prévias).
 Perguntas no `viking chat` também validadas. Não medida: a latência do raio-x.
 
-## Sessão Gmail 2 — limpar a caixa (próxima; perguntas respondidas, plano ainda não escrito)
+## Sessão Gmail 2 — limpar a caixa (feita no VPS em 2026-09-26; falta validar no Mac)
+
+**Entregue:** `viking chat` → "arquiva tudo do X" → a tool `preparar_limpeza` imprime no terminal
+a lista exata e um código de 4 dígitos (nunca devolvido ao Gemini) → o dono digita
+`confirma NNNN`, lido pelo laço do chat antes do modelo → arquiva; `desfaz NNNN` devolve por 7
+dias. `viking gmail --arquivar/--desfazer` faz o mesmo sem o Gemini. Teto 1000 (D28); escopo
+`gmail.modify` com teste que proíbe enviar/lixeira/apagar (D29); confirmação mecânica genérica
+em `lifeos/confirmacao.py`, pronta para a Sessão 5. Plano e checkpoints em `PROGRESSO.md`.
+
+O que era a abertura:
 
 Pedida pelo dono em 2026-09-26 ("recebo anúncio e jornal que não abro nunca"); separada da
 leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.

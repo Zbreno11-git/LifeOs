@@ -250,6 +250,103 @@ MUTACOES = [
         "    corpo = corpo",
         "tests/test_gmail_service.py::test_corpo_com_controle_sai_limpo",
     ),
+    Mutacao(
+        "limpeza: estrela/importante só na consulta do Gmail",
+        "src/lifeos/gmail/service.py",
+        "elif email.na_caixa and not email.estrela and not email.importante:",
+        "elif email.na_caixa:",
+        "tests/test_gmail_limpeza.py::test_protegidos_nunca_saem_nem_se_a_consulta_falhar",
+    ),
+    Mutacao(
+        "limpeza: anexo sai se a consulta falhar",
+        "src/lifeos/gmail/service.py",
+        "candidatos = [i for i in reversed(candidatos) if i not in com_anexo]",
+        "candidatos = list(reversed(candidatos))",
+        "tests/test_gmail_limpeza.py::test_protegidos_nunca_saem_nem_se_a_consulta_falhar",
+    ),
+    Mutacao(
+        "limpeza: remetente parecido entra",
+        "src/lifeos/gmail/service.py",
+        "            if email.endereco != endereco:",
+        "            if False:",
+        "tests/test_gmail_limpeza.py::test_remetente_parecido_nao_entra",
+    ),
+    Mutacao(
+        "limpeza: operador de busca amplia a seleção",
+        "src/lifeos/gmail/service.py",
+        "        if not _ENDERECO.fullmatch(endereco):",
+        "        if False:",
+        "tests/test_gmail_limpeza.py::test_pedido_que_nao_e_endereco_exato_nao_consulta_nada",
+    ),
+    Mutacao(
+        "arquivar: tira mais que o rótulo INBOX",
+        "src/lifeos/gmail/service.py",
+        'return _rotular(ids, {"removeLabelIds": ["INBOX"]})',
+        'return _rotular(ids, {"removeLabelIds": ["INBOX", "UNREAD"]})',
+        "tests/test_gmail_limpeza.py::test_arquivar_so_tira_o_rotulo_inbox",
+    ),
+    Mutacao(
+        "limpeza: confirmação arquiva o que mudou desde a lista",
+        "src/lifeos/gmail/limpeza.py",
+        "    ids = [i for i in aprovados if i in ainda]",
+        "    ids = list(aprovados)",
+        "tests/test_gmail_limpeza.py::test_confirmacao_so_arquiva_o_que_foi_aprovado_e_ainda_vale",
+    ),
+    Mutacao(
+        "desfazer: a mesma limpeza desfeita duas vezes",
+        "src/lifeos/gmail/limpeza.py",
+        '    if resultado.get("desfeito_em"):',
+        "    if False:",
+        "tests/test_gmail_limpeza.py::test_desfazer_devolve_exatamente_os_arquivados_uma_vez",
+    ),
+    Mutacao(
+        "confirmação: código vencido aprova",
+        "src/lifeos/confirmacao.py",
+        '        if datetime.fromisoformat(linha["expira_em"]) < agora:',
+        "        if False:",
+        "tests/test_confirmacao.py::test_codigo_vencido_nao_aprova",
+    ),
+    Mutacao(
+        "confirmação: proposta nova não invalida a velha",
+        "src/lifeos/confirmacao.py",
+        "    expira = agora + VALIDADE\n"
+        "    with _sessao() as conn:\n"
+        "        conn.execute(\n"
+        "            \"UPDATE confirmacoes SET estado = 'substituida' WHERE",
+        "    expira = agora + VALIDADE\n"
+        "    with _sessao() as conn:\n"
+        "        conn.execute(\n"
+        "            \"UPDATE confirmacoes SET estado = 'aberta' WHERE",
+        "tests/test_confirmacao.py::test_proposta_nova_invalida_o_codigo_velho",
+    ),
+    Mutacao(
+        "confirmação: desfazer depois do prazo",
+        "src/lifeos/confirmacao.py",
+        "    if registro.consumida_em is None or registro.consumida_em + janela < agora:",
+        "    if registro.consumida_em is None:",
+        "tests/test_confirmacao.py::test_desfazer_acha_a_acao_feita_dentro_da_janela",
+    ),
+    Mutacao(
+        "confirmação: dígito de outro alfabeto passa no formato",
+        "src/lifeos/confirmacao.py",
+        '_CODIGO = re.compile(rf"[0-9]{{{DIGITOS}}}")',
+        '_CODIGO = re.compile(rf"\\d{{{DIGITOS}}}")',
+        "tests/test_confirmacao.py::test_formato_errado_e_recusado",
+    ),
+    Mutacao(
+        "aprovação: a linha com o código vai ao Gemini",
+        "src/lifeos/assistant/agent.py",
+        "        local = aprovacao_local(prompt)",
+        "        local = None",
+        "tests/test_gmail_aprovacao.py::test_laco_do_chat_nunca_manda_a_linha_de_aprovacao_ao_gemini",
+    ),
+    Mutacao(
+        "aprovação: o código volta no texto do Gemini",
+        "src/lifeos/gmail/tools.py",
+        "        _SEM_CODIGO,\n    ]",
+        "        _SEM_CODIGO + str(proposta.codigo),\n    ]",
+        "tests/test_gmail_aprovacao.py::test_codigo_vai_ao_terminal_e_nunca_ao_gemini",
+    ),
 ]
 
 

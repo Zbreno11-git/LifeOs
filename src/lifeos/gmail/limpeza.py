@@ -35,6 +35,7 @@ class Execucao:
     codigo: str
     aprovados: int
     fora: int  # aprovados que deixaram de valer (ganharam estrela, saíram da caixa...)
+    nao_conferidos: int  # não deu para reler agora (falha da API): ficaram, e não "mudaram"
     modificacao: service.Modificacao
     desfazer_ate: datetime
 
@@ -68,20 +69,24 @@ def confirmar(codigo: str) -> Execucao:
         raise
     ainda = set(atual.ids)
     ids = [i for i in aprovados if i in ainda]
+    nao_conferidos = sum(g.falharam for g in atual.grupos)
+    fora = len(aprovados) - len(ids) - nao_conferidos
     modificacao = service.arquivar(ids)
     confirmacao.registrar(
         registro.id,
         {
             "arquivados": list(modificacao.feitos),
             "falharam": list(modificacao.falharam),
-            "fora": len(aprovados) - len(ids),
+            "fora": fora,
+            "nao_conferidos": nao_conferidos,
         },
     )
     quando = registro.consumida_em or datetime.now(UTC)
     return Execucao(
         codigo=registro.codigo,
         aprovados=len(aprovados),
-        fora=len(aprovados) - len(ids),
+        fora=fora,
+        nao_conferidos=nao_conferidos,
         modificacao=modificacao,
         desfazer_ate=quando + DESFAZER_POR,
     )

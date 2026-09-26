@@ -7,13 +7,34 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-26 (Sessão Gmail).**
+**Última atualização: 2026-09-26 (Sessão Gmail 2, antes do teste no Mac).**
 
-`███████████░░░░░░░░░ 5 de 11 sessões fechadas + 2 parciais (= 6 de 11)`
+`███████████░░░░░░░░░ 5 de 12 sessões fechadas + 3 parciais (= 6,5 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b e Gmail; parciais 4 e 3b; na fila Gmail 2, 5, 6
-e 7 (a Gmail 2, limpar a caixa, entrou hoje a seu pedido). Cada
-parcial vale meio bloco na barra.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b e Gmail; parciais 4, 3b e Gmail 2 (feita, falta
+testar no Mac); na fila Pluggy, 5, 6 e 7 (a do Pluggy entrou hoje, a seu pedido). Cada parcial
+vale meio bloco na barra.
+
+## 2026-09-26 — limpar a caixa, com você aprovando
+
+**O que mudou:** no `viking chat` você pode dizer "arquiva tudo da loja X e do jornal Y". O Viking
+mostra, direto na sua tela, quantos e-mails saem de cada um, quantos ficam e por quê (com estrela,
+marcados como importantes, com anexo nunca saem), e um código de 4 números. Só quando **você**
+digita `confirma` e o código é que eles saem da caixa de entrada — arquivados, não apagados: ficam
+em "Todos os e-mails". O Gemini nunca vê esse código, então um e-mail malicioso pode no máximo
+fazê-lo *sugerir* uma limpeza, nunca aprová-la. Errou? `desfaz` e o mesmo código, por 7 dias,
+devolve exatamente aqueles e-mails. No máximo 1000 por vez.
+
+**Um aviso honesto:** para arquivar, o Google só oferece uma permissão que, no papel, também
+deixaria enviar e-mail e mandar para a lixeira. O Viking não usa nada disso, e um teste quebra se
+alguém escrever código que use. No login, a tela do Google vai descrever essa permissão maior.
+
+**Como sabemos:** 607 testes passando no VPS, inclusive um "Gemini de mentira" tentando aprovar
+sozinho, e 41 proteções quebradas de propósito, todas pegas pelo teste certo. **Falta:** rodar no
+seu Mac, na sua caixa de verdade.
+
+**Finanças (Pluggy):** medi hoje — para uso pessoal é de graça (até 5 bancos). Suas credenciais
+funcionam. É a próxima sessão, depois deste teste.
 
 ## 2026-09-26 — o Viking lê o seu Gmail (e só lê)
 

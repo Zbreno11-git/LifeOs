@@ -17,9 +17,9 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 6 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 3 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar |
-| 4 | Teste que não separava o certo do errado | 5 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso |
+| 4 | Teste que não separava o certo do errado | 6 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 2 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 3 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -84,6 +84,16 @@ com os escopos **pedidos** e daria sempre verdadeiro. Pego antes do código, len
 conferência lê o campo `scopes` do arquivo. O que tem de novo: era um nome de método que parecia
 dizer o que faz.
 
+**2026-09-26 — "a regex ASCII não aceita" (Gmail 2).** Escrevi `\d{4}` para o código de
+aprovação e, na docstring do teste, que dígitos de largura total (`１２３４`) seriam recusados
+"pela regex ASCII". No Python, `\d` em `str` casa qualquer dígito Unicode. O próprio teste caiu
+na primeira execução; agora `[0-9]`, com mutação que volta ao `\d`.
+
+**2026-09-26 — o texto da tela de consentimento de memória (plano da Gmail 2).** Escrevi no
+plano como o Google descreve o `gmail.modify` na tela de login, sem conferir. Pego na releitura;
+o `gmail.v1.json` instalado tinha a resposta — e ela era pior do que eu lembrava (o escopo
+também autoriza **enviar**). Virou D29 e um teste.
+
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
 
@@ -130,6 +140,12 @@ primeira rodada de `scripts/mutacoes.py`; teste novo
 **2026-09-26 — asserção que sempre passa (Sessão Gmail).** Escrevi
 `assert not busca.mais is False or True` num teste do Gmail — o `or True` torna a linha
 verdadeira em qualquer caso. Pego na releitura antes de rodar a suíte; removida.
+
+**2026-09-26 — de novo um `or` que aceita dois caminhos (Gmail 2).** No teste do desfazer que
+falha, escrevi `assert "pode ser tentado de novo" in texto or "tenta de novo" in texto`: passava
+pelo caminho da falha parcial e nunca exercitava o outro (erro de login), que era o que a
+correção mudou. Pego na segunda passada; virou dois testes, um por caminho. Segunda vez da mesma
+forma: `or` numa asserção agora é sinal de parar e separar.
 
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 

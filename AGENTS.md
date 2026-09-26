@@ -43,9 +43,13 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `google_auth.py` — login OAuth do Google compartilhado pelo calendário e pelo Gmail (confere o
     escopo gravado no token; grava com permissão 600)
   - `nao_confiavel.py` — o bloco delimitado de conteúdo de terceiros (página, e-mail) para o modelo
+  - `confirmacao.py` — confirmação mecânica: código curto ligado aos dados exatos de uma ação,
+    uma vez só e por 10 min (SQLite em `viking.db`); primeiro uso na limpeza do Gmail, a Sessão 5
+    reaproveita
   - `calendar/` — Google Calendar (OAuth + operações), portado de um protótipo já validado
-  - `gmail/` — Gmail **só leitura** pela API (buscar, ler, não lidos de hoje, raio-x da caixa);
-    só o `viking chat` registra essas tools, o MCP não (decisão do dono)
+  - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
+    Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
+    desfazer por 7 dias). Só o `viking chat` registra essas tools, o MCP não (decisão do dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
@@ -105,9 +109,11 @@ viking chat                    # assistente de chat (calendário + navegador + l
 viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
 viking browser --doctor         # diagnostica o Browser Harness (Chrome/daemon/conexão)
-viking gmail --login            # faz/confere o login do Gmail (só leitura) e sai
+viking gmail --login            # faz/confere o login do Gmail (ler e arquivar) e sai
 viking gmail --raio-x           # Gmail sem o Gemini (também --buscar Q, --ler ID;
                                # sem opção: não lidos de hoje)
+viking gmail --arquivar A,B     # propõe arquivar tudo destes remetentes e pede o código
+viking gmail --desfazer CODIGO  # devolve à caixa o que aquele código arquivou (até 7 dias)
 ```
 
 As ferramentas de navegador exigem `uv` no PATH e o clone do Jev (`VIKING_JEV_DIR`); o Viking o
@@ -264,6 +270,14 @@ upstream passar a chamar `model.choose(...)`, o envelope seria contornado em sil
 `decision["choice"]`, e o `guard` do `snapshot.js` ter `href`/texto do contêiner nas posições
 12/13 — `test_contrato_do_freio_com_o_jev_real`. Ao atualizar o Jev, rode a suíte **com o clone
 presente** (sem ele os dois testes são pulados).
+
+**A aprovação da limpeza do Gmail não é uma tool, e não pode virar uma.** A linha `confirma
+NNNN`/`desfaz NNNN` é lida por `assistant/agent.py:aprovacao_local` **antes** do
+`send_message`, e o código só aparece no terminal (`gmail/tools.py:_ao_dono`), nunca no retorno
+da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se autoaprovar
+(D26). `tests/test_gmail_aprovacao.py` confere quem chama `confirmar`/`arquivar`/`batchModify`
+lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza
+também enviar e mover para a lixeira: `test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar`.
 
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela

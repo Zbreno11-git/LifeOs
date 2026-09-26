@@ -1,10 +1,16 @@
 # Gmail API (Sessão Gmail, 2026-09-26)
 
 - **API:** Gmail API v1 via `googleapiclient` (a descrição `gmail.v1.json` já vem no pacote
-  instalado; nenhuma dependência nova). Só `users.messages.list`, `users.messages.get` e
-  `users.getProfile`, sempre com `userId="me"`.
-- **Escopo:** `gmail.readonly` — o Viking **só lê**. Limpar a caixa (arquivar) é a Sessão Gmail 2,
-  que troca o escopo por `gmail.modify`. Os dois são escopos **restritos** do Google.
+  instalado; nenhuma dependência nova). `users.messages.list`, `users.messages.get`,
+  `users.getProfile` e, só para arquivar/desarquivar, `users.messages.batchModify` — sempre com
+  `userId="me"`.
+- **Escopo:** `gmail.modify` desde a Sessão Gmail 2 (antes, `gmail.readonly`). Medido em
+  2026-09-26 no `gmail.v1.json` instalado: o Google o descreve como "Read, compose, and send
+  emails from your Gmail account" e ele autoriza `send`, `trash`, `import`, `insert` e
+  `drafts.send`; não autoriza `delete`/`batchDelete` (apagar de vez). É o menor escopo que tira
+  e-mail da caixa. O Viking não chama nada disso (teste que lê o código de `gmail/`; D29). Os dois
+  são escopos **restritos** do Google. Trocar o escopo força **um login novo** (a conferência de
+  `google_auth` vê que o token salvo é de `readonly`).
 - **App OAuth:** o mesmo do calendário (`secrets/google_credentials.json`). Conferido pelo dono
   em 2026-09-26: em produção, tipo externo, só ele de usuário. Pela documentação do Google (não
   medido): em produção o login não vence em 7 dias (isso é do modo "Testing"), e um app não
@@ -65,3 +71,18 @@ O raio-x lê metadados de até 200 e-mails da caixa de entrada em lotes de 25
 (`new_batch_http_request`). Quem falha (ex.: 429 por rajada) ganha uma nova tentativa depois de
 1 s; quem falha de novo é contado e aparece no texto. Latência e taxa de 429 **não medidas** —
 medir no Mac antes de mexer em `LOTE`/`MAX_RAIO_X`.
+
+## Limpeza da caixa (Sessão Gmail 2)
+
+- **Arquivar** = `batchModify` com `removeLabelIds: ["INBOX"]` (até 1000 IDs por chamada); o e-mail
+  continua em "Todos os e-mails". **Desfazer** = `addLabelIds: ["INBOX"]` nos mesmos IDs, por 7
+  dias, a partir do registro em `viking.db` (tabela `confirmacoes`).
+- **Seleção por remetente:** `from:<endereço> in:inbox -is:starred -is:important -has:attachment`.
+  O `from:` do Gmail casa **por pedaço** (um `ofertas@loja.example.golpe.example` também casa), então
+  o remetente de cada e-mail é conferido igual ao endereço nos metadados. As proteções também são
+  conferidas de novo no cliente (rótulos `STARRED`/`IMPORTANT` e a lista de `has:attachment`).
+- **Endereço estrito antes da consulta:** `a@b.com OR in:anywhere` viraria uma busca na conta
+  inteira; qualquer pedido fora do formato recusa tudo, sem consultar.
+- **Teto 1000 por aprovação (D28):** acima disso, os mais antigos de cada remetente, na ordem pedida.
+- **Não medido:** latência e 429 dos metadados de 1000 e-mails (40 lotes de 25). Quem falha fica
+  na caixa e aparece contado ("não puderam ser conferidos") — nunca sai sem conferência.
