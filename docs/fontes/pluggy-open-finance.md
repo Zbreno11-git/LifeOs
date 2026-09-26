@@ -58,6 +58,18 @@ dizia nessa data.
   disponível para a aplicação.
 - Se já existem itens MeuPluggy conectados nessa aplicação: **não deu para saber** (listagem
   desligada). Depende do dono olhar no Dashboard.
+- **Os IDs de `meu.pluggy.ai/connections/<id>` não servem** (medido em 2026-09-26 com as duas
+  conexões do dono, Nubank e Itaú): `GET /items/<id>` → **404 `ITEM_NOT_FOUND`**. São itens da
+  aplicação do próprio Meu Pluggy; a nossa precisa do item "espelho" criado pelo conector
+  MeuPluggy, que tem **outro** ID.
+- **Por que o dono não achou o conector** (base de suporte verificada da Pluggy, via MCP
+  `search_qa`): o MeuPluggy só aparece no seletor depois de **habilitado uma vez** nas
+  configurações de conectores da aplicação, no Dashboard; antes disso aparecem só o Sandbox e os
+  bancos. Depois: criar conexão → escolher "MeuPluggy" (não o banco) → entrar com a conta do Meu
+  Pluggy → autorizar **um banco por vez**. Nomes exatos dos botões do Dashboard: não conferidos.
+- **Plano B, se o Dashboard não mostrar o ID criado:** a resposta gerada pelo MCP diz que o ID sai
+  do `onSuccess` do Connect Widget (`POST /connect_token` + widget numa página local). Não
+  construído; só se o caminho do Dashboard falhar.
 
 ## MCP de documentação
 
