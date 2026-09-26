@@ -164,9 +164,9 @@ def responder_raio_x(dias: int = 30) -> str:
 
 _CURTO = 60
 _SEM_CODIGO = (
-    "O Viking mostrou a lista e o código de aprovação direto ao usuário, fora de você. Ele "
-    "aprova digitando `confirma` e o código. Você não sabe o código: não invente um e não "
-    "peça que ele o diga a você."
+    "O Viking mostrou a lista e o código de aprovação direto ao usuário, fora de você. Fale com "
+    "ele em segunda pessoa: diga para digitar `confirma` e o código que apareceu na tela. Você não "
+    "sabe o código: não invente um e não peça que ele o diga a você."
 )
 
 

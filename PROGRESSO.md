@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, Gmail 2: 1º teste no Mac bateu na cota; consertado, falta repetir (C8)
+## ▶️ RETOMAR AQUI — 2026-09-26, Gmail 2: arquivou 71 pelo chat no Mac; falta o desfazer (C8)
 
 **Estado do repositório:** o commit de fechamento da Gmail 2 (conferir com `git log -1`) · igual
 ao remoto · travas: nenhuma · execuções em background: nenhuma.
@@ -15,7 +15,7 @@ ao remoto · travas: nenhuma · execuções em background: nenhuma.
 (`sessoes.md`), que depende de o dono pôr os IDs das conexões no `.env`.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `612 passed`.
+`python -m pytest -q` → `618 passed`.
 
 **Não pode ser esquecido:** repo público (nada de remetente real nem `project_id` em commit — nem
 o endereço que o dono escolher para o teste); formatar só os arquivos editados (baseline 7);
@@ -34,7 +34,7 @@ viking gmail --login
 viking gmail --arquivar REMETENTE
 ```
 
-Esperado: `612 passed`; o `--login` já passou na 1ª tentativa (não deve abrir o navegador de
+Esperado: `618 passed`; o `--login` já passou na 1ª tentativa (não deve abrir o navegador de
 novo); o `--arquivar` pode mostrar "⏳ Esperando N s" (é a cota do Gmail, D28) e depois a lista,
 e pede o código — digitar o código; esperado `Arquivei N e-mail(s)` sem "NÃO foram arquivados";
 conferir no Gmail (web) que saíram da Caixa de entrada e estão em "Todos os e-mails". Depois:
@@ -108,7 +108,7 @@ arquive.
 | C5 | `viking gmail --arquivar/--desfazer` + testes de CLI — 5 testes de CLI no mesmo arquivo; suíte 606 | ✅ |
 | C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles — 41/41 mortas; ruff limpo; baseline 7; varredura 0 | ✅ |
 | C7 | docs + revisão em duas passadas + commit + push — 3 achados na 1ª passada, docs velhos na 2ª | ✅ |
-| C8 | Mac: login novo com modify, arquivar um remetente escolhido pelo dono, conferir no Gmail, desfazer, e o mesmo pelo chat — 1ª tentativa: login ok, arquivar levou 403 de cota (0 arquivados); consertado, repetir | ⬜ |
+| C8 | Mac: login novo com modify, arquivar um remetente escolhido pelo dono, conferir no Gmail, desfazer, e o mesmo pelo chat — 1ª tentativa: 403 de cota (consertado); 2ª, pelo chat: 71 arquivados; falta `desfaz` e conferir no Gmail web | ⬜ |
 
 ### Fase 1 — escopo e confirmação
 **1.1** `gmail/oauth.py` → `gmail.modify`; `cli.py` e docstrings deixam de dizer "só leitura";

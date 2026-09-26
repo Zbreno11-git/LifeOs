@@ -157,14 +157,37 @@ _APROVACAO = re.compile(
     r"^\s*(confirma|confirmo|confirmar|desfaz|desfazer)\s*[:\-]?\s*([\d\s]+?)\s*[.!]?\s*$",
     re.IGNORECASE,
 )
+# Só o número, ou só a palavra: foi o que o dono digitou na primeira vez no Mac (2026-09-26), e o
+# número sozinho foi parar no Gemini. Com uma proposta aberta, um número do tamanho do código é
+# tratado como a aprovação; a palavra sozinha ganha a instrução aqui mesmo.
+_SO_NUMERO = re.compile(r"^\s*([\d\s]+?)\s*[.!]?\s*$")
+_SO_PALAVRA = re.compile(
+    r"^\s*(confirma|confirmo|confirmar|desfaz|desfazer)\s*[.!]?\s*$", re.IGNORECASE
+)
+_COMO_APROVAR = (
+    "Para aprovar, digite `confirma` e o código de 4 números da lista (ou só o código). Para "
+    "desfazer uma limpeza: `desfaz` e o código."
+)
 
 
 def aprovacao_local(linha: str) -> tuple[str, str] | None:
-    """(texto para o dono, nota para o Gemini) se a linha é uma aprovação; senão `None`."""
-    achado = _APROVACAO.match(linha or "")
-    if not achado:
+    """(texto para o dono, nota para o Gemini) se a linha é uma aprovação; senão `None`. A nota
+    vem vazia quando não há nada a contar ao Gemini."""
+    linha = linha or ""
+    if _SO_PALAVRA.match(linha):
+        return _COMO_APROVAR, ""
+    achado = _APROVACAO.match(linha)
+    so_numero = _SO_NUMERO.match(linha)
+    if achado:
+        verbo, codigo = achado.group(1).lower(), achado.group(2)
+    elif (
+        so_numero
+        and len("".join(so_numero.group(1).split())) == confirmacao.DIGITOS
+        and confirmacao.aberta(limpeza.ACAO)
+    ):
+        verbo, codigo = "confirma", so_numero.group(1)
+    else:
         return None
-    verbo, codigo = achado.group(1).lower(), achado.group(2)
     desfazendo = verbo.startswith("desfaz")
     try:
         if desfazendo:
@@ -232,11 +255,10 @@ navegação web (via Browser Harness) e lembretes/notas gerais.
             continue
         local = aprovacao_local(prompt)
         if local is not None:
-            texto, nota_pendente = local
+            texto, nota = local
+            nota_pendente = nota or nota_pendente
             print(f"🤖 Viking: {texto}\n")
             continue
-        if nota_pendente:
-            prompt, nota_pendente = f"{nota_pendente}\n\n{prompt}", ""
         if prompt.lower() in ["sair", "exit", "quit"]:
             print("🤖 Viking: Até logo!")
             print(custos.SESSAO.total_formatado())
@@ -245,6 +267,10 @@ navegação web (via Browser Harness) e lembretes/notas gerais.
             print(custos.SESSAO.total_formatado())
             continue
 
+        # A nota entra só aqui, depois de "sair" e "/custos": colada antes, o "sair" logo depois de
+        # uma aprovação virou mensagem ao Gemini (visto no Mac, 2026-09-26).
+        if nota_pendente:
+            prompt, nota_pendente = f"{nota_pendente}\n\n{prompt}", ""
         print("⏳ Pensando...")
         custos.SESSAO.iniciar_turno()
         try:

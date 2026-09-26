@@ -138,6 +138,17 @@ def propor(acao: str, dados: dict[str, Any], *, agora: datetime | None = None) -
         return Proposta(cursor.lastrowid, acao, codigo, dados, expira)
 
 
+def aberta(acao: str, *, agora: datetime | None = None) -> bool:
+    """Há proposta desta ação esperando código, dentro da validade?"""
+    agora = _agora(agora)
+    with _sessao() as conn:
+        linha = conn.execute(
+            "SELECT 1 FROM confirmacoes WHERE acao = ? AND estado = 'aberta' AND expira_em >= ?",
+            (acao, agora.isoformat()),
+        ).fetchone()
+    return linha is not None
+
+
 def cancelar(acao: str) -> None:
     """Invalida as propostas abertas da ação (ex.: uma proposta nova que não tem o que aprovar)."""
     with _sessao() as conn:

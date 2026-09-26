@@ -80,10 +80,29 @@ def test_linha_de_aprovacao_arquiva_sem_o_gemini(caixa, capsys, linha):
 
 
 @pytest.mark.parametrize(
-    "linha", ["confirma a reunião de amanhã?", "confirma", "desfaz o último evento", "4821"]
+    "linha", ["confirma a reunião de amanhã?", "desfaz o último evento", "4821", "12"]
 )
 def test_frase_comum_segue_para_o_gemini(linha):
+    """Sem proposta aberta, nem um número de 4 dígitos é roubado do Gemini."""
     assert agent.aprovacao_local(linha) is None
+
+
+def test_so_o_numero_com_proposta_aberta_aprova_e_nao_vai_ao_gemini(caixa):
+    """No Mac o dono digitou só o código, e ele foi parar no Gemini (2026-09-26)."""
+    tools.preparar_limpeza(LOJA)
+    texto, nota = agent.aprovacao_local(f" {CODIGO} ")
+    assert "Arquivei 2 e-mail(s)" in texto and CODIGO not in nota
+
+
+def test_numero_de_outro_tamanho_com_proposta_aberta_segue_para_o_gemini(caixa):
+    tools.preparar_limpeza(LOJA)
+    assert agent.aprovacao_local("12") is None
+
+
+@pytest.mark.parametrize("linha", ["confirma", "Confirmo.", "desfaz"])
+def test_so_a_palavra_ganha_a_instrucao_aqui(linha):
+    texto, nota = agent.aprovacao_local(linha)
+    assert "digite `confirma` e o código" in texto and nota == ""
 
 
 def test_digitos_de_outro_alfabeto_sao_barrados_mas_nao_vao_ao_gemini(caixa):
@@ -149,6 +168,32 @@ class _ChatFalso:
         if len(self.enviados) == 1:
             tools.preparar_limpeza(LOJA)
         return _Resposta()
+
+
+def _rodar_chat(monkeypatch, linhas):
+    chat = _ChatFalso()
+
+    class _Cliente:
+        class chats:  # imita `client.chats.create`
+            @staticmethod
+            def create(**_kwargs):
+                return chat
+
+    fila = iter(linhas)
+    monkeypatch.setattr("builtins.input", lambda _prompt="": next(fila))
+    monkeypatch.setattr(agent, "_build_client", lambda: _Cliente())
+    monkeypatch.setattr(agent.custos, "instrumentar", lambda _cliente: None)
+    agent.iniciar_assistente()
+    return chat
+
+
+def test_a_sequencia_do_mac_nao_vaza_o_codigo_e_sair_sai(caixa, monkeypatch, capsys):
+    """O que o dono digitou no Mac: "confirma", só o código, e "sair" logo depois da aprovação —
+    que virava mensagem ao Gemini porque a nota era colada antes de conferir o "sair"."""
+    chat = _rodar_chat(monkeypatch, ["limpa a loja", "confirma", CODIGO, "sair"])
+    assert chat.enviados == ["limpa a loja"]
+    assert not _na_caixa(caixa, "l1")
+    assert "Até logo" in capsys.readouterr().out
 
 
 def test_laco_do_chat_nunca_manda_a_linha_de_aprovacao_ao_gemini(caixa, monkeypatch, capsys):

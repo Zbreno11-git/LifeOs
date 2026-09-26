@@ -272,8 +272,8 @@ upstream passar a chamar `model.choose(...)`, o envelope seria contornado em sil
 presente** (sem ele os dois testes são pulados).
 
 **A aprovação da limpeza do Gmail não é uma tool, e não pode virar uma.** A linha `confirma
-NNNN`/`desfaz NNNN` é lida por `assistant/agent.py:aprovacao_local` **antes** do
-`send_message`, e o código só aparece no terminal (`gmail/tools.py:_ao_dono`), nunca no retorno
+NNNN`/`desfaz NNNN` — ou só o número, com proposta aberta, e só a palavra (que ganha a
+instrução) — é lida por `assistant/agent.py:aprovacao_local` **antes** do `send_message`, e o código só aparece no terminal (`gmail/tools.py:_ao_dono`), nunca no retorno
 da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se autoaprovar
 (D26). `tests/test_gmail_aprovacao.py` confere quem chama `confirmar`/`arquivar`/`batchModify`
 lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza

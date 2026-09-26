@@ -828,3 +828,21 @@ passou a cobrar a mesma cota num relógio falso, e o caso do Mac (raio-x + 207 n
 virou teste. Portões: `612 passed`; `ruff check` limpo; baseline 7; mutações
 `46 · mortas pelo teste esperado: 46` (5 novas de cota).
 
+### 2026-09-26 — Gmail 2 validada no chat do Mac (e dois defeitos do laço)
+
+**Medido (saída colada pelo dono).** Depois do conserto da cota: no `viking chat`, "qual foi o
+último e-mail?" → respondeu; "podemos arquivar [o remetente]" → a espera de cota apareceu uma vez
+("pediu calma … em 2 s") e a lista foi impressa no terminal: 71 saem, 2 ficam (importantes), 3
+assuntos de exemplo, o código e a validade; o Gemini não repetiu o código. `confirma NNNN` →
+`Arquivei 71 e-mail(s)` com o prazo do desfazer, sem passar pelo Gemini. Custo por mensagem:
+~3,2 mil a ~6,2 mil tokens (US$ 0,001 a 0,002).
+
+**Defeitos vistos ali.** (1) O dono digitou primeiro "confirma" e depois só o número: o número
+foi ao Gemini (classe 7). (2) "sair" logo depois da aprovação virou mensagem ao Gemini, porque a
+nota era colada antes da checagem do `sair` (classe 6). Consertados no mesmo dia, com testes que
+repetem a sequência do Mac e 3 mutações novas; o Gemini agora é instruído a falar com o dono em
+segunda pessoa (tinha dito "o usuário precisa digitar"). Portões: `618 passed`; mutações
+`49 · mortas pelo teste esperado: 49`.
+
+**Ainda não visto no Mac:** o `desfaz` e a conferência no Gmail web.
+

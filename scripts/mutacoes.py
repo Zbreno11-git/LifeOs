@@ -382,6 +382,29 @@ MUTACOES = [
         "                raise LimiteDoGmail(str(exc)) from exc",
         "tests/test_gmail_limpeza.py::test_cota_que_nunca_volta_vira_frase_sem_o_erro_cru",
     ),
+    Mutacao(
+        "aprovação: só o código, digitado sozinho, vai ao Gemini",
+        "src/lifeos/assistant/agent.py",
+        "        and confirmacao.aberta(limpeza.ACAO)",
+        "        and False",
+        "tests/test_gmail_aprovacao.py::test_so_o_numero_com_proposta_aberta_aprova_e_nao_vai_ao_gemini",
+    ),
+    Mutacao(
+        "aprovação: número qualquer é roubado do Gemini sem proposta aberta",
+        "src/lifeos/assistant/agent.py",
+        "        and confirmacao.aberta(limpeza.ACAO)",
+        "        and True",
+        "tests/test_gmail_aprovacao.py::test_frase_comum_segue_para_o_gemini",
+    ),
+    Mutacao(
+        "aprovação: a nota colada antes do sair (o bug do Mac)",
+        "src/lifeos/assistant/agent.py",
+        '        if prompt.lower() in ["sair", "exit", "quit"]:',
+        "        if nota_pendente:\n"
+        '            prompt, nota_pendente = f"{nota_pendente}\\n\\n{prompt}", ""\n'
+        '        if prompt.lower() in ["sair", "exit", "quit"]:',
+        "tests/test_gmail_aprovacao.py::test_a_sequencia_do_mac_nao_vaza_o_codigo_e_sair_sai",
+    ),
 ]
 
 
