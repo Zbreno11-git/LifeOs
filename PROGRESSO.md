@@ -10,9 +10,8 @@
 **Estado do repositório:** HEAD `0114556` (medição do Pluggy) + o commit deste plano · travas:
 nenhuma · execuções em background: nenhuma.
 
-**Próximo passo exato:** com o teto respondido pelo dono, fechar C0 (resposta no plano) e
-começar a Etapa 1.1 (escopo `gmail.modify` em `src/lifeos/gmail/oauth.py`); esperado
-`python -m pytest -q` → 530 passed antes de qualquer teste novo.
+**Próximo passo exato:** C0–C3 fechados. Fase 3: `tools.preparar_limpeza` + interceptação de
+`confirma`/`desfaz` em `assistant/agent.py` + CLI; esperado suíte 578+ verde.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `530 passed`.
@@ -46,7 +45,8 @@ arquive.
 | O que nunca sai | estrela, importante, anexo | filtrado na consulta **e** conferido de novo no cliente |
 | Como aprovar | digitando código mostrado no terminal, fora do Gemini | interceptação da linha no laço do chat; nenhuma tool de confirmar |
 | Desfazer | sim, por 7 dias | registro local dos IDs arquivados |
-| Teto por aprovação | **pergunta aberta (C0)** | tamanho da proposta e do lote |
+| Teto por aprovação | **1000** (D28) | uma chamada `batchModify`; acima disso, os mais antigos de cada remetente, na ordem pedida, e o texto diz quantos sobraram |
+| Permissão maior | seguir com `gmail.modify` sabendo que ele autoriza enviar/lixeira (D29) | teste que proíbe essas chamadas no código |
 
 ### Decisões técnicas minhas
 | Decisão | Por quê | O que me faria mudar |
@@ -74,10 +74,10 @@ arquive.
 ### Mapa de checkpoints
 | C | Fecha quando | Estado |
 |---|---|---|
-| C0 | teto respondido e escrito aqui e em `docs/decisoes.md` | ⬜ |
-| C1 | escopo `modify` + textos "só leitura" ajustados; suíte 530+ verde | ⬜ |
-| C2 | `confirmacao.py` + `tests/test_confirmacao.py` (código único, expira, consumido uma vez, proposta nova invalida a velha) | ⬜ |
-| C3 | `service.selecionar/arquivar/desfazer` + fake com consulta e `batchModify` + `tests/test_gmail_limpeza.py` | ⬜ |
+| C0 | teto respondido e escrito aqui e em `docs/decisoes.md` — D28, D29; Pluggy logo depois da Gmail 2 | ✅ |
+| C1 | escopo `modify` + textos "só leitura" ajustados; suíte 530+ verde — suíte 547 | ✅ |
+| C2 | `confirmacao.py` + `tests/test_confirmacao.py` (código único, expira, consumido uma vez, proposta nova invalida a velha) — 17 passed | ✅ |
+| C3 | `service.selecionar/arquivar/desfazer` + fake com consulta e `batchModify` + `tests/test_gmail_limpeza.py` — 31 passed, suíte 578 | ✅ |
 | C4 | tool `preparar_limpeza` + interceptação no chat + testes de segurança (código nunca no texto do Gemini; injeção no remetente; nada sai sem código) | ⬜ |
 | C5 | `viking gmail --arquivar/--desfazer` + testes de CLI | ⬜ |
 | C6 | mutações novas mortas; suíte, `ruff`, baseline 7, varredura de controles | ⬜ |

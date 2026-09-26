@@ -1,7 +1,9 @@
 """Serviço do Gmail: leitura pela API oficial, sem texto para o modelo (isso é `gmail/tools.py`).
 
-Mesmo desenho de `calendar/service.py`: devolve dados (`Email`, `EmailCompleto`, `RaioX`) ou
-levanta um erro de domínio com `codigo`. Só leitura: o escopo é `gmail.readonly`.
+Mesmo desenho de `calendar/service.py`: devolve dados (`Email`, `EmailCompleto`, `RaioX`,
+`Selecao`) ou levanta um erro de domínio com `codigo`. A única escrita é tirar e devolver o
+rótulo `INBOX` (arquivar/desarquivar, Sessão Gmail 2), e só `gmail/limpeza.py` a chama, depois
+da aprovação do dono.
 
 Falha nunca vira vazio: uma busca em que parte dos e-mails não pôde ser lida devolve quantos
 faltaram (`falharam`), e um raio-x que bateu no teto diz que é piso, não total (`no_teto`).
@@ -35,9 +37,15 @@ MAX_CORPO = 4000  # caracteres do corpo devolvidos
 MAX_RAIO_X = 200  # e-mails lidos por raio-x; acima disso o resultado é piso
 LOTE = 25  # pedidos por lote; o Gmail recusa (429) lotes grandes demais em rajada
 PAUSA_S = 1.0  # antes da única nova tentativa de quem falhou no lote
+TETO_LIMPEZA = 1000  # e-mails por aprovação (D28); é também o máximo do batchModify
+MAX_REMETENTES_LIMPEZA = 10  # por proposta
+MAX_LISTAGEM = 5000  # IDs listados por consulta da limpeza; acima disso a contagem é piso
 
 _CABECALHOS = ["From", "Subject", "Date", "List-Unsubscribe", "List-Id"]
 _ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
+# Endereço exato, sem espaço nem operador: vira `from:<endereço>` numa consulta do Gmail, e
+# `a@b.com OR in:anywhere` ampliaria a seleção para a conta inteira.
+_ENDERECO = re.compile(r"[a-z0-9._%+-]{1,64}@[a-z0-9-]{1,63}(\.[a-z0-9-]{1,63}){1,8}")
 _CATEGORIAS = {
     "CATEGORY_PROMOTIONS": "promoções",
     "CATEGORY_UPDATES": "atualizações",
@@ -85,6 +93,9 @@ class Email:
     nao_lido: bool
     categorias: tuple[str, ...] = ()
     lista: bool = False  # tem List-Unsubscribe/List-Id: newsletter, anúncio, lista de envio
+    na_caixa: bool = False  # rótulo INBOX
+    estrela: bool = False
+    importante: bool = False
 
 
 @dataclass(frozen=True)
@@ -242,6 +253,9 @@ def _email_de(mensagem: dict) -> Email:
         nao_lido="UNREAD" in rotulos,
         categorias=tuple(nome for chave, nome in _CATEGORIAS.items() if chave in rotulos),
         lista=bool(_cabecalho(cabecalhos, "List-Unsubscribe") or _cabecalho(cabecalhos, "List-Id")),
+        na_caixa="INBOX" in rotulos,
+        estrela="STARRED" in rotulos,
+        importante="IMPORTANT" in rotulos,
     )
 
 
@@ -399,3 +413,155 @@ def raio_x(dias: int = 30) -> RaioX:
         key=lambda r: (-r.nao_lidos, -r.total, r.endereco),
     )
     return RaioX(dias, len(emails), falharam, sobrou, tuple(remetentes))
+
+
+# --- limpeza: seleção, arquivar, desarquivar (Sessão Gmail 2) ---------------------------------
+
+# O que nunca sai da caixa (D25). Cada motivo filtra a consulta E é conferido de novo no cliente,
+# nos metadados de cada e-mail: uma camada falhar não arquiva o protegido.
+_PROTECOES = (
+    ("com estrela", "is:starred"),
+    ("importantes", "is:important"),
+    ("com anexo", "has:attachment"),
+)
+
+
+@dataclass(frozen=True)
+class Grupo:
+    """O que a limpeza faria com um remetente."""
+
+    endereco: str
+    nome: str
+    sai: tuple[str, ...]  # IDs que seriam arquivados, dos mais antigos para os mais novos
+    sobram: int  # arquivaveis que não couberam no teto desta aprovação
+    protegidos: tuple[tuple[str, int], ...]  # (motivo, quantos); um e-mail pode ter dois motivos
+    assuntos: tuple[str, ...]  # até 3, dos mais recentes que saem
+    outro_remetente: int  # a busca trouxe, mas o remetente não é exatamente este endereço
+    falharam: int  # não deu para conferir os metadados: ficam na caixa
+    piso: bool  # alguma consulta bateu em MAX_LISTAGEM: as contagens são piso
+
+
+@dataclass(frozen=True)
+class Selecao:
+    grupos: tuple[Grupo, ...]
+
+    @property
+    def ids(self) -> tuple[str, ...]:
+        return tuple(i for g in self.grupos for i in g.sai)
+
+    @property
+    def sobram(self) -> int:
+        return sum(g.sobram for g in self.grupos)
+
+
+@dataclass(frozen=True)
+class Modificacao:
+    feitos: tuple[str, ...]
+    falharam: tuple[str, ...]
+    erro: str = ""
+
+
+def enderecos_validos(remetentes) -> list[str]:
+    """Endereços exatos, sem repetição, na ordem pedida. Qualquer um fora do formato recusa tudo:
+    melhor não arquivar nada do que arquivar a lista errada."""
+    itens = remetentes.split(",") if isinstance(remetentes, str) else list(remetentes or [])
+    vistos: list[str] = []
+    for item in itens:
+        endereco = str(item).strip().strip("<>").lower()
+        if not endereco:
+            continue
+        if not _ENDERECO.fullmatch(endereco):
+            raise EntradaInvalida(
+                "cada remetente tem de ser um endereço de e-mail exato, como aparece no raio-x",
+                endereco=limpar_controles(endereco)[:80],
+            )
+        if endereco not in vistos:
+            vistos.append(endereco)
+    if not vistos:
+        raise EntradaInvalida("nenhum remetente pedido")
+    if len(vistos) > MAX_REMETENTES_LIMPEZA:
+        raise EntradaInvalida(f"no máximo {MAX_REMETENTES_LIMPEZA} remetentes por vez")
+    return vistos
+
+
+def selecionar(remetentes, *, teto: int = TETO_LIMPEZA, somente=None) -> Selecao:
+    """O que sairia da caixa de entrada: todos os e-mails de cada remetente, lidos ou não, menos
+    os protegidos. Só lê. Passando do teto, vão os mais antigos de cada remetente, na ordem pedida.
+
+    `somente`: na confirmação, restringe aos IDs aprovados — o que ganhou estrela depois fica, e o
+    que chegou depois não entra.
+    """
+    enderecos = enderecos_validos(remetentes)
+    permitidos = set(somente) if somente is not None else None
+    service = _servico()
+    orcamento = max(0, min(int(teto), TETO_LIMPEZA))
+    grupos = []
+    for endereco in enderecos:
+        base = f"from:{endereco} in:inbox"
+        protegidos, com_anexo, piso = [], set(), False
+        for motivo, filtro in _PROTECOES:
+            ids, cheio = _ids(service, f"{base} {filtro}", MAX_LISTAGEM)
+            piso |= cheio
+            protegidos.append((motivo, len(ids)))
+            if filtro == "has:attachment":
+                com_anexo = set(ids)
+        filtros = " ".join(f"-{f}" for _, f in _PROTECOES)
+        candidatos, cheio = _ids(service, f"{base} {filtros}", MAX_LISTAGEM)
+        piso |= cheio
+        # O Gmail lista do mais novo para o mais velho; os mais antigos saem primeiro.
+        candidatos = [i for i in reversed(candidatos) if i not in com_anexo]
+        if permitidos is not None:
+            candidatos = [i for i in candidatos if i in permitidos]
+        escolhidos = candidatos[:orcamento]
+        emails, falharam = _metadados(service, escolhidos)
+        sai, outro, nome = [], 0, ""
+        for email in emails:
+            if email.endereco != endereco:
+                outro += 1
+            elif email.na_caixa and not email.estrela and not email.importante:
+                sai.append(email)
+                nome = nome or email.remetente
+        orcamento -= len(escolhidos)
+        grupos.append(
+            Grupo(
+                endereco=endereco,
+                nome=nome or endereco,
+                sai=tuple(e.id for e in sai),
+                sobram=len(candidatos) - len(escolhidos),
+                protegidos=tuple((m, n) for m, n in protegidos if n),
+                assuntos=tuple(e.assunto for e in reversed(sai[-3:])),
+                outro_remetente=outro,
+                falharam=falharam,
+                piso=piso,
+            )
+        )
+    return Selecao(tuple(grupos))
+
+
+def _rotular(ids, corpo: dict) -> Modificacao:
+    ids = [i for i in dict.fromkeys(ids) if _ID.fullmatch(str(i))]
+    if not ids:
+        return Modificacao((), ())
+    service = _servico()
+    feitos: list[str] = []
+    for inicio in range(0, len(ids), TETO_LIMPEZA):
+        lote = ids[inicio : inicio + TETO_LIMPEZA]
+        try:
+            _executar(
+                lambda lote=lote: (
+                    service.users().messages().batchModify(userId="me", body={"ids": lote, **corpo})
+                )
+            )
+        except ErroGmail as exc:
+            return Modificacao(tuple(feitos), tuple(ids[len(feitos) :]), limpar_controles(str(exc)))
+        feitos += lote
+    return Modificacao(tuple(feitos), ())
+
+
+def arquivar(ids) -> Modificacao:
+    """Tira da caixa de entrada (continua em "Todos os e-mails"). Nada é apagado nem marcado."""
+    return _rotular(ids, {"removeLabelIds": ["INBOX"]})
+
+
+def desarquivar(ids) -> Modificacao:
+    return _rotular(ids, {"addLabelIds": ["INBOX"]})

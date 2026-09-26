@@ -30,6 +30,13 @@ def _sem_google_de_verdade(monkeypatch):
     )
 
 
+@pytest.fixture(autouse=True)
+def _confirmacoes_em_banco_de_teste(monkeypatch, tmp_path):
+    """Códigos de aprovação nunca no `viking.db` real: um teste que esquecesse disto deixaria uma
+    proposta aberta (ou "já usada") no banco do dono."""
+    monkeypatch.setattr("lifeos.confirmacao.DB_PATH", tmp_path / "confirmacoes.db")
+
+
 # --- Google Calendar falso, compartilhado pelos testes de calendário e do MCP -------------
 
 
@@ -143,6 +150,39 @@ class _GmailLote:
                 self._callback(request_id, None, exc)
 
 
+def _de(mensagem: dict) -> str:
+    for cabecalho in mensagem["payload"]["headers"]:
+        if cabecalho["name"] == "From":
+            return cabecalho["value"].lower()
+    return ""
+
+
+def _casa(termo: str, mensagem: dict) -> bool:
+    """Um termo da busca do Gmail, no mínimo que os testes usam. `from:` casa por **pedaço** do
+    cabeçalho, como o Gmail real — é o que obriga o serviço a conferir o remetente exato."""
+    rotulos = set(mensagem["labelIds"])
+    chave, _, valor = termo.lower().partition(":")
+    if chave == "from":
+        return valor in _de(mensagem)
+    if chave == "in" and valor == "inbox":
+        return "INBOX" in rotulos
+    if chave == "is":
+        return {"starred": "STARRED", "important": "IMPORTANT", "unread": "UNREAD"}.get(
+            valor, ""
+        ) in rotulos
+    if chave == "has" and valor == "attachment":
+        return any(p.get("filename") for p in mensagem["payload"]["parts"])
+    return True  # newer_than:, after:, texto livre: o fake não filtra
+
+
+def _filtra(consulta: str, mensagem: dict) -> bool:
+    for termo in (consulta or "").split():
+        negado = termo.startswith("-")
+        if _casa(termo.lstrip("-"), mensagem) == negado:
+            return False
+    return True
+
+
 class _GmailMensagens:
     def __init__(self, estado):
         self._estado = estado
@@ -154,7 +194,10 @@ class _GmailMensagens:
             estado["consultas"].append(q)
             if estado["falhar_list"]:
                 raise RuntimeError("API fora do ar")
-            ids = list(estado["mensagens"])
+            consulta = q
+            if estado["consulta_frouxa"]:  # simula o Gmail ignorando as exclusões (`-is:...`)
+                consulta = " ".join(termo for termo in q.split() if not termo.startswith("-"))
+            ids = [i for i, m in estado["mensagens"].items() if _filtra(consulta, m)]
             inicio = int(pageToken or 0)
             fim = inicio + min(maxResults, estado["por_pagina"])
             resposta = {"messages": [{"id": i, "threadId": i} for i in ids[inicio:fim]]}
@@ -177,6 +220,27 @@ class _GmailMensagens:
             if id not in estado["mensagens"]:
                 raise _erro_http(404)
             return estado["mensagens"][id]
+
+        return _GmailPedido(acao)
+
+    def batchModify(self, userId, body):
+        estado = self._estado
+
+        def acao():
+            if estado["falhar_modify"]:
+                estado["falhar_modify"] -= 1
+                raise _erro_http(500)
+            estado["modificacoes"].append(body)
+            for email_id in body.get("ids", []):
+                mensagem = estado["mensagens"].get(email_id)
+                if mensagem is None:
+                    continue
+                rotulos = [
+                    r for r in mensagem["labelIds"] if r not in body.get("removeLabelIds", [])
+                ]
+                rotulos += [r for r in body.get("addLabelIds", []) if r not in rotulos]
+                mensagem["labelIds"] = rotulos
+            return ""
 
         return _GmailPedido(acao)
 
@@ -227,7 +291,9 @@ def mensagem_gmail(
 @pytest.fixture()
 def gmail(monkeypatch):
     """Gmail falso no lugar do `get_gmail_service` que o serviço usa. `estado["mensagens"]` é a
-    caixa (id → mensagem no formato da API); o resto registra o que foi pedido e liga falhas."""
+    caixa (id → mensagem no formato da API, na ordem da mais nova para a mais velha, como o
+    Gmail lista); o resto registra o que foi pedido e liga falhas. Não tem `send`, `trash` nem
+    `delete`: uma chamada dessas no serviço vira `AttributeError` no teste."""
     estado = {
         "mensagens": {},
         "consultas": [],
@@ -238,6 +304,9 @@ def gmail(monkeypatch):
         "falhar_lote": False,
         "falhar_sempre": set(),
         "falhar_uma_vez": set(),
+        "consulta_frouxa": False,
+        "falhar_modify": 0,  # quantas chamadas de batchModify falham antes de funcionar
+        "modificacoes": [],  # corpo de cada batchModify que deu certo
     }
 
     def nova(email_id, **campos):

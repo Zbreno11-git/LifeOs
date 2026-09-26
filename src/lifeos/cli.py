@@ -60,7 +60,7 @@ def _gmail(args: argparse.Namespace) -> int:
         except service.ErroGmail as exc:
             print(f"❌ {tools.mensagem_de_erro(exc)}", file=sys.stderr)
             return 2
-        print(f"✅ Login do Gmail ok (só leitura): {endereco}, {total} mensagens na conta.")
+        print(f"✅ Login do Gmail ok (ler e arquivar): {endereco}, {total} mensagens na conta.")
         return 0
     if args.buscar is not None:
         print(tools.buscar_emails(args.buscar, args.max))

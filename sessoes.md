@@ -24,7 +24,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   primeira lista de limpeza.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
-> dono — o freio de clique era o maior risco aberto e estava sem sessão.
+> dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
+> Pluggy logo depois da Gmail 2 e antes da Sessão 5, por decisão do dono ("bem importante").
 
 ## Sessão 1 — correção, custos e runner (feita em 2026-09-20)
 
@@ -230,7 +231,7 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
   dias; nos 15 maiores, praticamente tudo sem abrir, e a maioria com sinal de newsletter. Nomes de
   remetente não entram neste repo (é público).
 
-## Sessão Pluggy — finanças, só leitura (medida em 2026-09-26; posição na fila a confirmar)
+## Sessão Pluggy — finanças, só leitura (medida em 2026-09-26; logo depois da Gmail 2)
 
 Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 `docs/fontes/pluggy-open-finance.md`. O essencial:
