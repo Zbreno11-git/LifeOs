@@ -405,6 +405,27 @@ MUTACOES = [
         '        if prompt.lower() in ["sair", "exit", "quit"]:',
         "tests/test_gmail_aprovacao.py::test_a_sequencia_do_mac_nao_vaza_o_codigo_e_sair_sai",
     ),
+    Mutacao(
+        "aprovação: código vivo em frase livre vai ao Gemini",
+        "src/lifeos/assistant/agent.py",
+        "            if confirmacao.vivo(limpeza.ACAO, c, janela=limpeza.DESFAZER_POR)",
+        "            if False",
+        "tests/test_gmail_aprovacao.py::test_desfazer_em_frase_livre_age_sem_o_gemini",
+    ),
+    Mutacao(
+        "aprovação: número que não é código vivo é roubado do Gemini",
+        "src/lifeos/assistant/agent.py",
+        "        if not vivos:\n            return None",
+        '        if not vivos:\n            return _COMO_APROVAR, ""',
+        "tests/test_gmail_aprovacao.py::test_numero_que_nao_e_codigo_vivo_segue_para_o_gemini",
+    ),
+    Mutacao(
+        "confirmação: código feito fica vivo para sempre",
+        "src/lifeos/confirmacao.py",
+        '        return datetime.fromisoformat(linha["consumida_em"]) + janela >= agora',
+        "        return True",
+        "tests/test_confirmacao.py::test_vivo_so_enquanto_serve_para_algo",
+    ),
 ]
 
 

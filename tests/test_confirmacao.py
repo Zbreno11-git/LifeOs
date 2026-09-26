@@ -104,3 +104,16 @@ def test_banco_de_teste_isolado_do_real():
     from lifeos.config import REMINDERS_DB_PATH
 
     assert confirmacao.DB_PATH != REMINDERS_DB_PATH
+
+
+def test_vivo_so_enquanto_serve_para_algo():
+    janela = timedelta(days=7)
+    proposta = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    assert confirmacao.vivo(ACAO, proposta.codigo, janela=janela, agora=T0)
+    vencida = T0 + confirmacao.VALIDADE + timedelta(seconds=1)
+    assert not confirmacao.vivo(ACAO, proposta.codigo, janela=janela, agora=vencida)
+    confirmacao.consumir(ACAO, proposta.codigo, agora=T0)
+    assert confirmacao.vivo(ACAO, proposta.codigo, janela=janela, agora=T0 + janela)
+    depois = T0 + janela + timedelta(seconds=1)
+    assert not confirmacao.vivo(ACAO, proposta.codigo, janela=janela, agora=depois)
+    assert not confirmacao.vivo(ACAO, "abcd", janela=janela, agora=T0)

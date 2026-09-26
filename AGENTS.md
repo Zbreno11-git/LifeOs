@@ -102,7 +102,8 @@ python -m pip install -e ".[dev]"   # editable install + pytest/ruff + deps do V
 python -m pytest               # roda os testes (testpaths = tests/)
 python -m ruff check .         # lint (line-length 100, src+tests)
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
-                               # acessar e egress (~40 s, à mão; não editar nada enquanto roda)
+                               # acessar e egress (~1 min, à mão; não editar nada enquanto roda;
+                               # nunca com `timeout`: travou? mate só o `pytest` filho)
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
                                # dentro dele: /custos mostra o gasto da sessão
@@ -272,8 +273,8 @@ upstream passar a chamar `model.choose(...)`, o envelope seria contornado em sil
 presente** (sem ele os dois testes são pulados).
 
 **A aprovação da limpeza do Gmail não é uma tool, e não pode virar uma.** A linha `confirma
-NNNN`/`desfaz NNNN` — ou só o número, com proposta aberta, e só a palavra (que ganha a
-instrução) — é lida por `assistant/agent.py:aprovacao_local` **antes** do `send_message`, e o código só aparece no terminal (`gmail/tools.py:_ao_dono`), nunca no retorno
+NNNN`/`desfaz NNNN` — ou só o número, com proposta aberta; ou qualquer frase com um número que
+seja código **vivo** (`confirmacao.vivo`), que com verbo age e sem verbo ganha a instrução — é lida por `assistant/agent.py:aprovacao_local` **antes** do `send_message`, e o código só aparece no terminal (`gmail/tools.py:_ao_dono`), nunca no retorno
 da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se autoaprovar
 (D26). `tests/test_gmail_aprovacao.py` confere quem chama `confirmar`/`arquivar`/`batchModify`
 lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza

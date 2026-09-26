@@ -149,6 +149,23 @@ def aberta(acao: str, *, agora: datetime | None = None) -> bool:
     return linha is not None
 
 
+def vivo(acao: str, codigo: str, *, janela: timedelta, agora: datetime | None = None) -> bool:
+    """O código ainda serve para algo: aprovar (proposta aberta e na validade) ou desfazer (ação
+    feita dentro da `janela`). É o que decide que uma linha não pode ir ao Gemini."""
+    if not _CODIGO.fullmatch(codigo or ""):
+        return False
+    agora = _agora(agora)
+    with _sessao() as conn:
+        linha = _mais_recente(conn, acao, codigo)
+    if linha is None:
+        return False
+    if linha["estado"] == "aberta":
+        return datetime.fromisoformat(linha["expira_em"]) >= agora
+    if linha["estado"] == "consumida" and linha["consumida_em"]:
+        return datetime.fromisoformat(linha["consumida_em"]) + janela >= agora
+    return False
+
+
 def cancelar(acao: str) -> None:
     """Invalida as propostas abertas da ação (ex.: uma proposta nova que não tem o que aprovar)."""
     with _sessao() as conn:

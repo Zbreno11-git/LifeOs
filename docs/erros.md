@@ -21,8 +21,8 @@
 | 3 | Estimei em vez de medir | 4 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar |
 | 4 | Teste que não separava o certo do errado | 6 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 3 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 4 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 4 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 5 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 1 | formatador e afins só nos arquivos que eu editei; conferir com `git status` depois |
 
 ---
@@ -192,6 +192,11 @@ no começo da linha seguinte logo depois de ler a entrada, antes das checagens d
 "sair" no fim, mas sem aprovação logo antes. O que tem de novo: mudei a linha e não reli as
 linhas **abaixo** dela que liam a mesma variável.
 
+**2026-09-26 — `timeout` em volta do script de mutações (Gmail 2).** Depois de uma rodada travar
+(teste com sorteio preso num valor, laço infinito na mutação), rodei a seguinte com `timeout 900`
+— o próprio script diz "sem timeout de propósito: SIGTERM não passa pelo `finally`". Terminou
+antes, sem estrago. O jeito certo, usado na rodada travada: matar só o `pytest` filho.
+
 **2026-09-20 — `fastmcp.md` fora do formato (Sessão 3).** Rodei o `ruff format` só nos `.py`; ele
 também formata o Python dentro dos `.md`. Formatado na Sessão 4.
 
@@ -220,6 +225,12 @@ legítimo escrito junto; remover passou a olhar só contexto de conta.
 ao Gemini. Sem estrago (o Gemini não tem como arquivar), mas quebrava a promessa de que ele nunca
 vê o código. Agora a palavra sozinha ganha a instrução ali mesmo, e o número do tamanho do código,
 com proposta aberta, aprova.
+
+**2026-09-26 — a mesma regra, de novo rígida (Gmail 2, horas depois).** O conserto acima ainda
+exigia a linha inteira no formato: "desfaz 8768 do gmail" e "você arquivou - desfaz o código é
+8768" foram ao Gemini, que ainda negou ter havido arquivamento. Segunda vez na mesma regra por não
+ter feito a lista de vizinhos e disfarces antes: feita agora, virou a regra "número que é código
+**vivo** nunca sai do Viking" e teste parametrizado dos dois lados.
 
 > **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
 > nem o vizinho inocente nem o disfarce.**

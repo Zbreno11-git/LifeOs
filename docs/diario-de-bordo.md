@@ -846,3 +846,13 @@ segunda pessoa (tinha dito "o usuário precisa digitar"). Portões: `618 passed`
 
 **Ainda não visto no Mac:** o `desfaz` e a conferência no Gmail web.
 
+**Mais tarde no mesmo dia (saída colada pelo dono).** Num `viking chat` novo, "desfaz 8768 do
+gmail" e "você arquivou - desfaz o código é 8768" foram ao Gemini, que disse não haver função de
+desfazer e negou o arquivamento. Consertado: qualquer frase com um número que seja código vivo
+(proposta aberta, ou arquivamento dentro dos 7 dias) fica no Viking — com verbo age, sem verbo
+ganha a instrução; número que não é código vivo segue para o Gemini. O Gemini passou a saber que
+o desfazer existe e que não deve negar arquivamentos. Uma rodada de mutações travou num teste com
+sorteio preso (laço infinito); matei só o `pytest` filho, o arquivo voltou (conferido), e o teste
+passou a sortear códigos diferentes depois do primeiro. Portões: `631 passed`; mutações
+`52 · mortas pelo teste esperado: 52`. **Falta:** o `desfaz` de verdade no Mac.
+
