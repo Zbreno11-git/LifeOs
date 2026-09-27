@@ -9,6 +9,7 @@ um caminho novo que esqueça os dois nomes acima.
 
 import base64
 import json
+from zoneinfo import ZoneInfo
 
 import httplib2
 import pytest
@@ -116,6 +117,9 @@ class _Service:
 def calendario(monkeypatch):
     """Fake do Google no lugar do `get_calendar_service` que o serviço usa. `estado` registra o
     que foi enviado e permite configurar o evento do `get`, os itens do `list` e falhas."""
+    # O fuso do dono (Brasília): os horários dos testes vêm com -03:00, e o VPS está em UTC. Sem
+    # isto a régua do fuso (`service.fuso_diferente`) recusaria todos eles.
+    monkeypatch.setattr("lifeos.calendar.service.TIMEZONE", ZoneInfo("America/Sao_Paulo"))
     estado = {
         "apagados": [],
         "patches": [],

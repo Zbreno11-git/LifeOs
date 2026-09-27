@@ -21,7 +21,7 @@
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 12 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 7 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 8 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 7 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei — e em arquivo do baseline, só os meus trechos do `--diff`; conferir com `git status` depois |
 
@@ -249,6 +249,12 @@ linhas **abaixo** dela que liam a mesma variável.
 (teste com sorteio preso num valor, laço infinito na mutação), rodei a seguinte com `timeout 900`
 — o próprio script diz "sem timeout de propósito: SIGTERM não passa pelo `finally`". Terminou
 antes, sem estrago. O jeito certo, usado na rodada travada: matar só o `pytest` filho.
+
+**2026-09-27 — de novo, pelo parâmetro da ferramenta (Sessão 5, conserto do fuso).** Rodei
+`python scripts/mutacoes.py "fuso:"` em primeiro plano com o `timeout` da ferramenta de terminal
+(600 s). Terminou em segundos, sem estrago; mas estourar mataria o processo como o `timeout 900`.
+O que tem de novo: não era o comando `timeout`, era o limite da própria ferramenta. Rodada de
+mutações vai em background, sem limite.
 
 **2026-09-20 — `fastmcp.md` fora do formato (Sessão 3).** Rodei o `ruff format` só nos `.py`; ele
 também formata o Python dentro dos `.md`. Formatado na Sessão 4.

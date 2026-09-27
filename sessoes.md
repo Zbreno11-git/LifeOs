@@ -16,11 +16,12 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 5 — confirmação mecânica (a Pluggy fechou no Mac em 2026-09-27).
-- **Primeiro passo:** o teste da Sessão 5 no Mac (roteiro no C9 do `PROGRESSO.md`); com ele
-  verde, a Sessão 5 fecha e a próxima é a 6.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D36–D38).
-- **Depende do dono:** sim — rodar o roteiro do Mac e colar a saída.
+- **Sessão:** 6 — runner em concorrência (a 5 fechou no Mac em 2026-09-27).
+- **Primeiro passo:** abrir a sessão com a skill `software-build` (perguntas ao dono e plano no
+  `PROGRESSO.md`), a partir da seção da Sessão 6 abaixo.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D36–D39),
+  `src/lifeos/browser/jev_runner.py`.
+- **Depende do dono:** sim — as perguntas da abertura.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -270,13 +271,17 @@ Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 - **Fica para depois:** categorização/recorrências pela Enrichment API, alertas de gasto, cópia
   local para RAG. Webhook não serve (o Viking não tem servidor público).
 
-## Sessão 5 — confirmação mecânica (commits 1 e 2 feitos em 2026-09-27; falta o Mac)
+## Sessão 5 — confirmação mecânica (feita e testada no Mac em 2026-09-27)
 
 **Commit 1 (2026-09-27):** registro de ações (D37), `desfaz` do calendário no chat, pedidos pelo
 MCP aprovados em `viking aprovar` (D36).
 **Commit 2 (2026-09-27):** liberar, com código e uma vez, um clique de sair ou de mexer na conta
-que o freio recusou; dinheiro nunca (D38, D18 reescrita). Falta o teste no Mac (C9 do plano no
-`PROGRESSO.md`). O que estava escrito na abertura:
+que o freio recusou; dinheiro nunca (D38, D18 reescrita).
+**Mac (2026-09-27):** as quatro partes funcionaram (liberar "Sair", recusar "Pagar", `desfaz`
+restaurando o mesmo evento, pedido do MCP aprovado em `viking aprovar`). O teste achou um defeito
+antigo — o Gemini inventou fuso e o evento foi às 15h em vez das 10h — consertado no mesmo dia
+(D39). Não medido: desfazer um reagendamento; evento com convidados. O que estava escrito na
+abertura:
 
 
 - **Primeiro passo (adiado da 4b por decisão do dono, 2026-09-26):** a liberação do freio de
@@ -291,6 +296,10 @@ que o freio recusou; dinheiro nunca (D38, D18 reescrita). Falta o teste no Mac (
 
 ## Sessão 6 — runner em concorrência
 
+- **Primeiro passo (adiado da 5, 2026-09-27):** no Mac, medir o que o teste da 5 não alcançou —
+  reagendar o "Teste Viking" pelo chat e `desfaz` (o `patch` com `{"date": null}`/`dateTime` volta
+  o horário exato?) e, se o dono topar, um evento de teste com um convidado dele mesmo (o `desfaz`
+  não manda aviso?). Roteiro: o do C9 da Sessão 5 no `PROGRESSO.md`/diário.
 - §10.7: lock hoje é só `threading.Lock` (intraprocesso) — dois `viking` separados disputam o
   mesmo daemon/Chrome. Lock em arquivo, com timeout de aquisição e mensagem de quem é o dono.
 - §10.10: `parse_event` aceita qualquer dict com `"type"` no stdout — um schema mais estrito (ou

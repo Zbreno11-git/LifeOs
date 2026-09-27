@@ -53,6 +53,41 @@ class Mutacao:
 
 MUTACOES = [
     Mutacao(
+        "fuso: a tool do Gemini aceita o fuso inventado",
+        "src/lifeos/calendar/service.py",
+        "    return _offset(dt), _offset(do_dono)",
+        "    return None",
+        "tests/test_calendar_tools.py::test_criar_evento_recusa_fuso_diferente_do_dono",
+    ),
+    Mutacao(
+        "fuso: o do dono de hoje, não o da data do evento",
+        "src/lifeos/calendar/service.py",
+        "    do_dono = dt.replace(tzinfo=TIMEZONE)",
+        "    do_dono = datetime.now(TIMEZONE)",
+        "tests/test_calendar_tools.py::test_fuso_do_dono_segue_o_horario_de_verao",
+    ),
+    Mutacao(
+        "fuso: só o início é conferido",
+        "src/lifeos/calendar/tools.py",
+        '    recusa = recusa_de_fuso("NÃO criei o evento", start_time, end_time)',
+        '    recusa = recusa_de_fuso("NÃO criei o evento", start_time)',
+        "tests/test_calendar_tools.py::test_fuso_so_no_fim_tambem_e_recusado",
+    ),
+    Mutacao(
+        "fuso: reagendar sem a régua",
+        "src/lifeos/calendar/tools.py",
+        '    recusa = recusa_de_fuso("NÃO reagendei", novo_inicio, novo_fim)',
+        '    recusa = ""',
+        "tests/test_calendar_tools.py::test_reagendar_recusa_fuso_diferente_do_dono",
+    ),
+    Mutacao(
+        "fuso: lembrete sem a régua",
+        "src/lifeos/assistant/agent.py",
+        '    recusa = recusa_de_fuso("NÃO criei o lembrete", quando)',
+        '    recusa = ""',
+        "tests/test_assistant_tools.py::test_lembrete_com_fuso_diferente_do_dono_e_recusado",
+    ),
+    Mutacao(
         "calendário: título divergente apaga o evento",
         "src/lifeos/calendar/service.py",
         "    return chave(a) == chave(b)",

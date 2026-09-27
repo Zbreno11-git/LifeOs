@@ -28,7 +28,8 @@ from lifeos.calendar import (
     reagendar_evento_por_id,
 )
 from lifeos.calendar import service as calendario_service
-from lifeos.config import GEMINI_API_KEY
+from lifeos.calendar.tools import recusa_de_fuso
+from lifeos.config import GEMINI_API_KEY, TIMEZONE
 from lifeos.financas.tools import (
     buscar_transacoes,
     fatura_do_cartao,
@@ -82,7 +83,11 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
     """Cria um lembrete ou nota. Não é evento de calendário: use isto para coisas a fazer, e o
     calendário para compromissos com hora marcada. `tags` separadas por vírgula. `quando` é o
     prazo opcional em ISO 8601 ('2026-09-25' ou '2026-09-25T14:00') — resolva "amanhã" você mesmo.
+    Sem fuso: o Viking aplica o do usuário.
     """
+    recusa = recusa_de_fuso("NÃO criei o lembrete", quando)
+    if recusa:
+        return recusa
     try:
         reminder = reminders_service.criar_lembrete(
             titulo, corpo, tags, quando, source="viking-cli"
@@ -127,8 +132,9 @@ _DIAS = (
 
 def _hoje() -> str:
     """Data corrente para o system_instruction: sem isso o modelo não resolve 'amanhã'."""
-    agora = datetime.now().astimezone()
-    return f"{agora:%Y-%m-%d} ({_DIAS[agora.weekday()]}, {agora:%H:%M %Z})"
+    agora = datetime.now(TIMEZONE)
+    fuso = calendario_service._offset(agora)
+    return f"{agora:%Y-%m-%d} ({_DIAS[agora.weekday()]}, {agora:%H:%M}, fuso {fuso})"
 
 
 def _build_client() -> genai.Client:
@@ -348,7 +354,8 @@ def iniciar_assistente() -> None:
         system_instruction=f"""Você é o Viking, um assistente pessoal que administra Google Calendar,
 navegação web (via Browser Harness) e lembretes/notas gerais.
 - Hoje é {_hoje()}. Resolva você mesmo referências como "amanhã", "semana que vem" ou "sexta" a
-  partir dessa data, sem perguntar a data ao usuário.
+  partir dessa data, sem perguntar a data ao usuário. Horários vão às ferramentas SEM fuso: o
+  Viking aplica o do usuário.
 - Para perguntas sobre uma data específica, use a ferramenta de busca por data.
 - Para criar eventos sem horário exato, use a ferramenta de dia inteiro.
 - Para tarefas que exigem abrir/usar um site, use a ferramenta de navegador — passando uma ação

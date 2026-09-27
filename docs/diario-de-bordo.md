@@ -1024,3 +1024,25 @@ deixaria ambígua a régua do MCP (classe 6, pega pelo teste).
 
 **Não medido:** a liberação numa Chrome de verdade (o Jev real achando o botão na reexecução) — no
 Mac (C9), numa página `data:`.
+
+### 2026-09-27 — Validação ao vivo da Sessão 5, no Mac do dono (e o evento às 15h)
+
+**Medido no Mac (`21ab218`, `1003 passed`):** `viking browser` numa página `data:` com "Sair" →
+recusa, 🔐 com código, código digitado → `✅ Cliquei em «Sair», uma vez.`; "Pagar" → recusa sem
+proposta; no chat, criar/apagar o "Teste Viking" e `desfaz` → "voltou ao calendário" (o `patch`
+de status restaura o mesmo evento — o gatilho da D37 não disparou); "o que você fez hoje?" listou
+tudo, com "clique liberado pelo dono"; `scripts/pedido_mcp_de_teste.py` →
+`aguardando_aprovacao`, `ainda no calendário: 1`, e o evento só saiu com o código em
+`viking aprovar`. A Sessão 5 fecha.
+
+**Achado:** "amanhã às 10h" virou `2026-09-28T10:00:00-08:00` — o Gemini inventou o fuso, e o
+evento caiu às 15h de Brasília. Defeito antigo (a docstring dava um exemplo **com** fuso e o
+serviço aceitava qualquer um). Consertado no mesmo dia (D39): as tools do Gemini (criar,
+reagendar, prazo de lembrete) recusam fuso diferente do do dono, pelo fuso da **data** do
+horário; o texto do sistema diz a hora com o fuso; o MCP fica como estava. Os testes do
+calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; `1015 passed`.
+
+**Não medido:** desfazer um reagendamento e evento com convidados — primeiro passo da Sessão 6.
+**Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
+segunda vez; terminou sem estrago).
+

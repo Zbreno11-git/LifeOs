@@ -104,3 +104,33 @@ def test_regra_de_ordinais_esta_na_ferramenta_de_navegador():
     fn = next(f for f in FERRAMENTAS if f.__name__ == "navegar_e_executar")
     doc = " ".join((inspect.getdoc(fn) or "").split())
     assert "Ordinais além do primeiro" in doc
+
+
+# --- fuso inventado pelo modelo (Mac, 2026-09-27) -----------------------------------------
+
+
+def test_lembrete_com_fuso_diferente_do_dono_e_recusado(monkeypatch):
+    """O vizinho do evento às 15h: o prazo do lembrete também sai de um horário do Gemini."""
+    from zoneinfo import ZoneInfo
+
+    from lifeos.assistant import agent
+    from lifeos.calendar import service
+
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    criados = []
+    monkeypatch.setattr(
+        agent.reminders_service, "criar_lembrete", lambda *a, **k: criados.append(a)
+    )
+    resposta = agent.criar_lembrete("Remédio", quando="2026-09-28T10:00-08:00")
+    assert criados == []
+    assert resposta.startswith("NÃO criei o lembrete: o horário veio com fuso -08:00")
+
+
+def test_hoje_diz_o_fuso_do_dono(monkeypatch):
+    """Sem o fuso escrito, o modelo chutou um (-08:00) para "amanhã às 10h"."""
+    from zoneinfo import ZoneInfo
+
+    from lifeos.assistant import agent
+
+    monkeypatch.setattr(agent, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
+    assert agent._hoje().endswith("fuso -03:00)")

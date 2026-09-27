@@ -7,12 +7,33 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-27 (Sessão Pluggy, testada no seu Mac).**
+**Última atualização: 2026-09-27 (Sessão 5, testada no seu Mac).**
 
-`█████████████░░░░░░░ 7 de 12 sessões fechadas + 2 parciais (= 8 de 12)`
+`███████████████░░░░░ 8 de 12 sessões fechadas + 2 parciais (= 9 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2 e Pluggy; parciais 4 e 3b; na
-fila 5, 6 e 7. Cada parcial vale meia sessão na barra.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy e 5; parciais 4 e 3b;
+na fila 6 e 7. Cada parcial vale meia sessão na barra.
+
+## 2026-09-27 — o Viking pede antes, lembra o que fez e desfaz
+
+**O que mudou:**
+- **"O que você fez hoje?"** O Viking guarda por 30 dias tudo o que fez (eventos, lembretes,
+  e-mails arquivados, navegador) e responde no chat ou com `viking registro`. Se o Gemini der erro
+  logo depois de uma ação, o Viking avisa o que já tinha feito, para você não pedir duas vezes.
+- **`desfaz`** no chat devolve o evento que o Viking apagou (ou o horário de antes, se reagendou).
+  No seu Mac, o evento voltou o mesmo, sem virar uma cópia.
+- **Outros apps só pedem.** Um app ligado ao Viking (pelo "servidor MCP") não apaga nem muda
+  evento sozinho: registra um pedido, e só você aprova, com um código, em `viking aprovar`.
+- **Liberar um clique.** O navegador continua parando antes de sair da conta, mexer nela ou pagar.
+  Agora, para sair e mexer na conta, ele mostra um código só para você; digitando, ele faz aquele
+  clique, uma vez. Pagar ou comprar continua sempre na sua mão.
+
+**Um defeito que o seu teste achou:** você pediu o evento às 10h e ele foi criado às 15h. O
+Gemini inventou um fuso horário (o da Califórnia). Agora o Viking recusa um horário com fuso
+diferente do seu e pede de novo, sem fuso; vale para eventos, reagendamentos e lembretes.
+
+**Ainda não testado no Mac:** desfazer um **reagendamento** e um evento com convidados (o de teste
+não tinha).
 
 ## 2026-09-27 — suas finanças no chat (só leitura)
 

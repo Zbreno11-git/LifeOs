@@ -5,66 +5,47 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5: commits 1 e 2 feitos, falta o teste no Mac (C9)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5 fechada no Mac; próxima: Sessão 6 (a abrir)
 
-**Estado do repositório:** o commit 2 da Sessão 5 (conferir com `git log -1`; o anterior é
-`6491136`, checkpoint) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+**Estado do repositório:** o commit de fechamento da Sessão 5 (conferir com `git log -1`; os
+anteriores são `21ab218`, commit 2, e `1b05733`, commit 1) · igual ao remoto · travas: nenhuma ·
+execuções em background: nenhuma.
 
-**Onde parou:** C0–C8 ✅. Commit 1 (`1b05733`): registro de ações, `desfaz` do calendário, pedidos
-pelo MCP + `viking aprovar` (D36, D37). Commit 2: liberar um clique de sair/conta, uma vez, com
-código (D38, D18 reescrita) — `_acoes_sensiveis.sinais`/`digital`/`ler_liberacao`,
-`_jev_subprocess --liberar-uma`, `jev_runner` com `--url=`/`--goal=` colados,
-`browser/liberacao.py`, aprovação no chat e em `viking browser`. Medido em 2026-09-27:
-`1003 passed` (0 pulados, com o clone do Jev); `ruff check` limpo; formatação `7 files would be
-reformatted` (baseline); `python scripts/mutacoes.py` → saída 0, 120 mutações;
-`python scripts/mutacoes.py liberar "chat: c" freio` → `mutações: 26 · mortas pelo teste
-esperado: 26`.
+**Onde parou:** Sessão 5 inteira ✅ (C0–C9), validada no Mac em 2026-09-27: liberar "Sair" com
+código, "Pagar" recusado sem proposta, `desfaz` restaurando o mesmo evento, pedido do MCP aprovado
+em `viking aprovar`. O teste achou o Gemini inventando fuso (evento às 15h em vez das 10h):
+consertado no mesmo dia (D39: tools do Gemini recusam fuso diferente do do dono). Medido em
+2026-09-27 depois do conserto: `1015 passed`; `ruff check` limpo; formatação `7 files would be
+reformatted` (baseline); `python scripts/mutacoes.py "fuso:"` → `mutações: 5 · mortas pelo teste
+esperado: 5`. O conserto do fuso **não** foi validado no Mac ainda: basta, no próximo uso do chat,
+pedir um evento "amanhã às 10h" e ver `10:00` no fuso do dono.
 
-**Próximo passo exato (C9):** o dono roda no Mac o roteiro abaixo e cola a saída. Conferir:
-(1) `viking browser` numa `data:` com "Sair" → recusa + 🔐 com código → digitado → `✅ Cliquei em
-«Sair», uma vez.` e a página final com título `Sair1`; (2) "Pagar" → recusa **sem** 🔐; (3) no
-chat, apagar o "Teste Viking" e `desfaz` → anotar se diz "voltou ao calendário" (restaurado pelo
-`patch`, mesmo ID) ou "Recriei" (decide o gatilho da D37); (4) o pedido pelo MCP deixa o evento lá
-até `viking aprovar`. Tudo verde → fechar a Sessão 5: barra (8 fechadas + 2 parciais), `sessoes.md`
-(próxima = 6), diário. Algo vermelho → consertar antes, com teste que caia.
+**Próximo passo exato:** abrir a Sessão 6 com a skill `software-build` — ler a seção dela em
+`sessoes.md` (o primeiro item é o adiado da 5: medir no Mac o desfazer de um reagendamento e um
+evento com convidado), fazer as perguntas ao dono e escrever o plano aqui, no lugar do plano da
+Sessão 5 abaixo (que desce para o diário quando a 6 abrir).
 
-**Roteiro do Mac (C9):**
-```
-cd ~/LifeOs
-git pull && git log --oneline -1
-source .venv/bin/activate
-which python
-python -m pytest -q
-viking browser --url 'data:text/html,<title>Antes</title><button%20onclick="document.title=this.textContent+1">Sair</button>' --goal 'clicar no botão Sair'
-viking browser --url 'data:text/html,<button>Pagar</button>' --goal 'clicar no botão Pagar'
-viking chat
-```
-No chat: `cria um evento Teste Viking amanhã às 10h` → `apaga o evento Teste Viking de amanhã` (e
-confirmar qual) → `desfaz` → `o que você fez hoje?` → `sair`. Depois, fora do chat, o pedido pelo
-MCP (imprime só estado e título, nunca o ID): `python scripts/pedido_mcp_de_teste.py`, depois
-`viking aprovar` e `viking registro`.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (armadilhas novas: fuso inventado, texto do Gemini
+colado ao `=`); este bloco; `sessoes.md` (Sessão 6); `docs/decisoes.md` (D36–D39); o índice de
+`docs/erros.md`; `src/lifeos/browser/jev_runner.py` (a Sessão 6 é do runner).
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
-(D36–D38); o índice de `docs/erros.md`; e, se algo do Mac falhar, o módulo da parte que falhou
-(`browser/liberacao.py` e `_jev_subprocess.py` para o navegador; `calendar/service.restaurar` para
-o `desfaz`; `calendar/service.pedir_mudanca`/`executar_aprovado` para o MCP).
-
-**Decisões (onde estão):** as do dono na tabela "Respostas do dono" do plano abaixo e em D36–D38.
-Mudança minha sobre o plano, escrita na D38: a reexecução abre a URL **redigida**, não a bruta.
+**Decisões (onde estão):** D36–D39 em `docs/decisoes.md`; as respostas do dono da Sessão 5 na
+tabela do plano abaixo.
 
 **Não pode ser esquecido:**
 - Código de aprovação nunca ao Gemini, ao cliente MCP, ao registro nem à nota; mostrar só com TTY.
 - `_jev_subprocess.py` e `_acoes_sensiveis.py` só stdlib; sem future import em módulo de tool;
   em arquivo do baseline de formatação (`agent.py`, `calendar/tools.py`, `custos.py`,
-  `tests/test_browser_jev_runner.py`…), só os próprios trechos do `ruff format --diff`. Baseline = 7.
-- Mutações sem `timeout`; e não cortar a saída com `tail` — a linha de resumo fica no topo.
+  `tests/test_assistant_tools.py`, `tests/test_browser_jev_runner.py`…), só os próprios trechos do
+  `ruff format --diff`. Baseline = 7.
+- Mutações em background, sem `timeout` (nem o da ferramenta); não cortar a saída com `tail`.
 - Texto com heredoc dentro não vai num heredoc: escrever num arquivo e ler dele.
 - `or` em asserção é proibido. Repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
 
-**Depende do dono:** rodar o roteiro do C9 e colar a saída.
+**Depende do dono:** as perguntas da abertura da Sessão 6.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1003 passed`; `python -m ruff format --check . | tail -1` → `7 files
+`python -m pytest -q` → `1015 passed`; `python -m ruff format --check . | tail -1` → `7 files
 would be reformatted`.
 
 ## Plano — Sessão 5: confirmação mecânica (registro de ações, MCP com aprovação, liberar um clique)
@@ -151,7 +132,7 @@ e "o que você fez hoje?" listam as ações, e um erro do Gemini depois de uma a
 | C6 | subprocesso: recusa estruturada, `--liberar-uma` de uso único, dinheiro recusado em qualquer sinal | ✅ |
 | C7 | pai: proposta, código só ao dono (TTY), aprovação no chat e no `viking browser`, execução curta | ✅ |
 | C8 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ✅ |
-| C9 | Mac: roteiro abaixo | ⬜ |
+| C9 | Mac: roteiro abaixo | ✅ 2026-09-27 (e o conserto do fuso, D39) |
 
 ### Commit 1 — registro, calendário e MCP
 

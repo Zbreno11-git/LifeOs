@@ -145,6 +145,31 @@ def _instante(valor: str) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=TIMEZONE)
 
 
+def _offset(dt: datetime) -> str:
+    total = int(dt.utcoffset().total_seconds()) // 60
+    sinal = "-" if total < 0 else "+"
+    return f"{sinal}{abs(total) // 60:02d}:{abs(total) % 60:02d}"
+
+
+def fuso_diferente(valor: str) -> tuple[str, str] | None:
+    """(fuso que veio, fuso do dono naquela data) se `valor` traz um fuso diferente do do dono.
+    `None` sem fuso, com o mesmo fuso ou se não for ISO (o formato é validado por quem cria).
+
+    Existe porque o Gemini inventou `-08:00` para "amanhã às 10h" e o evento caiu às 15h de
+    Brasília (Mac, 2026-09-27). O fuso do dono é o da data do horário, não o de hoje (horário de
+    verão)."""
+    try:
+        dt = datetime.fromisoformat(str(valor or "").strip())
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        return None
+    do_dono = dt.replace(tzinfo=TIMEZONE)
+    if dt.utcoffset() == do_dono.utcoffset():
+        return None
+    return _offset(dt), _offset(do_dono)
+
+
 def _intervalo(inicio_txt: str, fim_txt: str) -> tuple[datetime, datetime]:
     try:
         inicio = _instante(inicio_txt)

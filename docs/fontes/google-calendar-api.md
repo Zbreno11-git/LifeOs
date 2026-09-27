@@ -34,7 +34,7 @@
   uma função que falha alto, e o fake (`calendario`) entra por cima. No Mac, onde o token existe,
   um teste que escapasse do fake criaria evento na agenda real.
 
-## Restaurar um evento apagado (lido em 2026-09-27 para a Sessão 5; **não medido**)
+## Restaurar um evento apagado (lido em 2026-09-27 para a Sessão 5; restaurar **medido** no Mac no mesmo dia)
 
 A referência do recurso `Events` diz que, no calendário do organizador, um evento cancelado
 (`events.delete`) continua expondo os detalhes "so that they can be restored (undeleted)", e que
@@ -55,3 +55,9 @@ A validar no Mac (C9 da Sessão 5), no evento "Teste Viking": `get` depois do `d
 aviso (`sendUpdates`)?. Até medir, o desfazer do Viking tenta restaurar e, se não der, recria uma
 cópia **sem convidados** e com `sendUpdates="none"` (reconvidar mandaria e-mail em nome do dono),
 avisando "ID novo"; recusa evento recorrente e de outro organizador.
+
+**Medido no Mac em 2026-09-27 (C9), evento "Teste Viking" sem convidados:** criar → apagar pelo
+chat → `desfaz` respondeu "voltou ao calendário" — o caminho `restaurado`: o `get` depois do
+`delete` deu `cancelled` e o `patch {"status": "confirmed"}` no mesmo ID funcionou; a busca
+seguinte (pelo MCP) achou o evento e o apagou. **Não medido:** aviso a convidados (o evento não
+tinha) e a mescla com `null` do desfazer de um reagendamento (não houve reagendamento).

@@ -284,3 +284,60 @@ def test_titulo_igual_ignora_forma_unicode():
 
 def test_titulo_igual_string_vazia_nao_casa_com_tudo():
     assert not service._titulo_igual("", "Qualquer coisa")
+
+
+# --- fuso inventado pelo modelo (Mac, 2026-09-27) -----------------------------------------
+# O dono pediu "amanhã às 10h" e o Gemini mandou `10:00:00-08:00`: o evento caiu às 15h de
+# Brasília. Nas tools do Gemini, fuso diferente do do dono é recusado com a instrução de mandar
+# sem fuso; o mesmo fuso, ou nenhum, segue.
+
+
+def test_criar_evento_recusa_fuso_diferente_do_dono(calendario):
+    resposta = tools.criar_evento(
+        "Teste Viking", "2026-09-28T10:00:00-08:00", "2026-09-28T11:00:00-08:00"
+    )
+    assert calendario["enviados"] == []
+    assert resposta.startswith("NÃO criei o evento: o horário veio com fuso -08:00")
+    assert "sem fuso" in resposta
+
+
+def test_criar_evento_com_o_fuso_do_dono_segue(calendario):
+    tools.criar_evento("Teste Viking", "2026-09-28T10:00:00-03:00", "2026-09-28T11:00:00-03:00")
+    assert calendario["enviados"][0]["start"]["dateTime"] == "2026-09-28T10:00:00-03:00"
+
+
+def test_fuso_so_no_fim_tambem_e_recusado(calendario):
+    # 14:00Z = 11:00 em Brasília, depois do início: só a régua do fuso pode recusar.
+    tools.criar_evento("Teste Viking", "2026-09-28T10:00:00", "2026-09-28T14:00:00Z")
+    assert calendario["enviados"] == []
+
+
+def test_reagendar_recusa_fuso_diferente_do_dono(calendario):
+    resposta = tools.reagendar_evento_por_id(
+        "abc123", "Dentista", "2026-10-02T10:00:00+00:00", "2026-10-02T11:00:00+00:00"
+    )
+    assert calendario["patches"] == []
+    assert resposta.startswith("NÃO reagendei: o horário veio com fuso +00:00")
+
+
+def test_fuso_do_dono_segue_o_horario_de_verao(calendario, monkeypatch):
+    """O fuso do dono é o da data do evento, não o de hoje: em Nova York, julho é -04:00 e janeiro
+    é -05:00. As duas datas juntas separam isso de "o fuso de agora", seja qual for o dia."""
+    monkeypatch.setattr(service, "TIMEZONE", ZoneInfo("America/New_York"))
+    tools.criar_evento("Verão", "2026-07-01T10:00:00-04:00", "2026-07-01T11:00:00-04:00")
+    tools.criar_evento("Inverno", "2026-01-15T10:00:00-05:00", "2026-01-15T11:00:00-05:00")
+    assert [e["summary"] for e in calendario["enviados"]] == ["Verão", "Inverno"]
+    tools.criar_evento("Trocado", "2026-07-01T10:00:00-05:00", "2026-07-01T11:00:00-05:00")
+    assert len(calendario["enviados"]) == 2
+
+
+def test_mcp_nao_passa_pela_regua_do_fuso(calendario):
+    """Pelo MCP quem manda o fuso é o app que chama; a régua é da tool do Gemini."""
+    tools.responder_criar("Outro app", "2026-09-28T10:00:00-08:00", "2026-09-28T11:00:00-08:00")
+    assert len(calendario["enviados"]) == 1
+
+
+@pytest.mark.parametrize("valor", ["2026-09-28T10:00:00", "2026-09-28", "não é data", ""])
+def test_sem_fuso_ou_invalido_nao_e_fuso_diferente(calendario, valor):
+    """Formato inválido é problema do serviço (mensagem própria), não da régua do fuso."""
+    assert service.fuso_diferente(valor) is None

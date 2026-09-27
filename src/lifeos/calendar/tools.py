@@ -245,10 +245,28 @@ def listar_eventos_por_data(data_inicio: str, data_fim: str | None = None) -> st
     return responder_por_data(data_inicio, data_fim).texto
 
 
+def recusa_de_fuso(nao_fiz: str, *horarios: str) -> str:
+    """Só nas tools do Gemini: pelo MCP, quem manda o fuso é o app que chama."""
+    for horario in horarios:
+        diferente = service.fuso_diferente(horario)
+        if diferente:
+            veio, do_dono = diferente
+            return (
+                f"{nao_fiz}: o horário veio com fuso {veio}, e o do usuário é {do_dono}. Mande o "
+                "horário local dele sem fuso (ex.: '2026-09-23T10:00:00'); se ele pediu outro "
+                "fuso, converta para o dele antes."
+            )
+    return ""
+
+
 def criar_evento(summary: str, start_time: str, end_time: str, description: str = "") -> str:
-    """Cria um evento com horário marcado. `start_time` e `end_time` em ISO 8601, com ou sem fuso
-    (ex.: '2026-09-23T10:00:00-03:00'); sem fuso, assume o fuso configurado do Viking.
+    """Cria um evento com horário marcado. `start_time` e `end_time` em ISO 8601 no horário local
+    do usuário, SEM fuso (ex.: '2026-09-23T10:00:00'): o Viking aplica o fuso dele. Um fuso
+    diferente do dele é recusado.
     """
+    recusa = recusa_de_fuso("NÃO criei o evento", start_time, end_time)
+    if recusa:
+        return recusa
     return responder_criar(summary, start_time, end_time, description).texto
 
 
@@ -280,6 +298,9 @@ def reagendar_evento_por_id(
     """Muda o horário de UM evento já identificado. `titulo_esperado` precisa bater EXATAMENTE com
     o título real (ignorando caixa e acentuação/forma Unicode) — o reagendamento é recusado se
     divergir ou vier vazio. `event_id` vem de uma busca ou listagem, nunca de chute. Novos horários
-    em ISO 8601, com ou sem fuso.
+    em ISO 8601 no horário local do usuário, SEM fuso: o Viking aplica o fuso dele.
     """
+    recusa = recusa_de_fuso("NÃO reagendei", novo_inicio, novo_fim)
+    if recusa:
+        return recusa
     return responder_reagendar(event_id, titulo_esperado, novo_inicio, novo_fim).texto

@@ -340,6 +340,12 @@ dia antes). O `balance` do cartão é o limite usado, com as parcelas, e o `bala
 vencimento da fatura já fechada. Tudo medido em 2026-09-27 (`docs/fontes/pluggy-open-finance.md`);
 os testes fixam `service.TIMEZONE` em Brasília porque o VPS está em UTC.
 
+**O Gemini inventa fuso horário.** Para "amanhã às 10h" ele mandou `10:00:00-08:00` e o evento
+caiu às 15h de Brasília (Mac, 2026-09-27). As tools do Gemini recebem horário **sem fuso** e
+recusam fuso diferente do do dono (`calendar/tools.recusa_de_fuso`, D39); o fuso do dono é o da
+**data** do horário (horário de verão), não o de agora. Os testes do calendário fixam
+`service.TIMEZONE` em Brasília no dublê (`conftest.calendario`), porque o VPS está em UTC.
+
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela
 ferramenta gravou o caractere bidi literal no código-fonte (Trojan Source). O `ruff` pega
