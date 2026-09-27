@@ -5,62 +5,35 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy: falta só o teste no Mac (C7)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy fechada; próxima: Sessão 5
 
-**Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
-anterior é `0126535`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+**Estado do repositório:** o commit de fechamento da Sessão Pluggy (conferir com `git log -1`) ·
+igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** C1–C6 ✅; C7 com a CLI ✅ no Mac (três rodadas, 2026-09-27: saldo, fatura,
-gastos, busca; consertos de conexão, de pagamento de fatura do Nubank e a linha própria das
-transferências, decisão do dono). Falta só ver o **chat** responder (nenhuma pergunta de
-finanças colada ainda). Suíte `807 passed`; mutações `78 · mortas pelo teste esperado: 78`.
+**Onde parou:** Sessão Pluggy fechada e validada no Mac em 2026-09-27 (CLI em três rodadas, chat
+com quatro perguntas; o dono: "tudo certo"). Suíte `808 passed`; mutações `78 · mortas pelo teste
+esperado: 78` (as 18 de finanças rodadas de novo depois do último conserto de texto: 18/18).
+Decisões D31–D35 em `docs/decisoes.md`; o que ficou de texto, no backlog de `sessoes.md`.
 
-**Próximo passo exato:** o dono cola uma conversa do `viking chat` com "quanto gastei este mês e
-em quê?" e "como está a fatura do cartão?". Esperado: o Gemini repete os números da ferramenta
-(os mesmos do `--gastos`/`--fatura`), cita a data da sincronização, não soma o que está "fora do
-total" e não inventa vencimento. Se sim: Pluggy fechada em `sessoes.md` e na barra (7 fechadas +
-2 parciais = 8 de 12), e este bloco passa a apontar para a Sessão 5. Se não: o texto do prompt
-ou das docstrings é o suspeito (a conta já bate na CLI).
+**Próximo passo exato:** abrir a Sessão 5 (confirmação mecânica) com a skill `software-build`:
+ler a seção dela em `sessoes.md` (o primeiro passo é a liberação do freio de cliques pela mesma
+confirmação, adiado da 4b), `src/lifeos/confirmacao.py` e D26/D30, e fazer as perguntas da
+abertura ao dono antes de planejar.
 
-**Erros desta sessão (vão para `docs/erros.md` no C6):** (1) `service.py` tratou `dueDate` de
-fatura como instante sem medir a hora, e o teste que escrevi logo depois afirmava o dia errado
-(classe 3: o teste copiou a implementação em vez do dado); (2) `\u202e` escrito pela ferramenta
-virou o caractere bidi literal no teste de novo — armadilha já no `AGENTS.md`, o `ruff` pegou
-(classe 5); (3) a Pluggy falsa filtrava a data ilegível antes do código testado, e três testes
-caíram pelo motivo errado (classe 4); (4) a Pluggy falsa copiava a lista mas não os dicionários: um teste sujou o seguinte
-(classe 4); (5) conta de hora errada num teste (36 h depois de 09:00 é 21:00 do dia seguinte),
-pega pelo próprio teste.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (Sessão 5);
+`docs/decisoes.md`; o índice de `docs/erros.md`; `src/lifeos/confirmacao.py`,
+`src/lifeos/browser/_acoes_sensiveis.py`.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo;
-`docs/fontes/pluggy-open-finance.md` (custo, caminho, formato real); `docs/decisoes.md` (D21,
-D22, D30 servem de modelo: só chat, redação, nada de escrita); `docs/erros.md` (índice; classes 4 e
-7 bateram nesta semana); `src/lifeos/financas/{pluggy,conectar,service}.py`;
-`src/lifeos/gmail/tools.py` (modelo de texto para o Gemini: bloco de não confiável + redação).
+**Não pode ser esquecido:** repo público (nada de ID de conexão, conta, valor ou descrição real);
+o cliente da Pluggy só lê; mutações sem `timeout`; formatar só os arquivos editados (baseline 7);
+roteiro do Mac começa com `git pull && git log --oneline -1`.
 
-**Decisões (e onde estão escritas):** do dono em 2026-09-27 — saldo, gastos, busca e fatura;
-valores e descrições podem ir ao Gemini; consultar toda vez, nada em disco; só no chat (tabela
-"Respostas do dono" do plano). Minhas — sentido pela `type`, movimento interno e investimento fora
-do gasto, PIX para outros conta como gasto em linha própria, parcela futura fora do total (tabela
-"Decisões técnicas minhas"). Faltam virar linha em `docs/decisoes.md` no fechamento (D31+).
-
-**Não pode ser esquecido:**
-- Repo público: nada de ID de conexão, nome de conta, valor ou descrição real em commit nem nos
-  testes. Os IDs estão no `.env` do Mac (e o dono os mandou no chat); o `.env` do VPS tem só as
-  credenciais — para medir daqui, passar `PLUGGY_ITEM_IDS=...` no próprio comando, sem gravar.
-- Medir só a estrutura (campos, contagens, formatos com dígitos trocados por 9), nunca imprimir
-  valor, descrição ou saldo.
-- O cliente só lê: escrita fora de `/auth` e `/connect_token` é recusada antes da rede.
-- `scripts/mutacoes.py`: sem `timeout`; travou → matar só o `pytest` filho. Teste de tempo tem de
-  ser determinístico (uma mutação morta uma vez não prova).
-- Formatar só os arquivos editados (baseline 7). Roteiro do Mac começa com
-  `git pull && git log --oneline -1`.
-
-**Depende do dono:** o C7 — rodar o roteiro acima no Mac e conferir os números com o app do banco.
+**Depende do dono:** as respostas da abertura da Sessão 5.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `807 passed`; `python -c "import lifeos.financas.service"` sem erro.
+`python -m pytest -q` → `808 passed`.
 
-## Plano — Sessão Pluggy: finanças no chat, só leitura
+## Plano — Sessão Pluggy: finanças no chat, só leitura (fechada em 2026-09-27)
 
 ### O que entrega
 No `viking chat`: "quanto tenho?", "quanto gastei este mês e em quê?", "paguei o aluguel?",
@@ -100,7 +73,7 @@ própria ou pela Enrichment API; alertas; qualquer escrita (PIX, mudar categoria
 | C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ✅ |
 | C5 | mutações novas mortas; suíte; ruff; baseline 7 | ✅ 71/71 |
 | C6 | docs + revisão em duas passadas + commit + push | ✅ |
-| C7 | Mac: as quatro perguntas no CLI e no chat, conferidas com o app do banco | CLI ✅ · chat ⬜ |
+| C7 | Mac: as quatro perguntas no CLI e no chat, conferidas com o app do banco | ✅ |
 
 ### 🐞 Previsto → Depurar
 - Total de gasto que não bate com o app do banco → primeiro o sinal por tipo, depois fatura paga

@@ -284,23 +284,35 @@ def responder_buscar(
 def _texto_da_fatura(f: service.Fatura, hoje: date) -> str:
     linhas = [f"{_limpo(f.conta.nome)}:"]
     if f.fechada:
+        vencida = f.fechada.vencimento is not None and f.fechada.vencimento < hoje
+        vence = "venceu em" if vencida else "vence em"
         linhas.append(
-            f"- Última fatura fechada que o banco mandou: {_reais(f.fechada.valor)} (fechou em "
-            f"{_data(f.fechada.fechamento)}, vencimento {_data(f.fechada.vencimento)})."
+            f"- Última fatura fechada que a Pluggy mostra: {_reais(f.fechada.valor)} (fechou em "
+            f"{_data(f.fechada.fechamento)}, {vence} {_data(f.fechada.vencimento)})"
+            + (" — já venceu: não é a fatura a pagar agora." if vencida else ".")
         )
         if f.atrasada:
             dias = (hoje - f.fechada.fechamento).days
+            # Documentação da Pluggy (Open Finance, "Bills"): a fatura só aparece depois que
+            # fecha ou vence, conforme o banco; nas do dono, só depois de vencer (2026-09-27).
             linhas.append(
-                f"  ⚠️ Ela fechou há {dias} dias: deve haver uma fatura mais nova que o banco "
-                "ainda não mandou. Para o valor exato da atual, confira no app do banco."
+                f"  ⚠️ Ela fechou há {dias} dias: a fatura seguinte já deve ter fechado, mas a "
+                "Pluggy só mostra uma fatura quando o banco a entrega, em geral depois do "
+                "vencimento. O valor dela está dentro das compras sem fatura abaixo; o exato, "
+                "no app do banco."
             )
         desde = "Depois desse fechamento"
     else:
         linhas.append("- O banco não mandou nenhuma fatura fechada.")
         desde = f"Nos últimos {service.ATRASO_DA_FECHADA.days} dias"
     linhas.append(
-        f"- {desde}, ainda sem fatura: {_reais(f.sem_fatura)} em {f.sem_fatura_n} compra(s) "
-        "(estornos descontados)."
+        f"- {desde}, ainda sem fatura na Pluggy: {_reais(f.sem_fatura)} em {f.sem_fatura_n} "
+        "compra(s) (estornos descontados)"
+        + (
+            " — junta a fatura que já fechou e ainda não apareceu com o que vai para a próxima."
+            if f.atrasada
+            else "."
+        )
     )
     if f.futuras:
         linhas.append(
@@ -365,8 +377,10 @@ def buscar_transacoes(texto: str = "", desde: str = "", ate: str = "", valor: st
 
 def fatura_do_cartao() -> str:
     """A última fatura fechada de cada cartão, o que entrou depois dela ainda sem fatura, as
-    parcelas futuras e o limite usado. A Pluggy não diz o vencimento da próxima fatura nem se uma
-    fatura foi paga: nunca invente esses dados; se o texto disser para conferir no app do banco,
-    repasse. Só leitura.
+    parcelas futuras e o limite usado. Os cartões vêm com o nome que o banco dá (o do Nubank pode
+    se chamar "gold"). A Pluggy não diz o vencimento da próxima fatura nem se uma fatura foi
+    paga: nunca invente esses dados. Fatura que "já venceu" não é a fatura a pagar agora: nunca a
+    compare com o saldo para dizer se o dinheiro dá. Se o texto disser para conferir no app do
+    banco, repasse. Só leitura.
     """
     return responder_fatura()

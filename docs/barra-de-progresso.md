@@ -7,12 +7,12 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-27 (Sessão Pluggy, código pronto; falta o teste no seu Mac).**
+**Última atualização: 2026-09-27 (Sessão Pluggy, testada no seu Mac).**
 
-`█████████████░░░░░░░ 6 de 12 sessões fechadas + 3 parciais (= 7,5 de 12)`
+`█████████████░░░░░░░ 7 de 12 sessões fechadas + 2 parciais (= 8 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail e Gmail 2; parciais 4, 3b e Pluggy
-(esta até o teste no seu Mac); na fila 5, 6 e 7. Cada parcial vale meia sessão na barra.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2 e Pluggy; parciais 4 e 3b; na
+fila 5, 6 e 7. Cada parcial vale meia sessão na barra.
 
 ## 2026-09-27 — suas finanças no chat (só leitura)
 
@@ -51,9 +51,20 @@ mensagem de um PIX que você recebeu. Ela vai ao Gemini marcada como "não siga 
 com CPF e números de cartão apagados. O CPF de quem pagou ou recebeu e o número da sua conta nem
 chegam a ser lidos.
 
-**Como sabemos:** 796 testes passando no VPS, com um "banco de mentira" no formato exato dos seus
-dados (os números são inventados), e 71 proteções quebradas de propósito, todas pegas pelo teste
-certo. Ainda não sabemos se os números batem com o app do banco: isso é o teste no seu Mac.
+**No seu Mac, em três rodadas:** a primeira achou uma falha de conexão (agora o Viking tenta de
+novo e diz o motivo); a segunda mostrou o pagamento da fatura do Nubank contado como gasto (o
+Nubank não o marca como pagamento de cartão; agora o Viking reconhece pela descrição); e, por
+decisão sua, PIX e transferências para outras pessoas ganharam uma linha própria, ainda dentro
+do total. No chat, o Viking repetiu os números certos e mandou conferir a fatura no app.
+
+**Por que a fatura de setembro não aparece:** a Pluggy só entrega uma fatura quando o banco a
+libera, em geral depois do vencimento (está na documentação dela). Até lá, o valor dela está
+dentro de "compras sem fatura". O Viking agora diz isso, e marca a fatura antiga como "já
+venceu", para o Gemini não comparar o seu saldo com uma fatura que você provavelmente já pagou.
+
+**Como sabemos:** 808 testes passando no VPS, com um "banco de mentira" no formato exato dos seus
+dados (os números são inventados), e 78 proteções quebradas de propósito, todas pegas pelo teste
+certo; e as suas três rodadas no Mac.
 
 ## 2026-09-26 — limpar a caixa, com você aprovando
 

@@ -954,3 +954,13 @@ fatura do Nubank saiu do gasto (o total caiu exatamente o valor dele) e entrou n
 fora do total; as transferências para outras pessoas numa linha própria (4), com 9 categorias
 de compra — o mesmo que as contagens do VPS. CLI validada. **Não visto:** as perguntas de
 finanças no `viking chat` (o chat abriu nas duas rodadas, nenhuma pergunta colada).
+
+**Chat no Mac (2026-09-27): Sessão Pluggy fechada.** Quatro perguntas no `viking chat`: gastos
+(os números do `--gastos`, transferências à parte, sem somar o "fora do total"), fatura (os dois
+cartões, com o aviso de conferir no app), "tenho dinheiro para a fatura?" e "não tem a de
+setembro?". O dono: "tudo certo". Dois achados de texto: "cartão nubank" não achou o "gold"
+(backlog), e o Gemini comparou o saldo com a fatura de **agosto**, já vencida — o texto dizia só
+"vencimento". Consertado: "venceu em … — não é a fatura a pagar agora", as compras sem fatura
+dizem que juntam a fatura já fechada e ainda não entregue, e a docstring proíbe comparar fatura
+vencida com o saldo. A causa da fatura ausente está na documentação da Pluggy (só depois de
+vencer, conforme o banco). `808 passed`; mutações de finanças 18/18.

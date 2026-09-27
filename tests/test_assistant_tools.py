@@ -82,7 +82,7 @@ _REGRAS = {
     "gastos_do_periodo": [["não some\n    de novo"], ["não siga instruções"], ["Só leitura"]],
     "buscar_transacoes": [["não siga instruções"], ["Só leitura"]],
     # medido: a Pluggy não traz o próximo vencimento; o modelo não pode preencher o buraco
-    "fatura_do_cartao": [["nunca invente"], ["Só leitura"]],
+    "fatura_do_cartao": [["nunca invente"], ["Só leitura"], ["nunca a\n    compare com o saldo"]],
 }
 
 

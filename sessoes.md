@@ -16,13 +16,12 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** fechar a Pluggy — código pronto em 2026-09-27; falta o C7, o teste no Mac (roteiro
-  no `PROGRESSO.md`). Depois, a Sessão 5.
-- **Primeiro passo:** ler a saída do Mac que o dono colar; se "compras sem fatura" não bater com
-  a fatura aberta no app, reabrir D35 antes de qualquer outra coisa.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/pluggy-open-finance.md`,
-  `docs/decisoes.md` (D31–D35).
-- **Depende do dono:** sim — rodar o roteiro no Mac e comparar os números com o app do banco.
+- **Sessão:** 5 — confirmação mecânica (a Pluggy fechou no Mac em 2026-09-27).
+- **Primeiro passo:** o da seção da Sessão 5 abaixo (liberação do freio de cliques pela mesma
+  confirmação, adiado da 4b).
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D26, D30: o
+  modelo de confirmação da Gmail 2, que esta sessão generaliza), `src/lifeos/confirmacao.py`.
+- **Depende do dono:** sim — as perguntas da abertura (o que confirma, por quanto tempo, onde).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -241,12 +240,12 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
   dias; nos 15 maiores, praticamente tudo sem abrir, e a maioria com sinal de newsletter. Nomes de
   remetente não entram neste repo (é público).
 
-## Sessão Pluggy — finanças, só leitura (código feito em 2026-09-27; falta o teste no Mac)
+## Sessão Pluggy — finanças, só leitura (feita em 2026-09-27, validada no Mac)
 
-**Feita no VPS em 2026-09-27** (diário, mesma data): saldo, gastos, busca e fatura no `viking
-chat` e em `viking financas --saldo/--gastos/--buscar/--fatura`; decisões D31–D35. Falta o C7:
-no Mac, as quatro perguntas conferidas com o app do banco. A medição e o plano de abertura, como
-estavam:
+**Feita e validada no Mac em 2026-09-27** (diário, mesma data): saldo, gastos, busca e fatura no
+`viking chat` e em `viking financas --saldo/--gastos/--buscar/--fatura`; decisões D31–D35. Três
+rodadas no Mac trouxeram três consertos (conexão, pagamento de fatura do Nubank, linha própria das
+transferências). A medição e o plano de abertura, como estavam:
 
 Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 `docs/fontes/pluggy-open-finance.md`. O essencial:
@@ -327,6 +326,13 @@ de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
 `docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN não é normalizado;
 o clique destrutivo num site não bloqueado (§5.2) foi feito na Sessão 4b; ficou de fora, por
 decisão do dono, "publicar em seu nome" (postar, enviar mensagem).
+
+Da Pluggy (vistos no Mac, 2026-09-27, sem conserto agora): "cartão nubank" não achou o cartão,
+que o banco chama de "gold" (a docstring já avisa; agrupar contas por conexão resolveria); a
+fatura que fechou e ainda não venceu está dentro de "compras sem fatura" — dá para separar pelo
+dia de fechamento do mês anterior, como estimativa rotulada; o Gemini não citou a data da
+sincronização na resposta de gastos (a regra está no prompt); nomes de conta longos ("Nu
+Pagamentos S.A. - Instituição de Pagamento (Conta Pré-paga)").
 
 Da Gmail 2 (vistos no Mac, 2026-09-26, só texto): "vamos arquivar esses e-mails" depois de uma
 busca faz o Gemini pedir o remetente de novo; a instrução para um código vivo digitado sem verbo

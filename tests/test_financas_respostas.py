@@ -255,10 +255,12 @@ def test_fatura(chat):
     texto = tools.responder_fatura()
     assert texto.startswith("Cartão Roxo:\n")
     assert (
-        "- Última fatura fechada que o banco mandou: R$ 812,34 (fechou em 03/09/2026, "
-        "vencimento 10/09/2026)." in texto
+        "- Última fatura fechada que a Pluggy mostra: R$ 812,34 (fechou em 03/09/2026, "
+        "venceu em 10/09/2026) — já venceu: não é a fatura a pagar agora." in texto
     )
-    assert "- Depois desse fechamento, ainda sem fatura: R$ 125,00 em 2 compra(s)" in texto
+    assert (
+        "- Depois desse fechamento, ainda sem fatura na Pluggy: R$ 125,00 em 2 compra(s)" in texto
+    )
     assert "- Parcelas com data futura: 2 (R$ 50,00)" in texto
     assert "- Limite usado: R$ 820,50 de R$ 5.000,00 (disponível R$ 4.179,50)." in texto
     assert "⚠️" not in texto
@@ -270,7 +272,17 @@ def test_fatura_atrasada_manda_conferir_no_app(chat):
     chat["relogio"]["agora"] = datetime(2026, 10, 5, 9, 0, tzinfo=BRASILIA)
     chat["item"]["lastUpdatedAt"] = "2026-10-05T11:00:00.000Z"
     texto = tools.responder_fatura()
-    assert "⚠️ Ela fechou há 32 dias: deve haver uma fatura mais nova" in texto
+    assert "⚠️ Ela fechou há 32 dias: a fatura seguinte já deve ter fechado" in texto
+    assert "junta a fatura que já fechou e ainda não apareceu" in texto
+
+
+def test_fatura_que_ainda_nao_venceu_diz_vence_em(chat):
+    preparar_ciclo(chat)
+    chat["relogio"]["agora"] = datetime(2026, 9, 8, 12, 0, tzinfo=BRASILIA)
+    chat["item"]["lastUpdatedAt"] = "2026-09-08T12:00:00.000Z"
+    texto = tools.responder_fatura()
+    assert "(fechou em 03/09/2026, vence em 10/09/2026)." in texto
+    assert "já venceu" not in texto
 
 
 def test_sem_cartao(chat):
@@ -392,7 +404,7 @@ def test_cli_so_valor_tambem_busca(chat, monkeypatch, capsys):
 def test_cli_fatura(chat, monkeypatch, capsys):
     preparar_ciclo(chat)
     assert _cli(monkeypatch, "--fatura") == 0
-    assert "Última fatura fechada que o banco mandou: R$ 812,34" in capsys.readouterr().out
+    assert "Última fatura fechada que a Pluggy mostra: R$ 812,34" in capsys.readouterr().out
 
 
 def test_cli_erro_da_pluggy_sai_com_2_no_stderr(chat, monkeypatch, capsys):

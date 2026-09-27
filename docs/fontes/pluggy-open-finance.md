@@ -130,6 +130,11 @@ item de verdade): não autenticar esse MCP numa sessão de agente sem necessidad
   documentação diz o mesmo para conectores Open Finance. Inclui as parcelas futuras.
 - **`balanceDueDate` é o vencimento da última fatura fechada**, já passado (igual ao `dueDate`
   mais recente de `/bills` nos dois cartões): não serve como "próximo vencimento".
+- **Por que a fatura mais nova não vem (documentação, "Open Finance › Considerations & FAQ ›
+  Bills", lida em 2026-09-27):** "open bills are not returned until the bills are closed or
+  overdue (This depends on the FI)"; e o ciclo de uma compra de cartão: `PENDING` sem `billId`
+  até a fatura vencer, quando a Pluggy acha a fatura e liga as compras. Nas do dono, a de
+  setembro do Itaú fechou e não veio até o vencimento.
 - **A última fatura de `/bills` pode estar atrasada:** fechou há 33 e 39 dias nos dois cartões, e
   vence 7 dias depois de fechar — uma fatura mais nova já fechou e ainda não veio.
 - **Cada compra diz sua fatura:** `creditCardMetadata.billId` (não há `billId` no topo) está em
