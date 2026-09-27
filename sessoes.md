@@ -16,12 +16,13 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** Pluggy — finanças, só leitura (decisão do dono: logo depois da Gmail 2).
-- **Primeiro passo:** o da seção da Sessão Pluggy abaixo (do dono: IDs das conexões no `.env`).
+- **Sessão:** fechar a Pluggy — código pronto em 2026-09-27; falta o C7, o teste no Mac (roteiro
+  no `PROGRESSO.md`). Depois, a Sessão 5.
+- **Primeiro passo:** ler a saída do Mac que o dono colar; se "compras sem fatura" não bater com
+  a fatura aberta no app, reabrir D35 antes de qualquer outra coisa.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/fontes/pluggy-open-finance.md`,
-  skills `integracoes` e `seguranca` (a chave da Pluggy alcança PIX: cliente só `GET`).
-- **Depende do dono:** sim — conectar os bancos no Meu Pluggy/Dashboard e as perguntas da
-  abertura escritas na seção.
+  `docs/decisoes.md` (D31–D35).
+- **Depende do dono:** sim — rodar o roteiro no Mac e comparar os números com o app do banco.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -240,7 +241,12 @@ leitura por decisão dele, para o Viking nunca ter mais permissão do que usa.
   dias; nos 15 maiores, praticamente tudo sem abrir, e a maioria com sinal de newsletter. Nomes de
   remetente não entram neste repo (é público).
 
-## Sessão Pluggy — finanças, só leitura (medida em 2026-09-26; logo depois da Gmail 2)
+## Sessão Pluggy — finanças, só leitura (código feito em 2026-09-27; falta o teste no Mac)
+
+**Feita no VPS em 2026-09-27** (diário, mesma data): saldo, gastos, busca e fatura no `viking
+chat` e em `viking financas --saldo/--gastos/--buscar/--fatura`; decisões D31–D35. Falta o C7:
+no Mac, as quatro perguntas conferidas com o app do banco. A medição e o plano de abertura, como
+estavam:
 
 Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 `docs/fontes/pluggy-open-finance.md`. O essencial:

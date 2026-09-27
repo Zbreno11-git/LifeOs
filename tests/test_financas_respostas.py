@@ -84,6 +84,11 @@ def test_data_ruim_nao_chega_a_pluggy(chat):
     assert chat["pedidos"] == []
 
 
+def test_so_a_data_final_pega_o_mes_dela(chat):
+    assert tools.responder_gastos(ate="2026-01-31").startswith("Gastos de 01/01/2026 a 31/01/2026:")
+    assert "de 03/11/2025 a 01/02/2026" in tools.responder_buscar("pix", ate="2026-02-01")
+
+
 def test_periodo_invertido_ou_longo_demais_e_recusado(chat):
     assert "vem depois da final" in tools.responder_gastos("2026-09-30", "2026-09-01")
     assert "passa de 366 dias" in tools.responder_gastos("2025-01-01", "2026-09-01")

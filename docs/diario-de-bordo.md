@@ -895,3 +895,36 @@ não medido), e cada uma mostrou o ID, `UPDATED` e as contas. Com os dois IDs no
 `viking financas` listou as duas conexões: 2 contas correntes e 2 cartões. IDs e nomes de conta
 não entram no repo.
 
+
+### 2026-09-27 — Sessão Pluggy: finanças no chat, só leitura (código pronto; falta o Mac)
+
+**Decidido pelo dono na abertura.** Quatro perguntas (saldo, gastos do período, buscar transação,
+fatura); valores e descrições podem ir ao Gemini; consultar toda vez, nada em disco; só no chat.
+Viraram D31–D33; as minhas (sentido pela `type`, o que fica fora do gasto, a fatura só com
+fatos) são D34 e D35.
+
+**Medido nas conexões do dono (só estrutura e comparações, nenhum valor impresso).** O sinal do
+`amount` muda entre conta e cartão; a fatura paga aparece nas duas contas; há 45 parcelas
+pendentes até 2027. No meio da sessão, mais quatro coisas, que mudaram o código: vencimento e
+fechamento de fatura vêm às `T00:00:00.000Z` (25 de 25) e convertidos cairiam um dia antes; o
+`balance` do cartão é igual a limite − disponível (o limite usado, não a fatura); o
+`balanceDueDate` é o vencimento da última fatura fechada, já passado; e a última fatura da
+Pluggy tinha 33 e 39 dias. Cada compra diz a fatura dela em `creditCardMetadata.billId`.
+
+**Feito.** `financas/service.py` (contas, transações com cursor e período cortado no fuso, gastos,
+busca, fatura), `financas/tools.py` (o texto do Gemini, descrição redigida e dentro do bloco de
+não confiável, rodapé com a última sincronização e aviso de conexão com erro ou velha), quatro
+tools no `viking chat` com argumentos só em texto, e `viking financas --saldo | --gastos |
+--buscar | --fatura` com o mesmo texto, sem o Gemini. A fatura não inventa "vence em": mostra a
+última fechada, as compras sem fatura depois dela, as parcelas futuras e o limite usado.
+
+**Portões.** `796 passed`; `ruff check` limpo; formatação no baseline de 7; mutações `71 ·
+mortas pelo teste esperado: 71` (13 novas de finanças, rodada completa e parcial concordando).
+
+**Erros meus** (em `docs/erros.md`): vencimento tratado como instante sem medir a hora, com um
+teste que copiava o erro (classe 3); três falhas da Pluggy falsa — filtrava o lixo antes do
+código, cópia rasa que vazou entre testes, e um teste que não conferia o que o nome dizia
+(classe 4); o caractere bidi literal pela quarta vez, pego pelo `ruff` (classe 5).
+
+**Não medido:** as respostas no Mac, com o Gemini de verdade e os números conferidos com o app do
+banco (C7) — em especial se "compras sem fatura" bate com a fatura aberta no app.

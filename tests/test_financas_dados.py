@@ -434,9 +434,11 @@ def test_pagamento_de_fatura_so_pela_operacao_tambem_e_interno(pluggy_falsa):
 
 
 def test_parcela_futura_fica_fora_do_total_e_e_contada(pluggy_falsa):
+    pluggy_falsa["transacoes"] = {CARTAO: [DO_CARTAO[3], DO_CARTAO[4]]}  # 1/10 paga, 2/10 futura
     g = _gastos()
+    assert g.total == 25.0
     assert (g.futuras, g.futuras_total) == (1, 25.0)
-    assert "k5" not in {t.id for t in g.maiores}
+    assert [t.id for t in g.maiores] == ["k4"]
 
 
 def test_hoje_entra_no_total(pluggy_falsa):

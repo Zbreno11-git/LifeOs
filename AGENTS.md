@@ -47,9 +47,12 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     uma vez só e por 10 min (SQLite em `viking.db`); primeiro uso na limpeza do Gmail, a Sessão 5
     reaproveita
   - `calendar/` — Google Calendar (OAuth + operações), portado de um protótipo já validado
-  - `financas/` — Pluggy (Meu Pluggy, uso pessoal). Hoje só conectar (`conectar.py`: a janela
-    oficial da Pluggy numa página local em 127.0.0.1) e conferir as conexões; `pluggy.py` recusa
-    qualquer escrita fora de `/auth` e `/connect_token` antes da rede (a chave alcança PIX)
+  - `financas/` — Pluggy (Meu Pluggy, uso pessoal), **só leitura**: `pluggy.py` recusa qualquer
+    escrita fora de `/auth` e `/connect_token` antes da rede (a chave alcança PIX); `conectar.py`
+    serve a janela oficial da Pluggy numa página local em 127.0.0.1; `service.py` normaliza
+    contas e transações (sentido pela `type`, movimento interno e parcela futura fora do gasto,
+    dia no fuso); `tools.py` é o texto do Gemini (saldo, gastos, busca, fatura), com a descrição
+    redigida e no bloco de não confiável. Consulta a cada pergunta, nada em disco; só no chat
   - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
     desfazer por 7 dias). Só o `viking chat` registra essas tools, o MCP não (decisão do dono)
@@ -105,7 +108,8 @@ python -m pip install -e ".[dev]"   # editable install + pytest/ruff + deps do V
 python -m pytest               # roda os testes (testpaths = tests/)
 python -m ruff check .         # lint (line-length 100, src+tests)
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
-                               # acessar e egress (~1 min, à mão; não editar nada enquanto roda;
+                               # acessar, egress e das contas de finanças (à mão; não
+                               # editar nada enquanto roda;
                                # nunca com `timeout`: travou? mate só o `pytest` filho)
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
@@ -120,6 +124,8 @@ viking gmail --arquivar A,B     # propõe arquivar tudo destes remetentes e pede
 viking gmail --desfazer CODIGO  # devolve à caixa o que aquele código arquivou (até 7 dias)
 viking financas --conectar      # abre a janela da Pluggy (MeuPluggy) e mostra o ID da conexão
 viking financas                 # confere as conexões de PLUGGY_ITEM_IDS (sem saldo nem extrato)
+viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
+                               # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
 ```
 
 As ferramentas de navegador exigem `uv` no PATH e o clone do Jev (`VIKING_JEV_DIR`); o Viking o
@@ -138,7 +144,7 @@ a dependência `pyserial`).
 Resumo curto; detalhe completo em `docs/arquitetura/viking-visao-e-arquitetura.md`:
 
 `viking chat` → `assistant/agent.py` (loop de function-calling) → tools de `calendar/` (Google Calendar),
-`gmail/` (leitura do Gmail, só no chat),
+`gmail/` (ler e, com aprovação do dono, arquivar; só no chat), `financas/` (Pluggy, só leitura, só no chat),
 `browser/` (executor Jev por subprocesso, dirigindo uma Chrome real via Browser Harness/CDP — ver
 `docs/arquitetura/browser-automation-stack.md`), e `reminders/` (SQLite). Em paralelo, `mcp_server/`
 expõe calendário + lembretes como um servidor MCP próprio, para outras ferramentas chamarem o Viking.
@@ -292,6 +298,13 @@ os 207 e-mails na confirmação e levou `403 rateLimitExceeded` no Mac (não é 
 passa por `gmail/service._executar`/`_metadados`, que gastam do orçamento `_Cota` e esperam
 (`ESPERAS_S`) na recusa; fluxo novo não relê o que já leu — busca (`list`, 5 unidades) é o que
 se repete. O erro cru do Google traz o número do projeto OAuth: use `_descrever`.
+
+**Na Pluggy, transação é instante e fatura é data.** A data da transação vem em UTC
+(`03:00Z` é meia-noite em Brasília, `02:59Z` é o dia anterior) e se converte para o fuso; o
+vencimento e o fechamento de fatura vêm às `T00:00:00.000Z` e **não** se convertem (cairiam um
+dia antes). O `balance` do cartão é o limite usado, com as parcelas, e o `balanceDueDate` é o
+vencimento da fatura já fechada. Tudo medido em 2026-09-27 (`docs/fontes/pluggy-open-finance.md`);
+os testes fixam `service.TIMEZONE` em Brasília porque o VPS está em UTC.
 
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela

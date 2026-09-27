@@ -18,9 +18,9 @@
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 4 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar |
-| 4 | Teste que não separava o certo do errado | 7 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
+| 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 4 | Teste que não separava o certo do errado | 10 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
+| 5 | A ferramenta fez outra coisa do que eu li | 4 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 4 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 5 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 1 | formatador e afins só nos arquivos que eu editei; conferir com `git status` depois |
@@ -118,6 +118,15 @@ Google. No Mac: 207 e-mails lidos duas vezes num minuto, `403 rateLimitExceeded`
 arquivado. O que tem de novo: marcar "não medido" não é tratar; um limite do terceiro que decide
 o desenho se lê **antes** (skill `integracoes`: limites como constantes).
 
+**2026-09-27 — vencimento de fatura tratado como instante (Sessão Pluggy).** A medição da
+véspera registrou só a forma do `dueDate` (dígitos trocados por 9), não a hora. Escrevi o
+`service.py` convertendo a data de Brasília, como as transações, e logo depois um teste que
+afirmava o dia 9 para um vencimento 10: o teste copiou a implementação em vez do dado. Medida a
+hora (25 de 25 faturas às `T00:00:00.000Z`), o vencimento caía um dia antes. No mesmo passo, a
+documentação da Pluggy mostrou que o `balance` do cartão é o limite usado, não a fatura — eu ia
+chamá-lo de "fatura atual". O que tem de novo: medir a forma de um campo não é medir o que ele
+quer dizer; data e instante têm a mesma forma.
+
 > **Um número sem comando é hipótese, mesmo quando parece óbvio.**
 
 **O antídoto, concreto:** o procedimento de medição de tokens do `AGENTS.md`; para linha, medir a
@@ -161,6 +170,15 @@ chega 0,5 s depois, e a mutação morre três vezes seguidas. Na mesma rodada, u
 tirava só o escape do `<` era equivalente (o `>` escapado já impede o `</script>`): trocada pela
 que tira todos. O que tem de novo: uma mutação morta uma vez não prova um teste de tempo.
 
+**2026-09-27 — três vezes no mesmo dia, na Pluggy falsa (Sessão Pluggy).** (1) A falsa filtrava
+por data antes de o código ver a transação, então a de data ilegível nunca chegava a ele: três
+testes caíram pelo motivo errado. (2) Ela copiava a lista de contas, não os dicionários dentro:
+um teste que pôs um controle no nome da conta sujou o teste seguinte. (3) Ao escrever a mutação
+"parcela futura entra no total", vi que o teste com esse nome não conferia o total — só o teste
+do total geral cairia. Os três foram pegos antes do commit; a falsa agora deixa passar o lixo,
+copia fundo, e o teste da parcela olha o caso isolado. O que tem de novo: o dublê de teste é
+código, e erra como código.
+
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 
 **O antídoto, concreto:** mutação vista caindo antes de dar por pronto (a Sessão 4b torna isso
@@ -180,6 +198,10 @@ um teste. A varredura antes do commit pegou (1 achado em 37 arquivos); trocado p
 
 **2026-09-26 — `cat > arquivo` sem entrada (Sessão 4).** O comando esperou stdin e travou até o
 timeout.
+
+**2026-09-27 — quarta vez (Sessão Pluggy).** O teste de descrição com caractere bidi, escrito pela
+ferramenta, gravou o caractere literal; o `ruff` pegou (`PLE2502`) e o escape foi gerado por
+script. A armadilha já estava no `AGENTS.md`: o antídoto que vale é o script, não lembrar.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 
