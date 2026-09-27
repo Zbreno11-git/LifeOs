@@ -33,6 +33,10 @@ MAX_BUSCA = 20
 MAX_PERIODO_DIAS = 366
 MAX_PAGINAS = 20  # por conta e período; a Pluggy devolveu até 351 transações numa página só
 DESATUALIZADO = timedelta(hours=36)  # o Meu Pluggy sincroniza a cada 24 h
+# Fatura é mensal: a mais recente com mais de 31 dias quer dizer que uma mais nova ainda não veio
+# (as dos dois cartões do dono tinham 33 e 39 dias em 2026-09-27).
+ATRASO_DA_FECHADA = timedelta(days=31)
+MAX_FUTURO_DIAS = 2 * 366  # parcelas: as do dono iam até 2027
 
 # Dinheiro que só mudou de lugar entre contas do dono, ou foi para/voltou de investimento
 # (categorias e operações medidas nas conexões do dono). Não é gasto nem renda.
@@ -73,10 +77,12 @@ class Conta:
     id: str
     nome: str
     cartao: bool
-    saldo: float | None  # no cartão, o que está na fatura em aberto
+    # Na conta, o disponível. No cartão, o LIMITE USADO (= limite − disponível, medido), com as
+    # parcelas futuras dentro — não é a fatura do mês. `balanceDueDate` não entra: é o vencimento
+    # da última fatura fechada, já passado (medido), e viraria um "vence em" errado.
+    saldo: float | None
     limite: float | None = None
     disponivel: float | None = None
-    vencimento: date | None = None
 
 
 @dataclass(frozen=True)
@@ -92,11 +98,13 @@ class Transacao:
     interna: bool
     pendente: bool
     parcela: str = ""  # "3/10"
+    fatura: str = ""  # `creditCardMetadata.billId`; vazio = ainda sem fatura fechada
 
 
 @dataclass(frozen=True)
 class Fechada:
     valor: float | None
+    fechamento: date | None
     vencimento: date | None
 
 
@@ -194,7 +202,6 @@ class Financas:
                         saldo=_numero(bruta.get("balance")),
                         limite=_numero(credito.get("creditLimit")),
                         disponivel=_numero(credito.get("availableCreditLimit")),
-                        vencimento=_data(credito.get("balanceDueDate")),
                     )
                     self._contas.append((conta, bruta))
         return self._contas
@@ -215,8 +222,8 @@ class Financas:
             }
         return self._categorias
 
-    def transacoes(self, desde: date, ate: date) -> list[Transacao]:
-        """Todas as transações de todas as contas com dia (no fuso do Viking) entre as datas."""
+    def transacoes(self, desde: date, ate: date, conta: Conta | None = None) -> list[Transacao]:
+        """Transações com dia (no fuso do Viking) entre as datas, de todas as contas ou de uma."""
         nomes = self._nomes_de_categoria()
         # O filtro da Pluggy é por data em UTC: um dia a mais de cada lado, e o corte é aqui.
         pedido_de, pedido_ate = (
@@ -225,18 +232,20 @@ class Financas:
         )
         saida: list[Transacao] = []
         self.ignoradas = 0
-        for conta, _ in self._brutas():
+        for atual, _ in self._brutas():
+            if conta is not None and atual.id != conta.id:
+                continue
             cursor = None
             for _pagina in range(MAX_PAGINAS):
                 resposta = self._cliente.get(
                     "/v2/transactions",
-                    accountId=conta.id,
+                    accountId=atual.id,
                     dateFrom=pedido_de,
                     dateTo=pedido_ate,
                     after=cursor,
                 )
                 for bruta in resposta.get("results") or []:
-                    transacao = self._transacao(bruta, conta, nomes)
+                    transacao = self._transacao(bruta, atual, nomes)
                     if transacao is None:
                         self.ignoradas += 1
                     elif desde <= transacao.dia <= ate:
@@ -273,6 +282,7 @@ class Financas:
             interna=interna(categoria, bruta.get("operationType")),
             pendente=bruta.get("status") == "PENDING",
             parcela=parcela,
+            fatura=_texto(metadado.get("billId")),
         )
 
     def ultima_fatura_fechada(self, conta: Conta) -> Fechada | None:
@@ -282,7 +292,9 @@ class Financas:
         if not datadas:
             return None
         fatura, vencimento = max(datadas, key=lambda par: par[1])
-        return Fechada(_numero(fatura.get("totalAmount")), vencimento)
+        return Fechada(
+            _numero(fatura.get("totalAmount")), _data(fatura.get("billClosingDate")), vencimento
+        )
 
 
 # --- respostas --------------------------------------------------------------------------------
@@ -352,3 +364,35 @@ def buscar(
             continue
         achadas.append(t)
     return achadas[:MAX_BUSCA], len(achadas) > MAX_BUSCA
+
+
+@dataclass(frozen=True)
+class Fatura:
+    conta: Conta
+    fechada: Fechada | None  # a mais recente que a Pluggy tem
+    atrasada: bool  # a fechada tem mais de `ATRASO_DA_FECHADA`: deve haver uma mais nova
+    sem_fatura: float  # compras menos estornos depois do fechamento, ainda sem fatura
+    sem_fatura_n: int
+    futuras: int  # parcelas com data depois de hoje
+    futuras_total: float
+
+
+def fatura(financas: Financas, conta: Conta, *, hoje: date | None = None) -> Fatura:
+    """Os fatos do cartão, sem inventar vencimento: a Pluggy não diz o da próxima fatura."""
+    hoje = hoje or datetime.now(TIMEZONE).date()
+    fechada = financas.ultima_fatura_fechada(conta)
+    fechamento = fechada.fechamento if fechada else None
+    desde = fechamento + timedelta(days=1) if fechamento else hoje - ATRASO_DA_FECHADA
+    todas = financas.transacoes(desde, hoje + timedelta(days=MAX_FUTURO_DIAS), conta)
+    externas = [t for t in todas if not t.interna]
+    abertas = [t for t in externas if not t.fatura and t.dia <= hoje]
+    futuras = [t for t in externas if t.saida and t.dia > hoje]
+    return Fatura(
+        conta=conta,
+        fechada=fechada,
+        atrasada=bool(fechamento and hoje - fechamento > ATRASO_DA_FECHADA),
+        sem_fatura=round(sum(t.valor if t.saida else -t.valor for t in abertas), 2),
+        sem_fatura_n=sum(1 for t in abertas if t.saida),
+        futuras=len(futuras),
+        futuras_total=round(sum(t.valor for t in futuras), 2),
+    )

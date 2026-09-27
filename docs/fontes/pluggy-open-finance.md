@@ -114,4 +114,15 @@ item de verdade): não autenticar esse MCP numa sessão de agente sem necessidad
   `T00:00:00.000Z` (25 de 25 faturas, medido em 2026-09-27; só a hora foi lida). Convertidas para
   Brasília, cairiam no dia anterior; `balanceDueDate` vem já sem hora. As transações, ao
   contrário, são instantes (`03:00Z` é meia-noite em Brasília) e se convertem.
+- **`balance` do cartão é o limite usado, não a fatura do mês:** nos dois cartões,
+  `balance == creditLimit − availableCreditLimit` (medido em 2026-09-27, só a comparação). A
+  documentação diz o mesmo para conectores Open Finance. Inclui as parcelas futuras.
+- **`balanceDueDate` é o vencimento da última fatura fechada**, já passado (igual ao `dueDate`
+  mais recente de `/bills` nos dois cartões): não serve como "próximo vencimento".
+- **A última fatura de `/bills` pode estar atrasada:** fechou há 33 e 39 dias nos dois cartões, e
+  vence 7 dias depois de fechar — uma fatura mais nova já fechou e ainda não veio.
+- **Cada compra diz sua fatura:** `creditCardMetadata.billId` (não há `billId` no topo) está em
+  333 de 336 e 219 de 219 transações até o último fechamento; depois dele, 8 e 7 sem `billId`
+  (uma com); parcelas futuras sem `billId`. Sem `billId` e depois do fechamento: tipos `DEBIT`
+  (compras), `CREDIT` de pagamento e `CREDIT` de estorno.
 

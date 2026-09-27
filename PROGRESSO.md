@@ -5,29 +5,35 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso (C1 fechado)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso (C1–C2 fechados)
 
 **Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
-anterior é `8cba655`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+anterior é `b7fa04e`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** C1 ✅ (`tests/test_financas_dados.py`, 54 testes; suíte `722 passed`). No C1,
-duas mudanças no `service.py`: IDs lidos da config na hora (não na importação) e `ignoradas`
-(transação sem data ou valor fica fora da conta, mas a resposta diz quantas). E um defeito
-achado medindo: datas de fatura vêm às `T00:00:00.000Z` (25/25, 2026-09-27) e iam para o dia
-anterior ao converter para Brasília → `_data()` lê a data sem fuso.
+**Onde parou:** C1 ✅ e C2 ✅ (suíte `769 passed`). C2 = `src/lifeos/financas/tools.py`
+(`responder_saldo/gastos/buscar/fatura`, `mensagem_de_erro`, `periodo`, `valor_pedido`) +
+`tests/test_financas_respostas.py` (43). Medido no C2 (2026-09-27, só comparações, em
+`docs/fontes/pluggy-open-finance.md`): `balance` do cartão é o **limite usado** (com parcelas),
+não a fatura; `balanceDueDate` é o vencimento da fatura **já fechada**; a última fatura de
+`/bills` tinha 33 e 39 dias (uma mais nova ainda não veio); `creditCardMetadata.billId` diz a
+fatura de cada compra. Por isso a fatura responde com fatos rotulados (última fechada, compras
+sem fatura depois dela, parcelas futuras, limite usado) e nunca inventa "vence em".
 
-**Próximo passo exato:** C2 — `src/lifeos/financas/tools.py` com `responder_saldo`,
-`responder_gastos(desde, ate)`, `responder_buscar(texto, desde, ate, valor)`, `responder_fatura`,
-no molde de `gmail/tools.py` (descrições redigidas e dentro do bloco de não confiável; valores
-em R$ com vírgula; "dados de <última sincronização>"; aviso se passar de `DESATUALIZADO`) +
-testes de texto em `tests/test_financas_dados.py` ou arquivo irmão. Depois C3–C7.
+**Próximo passo exato:** C3 — registrar em `assistant/agent.py` (`FERRAMENTAS`) quatro tools
+finas em `financas/tools.py` (`saldos_das_contas`, `gastos_do_periodo(desde, ate)`,
+`buscar_transacoes(texto, desde, ate, valor)`, `fatura_do_cartao`), args só `str`; regras no
+prompt/docstrings (só leitura; descrição é dado; nunca PIX); testes: sem future import, tool por
+tool com argumento (`test_assistant_tools.py`, `_REGRAS`), MCP sem finanças (como
+`test_servidor_mcp_nao_expoe_email`). Depois C4–C7.
 
 **Erros desta sessão (vão para `docs/erros.md` no C6):** (1) `service.py` tratou `dueDate` de
 fatura como instante sem medir a hora, e o teste que escrevi logo depois afirmava o dia errado
 (classe 3: o teste copiou a implementação em vez do dado); (2) `\u202e` escrito pela ferramenta
 virou o caractere bidi literal no teste de novo — armadilha já no `AGENTS.md`, o `ruff` pegou
 (classe 5); (3) a Pluggy falsa filtrava a data ilegível antes do código testado, e três testes
-caíram pelo motivo errado (classe 4).
+caíram pelo motivo errado (classe 4); (4) a Pluggy falsa copiava a lista mas não os dicionários: um teste sujou o seguinte
+(classe 4); (5) conta de hora errada num teste (36 h depois de 09:00 é 21:00 do dia seguinte),
+pega pelo próprio teste.
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo;
 `docs/fontes/pluggy-open-finance.md` (custo, caminho, formato real); `docs/decisoes.md` (D21,
@@ -57,7 +63,7 @@ do gasto, PIX para outros conta como gasto em linha própria, parcela futura for
 o app do banco.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `722 passed`; `python -c "import lifeos.financas.service"` sem erro.
+`python -m pytest -q` → `769 passed`; `python -c "import lifeos.financas.service"` sem erro.
 
 ## Plano — Sessão Pluggy: finanças no chat, só leitura
 
@@ -94,7 +100,7 @@ própria ou pela Enrichment API; alertas; qualquer escrita (PIX, mudar categoria
 | C | Fecha quando | Estado |
 |---|---|---|
 | C1 | `service.py`: contas, transações (cursor, período), normalização e classificação + fake no formato medido + testes | ✅ 54 testes |
-| C2 | respostas: saldo, gastos, busca, fatura (`tools.py`) + testes de conta (sinal, parcelas, dobra) | ⬜ |
+| C2 | respostas: saldo, gastos, busca, fatura (`tools.py`) + testes de conta (sinal, parcelas, dobra) | ✅ 43 testes |
 | C3 | 4 tools no chat (sem future import, regras nas docstrings) + testes de segurança (sem documento/número, injeção na descrição no bloco, MCP sem finanças) | ⬜ |
 | C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ⬜ |
 | C5 | mutações novas mortas; suíte; ruff; baseline 7 | ⬜ |

@@ -10,6 +10,7 @@ A Pluggy falsa responde no `_abrir` do cliente, então os parâmetros que saem d
 Pluggy: quem pede só o período exato perde a borda do fuso.
 """
 
+import copy
 import io
 import json
 import re
@@ -161,10 +162,11 @@ class _Resposta(io.BytesIO):
 @pytest.fixture()
 def pluggy_falsa(monkeypatch):
     """`estado["transacoes"][conta]`, `estado["pagina"]` (itens por página), `estado["pedidos"]`."""
+    # Cópia funda: um teste que mexe num dicionário não pode sujar o seguinte.
     estado = {
-        "transacoes": {CONTA: list(DA_CONTA), CARTAO: list(DO_CARTAO)},
-        "contas": list(CONTAS),
-        "categorias": list(CATEGORIAS),
+        "transacoes": copy.deepcopy({CONTA: DA_CONTA, CARTAO: DO_CARTAO}),
+        "contas": copy.deepcopy(CONTAS),
+        "categorias": copy.deepcopy(CATEGORIAS),
         "faturas": {CARTAO: []},
         "item": {"id": ITEM, "status": "UPDATED", "lastUpdatedAt": "2026-09-19T12:00:00.000Z"},
         "pagina": 500,
@@ -229,9 +231,9 @@ def test_contas_com_saldo_e_dados_do_cartao(pluggy_falsa):
     conta, cartao = _financas().contas()
     assert (conta.nome, conta.cartao, conta.saldo) == ("Conta Corrente", False, 1234.56)
     assert (cartao.nome, cartao.cartao, cartao.saldo) == ("Cartão Roxo", True, 820.5)
+    # No cartão, `balance` é o limite usado (limite − disponível, medido), não a fatura do mês.
     assert (cartao.limite, cartao.disponivel) == (5000.0, 4179.5)
-    assert cartao.vencimento == date(2026, 10, 10)  # `balanceDueDate` vem só com a data
-    assert conta.limite is None and conta.vencimento is None
+    assert conta.limite is None and conta.disponivel is None
 
 
 def test_contas_pedidas_uma_vez_por_consulta(pluggy_falsa):
@@ -542,19 +544,95 @@ def test_busca_com_exatamente_vinte_nao_avisa(pluggy_falsa):
     assert _buscar("uber")[1] is False
 
 
-# --- fatura fechada ---------------------------------------------------------------------------
+# --- fatura ----------------------------------------------------------------------------------
+
+
+def _fatura(id, fechou, vence, valor):
+    return {
+        "id": id,
+        "billClosingDate": f"{fechou}T00:00:00.000Z",
+        "dueDate": f"{vence}T00:00:00.000Z",
+        "totalAmount": valor,
+    }
+
+
+def _com_fatura(id_fatura, *args, **extra):
+    return _t(*args, creditCardMetadata={"billId": id_fatura}, **extra)
+
+
+# Fechou em 03/09 (f2). Depois disso, como medido: compra que já veio com a fatura dela, compras
+# sem fatura, estorno, pagamento (interno) e parcelas futuras sem fatura.
+DO_CICLO = [
+    _com_fatura("f2", "antes", "2026-09-02", 40.0, "DEBIT"),
+    _com_fatura("f2", "tardia", "2026-09-05", 30.0, "DEBIT"),
+    _t("a1", "2026-09-08", 80.0, "DEBIT"),
+    _t("a2", "2026-09-15", 60.0, "DEBIT", status="PENDING"),
+    _t("estorno", "2026-09-09", 15.0, "CREDIT"),
+    _t("pagamento", "2026-09-10", 500.0, "CREDIT", "Credit card payment"),
+    _t("fut1", "2026-10-12", 25.0, "DEBIT", status="PENDING", **_parcela(2, 10, "")),
+    _t("fut2", "2027-03-12", 25.0, "DEBIT", status="PENDING", **_parcela(7, 10, "")),
+]
+
+
+def _fatura_do_cartao(pluggy_falsa, hoje=HOJE):
+    financas = _financas()
+    return service.fatura(financas, financas.contas()[1], hoje=hoje)
+
+
+def preparar_ciclo(estado):
+    estado["transacoes"] = copy.deepcopy({CONTA: DA_CONTA, CARTAO: DO_CICLO})
+    estado["faturas"][CARTAO] = [
+        _fatura("f1", "2026-08-03", "2026-08-10", 700.0),
+        _fatura("f2", "2026-09-03", "2026-09-10", 812.34),
+    ]
+    return estado
+
+
+@pytest.fixture()
+def ciclo(pluggy_falsa):
+    return preparar_ciclo(pluggy_falsa)
+
+
+def test_fatura_sem_fatura_e_o_que_veio_depois_do_fechamento_sem_billid(ciclo):
+    f = _fatura_do_cartao(ciclo)
+    assert f.fechada == service.Fechada(812.34, date(2026, 9, 3), date(2026, 9, 10))
+    # 80 + 60 − 15 de estorno; a "tardia" já tem fatura, o pagamento é interno
+    assert (f.sem_fatura, f.sem_fatura_n) == (125.0, 2)
+    assert (f.futuras, f.futuras_total) == (2, 50.0)
+    assert f.atrasada is False
+
+
+def test_fatura_so_pede_transacoes_do_cartao_a_partir_do_fechamento(ciclo):
+    _fatura_do_cartao(ciclo)
+    pedidos = [q for _m, c, q in ciclo["pedidos"] if c == "/v2/transactions"]
+    assert [(q["accountId"], q["dateFrom"]) for q in pedidos] == [(CARTAO, "2026-09-03")]
+
+
+def test_fatura_mais_nova_que_nao_veio_e_avisada(ciclo):
+    # 03/09 + 32 dias: já deveria ter fechado outra (medido: 33 e 39 dias nas do dono)
+    assert _fatura_do_cartao(ciclo, hoje=date(2026, 10, 5)).atrasada is True
+    assert _fatura_do_cartao(ciclo, hoje=date(2026, 10, 4)).atrasada is False
+
+
+def test_cartao_sem_fatura_fechada_olha_os_ultimos_31_dias(ciclo):
+    ciclo["faturas"][CARTAO] = []
+    f = _fatura_do_cartao(ciclo)
+    assert (f.fechada, f.atrasada) == (None, False)
+    pedidos = [q for _m, c, q in ciclo["pedidos"] if c == "/v2/transactions"]
+    assert pedidos[0]["dateFrom"] == "2026-08-19"  # 20/08, um dia antes pelo fuso
+    assert f.sem_fatura == 125.0  # quem já tem `billId` fica de fora mesmo sem a fatura na lista
 
 
 def test_ultima_fatura_fechada_e_a_de_vencimento_mais_recente(pluggy_falsa):
     pluggy_falsa["faturas"][CARTAO] = [
-        {"id": "f1", "dueDate": "2026-08-10T00:00:00.000Z", "totalAmount": 700.0},
-        {"id": "f2", "dueDate": "2026-09-10T00:00:00.000Z", "totalAmount": 812.34},
-        {"id": "f0", "dueDate": "2026-07-10T00:00:00.000Z", "totalAmount": 600.0},
+        _fatura("f1", "2026-08-03", "2026-08-10", 700.0),
+        _fatura("f2", "2026-09-03", "2026-09-10", 812.34),
+        _fatura("f0", "2026-07-03", "2026-07-10", 600.0),
     ]
     financas = _financas()
     fechada = financas.ultima_fatura_fechada(financas.contas()[1])
     # 00:00Z é 21:00 do dia 9 em Brasília, mas o vencimento é o dia 10: data, não instante.
-    assert fechada == service.Fechada(812.34, date(2026, 9, 10))
+    assert fechada == service.Fechada(812.34, date(2026, 9, 3), date(2026, 9, 10))
 
 
 @pytest.mark.parametrize("ruim", [None, "", "sem data", "2026-13-01"])
