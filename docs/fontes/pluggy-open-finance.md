@@ -67,9 +67,15 @@ dizia nessa data.
   configurações de conectores da aplicação, no Dashboard; antes disso aparecem só o Sandbox e os
   bancos. Depois: criar conexão → escolher "MeuPluggy" (não o banco) → entrar com a conta do Meu
   Pluggy → autorizar **um banco por vez**. Nomes exatos dos botões do Dashboard: não conferidos.
-- **Plano B, se o Dashboard não mostrar o ID criado:** a resposta gerada pelo MCP diz que o ID sai
-  do `onSuccess` do Connect Widget (`POST /connect_token` + widget numa página local). Não
-  construído; só se o caminho do Dashboard falhar.
+- **O dono não achou nada do MeuPluggy no Dashboard** (2026-09-26): foi feito o plano B,
+  `viking financas --conectar` (`lifeos/financas/conectar.py`). `POST /connect_token` → token
+  (campo `accessToken`, conferido na OpenAPI) → página em `127.0.0.1`, num caminho aleatório, com
+  o widget `PluggyConnect` (script `cdn.pluggy.ai/pluggy-connect/v2.7.0`, conferido que existe)
+  já em `connectorIds: [200]`/`selectedConnectorId: 200`, sem sandbox → no `onSuccess`, o ID
+  volta ao processo, que o confere com `GET /items/{id}`. Medido em `GET /connectors/200`: o
+  MeuPluggy é **OAuth** (sem campos de credencial), então o widget abre o login do Meu Pluggy.
+  **Não medido:** se o OAuth do widget funciona com a página em `http://127.0.0.1` sem
+  `oauthRedirectUri` — é a primeira coisa que o teste no Mac mostra.
 
 ## MCP de documentação
 

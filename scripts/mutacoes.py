@@ -426,6 +426,49 @@ MUTACOES = [
         "        return True",
         "tests/test_confirmacao.py::test_vivo_so_enquanto_serve_para_algo",
     ),
+    Mutacao(
+        "pluggy: escrita fora da lista (PIX, apagar conexão) chega à rede",
+        "src/lifeos/financas/pluggy.py",
+        '    if metodo != "GET" and (metodo, caminho) not in _ESCRITAS_PERMITIDAS:',
+        "    if False:",
+        "tests/test_financas.py::test_escrita_fora_da_lista_e_recusada_antes_da_rede",
+    ),
+    Mutacao(
+        "pluggy: a mensagem de erro ecoa o corpo (com o segredo)",
+        "src/lifeos/financas/pluggy.py",
+        'detalhe = json.loads(exc.read() or b"{}").get("codeDescription") or ""',
+        'detalhe = json.loads(exc.read() or b"{}").get("message") or ""',
+        "tests/test_financas.py::test_segredo_nunca_aparece_em_erro_nem_em_repr",
+    ),
+    Mutacao(
+        "pluggy: ID estranho vira caminho da API",
+        "src/lifeos/financas/pluggy.py",
+        "    if not _UUID.fullmatch(limpo):",
+        "    if False:",
+        "tests/test_financas.py::test_id_estranho_nao_vira_caminho",
+    ),
+    Mutacao(
+        "conectar: ID mandado sem o caminho secreto é aceito",
+        "src/lifeos/financas/conectar.py",
+        '            rota = self.path[len(base) :] if self.path.startswith(base + "/") else None',
+        '            rota = "/" + self.path.rsplit("/", 1)[-1]',
+        "tests/test_financas.py::test_id_mandado_por_outra_aba_sem_o_segredo_e_ignorado",
+    ),
+    Mutacao(
+        # Sem escape nenhum: tirar só o do "<" é equivalente (o ">" escapado já impede o fechamento).
+        "conectar: token com </script> fecha o script da página",
+        "src/lifeos/financas/conectar.py",
+        "    return json.dumps(valor).replace(",
+        "    return json.dumps(valor) if True else json.dumps(valor).replace(",
+        "tests/test_financas.py::test_token_malicioso_nao_fecha_o_script",
+    ),
+    Mutacao(
+        "conectar: 'fechou' antes do ID perde a conexão criada",
+        "src/lifeos/financas/conectar.py",
+        "            resultado.tem_id.wait(tolerancia_s)",
+        "            pass",
+        "tests/test_financas.py::test_fechou_antes_do_id_chegar_ainda_pega_o_id",
+    ),
 ]
 
 

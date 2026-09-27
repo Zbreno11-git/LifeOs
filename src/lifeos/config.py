@@ -150,6 +150,13 @@ GOOGLE_TOKEN_PATH = _path_env("VIKING_GOOGLE_TOKEN_PATH", SECRETS_DIR / "google_
 GMAIL_TOKEN_PATH = _path_env("VIKING_GMAIL_TOKEN_PATH", SECRETS_DIR / "google_token_gmail.json")
 REMINDERS_DB_PATH = _path_env("VIKING_DB_PATH", DATA_DIR / "viking.db")
 
+# Pluggy (finanças pelo Meu Pluggy, uso pessoal). Os IDs são os das conexões "espelho" criadas
+# pelo conector MeuPluggy na aplicação do dono (`viking financas --conectar`), não os do site do
+# Meu Pluggy. Ver docs/fontes/pluggy-open-finance.md.
+PLUGGY_CLIENT_ID = os.getenv("PLUGGY_CLIENT_ID") or ""
+PLUGGY_CLIENT_SECRET = os.getenv("PLUGGY_CLIENT_SECRET") or ""
+PLUGGY_ITEM_IDS = _lista_env("PLUGGY_ITEM_IDS")
+
 # Automação de navegador: o Viking chama o Jev por subprocesso, no ambiente do próprio Jev.
 # As chaves do Jev (OPENROUTER_API_KEY, TEXT_MODEL_*) ficam no .env DELE — aqui só o ponteiro.
 JEV_DIR = _path_env("VIKING_JEV_DIR", REPO_ROOT / "jev-ultrafast")

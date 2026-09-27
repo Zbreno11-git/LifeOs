@@ -29,6 +29,8 @@ def _sem_google_de_verdade(monkeypatch):
     monkeypatch.setattr(
         "lifeos.google_auth.InstalledAppFlow.from_client_secrets_file", staticmethod(_proibido)
     )
+    # A chave da Pluggy alcança PIX: nenhum teste fala com a Pluggy de verdade.
+    monkeypatch.setattr("lifeos.financas.pluggy._abrir", _proibido)
 
 
 @pytest.fixture(autouse=True)

@@ -47,6 +47,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     uma vez só e por 10 min (SQLite em `viking.db`); primeiro uso na limpeza do Gmail, a Sessão 5
     reaproveita
   - `calendar/` — Google Calendar (OAuth + operações), portado de um protótipo já validado
+  - `financas/` — Pluggy (Meu Pluggy, uso pessoal). Hoje só conectar (`conectar.py`: a janela
+    oficial da Pluggy numa página local em 127.0.0.1) e conferir as conexões; `pluggy.py` recusa
+    qualquer escrita fora de `/auth` e `/connect_token` antes da rede (a chave alcança PIX)
   - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
     desfazer por 7 dias). Só o `viking chat` registra essas tools, o MCP não (decisão do dono)
@@ -115,6 +118,8 @@ viking gmail --raio-x           # Gmail sem o Gemini (também --buscar Q, --ler 
                                # sem opção: não lidos de hoje)
 viking gmail --arquivar A,B     # propõe arquivar tudo destes remetentes e pede o código
 viking gmail --desfazer CODIGO  # devolve à caixa o que aquele código arquivou (até 7 dias)
+viking financas --conectar      # abre a janela da Pluggy (MeuPluggy) e mostra o ID da conexão
+viking financas                 # confere as conexões de PLUGGY_ITEM_IDS (sem saldo nem extrato)
 ```
 
 As ferramentas de navegador exigem `uv` no PATH e o clone do Jev (`VIKING_JEV_DIR`); o Viking o
@@ -166,7 +171,8 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   `VIKING_GOOGLE_CREDENTIALS_PATH`/`VIKING_GOOGLE_TOKEN_PATH`/`VIKING_DB_PATH`/`VIKING_UV_BIN`/
   `VIKING_GMAIL_TOKEN_PATH` (token próprio do Gmail)/`VIKING_BROWSER_TIMEOUT_S`
   (180s)/`VIKING_BROWSER_MAX_ACOES` (30)/`VIKING_PRECO_GEMINI_ENTRADA` e `_SAIDA` (tarifas da
-  estimativa de custo, US$ por 1M tokens)/`VIKING_TIMEZONE` (zona IANA usada para resolver "amanhã"
+  estimativa de custo, US$ por 1M tokens)/`PLUGGY_CLIENT_ID`/`PLUGGY_CLIENT_SECRET`/
+  `PLUGGY_ITEM_IDS` (IDs das conexões "espelho" do MeuPluggy, não os do site)/`VIKING_TIMEZONE` (zona IANA usada para resolver "amanhã"
   e montar janelas de dia no calendário e o instante de lembretes com prazo; sem ela, usa o offset
   fixo da máquina — não acompanha horário de verão). Copiar de `.env.example`. Caminhos relativos
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde

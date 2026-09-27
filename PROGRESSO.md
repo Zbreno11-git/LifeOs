@@ -10,12 +10,14 @@
 **Estado do repositório:** o commit de fechamento da Gmail 2 (conferir com `git log -1`) · igual
 ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Próximo passo exato:** abrir a Sessão Pluggy (`sessoes.md`) com a skill `software-build`. Antes
-de planejar, o dono precisa conectar os bancos no Meu Pluggy/Dashboard e pôr os IDs das conexões
-no `.env` como `PLUGGY_ITEM_IDS`; depois, as perguntas da abertura escritas na seção.
+**Próximo passo exato:** o dono roda `viking financas --conectar` no Mac (uma vez por banco) e
+cola a saída de `viking financas`. Com os IDs no `.env`, abrir a Sessão Pluggy (`sessoes.md`)
+com a skill `software-build` e as perguntas da abertura escritas na seção. Se a janela da Pluggy
+não voltar do login (OAuth em `127.0.0.1`), é o risco anotado em
+`docs/fontes/pluggy-open-finance.md`.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `631 passed`.
+`python -m pytest -q` → `668 passed`.
 
 **Não pode ser esquecido:** repo público (nada de remetente real, `project_id`/número do projeto,
 nem ID de conexão da Pluggy em commit); a chave da Pluggy alcança PIX — cliente só `GET` por

@@ -115,6 +115,75 @@ def _gmail(args: argparse.Namespace) -> int:
     return 0
 
 
+def _financas(args: argparse.Namespace) -> int:
+    """Conectar e conferir as conexões da Pluggy. Nunca mostra saldo nem transação."""
+    import webbrowser
+
+    from lifeos.config import PLUGGY_ITEM_IDS
+    from lifeos.financas import conectar, pluggy
+
+    try:
+        cliente = pluggy.cliente()
+    except pluggy.ErroPluggy as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        return 2
+
+    def descrever(item_id: str) -> str:
+        item = cliente.conexao(item_id)
+        contas = cliente.get("/accounts", itemId=item_id).get("results") or []
+        tipos = ", ".join(
+            f"{c.get('name') or '?'} ({c.get('type')}/{c.get('subtype')})" for c in contas
+        )
+        conector = (item.get("connector") or {}).get("name") or "?"
+        return (
+            f"{conector}: {item.get('status')} · atualizado {item.get('lastUpdatedAt') or '?'} · "
+            f"{len(contas)} conta(s){': ' + tipos if tipos else ''}"
+        )
+
+    if args.conectar:
+        try:
+            token = cliente.token_de_conexao()
+        except pluggy.ErroPluggy as exc:
+            print(f"❌ {exc}", file=sys.stderr)
+            return 2
+
+        def abrir(url: str) -> None:
+            print(f"Abrindo o navegador em {url} (se não abrir, cole o endereço).")
+            print("Dentro da janela da Pluggy: entre no Meu Pluggy e autorize UM banco.")
+            webbrowser.open(url)
+
+        resultado = conectar.servir(token, abrir=abrir)
+        if resultado.item_id:
+            try:
+                print(f"✅ Conectado: {descrever(resultado.item_id)}")
+            except pluggy.ErroPluggy as exc:
+                print(f"⚠️ Conectado, mas não consegui conferir agora: {exc}")
+            ids = ",".join(dict.fromkeys([*PLUGGY_ITEM_IDS, resultado.item_id]))
+            print("Coloque (ou troque) esta linha no .env da raiz:")
+            print(f"PLUGGY_ITEM_IDS={ids}")
+            return 0
+        if resultado.erro:
+            print(f"❌ A Pluggy devolveu um erro: {resultado.erro}", file=sys.stderr)
+            return 2
+        if resultado.fechou:
+            print("A janela foi fechada sem conectar nenhum banco.")
+        else:
+            print("Tempo esgotado sem resposta da janela da Pluggy.")
+        return 1
+
+    if not PLUGGY_ITEM_IDS:
+        print("Nenhuma conexão no .env (PLUGGY_ITEM_IDS). Rode `viking financas --conectar`.")
+        return 1
+    falhou = False
+    for item_id in PLUGGY_ITEM_IDS:
+        try:
+            print(f"- {descrever(item_id)}")
+        except pluggy.ErroPluggy as exc:
+            falhou = True
+            print(f"- ❌ {item_id[:8]}…: {exc}")
+    return 2 if falhou else 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="viking")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -170,6 +239,15 @@ def main() -> None:
     acao.add_argument("--desfazer", metavar="CODIGO", help="Desfaz uma limpeza (até 7 dias)")
     gmail.add_argument("--max", type=int, default=10, help="Máximo de resultados da busca")
 
+    financas = subparsers.add_parser(
+        "financas", help="Pluggy: conecta um banco ou confere as conexões (padrão: conferir)"
+    )
+    financas.add_argument(
+        "--conectar",
+        action="store_true",
+        help="Abre a janela oficial da Pluggy no navegador e mostra o ID da conexão criada",
+    )
+
     args = parser.parse_args()
 
     if args.command == "chat":
@@ -184,6 +262,8 @@ def main() -> None:
         sys.exit(_browser(args, navegador))
     elif args.command == "gmail":
         sys.exit(_gmail(args))
+    elif args.command == "financas":
+        sys.exit(_financas(args))
 
 
 if __name__ == "__main__":

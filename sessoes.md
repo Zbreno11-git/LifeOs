@@ -250,9 +250,10 @@ Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 - **Credenciais:** `PLUGGY_CLIENT_ID`/`PLUGGY_CLIENT_SECRET` já estão no `.env` da raiz; `/auth`
   respondeu 200 e o conector MeuPluggy (id 200) está disponível. Falta o **ID de cada conexão**
   (a listagem vem desligada: 403) — sai do Dashboard.
-- **Primeiro passo (do dono, fora do código, ~10 min):** conferir os bancos em `meu.pluggy.ai`;
-  no Dashboard, conectar o MeuPluggy uma vez **por banco**; anotar o ID de cada item (vai para o
-  `.env` como `PLUGGY_ITEM_IDS`, nunca para commit).
+- **Primeiro passo (do dono, no Mac):** `viking financas --conectar` uma vez por banco (Nubank e
+  Itaú) e pôr os IDs no `.env` como `PLUGGY_ITEM_IDS`, nunca em commit; `viking financas` confere.
+  O caminho pelo Dashboard não existiu para o dono (2026-09-26); o comando foi feito antes da
+  sessão para destravá-la.
 - **Entrega proposta (1 sessão de ~1h30–2h):** `lifeos/financas/` com cliente **só `GET`** por
   construção (a mesma chave alcança PIX e apagar item — ver a fonte), chave de 2 h em cache,
   contas e transações por período (`/v2/transactions`, cursor); tools no chat para saldo, gastos

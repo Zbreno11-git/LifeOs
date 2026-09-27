@@ -19,7 +19,7 @@
 | 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 4 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar |
-| 4 | Teste que não separava o certo do errado | 6 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
+| 4 | Teste que não separava o certo do errado | 7 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 3 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 4 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 5 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -153,6 +153,13 @@ falha, escrevi `assert "pode ser tentado de novo" in texto or "tenta de novo" in
 pelo caminho da falha parcial e nunca exercitava o outro (erro de login), que era o que a
 correção mudou. Pego na segunda passada; virou dois testes, um por caminho. Segunda vez da mesma
 forma: `or` numa asserção agora é sinal de parar e separar.
+
+**2026-09-27 — teste de corrida que passava por sorte (plano B da Pluggy).** O teste do "fechou
+antes do ID" mandava os dois avisos um atrás do outro: sem a tolerância, o ID às vezes chegava
+antes de o servidor fechar. A mutação morreu numa rodada e sobreviveu na seguinte. Agora o ID
+chega 0,5 s depois, e a mutação morre três vezes seguidas. Na mesma rodada, uma mutação que
+tirava só o escape do `<` era equivalente (o `>` escapado já impede o `</script>`): trocada pela
+que tira todos. O que tem de novo: uma mutação morta uma vez não prova um teste de tempo.
 
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 

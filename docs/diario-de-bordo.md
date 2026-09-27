@@ -870,3 +870,22 @@ Gemini pedir o nome do remetente em vez de entender "esses" — a regra "só o q
 está mais estrita do que precisa; e a instrução para código vivo sem verbo não diz o que o código
 foi. Os dois são de texto, não de segurança; anotados no backlog.
 
+### 2026-09-27 — Pluggy: plano B para conectar (`viking financas --conectar`)
+
+**Medido.** Os IDs de `meu.pluggy.ai/connections/...` que o dono mandou (Nubank e Itaú) dão
+**404** para as credenciais da aplicação dele: são da aplicação do Meu Pluggy. O dono não achou
+nada do MeuPluggy no Dashboard. `GET /connectors/200`: o MeuPluggy é OAuth, sem campos de
+credencial. `connect_token` devolve `accessToken` (OpenAPI). O script do widget existe na CDN.
+
+**Feito.** `lifeos/financas/`: cliente da Pluggy que recusa qualquer escrita fora de `/auth` e
+`/connect_token` **antes** da rede (a chave alcança PIX), guarda a chave por 110 min e nunca põe
+o segredo nem o corpo do erro numa mensagem; `viking financas --conectar` serve a janela oficial
+da Pluggy numa página em `127.0.0.1` (caminho aleatório, token escapado dentro do `<script>`),
+recebe o ID do `onSuccess`, confere na API e mostra a linha do `.env`; `viking financas` confere
+as conexões (banco, estado, contas — sem saldo). Nenhum teste fala com a Pluggy (trava no
+`conftest`). Portões: `668 passed`; mutações `58 · mortas pelo teste esperado: 58` (6 novas).
+
+**Erro meu (classe 4).** Um teste de corrida passava por sorte e uma mutação era equivalente —
+achados porque a rodada completa discordou da parcial. **Não medido:** o OAuth do widget numa
+página em `127.0.0.1`.
+
