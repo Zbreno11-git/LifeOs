@@ -110,4 +110,8 @@ item de verdade): não autenticar esse MCP numa sessão de agente sem necessidad
 - **Cartão:** `creditData` tem `creditLimit`, `availableCreditLimit`, `balanceCloseDate`,
   `balanceDueDate`, `minimumPayment`; `/bills` devolve as faturas fechadas (`totalAmount`,
   `dueDate`, `billClosingDate`).
+- **Datas de fatura são datas, não instantes:** `dueDate` e `billClosingDate` vêm sempre às
+  `T00:00:00.000Z` (25 de 25 faturas, medido em 2026-09-27; só a hora foi lida). Convertidas para
+  Brasília, cairiam no dia anterior; `balanceDueDate` vem já sem hora. As transações, ao
+  contrário, são instantes (`03:00Z` é meia-noite em Brasília) e se convertem.
 

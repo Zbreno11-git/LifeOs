@@ -5,25 +5,29 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso — antes de um compact
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso (C1 fechado)
 
 **Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
-anterior é `ca76a8b`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+anterior é `8cba655`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** C1 pela metade. `src/lifeos/financas/service.py` está **escrito e sem teste**
-(ruff limpo, importa; ninguém o chama ainda, então a suíte segue `668 passed`). Tem: `Financas`
-(conexões, contas, categorias em português, transações com cursor e período cortado no fuso),
-`gastos()` e `buscar()`. Falta dele: a fatura como resposta (`ultima_fatura_fechada` existe).
+**Onde parou:** C1 ✅ (`tests/test_financas_dados.py`, 54 testes; suíte `722 passed`). No C1,
+duas mudanças no `service.py`: IDs lidos da config na hora (não na importação) e `ignoradas`
+(transação sem data ou valor fica fora da conta, mas a resposta diz quantas). E um defeito
+achado medindo: datas de fatura vêm às `T00:00:00.000Z` (25/25, 2026-09-27) e iam para o dia
+anterior ao converter para Brasília → `_data()` lê a data sem fuso.
 
-**Próximo passo exato:** escrever `tests/test_financas_dados.py` com uma Pluggy falsa **no formato
-medido** (ver `docs/fontes/pluggy-open-finance.md`, "Formato real dos dados"): gasto negativo na
-conta e positivo no cartão; `Credit card payment` nas duas contas; parcelas `PENDING` com data no
-futuro; transação sem categoria; `paymentData` com `documentNumber`; datas `...T03:00:00.000Z` e
-`...T02:59:00.000Z`; descrição com CPF e com injeção. Esperado: os testes de `gastos()` caem se o
-sentido vier do sinal, se a fatura paga contar em dobro ou se parcela futura entrar no total.
-**Fixar `service.TIMEZONE` em `ZoneInfo("America/Sao_Paulo")` nos testes:** o VPS está em UTC
-(sem `VIKING_TIMEZONE`, o Viking usa o fuso da máquina) e ali `02:59Z` cai no mesmo dia — medido.
-Depois, C2–C7 do plano abaixo.
+**Próximo passo exato:** C2 — `src/lifeos/financas/tools.py` com `responder_saldo`,
+`responder_gastos(desde, ate)`, `responder_buscar(texto, desde, ate, valor)`, `responder_fatura`,
+no molde de `gmail/tools.py` (descrições redigidas e dentro do bloco de não confiável; valores
+em R$ com vírgula; "dados de <última sincronização>"; aviso se passar de `DESATUALIZADO`) +
+testes de texto em `tests/test_financas_dados.py` ou arquivo irmão. Depois C3–C7.
+
+**Erros desta sessão (vão para `docs/erros.md` no C6):** (1) `service.py` tratou `dueDate` de
+fatura como instante sem medir a hora, e o teste que escrevi logo depois afirmava o dia errado
+(classe 3: o teste copiou a implementação em vez do dado); (2) `\u202e` escrito pela ferramenta
+virou o caractere bidi literal no teste de novo — armadilha já no `AGENTS.md`, o `ruff` pegou
+(classe 5); (3) a Pluggy falsa filtrava a data ilegível antes do código testado, e três testes
+caíram pelo motivo errado (classe 4).
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo;
 `docs/fontes/pluggy-open-finance.md` (custo, caminho, formato real); `docs/decisoes.md` (D21,
@@ -53,7 +57,7 @@ do gasto, PIX para outros conta como gasto em linha própria, parcela futura for
 o app do banco.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `668 passed`; `python -c "import lifeos.financas.service"` sem erro.
+`python -m pytest -q` → `722 passed`; `python -c "import lifeos.financas.service"` sem erro.
 
 ## Plano — Sessão Pluggy: finanças no chat, só leitura
 
@@ -89,7 +93,7 @@ própria ou pela Enrichment API; alertas; qualquer escrita (PIX, mudar categoria
 ### Checkpoints
 | C | Fecha quando | Estado |
 |---|---|---|
-| C1 | `service.py`: contas, transações (cursor, período), normalização e classificação + fake no formato medido + testes | ⬜ |
+| C1 | `service.py`: contas, transações (cursor, período), normalização e classificação + fake no formato medido + testes | ✅ 54 testes |
 | C2 | respostas: saldo, gastos, busca, fatura (`tools.py`) + testes de conta (sinal, parcelas, dobra) | ⬜ |
 | C3 | 4 tools no chat (sem future import, regras nas docstrings) + testes de segurança (sem documento/número, injeção na descrição no bloco, MCP sem finanças) | ⬜ |
 | C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ⬜ |

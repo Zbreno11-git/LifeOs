@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 from lifeos.browser._redacao import limpar_controles
-from lifeos.config import PLUGGY_ITEM_IDS, TIMEZONE
+from lifeos.config import TIMEZONE
 from lifeos.financas import pluggy
 
 MAX_BUSCA = 20
@@ -122,6 +122,16 @@ def _dia(texto) -> date | None:
     return instante.astimezone(TIMEZONE).date() if instante else None
 
 
+def _data(texto) -> date | None:
+    """Data de calendário (vencimento, fechamento): a Pluggy manda como meia-noite UTC
+    (`T00:00:00.000Z` nas 25 faturas do dono, medido em 2026-09-27). Converter para Brasília
+    daria o dia anterior: vale o que está escrito."""
+    try:
+        return date.fromisoformat(str(texto)[:10])
+    except ValueError:
+        return None
+
+
 def _numero(valor) -> float | None:
     if isinstance(valor, bool) or not isinstance(valor, (int, float)):
         return None
@@ -149,14 +159,18 @@ class Financas:
     """Uma consulta: guarda contas e categorias enquanto responde uma pergunta."""
 
     def __init__(self, cliente: pluggy.Cliente, item_ids=None) -> None:
+        from lifeos import config  # lido na hora, não na importação
+
         self._cliente = cliente
-        self._ids = tuple(item_ids if item_ids is not None else PLUGGY_ITEM_IDS)
+        self._ids = tuple(item_ids if item_ids is not None else config.PLUGGY_ITEM_IDS)
         if not self._ids:
             raise SemConexoes(
                 "nenhuma conexão no .env (PLUGGY_ITEM_IDS); rode `viking financas --conectar`"
             )
         self._contas: list[tuple[Conta, dict]] | None = None
         self._categorias: dict[str, str] | None = None
+        # Transações sem data ou valor legível: ficam fora da conta, mas a resposta diz quantas.
+        self.ignoradas = 0
 
     def conexoes(self) -> list[Conexao]:
         saida = []
@@ -180,7 +194,7 @@ class Financas:
                         saldo=_numero(bruta.get("balance")),
                         limite=_numero(credito.get("creditLimit")),
                         disponivel=_numero(credito.get("availableCreditLimit")),
-                        vencimento=_dia(credito.get("balanceDueDate")),
+                        vencimento=_data(credito.get("balanceDueDate")),
                     )
                     self._contas.append((conta, bruta))
         return self._contas
@@ -210,6 +224,7 @@ class Financas:
             (ate + timedelta(days=1)).isoformat(),
         )
         saida: list[Transacao] = []
+        self.ignoradas = 0
         for conta, _ in self._brutas():
             cursor = None
             for _pagina in range(MAX_PAGINAS):
@@ -222,7 +237,9 @@ class Financas:
                 )
                 for bruta in resposta.get("results") or []:
                     transacao = self._transacao(bruta, conta, nomes)
-                    if transacao and desde <= transacao.dia <= ate:
+                    if transacao is None:
+                        self.ignoradas += 1
+                    elif desde <= transacao.dia <= ate:
                         saida.append(transacao)
                 cursor = resposta.get("next")
                 if not cursor:
@@ -260,7 +277,7 @@ class Financas:
 
     def ultima_fatura_fechada(self, conta: Conta) -> Fechada | None:
         faturas = self._cliente.get("/bills", accountId=conta.id).get("results") or []
-        datadas = [(f, _dia(f.get("dueDate"))) for f in faturas]
+        datadas = [(f, _data(f.get("dueDate"))) for f in faturas]
         datadas = [(f, d) for f, d in datadas if d is not None]
         if not datadas:
             return None
@@ -284,6 +301,7 @@ class Gastos:
     futuras: int  # saídas com data depois de hoje (parcelas), fora do total
     futuras_total: float
     pendentes: int  # dentro do total, ainda não confirmadas pelo banco
+    ignoradas: int  # vieram sem data ou valor legível: fora de tudo, mas a resposta diz
 
 
 def gastos(financas: Financas, desde: date, ate: date, *, hoje: date | None = None) -> Gastos:
@@ -317,6 +335,7 @@ def gastos(financas: Financas, desde: date, ate: date, *, hoje: date | None = No
         futuras=len(futuras),
         futuras_total=round(sum(t.valor for t in futuras), 2),
         pendentes=sum(1 for t in saidas if t.pendente),
+        ignoradas=financas.ignoradas,
     )
 
 
