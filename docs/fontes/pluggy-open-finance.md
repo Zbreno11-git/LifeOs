@@ -87,3 +87,27 @@ do VPS em 2026-09-26). As ferramentas de documentação (`query`, `search_docs`,
 `list_endpoints`, `get_api_endpoint`) funcionam sem login. O mesmo servidor tem ferramentas
 **autenticadas que escrevem** (`create_request`, `update_request`, `delete_request`, que apaga
 item de verdade): não autenticar esse MCP numa sessão de agente sem necessidade.
+
+## Formato real dos dados (medido nas conexões do dono, 2026-09-27; só estrutura, sem valores)
+
+- **Sinal do `amount` muda por tipo de conta:** conta corrente, `DEBIT` vem **negativo**; cartão,
+  `DEBIT` vem **positivo**. O sentido sai de `type` (`DEBIT`/`CREDIT`), nunca do sinal.
+- **Parcelas no futuro:** no cartão, 144 transações parceladas (`creditCardMetadata` com
+  `installmentNumber`/`totalInstallments`/`purchaseDate`/`billId`) e 45 parcelas `PENDING` com data
+  até 2027. "Gasto do mês" não pode somar data depois de hoje.
+- **O mesmo dinheiro aparece duas vezes:** pagar a fatura é `Credit card payment` na conta
+  corrente e de novo no cartão; há também `Same person transfer`, `Transfer - Internal`,
+  investimentos (`Investments`, `Fixed income`, `Variable income`, `Proceeds interests and
+  dividends`) e `operationType` `RESGATE_APLIC_FINANCEIRA`/`RENDIMENTO_APLIC_FINANCEIRA`/
+  `PAGAMENTO_FATURA`/`TRANSFERENCIA_MESMA_INSTITUICAO`. Nada disso é gasto.
+- **Categoria:** em inglês (`category`), com `categoryId`; `/categories` tem 130, com
+  `descriptionTranslated`. Faltam em parte: 6 de 65 numa conta, 31 de 265 num cartão.
+- **`merchant` sempre vazio**; quem diz o que foi é `description`.
+- **`paymentData` traz o CPF/CNPJ da contraparte** (`payer`/`receiver.documentNumber`) e dados
+  de conta: não vai ao Gemini. `account.number`/`taxNumber`/`owner` também não.
+- **Uma página de `/v2/transactions` sem filtro trouxe tudo** (até 351 itens, `next` vazio); o
+  cursor existe mesmo assim.
+- **Cartão:** `creditData` tem `creditLimit`, `availableCreditLimit`, `balanceCloseDate`,
+  `balanceDueDate`, `minimumPayment`; `/bills` devolve as faturas fechadas (`totalAmount`,
+  `dueDate`, `billClosingDate`).
+

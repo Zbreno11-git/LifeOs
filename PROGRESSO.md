@@ -5,24 +5,68 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-26, Gmail 2 fechada; próxima: Sessão Pluggy
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy aberta (plano escrito, código começando)
 
-**Estado do repositório:** o commit de fechamento da Gmail 2 (conferir com `git log -1`) · igual
-ao remoto · travas: nenhuma · execuções em background: nenhuma.
+**Estado:** conexões validadas no Mac (Nubank e Itaú; IDs no `.env` do Mac, e também ditos pelo
+dono no chat — nunca em commit). Credenciais no `.env` do VPS; os IDs **não** estão no `.env` do
+VPS (medições passam por variável de ambiente no comando).
 
-**Próximo passo exato:** conexões validadas no Mac em 2026-09-27 (Nubank e Itaú, 2 contas
-correntes + 2 cartões). Abrir a Sessão Pluggy (`sessoes.md`) com a skill `software-build`: as
-perguntas da abertura, depois o plano.
+**Próximo passo exato:** o primeiro checkpoint não marcado abaixo.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `668 passed`.
+`python -m pytest -q` → 668 passed ou mais.
 
-**Não pode ser esquecido:** repo público (nada de remetente real, `project_id`/número do projeto,
-nem ID de conexão da Pluggy em commit); a chave da Pluggy alcança PIX — cliente só `GET` por
-construção; formatar só os arquivos editados (baseline 7); roteiro do Mac começa com
-`git pull && git log --oneline -1`; `scripts/mutacoes.py` nunca com `timeout`.
+**Não pode ser esquecido:** repo público — nada de ID de conexão, nome de conta, valor ou
+descrição real em commit, nem nos testes; o cliente só lê (escrita fora de `/auth`/`/connect_token`
+recusada antes da rede); `scripts/mutacoes.py` nunca com `timeout`.
 
-> O plano da Gmail 2 fica abaixo como registro até a Sessão Pluggy abrir o dela.
+## Plano — Sessão Pluggy: finanças no chat, só leitura
+
+### O que entrega
+No `viking chat`: "quanto tenho?", "quanto gastei este mês e em quê?", "paguei o aluguel?",
+"quanto está a fatura?" — respondidos com dados da Pluggy consultados na hora, sempre dizendo de
+quando é a última sincronização. `viking financas --saldo/--gastos/--buscar/--fatura` faz o
+mesmo sem o Gemini.
+
+### O que NÃO faz
+Cópia local e RAG (decisão do dono: consultar toda vez); MCP (decisão do dono); categorização
+própria ou pela Enrichment API; alertas; qualquer escrita (PIX, mudar categoria).
+
+### Respostas do dono (2026-09-27)
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| O que perguntar | saldo, gastos do período, buscar transação, fatura | 4 tools |
+| O que vai ao Gemini | valores e descrições | descrição redigida (regra das páginas) e no bloco de não confiável; nunca `paymentData`, número de conta, CPF do titular |
+| Onde fica | consultar toda vez | nada financeiro gravado em disco |
+| Acesso | só no chat | teste que o MCP não expõe |
+
+### Decisões técnicas minhas
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| Sentido pela `type`, valor sempre positivo | o sinal muda entre conta e cartão (medido) | — |
+| Movimento entre contas próprias e investimentos fora do "gasto", mostrado à parte | senão a fatura paga conta duas vezes (medido) | o dono querer ver tudo junto |
+| PIX/transferência para outros conta como gasto, em linha própria | é dinheiro que saiu; separado para não parecer compra | o dono decidir que não é gasto |
+| Data depois de hoje fora do "gasto do mês", contada à parte ("parcelas futuras") | 45 parcelas pendentes até 2027 (medido) | — |
+| Dia da transação no fuso do Viking | a data vem em UTC | — |
+| Categoria em português por `/categories` (`descriptionTranslated`), guardada no processo | a taxonomia é da Pluggy, não dado do dono | — |
+| `lifeos/financas/service.py` (dados) + `tools.py` (texto do Gemini), como o Gmail | fonte única e testável | — |
+
+### Checkpoints
+| C | Fecha quando | Estado |
+|---|---|---|
+| C1 | `service.py`: contas, transações (cursor, período), normalização e classificação + fake no formato medido + testes | ⬜ |
+| C2 | respostas: saldo, gastos, busca, fatura (`tools.py`) + testes de conta (sinal, parcelas, dobra) | ⬜ |
+| C3 | 4 tools no chat (sem future import, regras nas docstrings) + testes de segurança (sem documento/número, injeção na descrição no bloco, MCP sem finanças) | ⬜ |
+| C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ⬜ |
+| C5 | mutações novas mortas; suíte; ruff; baseline 7 | ⬜ |
+| C6 | docs + revisão em duas passadas + commit + push | ⬜ |
+| C7 | Mac: as quatro perguntas no CLI e no chat, conferidas com o app do banco | ⬜ |
+
+### 🐞 Previsto → Depurar
+- Total de gasto que não bate com o app do banco → primeiro o sinal por tipo, depois fatura paga
+  em dobro, depois parcela futura (as três armadilhas medidas).
+- Mês "errado" nas bordas → data em UTC; converter para o fuso antes de agrupar.
+- Categoria vazia → "sem categoria", nunca some da soma.
 
 ## Plano — Sessão Gmail 2: limpar a caixa (só arquivar, lista aprovada)
 
