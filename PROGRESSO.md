@@ -5,10 +5,10 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso (C1–C3 fechados)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso (C1–C4 fechados)
 
 **Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
-anterior é `0a93eeb`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+anterior é `fda1805`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
 **Onde parou:** C1 ✅ e C2 ✅ (suíte `769 passed`). C2 = `src/lifeos/financas/tools.py`
 (`responder_saldo/gastos/buscar/fatura`, `mensagem_de_erro`, `periodo`, `valor_pedido`) +
@@ -19,12 +19,13 @@ não a fatura; `balanceDueDate` é o vencimento da fatura **já fechada**; a úl
 fatura de cada compra. Por isso a fatura responde com fatos rotulados (última fechada, compras
 sem fatura depois dela, parcelas futuras, limite usado) e nunca inventa "vence em".
 
-**Próximo passo exato:** C4 — `viking financas --saldo`, `--gastos [DESDE [ATE]]`,
-`--buscar TEXTO` (com `--valor`, `--desde`, `--ate`) e `--fatura` em `cli.py:_financas`, cada um
-imprimindo o mesmo `tools.responder_*` que o chat usa (sem o Gemini), com saída 2 em erro da
-Pluggy; testes no molde de `test_cli_conferir_*` em `tests/test_financas.py`. C3 ✅: as quatro
-tools estão em `FERRAMENTAS`, com regra no prompt e em `_REGRAS`, e
-`test_servidor_mcp_nao_expoe_financas`. Depois C5–C7.
+**Próximo passo exato:** C5 — mutações novas em `scripts/mutacoes.py` para as regras de
+finanças (sentido pelo sinal, fatura em dobro, parcela futura no total, fuso das bordas, margem
+de um dia no pedido, data de fatura como instante, descrição fora do bloco/sem redação, estorno
+como renda, `billId` ignorado na fatura), cada uma com o teste que deve matá-la; rodar
+`python scripts/mutacoes.py` sem `timeout`, esperado todas mortas pelo teste certo. C4 ✅:
+`viking financas --saldo | --gastos | --buscar T | --fatura` (+ `--valor`, `--desde`, `--ate`),
+o mesmo texto do chat, erro → stderr e saída 2. Depois C6–C7.
 
 **Erros desta sessão (vão para `docs/erros.md` no C6):** (1) `service.py` tratou `dueDate` de
 fatura como instante sem medir a hora, e o teste que escrevi logo depois afirmava o dia errado
@@ -63,7 +64,7 @@ do gasto, PIX para outros conta como gasto em linha própria, parcela futura for
 o app do banco.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `788 passed`; `python -c "import lifeos.financas.service"` sem erro.
+`python -m pytest -q` → `796 passed`; `python -c "import lifeos.financas.service"` sem erro.
 
 ## Plano — Sessão Pluggy: finanças no chat, só leitura
 
@@ -102,7 +103,7 @@ própria ou pela Enrichment API; alertas; qualquer escrita (PIX, mudar categoria
 | C1 | `service.py`: contas, transações (cursor, período), normalização e classificação + fake no formato medido + testes | ✅ 54 testes |
 | C2 | respostas: saldo, gastos, busca, fatura (`tools.py`) + testes de conta (sinal, parcelas, dobra) | ✅ 43 testes |
 | C3 | 4 tools no chat (sem future import, regras nas docstrings) + testes de segurança (sem documento/número, injeção na descrição no bloco, MCP sem finanças) | ✅ |
-| C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ⬜ |
+| C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ✅ |
 | C5 | mutações novas mortas; suíte; ruff; baseline 7 | ⬜ |
 | C6 | docs + revisão em duas passadas + commit + push | ⬜ |
 | C7 | Mac: as quatro perguntas no CLI e no chat, conferidas com o app do banco | ⬜ |

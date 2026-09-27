@@ -158,13 +158,16 @@ def mensagem_de_erro(exc: Exception) -> str:
     return f"Não consegui falar com a Pluggy agora: {detalhe}. Nada foi alterado."
 
 
-def _responder(montar) -> str:
+def _responder(montar, levantar: bool) -> str:
+    """O chat recebe a frase do erro; a CLI (`levantar=True`) recebe o erro, para sair com 2."""
     try:
         financas = _abrir()
         agora = _agora()
         corpo = montar(financas, agora)
         rodape = _sincronizacao(financas, agora)
     except pluggy.ErroPluggy as exc:
+        if levantar:
+            raise
         return mensagem_de_erro(exc)
     return "\n".join(p for p in (corpo, rodape) if p)
 
@@ -196,8 +199,8 @@ def _texto_do_saldo(financas: service.Financas, _momento: datetime) -> str:
     return "\n".join(linhas)
 
 
-def responder_saldo() -> str:
-    return _responder(_texto_do_saldo)
+def responder_saldo(*, levantar: bool = False) -> str:
+    return _responder(_texto_do_saldo, levantar)
 
 
 def _texto_dos_gastos(g: service.Gastos, hoje: date) -> str:
@@ -232,16 +235,18 @@ def _texto_dos_gastos(g: service.Gastos, hoje: date) -> str:
     return "\n".join(linhas)
 
 
-def responder_gastos(desde: str = "", ate: str = "") -> str:
+def responder_gastos(desde: str = "", ate: str = "", *, levantar: bool = False) -> str:
     def montar(financas, agora):
         hoje = agora.date()
         inicio, fim = periodo(desde, ate, hoje=hoje, padrao_desde=hoje.replace(day=1))
         return _texto_dos_gastos(service.gastos(financas, inicio, fim, hoje=hoje), hoje)
 
-    return _responder(montar)
+    return _responder(montar, levantar)
 
 
-def responder_buscar(texto: str = "", desde: str = "", ate: str = "", valor: str = "") -> str:
+def responder_buscar(
+    texto: str = "", desde: str = "", ate: str = "", valor: str = "", *, levantar: bool = False
+) -> str:
     def montar(financas, agora):
         hoje = agora.date()
         inicio, fim = periodo(
@@ -262,7 +267,7 @@ def responder_buscar(texto: str = "", desde: str = "", ate: str = "", valor: str
         linhas.append(_dados(achadas))
         return "\n".join(linhas)
 
-    return _responder(montar)
+    return _responder(montar, levantar)
 
 
 def _texto_da_fatura(f: service.Fatura, hoje: date) -> str:
@@ -300,7 +305,7 @@ def _texto_da_fatura(f: service.Fatura, hoje: date) -> str:
     return "\n".join(linhas)
 
 
-def responder_fatura() -> str:
+def responder_fatura(*, levantar: bool = False) -> str:
     def montar(financas, agora):
         hoje = agora.date()
         cartoes = [c for c in financas.contas() if c.cartao]
@@ -313,7 +318,7 @@ def responder_fatura() -> str:
         )
         return "\n".join(partes)
 
-    return _responder(montar)
+    return _responder(montar, levantar)
 
 
 # --- tools do Gemini: docstring = o que o modelo lê; o corpo só devolve o texto ------------

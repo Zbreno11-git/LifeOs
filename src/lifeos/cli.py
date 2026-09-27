@@ -115,12 +115,42 @@ def _gmail(args: argparse.Namespace) -> int:
     return 0
 
 
+def _financas_consulta(args: argparse.Namespace) -> int | None:
+    """Saldo, gastos, busca e fatura: o mesmo texto que o chat recebe, sem o Gemini."""
+    from lifeos.financas import pluggy, tools
+
+    buscar = args.buscar is not None or bool(args.valor)
+    if not (args.saldo or args.gastos or buscar or args.fatura):
+        return None
+    desde, ate = args.desde or "", args.ate or ""
+    try:
+        if args.saldo:
+            texto = tools.responder_saldo(levantar=True)
+        elif args.gastos:
+            texto = tools.responder_gastos(desde, ate, levantar=True)
+        elif buscar:
+            texto = tools.responder_buscar(
+                args.buscar or "", desde, ate, args.valor or "", levantar=True
+            )
+        else:
+            texto = tools.responder_fatura(levantar=True)
+    except pluggy.ErroPluggy as exc:
+        print(f"❌ {tools.mensagem_de_erro(exc)}", file=sys.stderr)
+        return 2
+    print(texto)
+    return 0
+
+
 def _financas(args: argparse.Namespace) -> int:
-    """Conectar e conferir as conexões da Pluggy. Nunca mostra saldo nem transação."""
+    """Conectar, conferir as conexões e (com --saldo/--gastos/--buscar/--fatura) consultar."""
     import webbrowser
 
     from lifeos.config import PLUGGY_ITEM_IDS
     from lifeos.financas import conectar, pluggy
+
+    consulta = _financas_consulta(args)
+    if consulta is not None:
+        return consulta
 
     try:
         cliente = pluggy.cliente()
@@ -241,13 +271,24 @@ def main() -> None:
     gmail.add_argument("--max", type=int, default=10, help="Máximo de resultados da busca")
 
     financas = subparsers.add_parser(
-        "financas", help="Pluggy: conecta um banco ou confere as conexões (padrão: conferir)"
+        "financas",
+        help="Pluggy: conecta um banco, confere as conexões (padrão) ou consulta, só leitura",
     )
-    financas.add_argument(
+    o_que = financas.add_mutually_exclusive_group()
+    o_que.add_argument(
         "--conectar",
         action="store_true",
         help="Abre a janela oficial da Pluggy no navegador e mostra o ID da conexão criada",
     )
+    o_que.add_argument("--saldo", action="store_true", help="Saldo das contas e limite do cartão")
+    o_que.add_argument(
+        "--gastos", action="store_true", help="Gastos do período (padrão: o mês até hoje)"
+    )
+    o_que.add_argument("--buscar", metavar="TEXTO", help="Transações com esse pedaço na descrição")
+    o_que.add_argument("--fatura", action="store_true", help="Faturas e limite dos cartões")
+    financas.add_argument("--valor", help="Com --buscar (ou sozinho): valor, ex.: 1500 ou 89,90")
+    financas.add_argument("--desde", metavar="AAAA-MM-DD", help="Início do período")
+    financas.add_argument("--ate", metavar="AAAA-MM-DD", help="Fim do período (padrão: hoje)")
 
     args = parser.parse_args()
 

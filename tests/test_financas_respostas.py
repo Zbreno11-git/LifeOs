@@ -343,3 +343,62 @@ def test_servidor_mcp_nao_expoe_financas():
     assert not any(p in n for n in nomes_mcp for p in ("saldo", "gasto", "transac", "fatura"))
     fonte = inspect.getsource(inspect.getmodule(mcp))
     assert "financas" not in fonte and "pluggy" not in fonte.lower()
+
+
+# --- viking financas --saldo/--gastos/--buscar/--fatura ---------------------------------------
+
+
+def _cli(monkeypatch, *args):
+    import sys
+
+    from lifeos import cli
+
+    monkeypatch.setattr(sys, "argv", ["viking", "financas", *args])
+    with pytest.raises(SystemExit) as saida:
+        cli.main()
+    return saida.value.code
+
+
+def test_cli_saldo_imprime_o_texto_do_chat(chat, monkeypatch, capsys):
+    assert _cli(monkeypatch, "--saldo") == 0
+    assert capsys.readouterr().out.strip() == tools.responder_saldo()
+
+
+def test_cli_gastos_com_periodo(chat, monkeypatch, capsys):
+    assert _cli(monkeypatch, "--gastos", "--desde", "2026-09-01", "--ate", "2026-09-30") == 0
+    assert "Gastos de 01/09/2026 a 30/09/2026 (contados até hoje" in capsys.readouterr().out
+
+
+def test_cli_buscar_com_valor(chat, monkeypatch, capsys):
+    assert _cli(monkeypatch, "--buscar", "pix", "--valor", "50") == 0
+    assert "saiu R$ 50,00 · PIX ENVIADO" in capsys.readouterr().out
+
+
+def test_cli_so_valor_tambem_busca(chat, monkeypatch, capsys):
+    assert _cli(monkeypatch, "--valor", "3.000,00") == 0
+    assert "entrou R$ 3.000,00" in capsys.readouterr().out
+
+
+def test_cli_fatura(chat, monkeypatch, capsys):
+    preparar_ciclo(chat)
+    assert _cli(monkeypatch, "--fatura") == 0
+    assert "Última fatura fechada que o banco mandou: R$ 812,34" in capsys.readouterr().out
+
+
+def test_cli_erro_da_pluggy_sai_com_2_no_stderr(chat, monkeypatch, capsys):
+    chat["falhar"].add("/accounts")
+    assert _cli(monkeypatch, "--saldo") == 2
+    saida = capsys.readouterr()
+    assert saida.out == ""
+    assert "❌ Não consegui falar com a Pluggy agora: a Pluggy respondeu 500" in saida.err
+
+
+def test_cli_data_ruim_sai_com_2_sem_chamar_a_pluggy(chat, monkeypatch, capsys):
+    assert _cli(monkeypatch, "--gastos", "--desde", "01/09") == 2
+    assert "formato AAAA-MM-DD" in capsys.readouterr().err
+    assert chat["pedidos"] == []
+
+
+def test_cli_duas_consultas_juntas_sao_recusadas(monkeypatch, capsys):
+    assert _cli(monkeypatch, "--saldo", "--fatura") == 2  # argparse: mutuamente exclusivas
+    assert "not allowed with" in capsys.readouterr().err
