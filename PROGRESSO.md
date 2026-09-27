@@ -5,20 +5,20 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5 em curso (plano aprovado; C0 feito)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5 em curso (commit 1 feito; C6 a seguir)
 
 **Estado do repositório:** conferir com `git log -1` (o último commit antes da sessão é `34d680f`)
 · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** plano da Sessão 5 aprovado pelo dono (abaixo, com as 11 respostas e a revisão
-crítica incorporada). C0 feito: backlog, linha quebrada em `docs/erros.md`, nota de restaurar
-evento em `docs/fontes/google-calendar-api.md`.
+**Onde parou:** commit 1 da Sessão 5 fechado (C0–C5 ✅): registro de ações, `desfaz` do
+calendário, pedidos pelo MCP e `viking aprovar`; D36, D37, D30 atualizada; `894 passed`; mutações
+`98/98` + 1. Detalhes no diário (2026-09-27, "Sessão 5, commit 1").
 
-**Próximo passo exato:** C1 — `confirmacao.propor(..., validade=, substituir=)`, reserva só entre
-propostas que ainda agem, `acao_do_codigo`, `vivo` pela janela da ação; `src/lifeos/aprovacoes.py`;
-`aprovacao_local` genérico com `desfaz` local; notas juntas. Esperado: `python -m pytest -q
-tests/test_confirmacao.py tests/test_gmail_aprovacao.py` verde, só
-`test_so_a_palavra_ganha_a_instrucao_aqui` mudando de propósito.
+**Próximo passo exato:** C6 — `_acoes_sensiveis.sinais(acao, guard)` (todas as categorias que
+casam no rótulo, contêiner e `href`); `_frear` leva `{esquema_host, categoria, rotulo}` no evento
+`error` (`acao_sensivel`); `--liberar-uma=JSON` de uso único, recusando `dinheiro` em qualquer
+sinal, JSON malformado e host vazio fora de `data:`; `allow_abbrev=False`. Testes em
+`tests/test_jev_subprocess_main.py` e o contrato com o Jev real. Depois C7 (pai), C8, C9 (Mac).
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
 (D18, D26–D30); o índice de `docs/erros.md` (classes 4, 6, 7); `src/lifeos/confirmacao.py`,
@@ -33,7 +33,7 @@ repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
 **Depende do dono:** nada até o C9 (Mac).
 
 **Antes de confiar neste bloco:** `git status --short` só com o trabalho da etapa; `ls
-.mutacao.lock` → não existe; `python -m pytest -q` → `808 passed` antes do C1.
+.mutacao.lock` → não existe; `python -m pytest -q` → `894 passed`.
 
 ## Plano — Sessão 5: confirmação mecânica (registro de ações, MCP com aprovação, liberar um clique)
 
@@ -110,12 +110,12 @@ e "o que você fez hoje?" listam as ações, e um erro do Gemini depois de uma a
 ### Mapa de checkpoints
 | C | Fecha quando | Estado |
 |---|---|---|
-| C0 | adiados no backlog; linha em branco quebrada em `docs/erros.md` (classe 7); `docs/fontes/google-calendar-api.md` com o que a doc diz sobre restaurar evento ("não medido; validar no Mac") | ⬜ |
-| C1 | confirmação genérica + `desfaz` local + notas juntas; Gmail igual | ⬜ |
-| C2 | registro (gerenciador de contexto, estados, purga, redação) + ganchos nos serviços + `reminders/service.concluir` | ⬜ |
-| C3 | chat: aviso pós-erro, `desfaz` do calendário, `acoes_recentes`; `viking registro [--desfazer ID]` | ⬜ |
-| C4 | MCP propõe; `viking aprovar` (TTY, releitura, 1 h, limites) | ⬜ |
-| C5 | mutações, docs, revisão em 2 passadas, **commit 1 + push** | ⬜ |
+| C0 | adiados no backlog; linha em branco quebrada em `docs/erros.md` (classe 7); `docs/fontes/google-calendar-api.md` com o que a doc diz sobre restaurar evento ("não medido; validar no Mac") | ✅ |
+| C1 | confirmação genérica + `desfaz` local + notas juntas; Gmail igual | ✅ |
+| C2 | registro (gerenciador de contexto, estados, purga, redação) + ganchos nos serviços + `reminders/service.concluir` | ✅ |
+| C3 | chat: aviso pós-erro, `desfaz` do calendário, `acoes_recentes`; `viking registro [--desfazer ID]` | ✅ |
+| C4 | MCP propõe; `viking aprovar` (TTY, releitura, 1 h, limites) | ✅ |
+| C5 | mutações, docs, revisão em 2 passadas, **commit 1 + push** | ✅ |
 | C6 | subprocesso: recusa estruturada, `--liberar-uma` de uso único, dinheiro recusado em qualquer sinal | ⬜ |
 | C7 | pai: proposta, código só ao dono (TTY), aprovação no chat e no `viking browser`, execução curta | ⬜ |
 | C8 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ⬜ |

@@ -36,19 +36,24 @@ def _sem_google_de_verdade(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _confirmacoes_em_banco_de_teste(monkeypatch, tmp_path):
-    """Códigos de aprovação nunca no `viking.db` real: um teste que esquecesse disto deixaria uma
-    proposta aberta (ou "já usada") no banco do dono."""
-    monkeypatch.setattr("lifeos.confirmacao.DB_PATH", tmp_path / "confirmacoes.db")
+    """Códigos de aprovação e registro de ações nunca no `viking.db` real: um teste que esquecesse
+    disto deixaria uma proposta aberta (ou "já usada") ou uma ação falsa no banco do dono. Os dois
+    no MESMO arquivo, como em produção."""
+    monkeypatch.setattr("lifeos.confirmacao.DB_PATH", tmp_path / "viking.db")
+    monkeypatch.setattr("lifeos.registro.DB_PATH", tmp_path / "viking.db")
 
 
 # --- Google Calendar falso, compartilhado pelos testes de calendário e do MCP -------------
 
 
 class _Exec:
-    def __init__(self, valor):
+    def __init__(self, valor, erro=None):
         self._valor = valor
+        self._erro = erro
 
     def execute(self):
+        if self._erro is not None:
+            raise self._erro
         return self._valor
 
 
@@ -65,19 +70,31 @@ class _Events:
     def delete(self, calendarId, eventId):
         if self._estado.get("falhar_delete"):
             raise RuntimeError("API fora do ar")
-        self._estado["apagados"].append(eventId)
-        return _Exec({})
+        # `erro_no_execute`: a falha vem no envio (como no Google); com `aplicar_antes`, o
+        # efeito acontece e SÓ DEPOIS a resposta falha — o caso "incerta" do registro.
+        erro = self._estado.get("erro_no_execute")
+        if erro is None or self._estado.get("aplicar_antes"):
+            self._estado["apagados"].append(eventId)
+            if self._evento is not None:
+                self._evento["status"] = "cancelled"  # como o Google: fica, cancelado
+        return _Exec({}, erro)
 
-    def patch(self, calendarId, eventId, body):
+    def patch(self, calendarId, eventId, body, **extra):
         if self._estado.get("falhar_patch"):
             raise RuntimeError("API fora do ar")
         self._estado["patches"].append((eventId, body))
+        self._estado.setdefault("extras", []).append(("patch", extra))
+        if self._evento is not None:  # como o Google: o evento muda
+            for campo in ("start", "end", "status"):
+                if campo in body:
+                    self._evento[campo] = body[campo]
         return _Exec({"summary": self._evento.get("summary") if self._evento else None})
 
-    def insert(self, calendarId, body):
+    def insert(self, calendarId, body, **extra):
         if self._estado.get("falhar_insert"):
             raise RuntimeError("API fora do ar")
         self._estado["enviados"].append(body)
+        self._estado.setdefault("extras", []).append(("insert", extra))
         return _Exec({"id": "novo123", "htmlLink": "http://exemplo"})
 
     def list(self, calendarId, **kwargs):

@@ -309,14 +309,8 @@ MUTACOES = [
     Mutacao(
         "confirmação: proposta nova não invalida a velha",
         "src/lifeos/confirmacao.py",
-        "    expira = agora + VALIDADE\n"
-        "    with _sessao() as conn:\n"
-        "        conn.execute(\n"
-        "            \"UPDATE confirmacoes SET estado = 'substituida' WHERE",
-        "    expira = agora + VALIDADE\n"
-        "    with _sessao() as conn:\n"
-        "        conn.execute(\n"
-        "            \"UPDATE confirmacoes SET estado = 'aberta' WHERE",
+        "        if substituir:\n            conn.execute(",
+        "        if False:\n            conn.execute(",
         "tests/test_confirmacao.py::test_proposta_nova_invalida_o_codigo_velho",
     ),
     Mutacao(
@@ -385,14 +379,14 @@ MUTACOES = [
     Mutacao(
         "aprovação: só o código, digitado sozinho, vai ao Gemini",
         "src/lifeos/assistant/agent.py",
-        "        and confirmacao.aberta(limpeza.ACAO)",
+        "        and any(confirmacao.aberta(t.acao) for t in aprovacoes.do_chat())",
         "        and False",
         "tests/test_gmail_aprovacao.py::test_so_o_numero_com_proposta_aberta_aprova_e_nao_vai_ao_gemini",
     ),
     Mutacao(
         "aprovação: número qualquer é roubado do Gemini sem proposta aberta",
         "src/lifeos/assistant/agent.py",
-        "        and confirmacao.aberta(limpeza.ACAO)",
+        "        and any(confirmacao.aberta(t.acao) for t in aprovacoes.do_chat())",
         "        and True",
         "tests/test_gmail_aprovacao.py::test_frase_comum_segue_para_o_gemini",
     ),
@@ -408,8 +402,8 @@ MUTACOES = [
     Mutacao(
         "aprovação: código vivo em frase livre vai ao Gemini",
         "src/lifeos/assistant/agent.py",
-        "            if confirmacao.vivo(limpeza.ACAO, c, janela=limpeza.DESFAZER_POR)",
-        "            if False",
+        "        if confirmacao.vivo(tipo.acao, c, janela=tipo.janela)",
+        "        if False",
         "tests/test_gmail_aprovacao.py::test_desfazer_em_frase_livre_age_sem_o_gemini",
     ),
     Mutacao(
@@ -611,6 +605,158 @@ MUTACOES = [
         "        or categoria_id.startswith(_PREFIXO_MESMA_TITULARIDADE)",
         "        or False",
         "tests/test_financas_dados.py::test_mesma_titularidade_por_pix_e_interna",
+    ),
+    # Sessão 5: vários tipos de aprovação.
+    Mutacao(
+        "confirmação: o mesmo código em duas ações",
+        "src/lifeos/confirmacao.py",
+        '        while (codigo := f"{secrets.randbelow(10**DIGITOS):0{DIGITOS}d}") in recentes:',
+        '        while (codigo := f"{secrets.randbelow(10**DIGITOS):0{DIGITOS}d}") in ():',
+        "tests/test_confirmacao.py::test_codigo_nao_se_repete_entre_acoes",
+    ),
+    Mutacao(
+        "confirmação: proposta substituída libera o número na hora",
+        "src/lifeos/confirmacao.py",
+        "\"WHERE expira_em >= ? OR (estado = 'consumida' AND consumida_em >= ?)\",",
+        "\"WHERE (estado = 'aberta' AND expira_em >= ?) \"\n"
+        "                \"OR (estado = 'consumida' AND consumida_em >= ?)\",",
+        "tests/test_confirmacao.py::test_codigo_substituido_nao_volta_enquanto_nao_vence",
+    ),
+    Mutacao(
+        "confirmação: validade da proposta ignorada",
+        "src/lifeos/confirmacao.py",
+        "    expira = agora + validade",
+        "    expira = agora + VALIDADE",
+        "tests/test_confirmacao.py::test_validade_da_proposta_pode_ser_maior",
+    ),
+    Mutacao(
+        "aprovação: código de pedido do MCP aprovado pelo chat",
+        "src/lifeos/assistant/agent.py",
+        '    if tipo is not None and not tipo.no_chat:\n        return _SO_NO_TERMINAL, ""',
+        '    if False:\n        return _SO_NO_TERMINAL, ""',
+        "tests/test_aprovacoes.py::test_codigo_do_mcp_no_chat_aponta_o_terminal_e_nao_age",
+    ),
+    Mutacao(
+        "aprovação: uma nota ao Gemini apaga a outra",
+        "src/lifeos/assistant/agent.py",
+        '    return "\\n".join(n for n in (pendente, nova) if n)',
+        "    return nova or pendente",
+        "tests/test_aprovacoes.py::test_notas_ao_gemini_se_somam",
+    ),
+    # Sessão 5: registro de ações, desfazer e pedidos pelo MCP.
+    Mutacao(
+        "mcp: apagar pelo MCP apaga direto, sem aprovação",
+        "src/lifeos/mcp_server/server.py",
+        "    return _resultado(calendario.responder_pedir_apagar(event_id, titulo_esperado))",
+        "    return _resultado(calendario.responder_apagar(event_id, titulo_esperado))",
+        "tests/test_mcp_aprovacao.py::test_apagar_pelo_mcp_so_pede_e_o_codigo_nao_sai",
+    ),
+    Mutacao(
+        "aprovar: roda sem terminal interativo (um agente lê o código)",
+        "src/lifeos/cli.py",
+        "    if not (sys.stdin.isatty() and sys.stdout.isatty()):",
+        "    if False:",
+        "tests/test_mcp_aprovacao.py::test_aprovar_sem_terminal_interativo_recusa",
+    ),
+    Mutacao(
+        "aprovar: evento que mudou desde o pedido é mexido",
+        "src/lifeos/calendar/service.py",
+        "    if mudou:",
+        "    if False:",
+        "tests/test_mcp_aprovacao.py::test_evento_que_mudou_desde_o_pedido_nao_e_mexido",
+    ),
+    Mutacao(
+        "pedidos: sem limite de pedidos abertos",
+        "src/lifeos/calendar/service.py",
+        "    if abertos >= MAX_PEDIDOS_ABERTOS or na_hora >= MAX_PEDIDOS_POR_HORA:",
+        "    if False:",
+        "tests/test_mcp_aprovacao.py::test_limite_de_pedidos_abertos",
+    ),
+    Mutacao(
+        "pedidos: um pedido do MCP some quando chega outro",
+        "src/lifeos/calendar/service.py",
+        "substituir=False",
+        "substituir=True",
+        "tests/test_mcp_aprovacao.py::test_dois_pedidos_convivem",
+    ),
+    Mutacao(
+        "registro: guarda texto sem redação",
+        "src/lifeos/registro.py",
+        "        return _redacao.redigir(_redacao.limpar_controles(valor))[:MAX_TEXTO]",
+        "        return valor",
+        "tests/test_registro.py::test_dado_sensivel_e_controle_saem_redigidos",
+    ),
+    Mutacao(
+        "registro: purga antes dos 30 dias",
+        "src/lifeos/registro.py",
+        "RETENCAO = timedelta(days=30)",
+        "RETENCAO = timedelta(days=28)",
+        "tests/test_registro.py::test_purga_depois_de_30_dias",
+    ),
+    Mutacao(
+        "registro: falha ambígua vira 'falhou' (e o dono repete)",
+        "src/lifeos/registro.py",
+        "        estado = INCERTA if _eh_incerta(exc) else FALHOU",
+        "        estado = FALHOU",
+        "tests/test_registro.py::test_falha_ambigua_e_incerta",
+    ),
+    Mutacao(
+        "calendário: 5xx ou tempo esgotado tratados como falha certa",
+        "src/lifeos/calendar/service.py",
+        "        raise FalhaDaApi(str(exc), incerta=not (status and 400 <= status < 500)) from exc",
+        "        raise FalhaDaApi(str(exc), incerta=False) from exc",
+        "tests/test_registro_ganchos.py::test_falha_depois_de_enviar_e_incerta",
+    ),
+    Mutacao(
+        "calendário: resposta ambígua diz 'NÃO apaguei'",
+        "src/lifeos/calendar/tools.py",
+        "        if exc.incerta:\n"
+        "            return Resposta(_nao_sei(f\"apaguei o evento '{titulo}'\", exc), erro=exc)",
+        "        if False:\n"
+        "            return Resposta(_nao_sei(f\"apaguei o evento '{titulo}'\", exc), erro=exc)",
+        "tests/test_registro_ganchos.py::test_falha_depois_de_enviar_e_incerta",
+    ),
+    Mutacao(
+        "chat: erro depois de agir não diz o que já foi feito",
+        "src/lifeos/assistant/agent.py",
+        "            aviso, nota = registro_texto.aviso_pos_erro(registro.do_turno(turno))",
+        '            aviso, nota = "", ""',
+        "tests/test_registro_chat.py::test_erro_depois_de_agir_diz_o_que_ja_foi_feito",
+    ),
+    Mutacao(
+        "desfazer: a mesma ação desfeita duas vezes",
+        "src/lifeos/registro.py",
+        '            "WHERE id = ? AND desfeita_em IS NULL AND desfazer IS NOT NULL AND estado = ?",',
+        '            "WHERE id = ? AND desfazer IS NOT NULL AND estado = ?",',
+        "tests/test_registro.py::test_desfazer_duas_vezes_so_a_primeira_leva",
+    ),
+    Mutacao(
+        "desfazer: `desfaz` alcança ações de outra sessão",
+        "src/lifeos/registro.py",
+        '            "AND substr(turno, 1, ?) = ? ORDER BY id DESC LIMIT 1",',
+        '            "AND ? > 0 AND ? IS NOT NULL ORDER BY id DESC LIMIT 1",',
+        "tests/test_registro_chat.py::test_desfaz_nao_alcanca_outra_sessao",
+    ),
+    Mutacao(
+        "desfazer: a cópia recriada leva os convidados (e-mail em nome do dono)",
+        "src/lifeos/calendar/service.py",
+        '    "summary",\n    "description",\n    "location",',
+        '    "summary",\n    "attendees",\n    "description",\n    "location",',
+        "tests/test_registro_chat.py::test_desfaz_recria_sem_convidados_quando_o_evento_sumiu",
+    ),
+    Mutacao(
+        "desfazer: volta o horário mesmo se alguém mudou depois",
+        "src/lifeos/calendar/service.py",
+        '        _mesmo_horario(atual.get("start"), copia["novo_start"])',
+        '        True or _mesmo_horario(atual.get("start"), copia["novo_start"])',
+        "tests/test_registro_chat.py::test_desfaz_nao_mexe_se_o_horario_mudou_depois",
+    ),
+    Mutacao(
+        "desfazer: resposta ambígua devolve o desfazer (e a cópia sai duas vezes)",
+        "src/lifeos/calendar/service.py",
+        '        if not getattr(exc, "incerta", False):\n            registro.devolver_desfazer(acao_id)',
+        "        if True:\n            registro.devolver_desfazer(acao_id)",
+        "tests/test_registro_chat.py::test_desfazer_ambiguo_nao_recria_duas_vezes",
     ),
 ]
 

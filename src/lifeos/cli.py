@@ -214,6 +214,71 @@ def _financas(args: argparse.Namespace) -> int:
     return 2 if falhou else 0
 
 
+def _aprovar() -> int:
+    """Os pedidos que vieram de outro app (MCP), um por um, com os dados exatos; o dono digita o
+    código de cada um para aprovar. Só num terminal interativo (D36): um app que roda comandos
+    (um agente com terminal) leria o código de uma saída que não é tela de gente."""
+    from lifeos import aprovacoes, confirmacao
+    from lifeos.browser._redacao import limpar_controles
+    from lifeos.calendar import service as calendario_service
+    from lifeos.config import TIMEZONE
+
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        print(
+            "❌ `viking aprovar` só roda num terminal interativo, digitado por você.",
+            file=sys.stderr,
+        )
+        return 2
+    pedidos = [
+        (tipo, proposta)
+        for tipo in aprovacoes.TIPOS
+        if not tipo.no_chat
+        for proposta in confirmacao.abertas(tipo.acao)
+    ]
+    if not pedidos:
+        print("Nenhum pedido esperando aprovação.")
+        return 0
+    falhou = False
+    for tipo, proposta in pedidos:
+        descricao = limpar_controles(str(proposta.dados.get("descricao") or tipo.acao))
+        quando = proposta.expira.astimezone(TIMEZONE).strftime("%H:%M")
+        print(f"\nPedido de outro app (MCP): {descricao}. Vale até as {quando}.")
+        print(f"Para aprovar, digite o código {proposta.codigo} (Enter pula).")
+        resposta = input("Código: ").strip()
+        if not resposta:
+            print("Pulado: nada mudou.")
+            continue
+        try:
+            evento = calendario_service.executar_aprovado(tipo.acao, resposta)
+        except (confirmacao.ErroConfirmacao, calendario_service.ErroCalendario) as exc:
+            falhou = True
+            print(f"❌ Não fiz: {limpar_controles(str(exc))}.", file=sys.stderr)
+            continue
+        feito = "apagado" if tipo.acao == aprovacoes.CALENDARIO_APAGAR else "reagendado"
+        print(f"✅ Evento '{evento.titulo}' {feito}. Para desfazer: `viking registro --ids`.")
+    return 2 if falhou else 0
+
+
+def _registro(args: argparse.Namespace) -> int:
+    """O que o Viking fez (30 dias) e, com --desfazer ID, desfaz uma ação de calendário."""
+    from lifeos import registro_texto
+    from lifeos.browser._redacao import limpar_controles
+    from lifeos.calendar import service as calendario_service
+
+    if args.desfazer is None:
+        print(registro_texto.texto_das_recentes(args.dias, com_id=args.ids))
+        if not args.ids:
+            print("(`viking registro --ids` mostra o número de cada ação, para --desfazer ID.)")
+        return 0
+    try:
+        feito = calendario_service.restaurar(args.desfazer)
+    except calendario_service.ErroCalendario as exc:
+        print(f"❌ Não desfiz: {limpar_controles(str(exc))}. Nada mudou.", file=sys.stderr)
+        return 2
+    print(f"↩️ Desfeito: '{feito.titulo}' ({feito.como}).")
+    return 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="viking")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -290,7 +355,24 @@ def main() -> None:
     financas.add_argument("--desde", metavar="AAAA-MM-DD", help="Início do período")
     financas.add_argument("--ate", metavar="AAAA-MM-DD", help="Fim do período (padrão: hoje)")
 
+    subparsers.add_parser(
+        "aprovar", help="Aprova (com código) pedidos que outros apps fizeram pelo MCP"
+    )
+    registro_cli = subparsers.add_parser(
+        "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
+    )
+    registro_cli.add_argument("--dias", type=int, default=7, help="Quantos dias mostrar (1 a 30)")
+    registro_cli.add_argument(
+        "--desfazer", type=int, metavar="ID", help="Desfaz uma exclusão ou reagendamento"
+    )
+    registro_cli.add_argument("--ids", action="store_true", help="Mostra o número de cada ação")
+
     args = parser.parse_args()
+
+    from lifeos import registro
+
+    # Quem pede, para o registro de ações: o chat e o MCP marcam a própria origem por cima.
+    registro.ORIGEM.set("cli")
 
     if args.command == "chat":
         from lifeos.assistant.agent import iniciar_assistente
@@ -306,6 +388,10 @@ def main() -> None:
         sys.exit(_gmail(args))
     elif args.command == "financas":
         sys.exit(_financas(args))
+    elif args.command == "registro":
+        sys.exit(_registro(args))
+    elif args.command == "aprovar":
+        sys.exit(_aprovar())
 
 
 if __name__ == "__main__":

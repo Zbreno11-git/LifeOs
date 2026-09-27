@@ -271,7 +271,12 @@ Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 - **Fica para depois:** categorização/recorrências pela Enrichment API, alertas de gasto, cópia
   local para RAG. Webhook não serve (o Viking não tem servidor público).
 
-## Sessão 5 — confirmação mecânica
+## Sessão 5 — confirmação mecânica (commit 1 feito em 2026-09-27; commit 2 e Mac em curso)
+
+**Commit 1 (2026-09-27):** registro de ações (D37), `desfaz` do calendário no chat, pedidos pelo
+MCP aprovados em `viking aprovar` (D36). Falta o commit 2 (liberar um clique do navegador) e o
+teste no Mac. Plano completo no `PROGRESSO.md`. O que estava escrito na abertura:
+
 
 - **Primeiro passo (adiado da 4b por decisão do dono, 2026-09-26):** a liberação do freio de
   cliques (`_acoes_sensiveis`) passa por esta mesma confirmação — o dono aprova **aquele** clique

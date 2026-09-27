@@ -964,3 +964,32 @@ setembro?". O dono: "tudo certo". Dois achados de texto: "cartão nubank" não a
 dizem que juntam a fatura já fechada e ainda não entregue, e a docstring proíbe comparar fatura
 vencida com o saldo. A causa da fatura ausente está na documentação da Pluggy (só depois de
 vencer, conforme o banco). `808 passed`; mutações de finanças 18/18.
+
+### 2026-09-27 — Sessão 5, commit 1: registro de ações, desfazer e pedidos pelo MCP
+
+**Decidido pelo dono (11 respostas na abertura):** as três partes em dois commits; no chat,
+apagar/reagendar sem código ("exagero"), com `desfaz`; pelo MCP, só pedido, aprovado em
+`viking aprovar` (1 h); registro por 30 dias, também no chat; liberar clique só de sair e conta,
+refazendo só aquele clique (commit 2). Viraram D36 e D37; D30 com gatilho novo.
+
+**Feito.** `confirmacao` com validade e substituição por proposta e número reservado entre ações;
+`aprovacoes.py`; `aprovacao_local` para vários tipos (código do MCP digitado no chat aponta o
+terminal); `registro.py` com estados feita/falhou/incerta, ligado a calendário, lembretes (novo
+`service.concluir`), Gmail e navegador, e uma régua AST que reprova efeito externo sem registro;
+"Não sei se apaguei…" na falha ambígua (antes dizia "NÃO apaguei" com o evento apagado — achado
+pelo teste); `calendar/service.restaurar` e o `desfaz` sozinho no chat; aviso "Antes do erro, o
+Viking já fez…" e a nota ao Gemini no turno seguinte; tool `acoes_recentes`; `viking registro`;
+MCP `viking_apagar_evento`/`viking_reagendar_evento` só pedem, com limites, e `viking aprovar`
+relê o evento (versão, título, início) antes de agir.
+
+**Portões.** `894 passed`; `ruff check` limpo; formatação no baseline 7 (depois de restaurar dois
+trechos); mutações `98 · mortas pelo teste esperado: 98` + 1 da revisão (1/1).
+
+**Erros meus** (em `docs/erros.md`): reserva de código que desarmava "o código velho não aprova a
+lista nova" e desfazer ambíguo que recriaria duas vezes (classe 6); prefixo de sessão com `LIKE`
+(classe 7); `or` numa asserção pela terceira vez e dublê sem `id`/`end` (classe 4); as mesmas duas
+docstrings reformatadas de novo (classe 8).
+
+**Não medido:** restaurar evento pelo `patch status=confirmed`, a mescla do `patch` com `null` no
+horário e o fluxo do MCP com um cliente de verdade — no Mac (C9).
+

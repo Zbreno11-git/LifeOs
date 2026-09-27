@@ -37,12 +37,18 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
 ## Estrutura do repo
 
 - `src/lifeos/` — pacote Python do Viking:
-  - `cli.py` — entrypoint `viking` (`chat`, `browser`, `mcp-server`)
+  - `cli.py` — entrypoint `viking` (`chat`, `browser`, `mcp-server`, `gmail`, `financas`,
+    `registro`, `aprovar`)
   - `config.py` — carga única de `.env` + caminhos (`secrets/`, `data/`) e knobs do navegador
   - `custos.py` — contabilidade de uso dos modelos (real para o Jev, estimada para o Gemini)
   - `google_auth.py` — login OAuth do Google compartilhado pelo calendário e pelo Gmail (confere o
     escopo gravado no token; grava com permissão 600)
   - `nao_confiavel.py` — o bloco delimitado de conteúdo de terceiros (página, e-mail) para o modelo
+  - `aprovacoes.py` — os tipos de ação que se aprovam com código (só dados: ação, janela do
+    desfazer, se aprova no chat ou só em `viking aprovar`); quem executa é o laço do chat ou a CLI
+  - `registro.py` — registro local de ações (30 dias, `viking.db`, tabela `acoes`): todo efeito
+    externo passa por `with registro.acao(...)`, com estados feita/falhou/incerta e a cópia para
+    desfazer; `registro_texto.py` é o texto (tool `acoes_recentes`, aviso depois de um erro)
   - `confirmacao.py` — confirmação mecânica: código curto ligado aos dados exatos de uma ação,
     uma vez só e por 10 min (SQLite em `viking.db`); primeiro uso na limpeza do Gmail, a Sessão 5
     reaproveita
@@ -64,7 +70,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     para português
   - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
-  - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools)
+  - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
+    reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
 - `tests/` — pytest para `src/lifeos`.
 - `sessoes.md` — roadmap em sessões de ~1h30, com o bloco "▶️ Começar a próxima sessão por aqui".
 - `PROGRESSO.md` — estado da sessão em curso e "retomar aqui" (atualizado a cada etapa; é o que
@@ -124,6 +131,9 @@ viking gmail --arquivar A,B     # propõe arquivar tudo destes remetentes e pede
 viking gmail --desfazer CODIGO  # devolve à caixa o que aquele código arquivou (até 7 dias)
 viking financas --conectar      # abre a janela da Pluggy (MeuPluggy) e mostra o ID da conexão
 viking financas                 # confere as conexões de PLUGGY_ITEM_IDS (sem saldo nem extrato)
+viking registro                 # o que o Viking fez (7 dias; --dias N, --ids, --desfazer ID)
+viking aprovar                  # aprova com código os pedidos que outros apps fizeram pelo MCP
+                               # (só num terminal interativo)
 viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
                                # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
 ```
@@ -298,6 +308,20 @@ os 207 e-mails na confirmação e levou `403 rateLimitExceeded` no Mac (não é 
 passa por `gmail/service._executar`/`_metadados`, que gastam do orçamento `_Cota` e esperam
 (`ESPERAS_S`) na recusa; fluxo novo não relê o que já leu — busca (`list`, 5 unidades) é o que
 se repete. O erro cru do Google traz o número do projeto OAuth: use `_descrever`.
+
+**O stdout do servidor MCP é o protocolo.** Um `print` em `mcp_server/server.py` corromperia o
+JSON-RPC, e um código de aprovação impresso ali chegaria ao app que chamou. Por isso o MCP só
+registra pedidos, o código aparece só em `viking aprovar` (que exige terminal interativo) e
+`tests/test_mcp_aprovacao.py` proíbe `print`, `consumir` e `executar_aprovado` no servidor. A
+origem das ações (`registro.ORIGEM`) é marcada **por chamada** (`_pelo_mcp()`): o FastMCP roda cada
+tool num contexto copiado.
+
+**Todo efeito externo passa pelo registro de ações.** `tests/test_registro_ganchos.py` lê o código:
+toda chamada `events().delete/patch/insert`, `batchModify`, `store.add`/`store.complete` fica dentro
+de uma função que abre `registro.acao` — uma função auxiliar sem registro, mesmo chamada por quem
+registra, derruba a régua (aconteceu com o Gmail). Falha do Google depois de enviar (5xx, tempo
+esgotado) é `incerta` (`FalhaDaApi.incerta`), e o texto diz "Não sei se…", nunca "NÃO fiz". O
+`desfaz` sozinho é lido pelo laço do chat, não por uma tool — como a aprovação da limpeza.
 
 **Na Pluggy, transação é instante e fatura é data.** A data da transação vem em UTC
 (`03:00Z` é meia-noite em Brasília, `02:59Z` é o dia anterior) e se converte para o fuso; o

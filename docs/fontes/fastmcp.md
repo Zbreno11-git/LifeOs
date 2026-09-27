@@ -65,3 +65,13 @@ cliente não vê de antemão o formato esperado. Uma tool que retornasse um tipo
 (dataclass/pydantic model) em vez de `str`/`ToolResult` teria schema anunciado; não foi o desenho
 escolhido para lembretes (ver `sessoes.md`, Sessão 3) para não acoplar o formato de saída do MCP ao
 modelo interno (`Reminder`) mais do que o necessário.
+
+## Contexto por chamada e stdout (Sessão 5, 2026-09-27)
+
+- **Tool síncrona roda num thread com o contexto copiado** (`fastmcp/utilities/async_utils.py`,
+  `anyio.to_thread.run_sync`, lido no `.venv` com FastMCP 4.0.5). Um `contextvars.ContextVar`
+  posto no `main()` não chega aos testes em memória (`fastmcp.Client(mcp)` não passa pelo
+  `main()`): o Viking marca a origem dentro de cada tool.
+- **stdout é o canal JSON-RPC no transporte stdio.** Nada de `print` no servidor; e nada que o
+  cliente não deva ver pode ir no retorno — por isso o código de aprovação nunca sai pelo MCP.
+

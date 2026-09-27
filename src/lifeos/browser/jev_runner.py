@@ -21,6 +21,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from lifeos import registro
 from lifeos.browser import _redacao
 from lifeos.config import (
     BROWSER_BLOQUEADOS,
@@ -284,80 +285,101 @@ def run_jev(
             return _erro("jev_dir_missing", str(JEV_DIR), goals)
 
         cmd = build_command(url, goals, timeout_s=limite, fechar=fechar)
-        try:
-            proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                bufsize=1,
-                **_popen_kwargs(),
+        # Registrado só daqui em diante: as recusas acima não abriram nada.
+        parametros = {"url": _redacao.redigir_url(url), "objetivos": goals}
+        with registro.acao("navegador.executar", parametros) as marca:
+            resultado = _rodar(cmd, goals, limite, on_progress)
+            marca.feito(
+                {
+                    "status": resultado.status,
+                    "erro": resultado.error_code or "",
+                    "passos": resultado.steps,
+                }
             )
-        except OSError as exc:
-            return _erro("spawn_failed", f"nao consegui iniciar o executor: {exc}", goals)
-
-        # Tudo a partir daqui roda sob um processo filho vivo — o finally garante que ele é
-        # aguardado ou morto não importa por onde a gente saia (retorno normal ou exceção
-        # inesperada). Sem isso, um erro imprevisto no laço abaixo vazava o processo e a aba.
-        try:
-            fila: queue.Queue = queue.Queue()
-            erros: deque = deque(maxlen=STDERR_LINHAS)
-            threading.Thread(target=_ler_stdout, args=(proc.stdout, fila), daemon=True).start()
-            threading.Thread(target=_ler_stderr, args=(proc.stderr, erros), daemon=True).start()
-
-            eventos: list[dict] = []
-            inicio = time.monotonic()
-            prazo = inicio + limite + GRACE_S
-            estourou = False
-            interrompido = False
-
-            try:
-                while True:
-                    restante = prazo - time.monotonic()
-                    if restante <= 0:
-                        estourou = True
-                        break
-                    try:
-                        item = fila.get(timeout=min(1.0, restante))
-                    except queue.Empty:
-                        continue
-                    if item is _FIM:
-                        break
-                    evento = parse_event(item)
-                    if evento is None:
-                        continue
-                    eventos.append(evento)
-                    if evento.get("type") in {"step", "health"}:
-                        _avisar(on_progress, evento)
-            except KeyboardInterrupt:
-                interrompido = True
-
-            if estourou or interrompido:
-                _matar(proc)
-            try:
-                returncode = proc.wait(timeout=KILL_GRACE_S + 5)
-            except subprocess.TimeoutExpired:
-                _matar(proc)
-                returncode = proc.poll()
-
-            stderr_tail = "".join(erros)[-2000:] or None
-            # Se nos matamos o processo e ele nao chegou a reportar nada, a causa verdadeira e o
-            # prazo -- nao o "crash" que a ausencia de linha terminal sugeriria.
-            tem_terminal = any(e.get("type") in {"result", "error"} for e in eventos)
-            if (estourou or interrompido) and not tem_terminal:
-                # Tempo REAL decorrido, não o limite configurado: um Ctrl-C aos 3s não pode
-                # dizer "interrompido após 180s".
-                decorrido = time.monotonic() - inicio
-                return _erro(
-                    "timeout_terminated" if interrompido else "timeout",
-                    f"interrompido apos {decorrido:.0f}s",
-                    goals,
-                )
-            return result_from(eventos, returncode, stderr_tail, goals)
-        finally:
-            if proc.poll() is None:
-                _matar(proc)
+        return resultado
     finally:
         _EXECUCAO.release()
+
+
+def _rodar(
+    cmd: list[str],
+    goals: list[str],
+    limite: float,
+    on_progress: Callable[[dict], None] | None,
+) -> BrowserResult:
+    """O subprocesso do Jev, do `Popen` ao resultado; o processo nunca fica vivo depois."""
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+            **_popen_kwargs(),
+        )
+    except OSError as exc:
+        return _erro("spawn_failed", f"nao consegui iniciar o executor: {exc}", goals)
+
+    # Tudo a partir daqui roda sob um processo filho vivo — o finally garante que ele é
+    # aguardado ou morto não importa por onde a gente saia (retorno normal ou exceção
+    # inesperada). Sem isso, um erro imprevisto no laço abaixo vazava o processo e a aba.
+    try:
+        fila: queue.Queue = queue.Queue()
+        erros: deque = deque(maxlen=STDERR_LINHAS)
+        threading.Thread(target=_ler_stdout, args=(proc.stdout, fila), daemon=True).start()
+        threading.Thread(target=_ler_stderr, args=(proc.stderr, erros), daemon=True).start()
+
+        eventos: list[dict] = []
+        inicio = time.monotonic()
+        prazo = inicio + limite + GRACE_S
+        estourou = False
+        interrompido = False
+
+        try:
+            while True:
+                restante = prazo - time.monotonic()
+                if restante <= 0:
+                    estourou = True
+                    break
+                try:
+                    item = fila.get(timeout=min(1.0, restante))
+                except queue.Empty:
+                    continue
+                if item is _FIM:
+                    break
+                evento = parse_event(item)
+                if evento is None:
+                    continue
+                eventos.append(evento)
+                if evento.get("type") in {"step", "health"}:
+                    _avisar(on_progress, evento)
+        except KeyboardInterrupt:
+            interrompido = True
+
+        if estourou or interrompido:
+            _matar(proc)
+        try:
+            returncode = proc.wait(timeout=KILL_GRACE_S + 5)
+        except subprocess.TimeoutExpired:
+            _matar(proc)
+            returncode = proc.poll()
+
+        stderr_tail = "".join(erros)[-2000:] or None
+        # Se nos matamos o processo e ele nao chegou a reportar nada, a causa verdadeira e o
+        # prazo -- nao o "crash" que a ausencia de linha terminal sugeriria.
+        tem_terminal = any(e.get("type") in {"result", "error"} for e in eventos)
+        if (estourou or interrompido) and not tem_terminal:
+            # Tempo REAL decorrido, não o limite configurado: um Ctrl-C aos 3s não pode
+            # dizer "interrompido após 180s".
+            decorrido = time.monotonic() - inicio
+            return _erro(
+                "timeout_terminated" if interrompido else "timeout",
+                f"interrompido apos {decorrido:.0f}s",
+                goals,
+            )
+        return result_from(eventos, returncode, stderr_tail, goals)
+    finally:
+        if proc.poll() is None:
+            _matar(proc)

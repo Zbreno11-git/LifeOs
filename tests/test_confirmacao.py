@@ -117,3 +117,77 @@ def test_vivo_so_enquanto_serve_para_algo():
     depois = T0 + janela + timedelta(seconds=1)
     assert not confirmacao.vivo(ACAO, proposta.codigo, janela=janela, agora=depois)
     assert not confirmacao.vivo(ACAO, "abcd", janela=janela, agora=T0)
+
+
+# --- Sessão 5: vários tipos de ação ----------------------------------------------------------
+
+OUTRA = "calendario.apagar"
+
+
+def _sorteio(monkeypatch, *numeros):
+    """Sorteios presos e FINITOS: uma reserva quebrada levanta StopIteration em vez de travar."""
+    fila = iter(numeros)
+    monkeypatch.setattr(confirmacao.secrets, "randbelow", lambda _n: next(fila))
+
+
+def test_codigo_nao_se_repete_entre_acoes(monkeypatch):
+    _sorteio(monkeypatch, 1234, 1234, 5678)
+    gmail = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    calendario = confirmacao.propor(OUTRA, {"event_id": "e"}, agora=T0)
+    assert (gmail.codigo, calendario.codigo) == ("1234", "5678")
+
+
+def test_codigo_substituido_nao_volta_enquanto_nao_vence(monkeypatch):
+    _sorteio(monkeypatch, 1234, 1234, 5678)
+    confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    nova = confirmacao.propor(ACAO, {"ids": ["a", "banco"]}, agora=T0)
+    assert nova.codigo == "5678"
+
+
+def test_codigo_vencido_e_nao_usado_deixa_de_reservar(monkeypatch):
+    _sorteio(monkeypatch, 1234, 1234)
+    confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    depois = T0 + confirmacao.VALIDADE + timedelta(seconds=1)
+    assert confirmacao.propor(OUTRA, {"event_id": "e"}, agora=depois).codigo == "1234"
+
+
+def test_codigo_usado_reserva_pela_janela_do_desfazer(monkeypatch):
+    _sorteio(monkeypatch, 1234, 1234, 5678)
+    usada = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    confirmacao.consumir(ACAO, usada.codigo, agora=T0)
+    seis_dias = T0 + timedelta(days=6)
+    assert confirmacao.propor(OUTRA, {"event_id": "e"}, agora=seis_dias).codigo == "5678"
+
+
+def test_validade_da_proposta_pode_ser_maior():
+    uma_hora = timedelta(hours=1)
+    proposta = confirmacao.propor(OUTRA, {"event_id": "e"}, validade=uma_hora, agora=T0)
+    assert confirmacao.aberta(OUTRA, agora=T0 + timedelta(minutes=59))
+    assert not confirmacao.aberta(OUTRA, agora=T0 + timedelta(minutes=61))
+    with pytest.raises(confirmacao.Expirado):
+        confirmacao.consumir(OUTRA, proposta.codigo, agora=T0 + timedelta(minutes=61))
+
+
+def test_sem_substituir_as_propostas_convivem():
+    a = confirmacao.propor(OUTRA, {"event_id": "a"}, substituir=False, agora=T0)
+    b = confirmacao.propor(OUTRA, {"event_id": "b"}, substituir=False, agora=T0)
+    assert [p.dados for p in confirmacao.abertas(OUTRA, agora=T0)] == [
+        {"event_id": "a"},
+        {"event_id": "b"},
+    ]
+    assert confirmacao.consumir(OUTRA, a.codigo, agora=T0).dados == {"event_id": "a"}
+    assert confirmacao.consumir(OUTRA, b.codigo, agora=T0).dados == {"event_id": "b"}
+
+
+def test_criadas_desde_conta_so_a_acao():
+    confirmacao.propor(OUTRA, {"event_id": "a"}, substituir=False, agora=T0)
+    confirmacao.propor(OUTRA, {"event_id": "b"}, substituir=False, agora=T0 + timedelta(hours=2))
+    confirmacao.propor(ACAO, {"ids": ["x"]}, agora=T0 + timedelta(hours=2))
+    assert confirmacao.criadas_desde(OUTRA, T0 + timedelta(hours=1)) == 1
+
+
+def test_acao_do_codigo():
+    proposta = confirmacao.propor(OUTRA, {"event_id": "e"}, agora=T0)
+    assert confirmacao.acao_do_codigo(f" {proposta.codigo} ") == OUTRA
+    assert confirmacao.acao_do_codigo("99999") is None
+    assert confirmacao.acao_do_codigo("abcd") is None

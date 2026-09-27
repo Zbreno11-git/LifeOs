@@ -12,13 +12,27 @@ from typing import Any
 from fastmcp import FastMCP
 from fastmcp.tools import ToolResult
 
+from lifeos import registro
 from lifeos.calendar import tools as calendario
-from lifeos.calendar.service import Evento
+from lifeos.calendar.service import Evento, Pedido
 from lifeos.reminders import service as reminders_service
 from lifeos.reminders import store
 from lifeos.reminders.models import Reminder
 
-mcp = FastMCP(name="viking", instructions="Calendário e lembretes pessoais do Viking (Life OS).")
+mcp = FastMCP(
+    name="viking",
+    instructions=(
+        "Calendário e lembretes pessoais do Viking (Life OS). Apagar e reagendar evento só "
+        "registram um PEDIDO: nada muda até o dono aprovar no terminal dele (`viking aprovar`). "
+        "O código de aprovação nunca passa por aqui; não o peça ao usuário."
+    ),
+)
+
+
+def _pelo_mcp() -> None:
+    """Toda tool marca a origem no registro de ações. Por chamada: o FastMCP roda cada tool num
+    contexto copiado, então um valor posto só no `main()` não chegaria (nem nos testes)."""
+    registro.ORIGEM.set("mcp")
 
 
 def _evento_para_dict(evento: Evento) -> dict[str, Any]:
@@ -34,14 +48,23 @@ def _evento_para_dict(evento: Evento) -> dict[str, Any]:
 
 def _resultado(resposta: calendario.Resposta) -> ToolResult:
     """Mesmo texto que o Gemini recebe + dados estruturados. Recusa de trava (título divergente,
-    ID vazio...) e falha da API viram erro de verdade (`is_error`), como nos lembretes."""
+    ID vazio...) e falha da API viram erro de verdade (`is_error`), como nos lembretes. Um pedido
+    registrado não é erro: é `aguardando_aprovacao`."""
     if resposta.erro is not None:
         return ToolResult(
             content=resposta.texto,
             structured_content={"erro": resposta.erro.codigo, **resposta.erro.dados},
             is_error=True,
         )
-    if isinstance(resposta.dados, list):
+    if isinstance(resposta.dados, Pedido):
+        dados = {
+            "estado": "aguardando_aprovacao",
+            "acao": resposta.dados.acao,
+            "evento": _evento_para_dict(resposta.dados.evento),
+            "expira_em": resposta.dados.expira.isoformat(),
+            "aprovar_com": "viking aprovar",
+        }
+    elif isinstance(resposta.dados, list):
         dados = {"eventos": [_evento_para_dict(e) for e in resposta.dados]}
     else:
         dados = _evento_para_dict(resposta.dados)
@@ -65,12 +88,14 @@ def viking_criar_evento(
     summary: str, start_time: str, end_time: str, description: str = ""
 ) -> ToolResult:
     """Cria um evento com horário marcado no Google Calendar."""
+    _pelo_mcp()
     return _resultado(calendario.responder_criar(summary, start_time, end_time, description))
 
 
 @mcp.tool()
 def viking_criar_evento_dia_inteiro(summary: str, data: str, description: str = "") -> ToolResult:
     """Cria um evento de dia inteiro no Google Calendar."""
+    _pelo_mcp()
     return _resultado(calendario.responder_criar_dia_inteiro(summary, data, description))
 
 
@@ -82,17 +107,21 @@ def viking_buscar_eventos(termo_busca: str) -> ToolResult:
 
 @mcp.tool()
 def viking_apagar_evento(event_id: str, titulo_esperado: str) -> ToolResult:
-    """Apaga UM evento pelo ID. Irreversível: busque e confirme com o usuário antes."""
-    return _resultado(calendario.responder_apagar(event_id, titulo_esperado))
+    """PEDE para apagar UM evento pelo ID — não apaga. O pedido espera o dono aprovar no terminal
+    dele (`viking aprovar`), por até 1 hora. Busque o evento antes: o título tem de bater."""
+    _pelo_mcp()
+    return _resultado(calendario.responder_pedir_apagar(event_id, titulo_esperado))
 
 
 @mcp.tool()
 def viking_reagendar_evento(
     event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
 ) -> ToolResult:
-    """Reagenda UM evento pelo ID. Irreversível: busque e confirme com o usuário antes."""
+    """PEDE para reagendar UM evento pelo ID — não reagenda. O pedido espera o dono aprovar no
+    terminal dele (`viking aprovar`), por até 1 hora. Busque o evento antes."""
+    _pelo_mcp()
     return _resultado(
-        calendario.responder_reagendar(event_id, titulo_esperado, novo_inicio, novo_fim)
+        calendario.responder_pedir_reagendar(event_id, titulo_esperado, novo_inicio, novo_fim)
     )
 
 
@@ -120,6 +149,7 @@ def viking_criar_lembrete(
     """Cria um lembrete/nota geral do Viking. `quando` é o prazo opcional em ISO 8601
     ('2026-09-25' ou '2026-09-25T14:00') — mesma regra do assistente de chat.
     """
+    _pelo_mcp()
     try:
         reminder = reminders_service.criar_lembrete(titulo, corpo, tags, quando, source="mcp")
     except reminders_service.QuandoInvalido:
@@ -153,7 +183,8 @@ def viking_listar_lembretes() -> ToolResult:
 @mcp.tool()
 def viking_concluir_lembrete(reminder_id: int) -> ToolResult:
     """Marca um lembrete do Viking como concluído."""
-    reminder = store.complete(reminder_id)
+    _pelo_mcp()
+    reminder = reminders_service.concluir(reminder_id)
     if not reminder:
         return ToolResult(
             content=f"Lembrete #{reminder_id} não encontrado.",

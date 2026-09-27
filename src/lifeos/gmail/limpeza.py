@@ -15,13 +15,13 @@ Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
-from lifeos import confirmacao
+from lifeos import aprovacoes, confirmacao
 from lifeos.gmail import service
 
-ACAO = "gmail.arquivar"
-DESFAZER_POR = timedelta(days=7)
+ACAO = aprovacoes.GMAIL_ARQUIVAR
+DESFAZER_POR = aprovacoes.JANELA_GMAIL  # D27
 
 
 @dataclass(frozen=True)

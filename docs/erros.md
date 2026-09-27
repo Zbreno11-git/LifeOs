@@ -19,11 +19,11 @@
 | 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 10 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
+| 4 | Teste que não separava o certo do errado | 12 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 4 | escapes gerados por script; varredura de caracteres de controle antes do commit |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 4 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 6 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 1 | formatador e afins só nos arquivos que eu editei; conferir com `git status` depois |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 6 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 7 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei — e em arquivo do baseline, só os meus trechos do `--diff`; conferir com `git status` depois |
 
 ---
 
@@ -179,6 +179,14 @@ do total geral cairia. Os três foram pegos antes do commit; a falsa agora deixa
 copia fundo, e o teste da parcela olha o caso isolado. O que tem de novo: o dublê de teste é
 código, e erra como código.
 
+
+**2026-09-27 — de novo um `or` na asserção, e um dublê sem campos (Sessão 5).** No teste da falha
+ambígua escrevi `"NÃO" not in texto or "pode" in texto.lower()` — terceira vez da forma; ela
+falhou e mostrou um defeito real (o texto dizia "NÃO apaguei" com o evento apagado), mas passaria
+com um texto que só tivesse "pode". Virou asserção exata. Na mesma etapa, o evento falso não tinha
+`id` nem `end`: o desfazer recriava em vez de restaurar, e o de horário quebrava com um
+`AttributeError` cru. O código passou a guardar o ID do pedido e a recusar sem horário completo.
+
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 
 **O antídoto, concreto:** mutação vista caindo antes de dar por pronto (a Sessão 4b torna isso
@@ -229,6 +237,15 @@ antes, sem estrago. O jeito certo, usado na rodada travada: matar só o `pytest`
 **2026-09-20 — `fastmcp.md` fora do formato (Sessão 3).** Rodei o `ruff format` só nos `.py`; ele
 também formata o Python dentro dos `.md`. Formatado na Sessão 4.
 
+
+**2026-09-27 — reserva de código que desarmava a garantia vizinha (Sessão 5).** Para não travar a
+limpeza com muitas propostas de outro app, deixei de reservar o número das propostas substituídas
+— e com isso a proposta nova podia sortear o número da velha, e o código da primeira lista
+aprovaria a segunda. O teste antigo `test_proposta_nova_invalida_o_codigo_velho` pegou. Na revisão
+do mesmo commit, outro do tipo: o desfazer que falhava de modo ambíguo voltava a ser desfazível, e
+um segundo `desfaz` recriaria a cópia duas vezes. O que tem de novo: uma otimização de limite
+(reserva, retentativa) é exatamente onde a garantia de "uma vez só" se perde.
+
 > **O que este conserto tornou falso, e onde mais a mesma falha nasce?** É a segunda passada de
 > revisão.
 
@@ -270,6 +287,12 @@ montada com o caso típico. Agora a descrição exata também reconhece, e o dis
 fatura VIVO", que é conta de telefone) tem teste e mutação. O que tem de novo: medir **por
 conexão**, não no agregado das duas.
 
+
+**2026-09-27 — prefixo de sessão com `LIKE` (Sessão 5).** O `desfaz` só alcança ações desta
+sessão, pelo prefixo do turno; escrevi `turno LIKE prefixo%` tirando só o `%` do prefixo. O teste
+com o disfarce mostrou: prefixo vazio vira `LIKE '%'` (qualquer sessão) e `_` também é curinga.
+Virou comparação exata do começo (`substr`), e prefixo vazio não acha nada.
+
 > **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
 > nem o vizinho inocente nem o disfarce.**
 
@@ -283,6 +306,13 @@ que tinha acabado de editar; o formatador reescreveu também 5 arquivos antigos 
 (`agent.py`, `calendar/tools.py`, `custos.py` e dois testes) — em `tools.py`, duas docstrings que
 o Gemini lê e que estavam fora do formato de propósito. Pego no `git status`; restaurado arquivo a
 arquivo com `git show HEAD:`, repondo à mão a única linha minha em `agent.py`.
+
+
+**2026-09-27 — as mesmas duas docstrings, segunda vez (Sessão 5).** Editei `calendar/tools.py` e
+rodei `ruff format` nele: o arquivo era meu, mas é do baseline, e as duas docstrings da Sessão 4b
+foram reformatadas de novo. Pego pelo `--check` do repo (6 em vez de 7). O antídoto antigo
+("formatar só o que eu editei") não cobre arquivo do baseline: nele, olhar o `--diff` e aplicar
+só os meus trechos.
 
 > **Conferir (`--check`) é no repo inteiro; escrever é só no que eu mudei.**
 

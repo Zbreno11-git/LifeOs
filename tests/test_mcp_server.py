@@ -1,7 +1,6 @@
-"""Primeiro teste que chama o servidor MCP do Viking pelo protocolo de verdade (fastmcp.Client
-em memória, sem stdio nem subprocesso) — antes só conferíamos os schemas descobertos, nunca uma
-chamada de tool de ponta a ponta (auditoria §14). Cobre só as tools de lembrete: são as únicas
-tocadas nesta sessão e não dependem de OAuth do Google Calendar, que não existe neste ambiente.
+"""O servidor MCP do Viking pelo protocolo de verdade (fastmcp.Client em memória, sem stdio nem
+subprocesso): lembretes e calendário com o Google falso do `conftest`. Apagar e reagendar só
+PEDEM desde a Sessão 5 — o fluxo com `viking aprovar` está em `tests/test_mcp_aprovacao.py`.
 """
 
 import asyncio
@@ -189,6 +188,7 @@ def test_apagar_titulo_divergente_pelo_mcp_nao_apaga(calendario):
     assert resultado.structured_content["erro"] == "titulo_divergente"
     assert resultado.structured_content["titulo_real"] == "Dentista"
     assert calendario["apagados"] == []
+    assert _pedidos() == []  # recusado pela trava: nem vira pedido
 
 
 @pytest.mark.parametrize(
@@ -200,26 +200,15 @@ def test_travas_da_sessao_1_valem_pelo_mcp(calendario, event_id, titulo):
     resultado = _chamar("viking_apagar_evento", {"event_id": event_id, "titulo_esperado": titulo})
     assert resultado.is_error is True
     assert calendario["apagados"] == []
+    # Sem isto, com o MCP só pedindo, `apagados == []` ficaria verdadeiro à toa.
+    assert _pedidos() == []
 
 
-def test_apagar_ok_pelo_mcp(calendario):
-    resultado = _chamar("viking_apagar_evento", {"event_id": "abc", "titulo_esperado": "dentista"})
-    assert resultado.is_error is False
-    assert resultado.structured_content["title"] == "Dentista"
-    assert calendario["apagados"] == ["abc"]
+def _pedidos():
+    from lifeos import aprovacoes, confirmacao
+
+    return confirmacao.abertas(aprovacoes.CALENDARIO_APAGAR)
 
 
-def test_falha_da_api_ao_reagendar_e_erro_estruturado(calendario):
-    calendario["falhar_patch"] = True
-    resultado = _chamar(
-        "viking_reagendar_evento",
-        {
-            "event_id": "abc",
-            "titulo_esperado": "Dentista",
-            "novo_inicio": "2026-10-02T10:00",
-            "novo_fim": "2026-10-02T11:00",
-        },
-    )
-    assert resultado.is_error is True
-    assert resultado.structured_content["erro"] == "falha_api"
-    assert "Dentista" in resultado.content[0].text
+# Apagar e reagendar pelo MCP só PEDEM desde a Sessão 5 (D36): o fluxo inteiro, com o
+# `viking aprovar`, está em `tests/test_mcp_aprovacao.py`.

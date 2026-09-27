@@ -43,6 +43,13 @@ esses eventos "will eventually disappear". O método não é nomeado; o caminho 
 convidado, os detalhes não ficam. Um `insert` com o ID antigo tende a dar 409 (cópia precisa de ID
 novo).
 
+**Como o Viking faz (Sessão 5, `calendar/service.restaurar`):** reivindica a ação no registro (uma
+vez só) e relê o evento; `confirmed` → nada a fazer; `cancelled` → `patch {"status": "confirmed"}`
+com `sendUpdates="none"`; sumiu → cópia sem convidados. Reagendamento volta só se o horário atual
+é o que o Viking pôs, com o campo que não vale anulado (`{"date": d, "dateTime": null}`: um
+`patch` em `start` mescla). Falha ambígua do desfazer deixa a ação desfeita (não recria duas
+vezes). Não medido: a mescla com `null` e o `patch` de status — validar no Mac.
+
 A validar no Mac (C9 da Sessão 5), no evento "Teste Viking": `get` depois do `delete` devolve
 `status=cancelled`?; o `patch` volta o mesmo ID e ele reaparece no `list`?; convidados recebem
 aviso (`sendUpdates`)?. Até medir, o desfazer do Viking tenta restaurar e, se não der, recria uma

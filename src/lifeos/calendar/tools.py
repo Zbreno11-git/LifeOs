@@ -20,17 +20,29 @@ from lifeos.calendar.service import (
     FalhaDaApi,
     TituloDivergente,
 )
+from lifeos.config import TIMEZONE
 
 
 @dataclass(frozen=True)
 class Resposta:
     texto: str
-    dados: Evento | list[Evento] | None = None
+    dados: Evento | list[Evento] | service.Pedido | None = None
     erro: ErroCalendario | None = None
 
 
-def _falha_da_api(exc: FalhaDaApi) -> Resposta:
+def _falha_da_api(exc: FalhaDaApi, *, feito: str = "") -> Resposta:
+    """`feito` ("criei o evento 'X'"): numa mutação, a falha ambígua não pode virar "não fiz" —
+    o Google pode ter aplicado, e quem lê "não fiz" pede de novo (auditoria §7)."""
+    if feito and exc.incerta:
+        return Resposta(_nao_sei(feito, exc), erro=exc)
     return Resposta(f"Não consegui falar com o Google Calendar: {exc}", erro=exc)
+
+
+def _nao_sei(feito: str, exc: FalhaDaApi) -> str:
+    return (
+        f"Não sei se {feito}: o Google Calendar não respondeu direito ({exc}). Pode ter sido "
+        "feito — confira no calendário antes de tentar de novo."
+    )
 
 
 def _linhas(eventos: list[Evento]) -> list[str]:
@@ -85,7 +97,7 @@ def responder_criar(
             texto = f"Não entendi os horários '{start_time}' / '{end_time}'. Use ISO 8601."
         return Resposta(texto, erro=exc)
     except FalhaDaApi as exc:
-        return _falha_da_api(exc)
+        return _falha_da_api(exc, feito=f"criei o evento '{summary}'")
     texto = f"✅ Evento '{summary}' criado com sucesso para {evento.inicio}! Link: {evento.link}"
     return Resposta(texto, dados=evento)
 
@@ -96,7 +108,7 @@ def responder_criar_dia_inteiro(summary: str, data: str, description: str = "") 
     except EntradaInvalida as exc:
         return Resposta(f"Não entendi a data '{data}'. Use YYYY-MM-DD.", erro=exc)
     except FalhaDaApi as exc:
-        return _falha_da_api(exc)
+        return _falha_da_api(exc, feito=f"criei o evento '{summary}'")
     return Resposta(
         f"✅ Evento de dia inteiro '{summary}' criado para a data {evento.inicio}!", dados=evento
     )
@@ -114,10 +126,8 @@ def _recusa_de_alvo(exc: ErroCalendario, verbo: str, event_id: str, titulo_esper
     return ""
 
 
-def responder_apagar(event_id: str, titulo_esperado: str) -> Resposta:
-    try:
-        evento = service.apagar(event_id, titulo_esperado)
-    except EntradaInvalida as exc:
+def _erro_ao_apagar(exc: ErroCalendario, event_id: str, titulo_esperado: str) -> Resposta:
+    if isinstance(exc, EntradaInvalida):
         if exc.dados.get("campo") == "event_id":
             texto = "NÃO apaguei nada: o ID do evento veio vazio. Busque o evento antes de apagar."
         else:
@@ -126,20 +136,20 @@ def responder_apagar(event_id: str, titulo_esperado: str) -> Resposta:
                 "apagar. Busque o evento e use o título que a busca devolveu."
             )
         return Resposta(texto, erro=exc)
-    except (EventoNaoEncontrado, TituloDivergente) as exc:
+    if isinstance(exc, EventoNaoEncontrado | TituloDivergente):
         return Resposta(_recusa_de_alvo(exc, "apaguei", event_id, titulo_esperado), erro=exc)
-    except FalhaDaApi as exc:
+    if isinstance(exc, FalhaDaApi):
         titulo = exc.dados.get("titulo_real", event_id)
+        if exc.incerta:
+            return Resposta(_nao_sei(f"apaguei o evento '{titulo}'", exc), erro=exc)
         return Resposta(f"NÃO consegui apagar o evento '{titulo}': {exc}", erro=exc)
-    return Resposta(f"🗑️ Evento '{evento.titulo}' ([{evento.inicio}]) foi apagado.", dados=evento)
+    return Resposta(f"NÃO apaguei nada: {exc}", erro=exc)
 
 
-def responder_reagendar(
-    event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
+def _erro_ao_reagendar(
+    exc: ErroCalendario, event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
 ) -> Resposta:
-    try:
-        evento = service.reagendar(event_id, titulo_esperado, novo_inicio, novo_fim)
-    except EntradaInvalida as exc:
+    if isinstance(exc, EntradaInvalida):
         campo = exc.dados.get("campo")
         if campo == "event_id":
             texto = "NÃO reagendei nada: o ID do evento veio vazio. Busque o evento antes."
@@ -155,15 +165,67 @@ def responder_reagendar(
         else:
             texto = f"Não entendi os horários '{novo_inicio}' / '{novo_fim}'. Use ISO 8601."
         return Resposta(texto, erro=exc)
-    except (EventoNaoEncontrado, TituloDivergente) as exc:
+    if isinstance(exc, EventoNaoEncontrado | TituloDivergente):
         return Resposta(_recusa_de_alvo(exc, "reagendei", event_id, titulo_esperado), erro=exc)
-    except FalhaDaApi as exc:
+    if isinstance(exc, FalhaDaApi):
         titulo = exc.dados.get("titulo_real", event_id)
+        if exc.incerta:
+            return Resposta(_nao_sei(f"reagendei o evento '{titulo}'", exc), erro=exc)
         return Resposta(f"NÃO consegui reagendar o evento '{titulo}': {exc}", erro=exc)
+    return Resposta(f"NÃO reagendei nada: {exc}", erro=exc)
+
+
+def responder_apagar(event_id: str, titulo_esperado: str) -> Resposta:
+    try:
+        evento = service.apagar(event_id, titulo_esperado)
+    except ErroCalendario as exc:
+        return _erro_ao_apagar(exc, event_id, titulo_esperado)
+    return Resposta(f"🗑️ Evento '{evento.titulo}' ([{evento.inicio}]) foi apagado.", dados=evento)
+
+
+def responder_reagendar(
+    event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
+) -> Resposta:
+    try:
+        evento = service.reagendar(event_id, titulo_esperado, novo_inicio, novo_fim)
+    except ErroCalendario as exc:
+        return _erro_ao_reagendar(exc, event_id, titulo_esperado, novo_inicio, novo_fim)
     return Resposta(
         f"✅ O evento '{evento.titulo}' foi reagendado com sucesso para {evento.inicio}!",
         dados=evento,
     )
+
+
+# --- pedidos de fora (MCP): nada muda até o dono aprovar no terminal -----------------------
+
+
+def _texto_do_pedido(pedido: service.Pedido) -> str:
+    quando = pedido.expira.astimezone(TIMEZONE).strftime("%H:%M")
+    return (
+        f"Pedido registrado: {pedido.descricao}. NADA mudou ainda: o dono aprova no terminal "
+        f"dele, com `viking aprovar`, até as {quando}. Não peça o código ao usuário — ele não "
+        "passa por aqui."
+    )
+
+
+def responder_pedir_apagar(event_id: str, titulo_esperado: str) -> Resposta:
+    try:
+        pedido = service.pedir_mudanca(service.APAGAR, event_id, titulo_esperado)
+    except ErroCalendario as exc:
+        return _erro_ao_apagar(exc, event_id, titulo_esperado)
+    return Resposta(_texto_do_pedido(pedido), dados=pedido)
+
+
+def responder_pedir_reagendar(
+    event_id: str, titulo_esperado: str, novo_inicio: str, novo_fim: str
+) -> Resposta:
+    try:
+        pedido = service.pedir_mudanca(
+            service.REAGENDAR, event_id, titulo_esperado, novo_inicio, novo_fim
+        )
+    except ErroCalendario as exc:
+        return _erro_ao_reagendar(exc, event_id, titulo_esperado, novo_inicio, novo_fim)
+    return Resposta(_texto_do_pedido(pedido), dados=pedido)
 
 
 # --- tools do Gemini: docstring = o que o modelo lê; o corpo só devolve o texto ------------

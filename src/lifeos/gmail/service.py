@@ -31,6 +31,7 @@ from html.parser import HTMLParser
 from googleapiclient.errors import HttpError
 
 # `_redacao` é stdlib pura e a única cópia da regra de caracteres de controle (ver D13).
+from lifeos import registro
 from lifeos.browser._redacao import limpar_controles
 from lifeos.config import TIMEZONE
 from lifeos.gmail.oauth import get_gmail_service
@@ -672,20 +673,28 @@ def _rotular(ids, corpo: dict) -> Modificacao:
     if not ids:
         return Modificacao((), ())
     service = _servico()
-    feitos: list[str] = []
-    for inicio in range(0, len(ids), LOTE_MODIFY):
-        lote = ids[inicio : inicio + LOTE_MODIFY]
-        try:
-            _executar(
-                lambda lote=lote: (
-                    service.users().messages().batchModify(userId="me", body={"ids": lote, **corpo})
-                ),
-                CUSTO_MODIFY,
-            )
-        except ErroGmail as exc:
-            return Modificacao(tuple(feitos), tuple(ids[len(feitos) :]), str(exc))
-        feitos += lote
-    return Modificacao(tuple(feitos), ())
+    operacao = "gmail.desarquivar" if "addLabelIds" in corpo else "gmail.arquivar"
+    with registro.acao(operacao, {"quantos": len(ids)}) as marca:
+        feitos: list[str] = []
+        erro = ""
+        for inicio in range(0, len(ids), LOTE_MODIFY):
+            lote = ids[inicio : inicio + LOTE_MODIFY]
+            try:
+                _executar(
+                    lambda lote=lote: (
+                        service.users()
+                        .messages()
+                        .batchModify(userId="me", body={"ids": lote, **corpo})
+                    ),
+                    CUSTO_MODIFY,
+                )
+            except ErroGmail as exc:
+                erro = str(exc)
+                break
+            feitos += lote
+        modificacao = Modificacao(tuple(feitos), tuple(ids[len(feitos) :]) if erro else (), erro)
+        marca.feito({"feitos": len(feitos), "falharam": len(modificacao.falharam), "erro": erro})
+    return modificacao
 
 
 def arquivar(ids) -> Modificacao:

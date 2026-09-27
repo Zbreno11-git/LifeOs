@@ -8,10 +8,13 @@ Viking, direto no terminal, e quem o lê é o laço do chat, antes de mandar a l
 
 Guarda em SQLite (`viking.db`, tabela `confirmacoes`): a ação, os dados exatos aprovados, a
 validade e o resultado. Regras:
-- o código vale uma vez e por `VALIDADE`;
-- uma proposta nova da mesma ação substitui as abertas (um código velho não aprova outra lista);
-- um código não se repete na mesma ação dentro de `JANELA_UNICA`, para "desfaz NNNN" não ter
-  dois donos.
+- o código vale uma vez e por `VALIDADE` (ou a `validade` da proposta: 1 h para o MCP);
+- uma proposta nova da mesma ação substitui as abertas (um código velho não aprova outra lista),
+  a menos que `substituir=False` (MCP: cada pedido de outro app espera o seu `viking aprovar`);
+- um código não se repete, **em nenhuma ação**, enquanto outro com o mesmo número não venceu
+  (em qualquer estado, inclusive substituída) ou foi usado há menos de `JANELA_UNICA`: "confirma
+  1234" tem um dono só. Vencida e não usada deixa de reservar (reservar 8 dias de tudo deixaria
+  outro app, com muitas propostas, travar a limpeza).
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
@@ -111,23 +114,35 @@ def normalizar(codigo: str) -> str:
     return limpo
 
 
-def propor(acao: str, dados: dict[str, Any], *, agora: datetime | None = None) -> Proposta:
+def propor(
+    acao: str,
+    dados: dict[str, Any],
+    *,
+    validade: timedelta = VALIDADE,
+    substituir: bool = True,
+    agora: datetime | None = None,
+) -> Proposta:
     agora = _agora(agora)
-    expira = agora + VALIDADE
+    expira = agora + validade
     with _sessao() as conn:
-        conn.execute(
-            "UPDATE confirmacoes SET estado = 'substituida' WHERE acao = ? AND estado = 'aberta'",
-            (acao,),
-        )
+        if substituir:
+            conn.execute(
+                "UPDATE confirmacoes SET estado = 'substituida' "
+                "WHERE acao = ? AND estado = 'aberta'",
+                (acao,),
+            )
         recentes = {
             linha["codigo"]
             for linha in conn.execute(
-                "SELECT codigo FROM confirmacoes WHERE acao = ? AND criada_em >= ?",
-                (acao, (agora - JANELA_UNICA).isoformat()),
+                # Substituída também reserva até vencer: senão a proposta nova podia sortear o
+                # número da velha, e o código lido na primeira lista aprovaria a segunda.
+                "SELECT codigo FROM confirmacoes "
+                "WHERE expira_em >= ? OR (estado = 'consumida' AND consumida_em >= ?)",
+                (agora.isoformat(), (agora - JANELA_UNICA).isoformat()),
             )
         }
         if len(recentes) >= 10**DIGITOS // 2:
-            raise ErroConfirmacao("códigos demais em uso para esta ação; tente mais tarde")
+            raise ErroConfirmacao("códigos demais em uso; tente mais tarde")
         while (codigo := f"{secrets.randbelow(10**DIGITOS):0{DIGITOS}d}") in recentes:
             pass
         cursor = conn.execute(
@@ -164,6 +179,51 @@ def vivo(acao: str, codigo: str, *, janela: timedelta, agora: datetime | None = 
     if linha["estado"] == "consumida" and linha["consumida_em"]:
         return datetime.fromisoformat(linha["consumida_em"]) + janela >= agora
     return False
+
+
+def abertas(acao: str, *, agora: datetime | None = None) -> list[Proposta]:
+    """As propostas desta ação esperando código, dentro da validade, da mais antiga à mais nova."""
+    agora = _agora(agora)
+    with _sessao() as conn:
+        linhas = conn.execute(
+            "SELECT * FROM confirmacoes WHERE acao = ? AND estado = 'aberta' AND expira_em >= ? "
+            "ORDER BY id",
+            (acao, agora.isoformat()),
+        ).fetchall()
+    return [
+        Proposta(
+            linha["id"],
+            linha["acao"],
+            linha["codigo"],
+            json.loads(linha["dados"]),
+            datetime.fromisoformat(linha["expira_em"]),
+        )
+        for linha in linhas
+    ]
+
+
+def criadas_desde(acao: str, desde: datetime) -> int:
+    """Quantas propostas desta ação nasceram desde `desde` (limite de pedidos do MCP)."""
+    with _sessao() as conn:
+        (total,) = conn.execute(
+            "SELECT COUNT(*) FROM confirmacoes WHERE acao = ? AND criada_em >= ?",
+            (acao, _agora(desde).isoformat()),
+        ).fetchone()
+    return total
+
+
+def acao_do_codigo(codigo: str) -> str | None:
+    """De que ação é este código (a proposta mais recente com ele, em qualquer estado); `None`
+    se nunca existiu. Com o número reservado entre ações, um código vivo tem um dono só."""
+    try:
+        codigo = normalizar(codigo)
+    except CodigoInvalido:
+        return None
+    with _sessao() as conn:
+        linha = conn.execute(
+            "SELECT acao FROM confirmacoes WHERE codigo = ? ORDER BY id DESC LIMIT 1", (codigo,)
+        ).fetchone()
+    return linha["acao"] if linha else None
 
 
 def cancelar(acao: str) -> None:

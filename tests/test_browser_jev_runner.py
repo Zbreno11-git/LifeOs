@@ -332,3 +332,43 @@ def test_callback_que_levanta_nao_impede_o_resultado_nem_vaza_processo(monkeypat
     r = run_jev("https://x.com", ["g"], timeout_s=10, on_progress=callback_ruim)
     assert r.status == "done" and r.steps == 1
     assert capturado["proc"].poll() is not None, "processo nao pode ficar orfao"
+
+
+# --- registro de ações (Sessão 5) ----------------------------------------------------------
+
+
+def test_execucao_fica_no_registro_com_a_url_redigida(monkeypatch, jev_falso):
+    from lifeos import registro
+
+    script = (
+        "import json\n"
+        "print(json.dumps({'schema':1,'type':'result','status':'done','steps':2,'url':'u'}))\n"
+    )
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+    monkeypatch.setattr(jev_runner, "build_command", lambda *a, **k: _fake_cmd(script))
+    token = registro.TURNO.set("s:9")
+    try:
+        run_jev("https://x.com/entrar?token=segredo123", ["abrir a página"], timeout_s=30)
+    finally:
+        registro.TURNO.reset(token)
+    (a,) = registro.do_turno("s:9")
+    assert (a.operacao, a.resultado) == (
+        "navegador.executar",
+        {"status": "done", "erro": "", "passos": 2},
+    )
+    assert "segredo123" not in a.parametros["url"]
+
+
+def test_recusa_antes_de_abrir_nao_entra_no_registro(monkeypatch, jev_falso):
+    from lifeos import registro
+
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+    jev_runner._EXECUCAO.acquire()
+    token = registro.TURNO.set("s:10")
+    try:
+        run_jev("https://x.com", ["g"])
+        run_jev("https://www.itau.com.br", ["g"])
+    finally:
+        jev_runner._EXECUCAO.release()
+        registro.TURNO.reset(token)
+    assert registro.do_turno("s:10") == []
