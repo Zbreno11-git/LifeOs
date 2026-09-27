@@ -72,6 +72,19 @@ preencheu pareceria errado e ele tenderia a repreencher em loop. É consequênci
 prompt, **não observada ao vivo**. Banco e e-mail ficam fora por bloqueio de domínio,
 não por redação.
 
+### O que o Jev recebe do ambiente (Sessão 6, 2026-09-27, D41)
+
+Até a Sessão 6 o subprocesso herdava o ambiente inteiro do Viking — `GEMINI_API_KEY`,
+`PLUGGY_CLIENT_SECRET`, tudo o que o `config.py` carrega do `.env` —, e o daemon do Browser
+Harness, que ele sobe, guardava isso enquanto vivesse. Hoje a tarefa, o `--doctor` e o `git` da
+conferência de versão recebem só `jev_runner.ambiente_do_jev`: sistema, `uv` (menos
+`UV_ENV_FILE`/`UV_NO_ENV_FILE`), harness (`BH_*`, `BU_*`, `BROWSER_HARNESS_*`, `CHROME_PATH`),
+rede (proxies, certificados), tela do Linux e o nonce. As chaves do Jev chegam pelo `.env` dele
+(`--env-file`), e o daemon continua com elas — são dele. Fora da lista de propósito: `BROWSER_USE_*`
+(o harness as lê para navegador na nuvem, que o Viking não usa). `viking browser --doctor` mostra
+ramo, commit, mudanças não salvas e se o patch OpenRouter está no `model.py` (pelo conteúdo, não
+pelo hash); cada tarefa avisa uma linha no stderr quando algo destoa.
+
 ## Freio de cliques que agem sobre a conta (Sessão 4b, 2026-09-26)
 
 O Jev dirige a Chrome **logada** do dono. O mesmo envelope confere a decisão que `choose` devolve

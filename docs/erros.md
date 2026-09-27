@@ -16,13 +16,13 @@
 
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
-| 1 | Comando para o Mac que não roda como escrito | 5 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
+| 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 12 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 7 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 8 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei — e em arquivo do baseline, só os meus trechos do `--diff`; conferir com `git status` depois |
 
 ---
@@ -46,13 +46,23 @@ de 528, `viking gmail` "não existe" e um chat da versão velha aberto. A falha 
 minha; a cascata era. O que tem de novo: é a armadilha "comandos sem `&&`" da skill `depuracao`,
 que eu tinha lido hoje.
 
+**2026-09-27 — URL com `?` sem aspas no roteiro (Sessão 6, plano).** O teste do YouTube usava
+`https://www.youtube.com/results?search_query=lofi` solto; no zsh o `?` é curinga e o comando
+morre com "no matches found". Pego antes de entregar. O diário do commit 1 disse que isto
+estava aqui; não estava — registrado só no commit 2, quando a divergência apareceu.
+
+**2026-09-27 — medida antes do `git pull` (Sessão 6, plano).** O roteiro do C7 media o ambiente
+do daemon entre o `cd` e o `git pull`, contra o antídoto desta classe. A medida não depende do
+código, mas a regra existe para o dono não ter de julgar isso: o pull vem primeiro, e a medida
+"antes" vem logo depois dele (o `pull` não reinicia o daemon). Pego ao reler o plano no C6.
+
 > **Um comando para o dono é código que roda numa máquina que eu não vejo.** Ele tem de funcionar
 > colado sem edição, no zsh com conda ativo.
 
 **O antídoto, concreto:** todo roteiro começa com `cd ~/LifeOs`, depois
 `git pull && git log --oneline -1` (o dono confere o commit esperado antes de seguir),
 `source .venv/bin/activate` e `which python`; `python -m pip`/`python -m pytest`; nenhum `#` na linha; nenhum `cat` de arquivo
-com segredo.
+com segredo; URL com `?` ou `&` entre aspas simples.
 
 ### 2. Afirmei sem abrir o lugar onde estaria
 
@@ -335,6 +345,14 @@ conexão**, não no agregado das duas.
 sessão, pelo prefixo do turno; escrevi `turno LIKE prefixo%` tirando só o `%` do prefixo. O teste
 com o disfarce mostrou: prefixo vazio vira `LIKE '%'` (qualquer sessão) e `_` também é curinga.
 Virou comparação exata do começo (`substr`), e prefixo vazio não acha nada.
+
+**2026-09-27 — prefixo `UV_` inteiro na lista do ambiente (Sessão 6).** O plano liberava todo
+`UV_*` para o Jev pensando em cache e Python do `uv`. Na revisão, a pergunta "que disfarce o
+prefixo deixa passar?" achou `UV_ENV_FILE`: medido, sem o `--env-file` (o `.env` do Jev não
+existe) ele é lido — e poderia apontar para o `.env` do Viking, com a chave do Gemini. E
+`UV_NO_ENV_FILE` desligaria o `.env` do Jev em silêncio. Viraram exceção dentro do prefixo
+(`AMBIENTE_EXCETO`), com teste e mutação. O que tem de novo: numa **lista do que passa**, o
+disfarce é um nome legítimo do mesmo dono (o `uv`) que muda o que a regra protege.
 
 > **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
 > nem o vizinho inocente nem o disfarce.**

@@ -18,7 +18,7 @@ import subprocess
 import threading
 import time
 from collections import deque
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
@@ -80,11 +80,7 @@ def build_command(
     """URL e objetivos vão **colados** (`--goal=...`): um objetivo escrito pelo Gemini que comece
     com "--" ("--liberar-uma=...") continua sendo objetivo. `--liberar-uma` só sai daqui com
     `liberar`, que só o caminho de aprovação passa (`liberacao.clicar_aprovado`)."""
-    jev_dir = Path(jev_dir or JEV_DIR)
-    env_file = Path(env_file) if env_file is not None else Path(JEV_ENV_FILE)
-    cmd = [uv_bin or UV_BIN, "run", "--directory", str(jev_dir)]
-    if env_file.is_file():
-        cmd += ["--env-file", str(env_file)]
+    cmd = _uv_run(jev_dir, env_file, uv_bin)
     cmd += ["python", str(SCRIPT_PATH), f"--url={url}"]
     cmd += [f"--goal={goal}" for goal in goals]
     teto = max_acoes if max_acoes is not None else BROWSER_MAX_ACOES
@@ -96,6 +92,60 @@ def build_command(
     if liberar is not None:
         cmd.append(f"--liberar-uma={json.dumps(liberar, sort_keys=True)}")
     return cmd
+
+
+def _uv_run(jev_dir: Path | None, env_file: Path | None, uv_bin: str | None) -> list[str]:
+    """`uv run` no clone do Jev, com o `.env` dele: é de lá, e só de lá, que vêm as chaves do Jev
+    (D7). Fonte única para a tarefa e para o `--doctor`."""
+    jev_dir = Path(jev_dir or JEV_DIR)
+    env_file = Path(env_file) if env_file is not None else Path(JEV_ENV_FILE)
+    cmd = [uv_bin or UV_BIN, "run", "--directory", str(jev_dir)]
+    if env_file.is_file():
+        cmd += ["--env-file", str(env_file)]
+    return cmd
+
+
+def comando_doctor() -> list[str]:
+    return [*_uv_run(None, None, None), "browser-harness", "doctor"]
+
+
+# O que o Jev, o `uv` e o daemon do Browser Harness recebem do ambiente do Viking (Sessão 6, D41):
+# uma lista do que PODE passar, então uma chave nova do Viking já nasce bloqueada. Ficam de fora,
+# entre outras, GEMINI_*, PLUGGY_*, GOOGLE_*, VIKING_* e as do próprio Jev (OPENROUTER_*, TYPESAFE_*,
+# TEXT_MODEL*): medido com o uv 0.12.10 em 2026-09-27, o ambiente do pai VENCE o `--env-file`, e
+# uma cópia velha no ambiente do Viking esconderia a do `.env` do Jev. Também VIRTUAL_ENV, CONDA_*
+# e PYTHON*, que são da venv do Viking e confundiriam o `uv` do Jev. O daemon herda o ambiente da
+# tarefa que o subiu e sobrevive a ela: o que passar daqui fica nele até ele reiniciar.
+AMBIENTE_NOMES = frozenset(
+    {
+        "PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "TZ",
+        "CHROME_PATH",
+        "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
+        "http_proxy", "https_proxy", "all_proxy", "no_proxy",
+        "SSL_CERT_FILE", "SSL_CERT_DIR",
+        "DISPLAY", "WAYLAND_DISPLAY", "XAUTHORITY", "DBUS_SESSION_BUS_ADDRESS",
+    }
+)  # fmt: skip
+AMBIENTE_PREFIXOS = ("LC_", "XDG_", "UV_", "BH_", "BU_", "BROWSER_HARNESS_")
+# Dentro do prefixo e mesmo assim fora: qual `.env` o Jev lê é escolha do Viking (`_uv_run`). Medido
+# com o uv 0.12.10 em 2026-09-27: sem o `--env-file` (o `.env` do Jev não existe), um UV_ENV_FILE
+# herdado é lido; e UV_NO_ENV_FILE desliga o `.env` do Jev em silêncio.
+AMBIENTE_EXCETO = frozenset({"UV_ENV_FILE", "UV_NO_ENV_FILE"})
+
+
+def ambiente_do_jev(nonce: str = "", origem: Mapping[str, str] | None = None) -> dict[str, str]:
+    """O ambiente de um subprocesso do Jev: só o que está na lista acima, mais o nonce desta
+    execução. Um `VIKING_JEV_NONCE` que já estivesse no ambiente do Viking não passa."""
+    origem = os.environ if origem is None else origem
+    env = {
+        nome: valor
+        for nome, valor in origem.items()
+        if nome not in AMBIENTE_EXCETO
+        and (nome in AMBIENTE_NOMES or nome.startswith(AMBIENTE_PREFIXOS))
+    }
+    if nonce:
+        env["VIKING_JEV_NONCE"] = nonce
+    return env
 
 
 SCHEMA = 1
@@ -390,7 +440,7 @@ def _rodar(
     try:
         proc = subprocess.Popen(
             cmd,
-            env={**os.environ, "VIKING_JEV_NONCE": nonce},
+            env=ambiente_do_jev(nonce),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,

@@ -63,13 +63,14 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
     desfazer por 7 dias). Só o `viking chat` registra essas tools, o MCP não (decisão do dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
-    parsing do JSONL); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
+    parsing do JSONL, o ambiente que ele recebe); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
     `_redacao.py` e `_acoes_sensiveis.py` (freio de clique que sai da conta, mexe nela ou gasta
     dinheiro) são módulos irmãos dele, também só stdlib; `mensagens.py` traduz códigos de erro
     para português; `liberacao.py` libera **uma vez**, com código, um clique de sair/conta que o
     freio recusou (dinheiro nunca; D38); `trava.py` é a trava entre processos: um navegador por
-    vez, e quem está usando na mensagem de "ocupado" (D40)
+    vez, e quem está usando na mensagem de "ocupado" (D40); `versao_jev.py` confere o clone do
+    Jev (ramo, commit, mudanças não salvas, patch OpenRouter pelo conteúdo) e só avisa (D41)
   - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
@@ -125,7 +126,8 @@ viking chat                    # assistente de chat (calendário + navegador + l
                                # dentro dele: /custos mostra o gasto da sessão
 viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
-viking browser --doctor         # diagnostica o Browser Harness (Chrome/daemon/conexão)
+viking browser --doctor         # versão do Jev (ramo/commit/patch) + diagnóstico do Browser
+                               # Harness (Chrome/daemon/conexão)
 viking gmail --login            # faz/confere o login do Gmail (ler e arquivar) e sai
 viking gmail --raio-x           # Gmail sem o Gemini (também --buscar Q, --ler ID;
                                # sem opção: não lidos de hoje)
@@ -202,7 +204,8 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   "Egress e redação".
 - As chaves do **Jev** (`OPENROUTER_API_KEY`, `TEXT_MODEL_*`) ficam no `.env` do próprio clone do
   Jev, não no do Viking — o Viking só guarda o ponteiro `VIKING_JEV_DIR`. Não duplicar a chave nos
-  dois arquivos (armadilha de rotação).
+  dois arquivos (armadilha de rotação). O Jev não recebe o ambiente do Viking: só a lista de
+  `jev_runner.ambiente_do_jev` (D41); variável nova de que o Jev precise entra lá, com o motivo.
 - `secrets/` (gitignored exceto `.gitkeep`) — `google_credentials.json` e `google_token.json` (OAuth
   real do Google Calendar).
 - **Regra fixa:** nunca commitar nada em `secrets/`, o `.env` da raiz, ou qualquer chave/token real.
@@ -349,6 +352,14 @@ continua na frente (dentro do processo). Teste de "ocupado" com **outro processo
 (`tests/test_browser_trava.py`): uma thread passaria pela trava de dentro e o teste ficaria verde
 por outro motivo. O stdout do runner só vale com o nonce da execução (`VIKING_JEV_NONCE`): roteiro
 falso de teste passa por `_fake_cmd`, que o carimba.
+
+**O ambiente do pai vence o `--env-file` do `uv`, e o daemon guarda o ambiente de quem o subiu.**
+Medido com o uv 0.12.10 (2026-09-27): uma `TYPESAFE_MODEL` no ambiente do Viking prevalece sobre a
+do `.env` do Jev, e um `UV_ENV_FILE` herdado é lido quando o `.env` do Jev não existe. Por isso o
+Jev recebe só a lista de `jev_runner.ambiente_do_jev` (sem `UV_ENV_FILE`/`UV_NO_ENV_FILE`), e as
+chaves dele vêm só do `.env` dele. O daemon do Browser Harness nasce com o ambiente da tarefa que
+o subiu e sobrevive a ela: depois de mudar a lista, o daemon velho continua com o ambiente velho
+até reiniciar (`pkill -f browser_harness.daemon`; a próxima tarefa o sobe de novo).
 
 **O Gemini inventa fuso horário.** Para "amanhã às 10h" ele mandou `10:00:00-08:00` e o evento
 caiu às 15h de Brasília (Mac, 2026-09-27). As tools do Gemini recebem horário **sem fuso** e

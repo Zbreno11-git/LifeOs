@@ -5,55 +5,47 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 6: commit 1 feito (trava + protocolo), C4 (ambiente) a começar
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 6: commits 1 e 2 feitos, falta o teste no Mac (C7)
 
-**Estado do repositório:** o commit 1 da Sessão 6 (conferir com `git log -1`; o anterior é
-`7f018f6`, C0) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+**Estado do repositório:** o commit 2 da Sessão 6 (conferir com `git log -1`; o anterior é
+`c188b8e`, commit 1) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** C0–C3 ✅. Commit 1: `browser/trava.py` (flock, sem espera, quem usa na mensagem,
-`trava_indisponivel`), `run_jev` e `--doctor` com a trava, protocolo com nonce
-(`VIKING_JEV_NONCE`) e `parse_event(linha, nonce)` estrito; D40. Medido em 2026-09-27:
-`1047 passed`; `ruff check` limpo; baseline 7; `python scripts/mutacoes.py` →
-`mutações: 135 · mortas pelo teste esperado: 135` + `"navegador ocupado"` 1/1.
+**Onde parou:** C0–C6 ✅. Commit 2: `jev_runner.ambiente_do_jev` (lista do que passa; exceção
+`UV_ENV_FILE`/`UV_NO_ENV_FILE`), `_uv_run`/`comando_doctor` (o `--doctor` com o `--env-file` do Jev e o
+mesmo ambiente), `browser/versao_jev.py` (doctor mostra; tarefa avisa no stderr); D41. Medido em
+2026-09-27: `1078 passed`; `ruff check` limpo; baseline 7; `python scripts/mutacoes.py` →
+`mutações: 146 · mortas pelo teste esperado: 146`.
 
-**Próximo passo exato (C4):** `jev_runner.ambiente_do_jev(nonce)` com a allowlist da tabela do plano
-(fonte única), usada no `Popen` de `_rodar` (hoje `{**os.environ, "VIKING_JEV_NONCE": nonce}`) e no
-`subprocess.call` de `cli._doctor` (que também passa a mandar `--env-file` quando existe);
-`tests/test_browser_ambiente.py` com as variáveis de fora e de dentro do plano e um roteiro falso que
-imprime só os **nomes** que recebeu. Depois C5 (`browser/versao_jev.py`), C6 (fechar commit 2), C7 (Mac).
+**Próximo passo exato (C7):** entregar ao dono o roteiro "Verificação ponta a ponta (C7, Mac)" do
+plano abaixo (já revisto: `git pull` primeiro, `ps -wwE` com `HOME=` de controle) e **esperar a saída
+colada**. Com ela: conferir `HOME` 1/1, `GEMINI_API_KEY` 1→0, o bloco "Jev em …" do doctor, o "Não
+rodei o diagnóstico: … pelo terminal (viking browser) …", 10:00 no evento e o `desfaz` do
+reagendamento. Depois fechar a sessão: diário (validação no Mac), barra de progresso (conta 9 de 12 +
+a 6), `sessoes.md` (Sessão 6 feita, ▶️ para a 7), este bloco para a Sessão 7.
+
+**Se o Mac mostrar:**
+- uma linha "⚠️  Jev: N mudança(s) não salva(s)" → pedir `git -C jev-ultrafast status --porcelain |
+  cut -c1-3 | sort | uniq -c` (só o tipo, sem nomes) e decidir se conta só rastreados
+  (`--untracked-files=no`);
+- tarefa quebrando depois da lista (uv, Chrome, rede) → a variável que falta entra em
+  `AMBIENTE_NOMES`/`AMBIENTE_PREFIXOS` com o incidente no D41 e no diário;
+- `HOME` dando 0 → o `ps` não mostra ambiente; medir de outro jeito antes de afirmar o `GEMINI` 0.
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
-(D7, D36–D39); o índice de `docs/erros.md` (classes 1, 4, 6, 7, 8); `src/lifeos/browser/jev_runner.py`,
-`_jev_subprocess.py` (`emit`), `trava.py`, `mensagens.py`, `cli.py` (`_doctor`, `_browser`);
-`tests/test_browser_jev_runner.py` (`_fake_cmd` + `_CARIMBA_NONCE`), `tests/test_browser_trava.py`.
-Skills: `pre-compact` ("Depois do compact") e `software-build`.
-
-**Decisões (onde estão):** as do dono na tabela "Respostas do dono" do plano abaixo; as técnicas na
-tabela seguinte. Viram D40 (commit 1) e D41 (commit 2).
+(D7, D40, D41); o índice de `docs/erros.md` (classes 1, 4, 7); `src/lifeos/browser/jev_runner.py`
+(`ambiente_do_jev`, `_uv_run`), `versao_jev.py`, `trava.py`, `cli.py` (`_doctor`, `_browser`).
+Skills: `pre-compact` ("Depois do compact") e `software-build` (fechar sessão).
 
 **Não pode ser esquecido:**
-- Medido na abertura: o ambiente do pai **vence** o `--env-file` do `uv`; o daemon do Browser
-  Harness herda o ambiente da primeira tarefa e sobrevive — no Mac, reiniciar uma vez e medir.
-- `_jev_subprocess.py` e `_acoes_sensiveis.py` só stdlib; `agent.py`, `calendar/tools.py`,
-  `custos.py`, `tests/test_assistant_tools.py`, `tests/test_browser_jev_runner.py` estão no
-  baseline de formatação: só os meus trechos do `--diff`. Baseline = 7.
-- Mutações em background, sem `timeout` (nem o da ferramenta); não cortar a saída com `tail`.
-- Texto com heredoc dentro não vai num heredoc. URL com `?` no roteiro do Mac vai entre aspas.
-- `or` em asserção é proibido. Repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
-- Para o C4: o nonce hoje entra por `{**os.environ, "VIKING_JEV_NONCE": nonce}` em `_rodar` — a
-  allowlist tem de manter `VIKING_JEV_NONCE` (os roteiros falsos de teste o leem do ambiente) e
-  bloquear o resto de `VIKING_*`. O dublê de `_rodar` em `test_browser_trava.py` recebe `nonce`.
-- Mutação que troca "recusa" por "espera": antes de rodar, perguntar *qual teste esperaria para
-  sempre?* (a rodada ficou 1 h parada nesta sessão; `docs/erros.md`, classe 6). Travou → matar só o
-  `pytest` filho e conferir o arquivo restaurado.
-- A 2ª passada da revisão do commit 1 achou o texto do clique aprovado com o navegador ocupado
-  (consertado). Na do commit 2, conferir `docs/fontes/jev-typesafe.md` ("Egress"), a D7 no
-  `AGENTS.md` e a doc do `--doctor`.
+- O daemon do Mac hoje ainda tem o ambiente velho (com `GEMINI_API_KEY`) até o `pkill` do roteiro.
+- Repo público; roteiro do Mac começa com `cd ~/LifeOs` e `git pull && git log --oneline -1`; URL
+  com `?` entre aspas; nunca imprimir valor de variável, só contar o nome.
+- Mutações em background, sem `timeout`; baseline de formatação = 7 (só os meus trechos do `--diff`).
 
-**Depende do dono:** nada até o C7 (Mac).
+**Depende do dono:** rodar o roteiro do C7 no Mac e colar a saída.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1047 passed`; `python -m ruff format --check . | tail -1` → `7 files
+`python -m pytest -q` → `1078 passed`; `python -m ruff format --check . | tail -1` → `7 files
 would be reformatted`.
 
 ## Plano — Sessão 6: o navegador com duas tarefas ao mesmo tempo (trava, protocolo, chaves, versão do Jev)
@@ -118,9 +110,9 @@ presente"; (d) `desfaz` de um reagendamento volta o horário exato; (e) "amanhã
 | C1 | trava entre processos + `--doctor` com a trava + mensagem "ocupado" | ✅ |
 | C2 | protocolo estrito (schema + nonce + campos mínimos) | ✅ |
 | C3 | mutações, docs, revisão em 2 passadas, **commit 1 + push** | ✅ |
-| C4 | ambiente allowlisted no Jev e no `--doctor` | ⬜ |
-| C5 | versão do Jev no `--doctor` + aviso por tarefa | ⬜ |
-| C6 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ⬜ |
+| C4 | ambiente allowlisted no Jev e no `--doctor` | ✅ |
+| C5 | versão do Jev no `--doctor` + aviso por tarefa | ✅ |
+| C6 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ✅ |
 | C7 | Mac: roteiro abaixo | ⬜ |
 
 ### Commit 1 — trava e protocolo
@@ -230,29 +222,36 @@ Chrome, proxy). **2ª passada:** *o que isto tornou falso?* — `docs/fontes/jev
 ### Verificação ponta a ponta (C7, Mac)
 ```
 cd ~/LifeOs
-pgrep -f browser_harness.daemon
-ps eww -o command= -p "$(pgrep -f browser_harness.daemon | head -1)" | tr ' ' '\n' | grep -c '^GEMINI_API_KEY='
 git pull && git log --oneline -1
+pgrep -f browser_harness.daemon
+ps -wwE -o command= -p "$(pgrep -f browser_harness.daemon | head -1)" | tr ' ' '\n' | grep -c '^HOME='
+ps -wwE -o command= -p "$(pgrep -f browser_harness.daemon | head -1)" | tr ' ' '\n' | grep -c '^GEMINI_API_KEY='
 source .venv/bin/activate
 which python
 python -m pytest -q
 pkill -f browser_harness.daemon
 viking browser --doctor
 viking browser --url https://example.com --goal 'abrir a página'
-ps eww -o command= -p "$(pgrep -f browser_harness.daemon | head -1)" | tr ' ' '\n' | grep -c '^GEMINI_API_KEY='
+ps -wwE -o command= -p "$(pgrep -f browser_harness.daemon | head -1)" | tr ' ' '\n' | grep -c '^HOME='
+ps -wwE -o command= -p "$(pgrep -f browser_harness.daemon | head -1)" | tr ' ' '\n' | grep -c '^GEMINI_API_KEY='
 viking browser --url 'https://www.youtube.com/results?search_query=lofi' --goal 'abrir o primeiro resultado' &
 sleep 4
 viking browser --doctor
 wait
 viking chat
 ```
-(URL entre aspas: no zsh o `?` sem aspas é curinga — classe 1. Se o primeiro `pgrep` não mostrar
-nada, o daemon não está de pé e a contagem "antes" não se mede: tudo bem, vale o "depois".)
-Esperado: contagem `1` antes e `0` depois (só o nome, nunca o valor); o `--doctor` mostra ramo,
-commit e "patch OpenRouter: presente"; o segundo `--doctor` (com o YouTube rodando) diz "ocupado por
-cli desde … (tarefa: «abrir o primeiro resultado»)". No chat: `cria um evento Teste Viking amanhã
-às 10h` (conferir **10:00**) → `muda o Teste Viking para as 11h` → `desfaz` (voltou às 10:00?) →
-`apaga o Teste Viking` → `sair`.
+(Revisto no C6, 2026-09-27: o `git pull` vem antes de qualquer medida — classe 1; `ps -wwE` e não
+`ps eww`: no macOS `-e` é "todos os processos" e o ambiente é `-E`, então o `eww` daria 0 de
+qualquer jeito — classe 4. O `HOME=` é o controle: tem de dar `1` nas duas medidas; se der `0`, o
+`ps` não está mostrando o ambiente e a contagem do `GEMINI_API_KEY` não vale. URL com `?` entre
+aspas. Se o primeiro `pgrep` não mostrar nada, o daemon não está de pé e o "antes" não se mede.)
+Esperado: `HOME` `1`/`1`; `GEMINI_API_KEY` `1` antes e `0` depois (só o nome, nunca o valor); o
+`--doctor` mostra "Jev em …", ramo, commit, "mudanças não salvas" e "patch OpenRouter: presente" antes
+do diagnóstico do harness; nenhuma tarefa mostra linha "⚠️  Jev:" (se mostrar, colar: é a medida do
+`git status` do clone do Mac); o segundo `--doctor` (com o YouTube rodando) diz "Não rodei o
+diagnóstico: o navegador está sendo usado pelo terminal (viking browser) desde … (tarefa: «abrir o
+primeiro resultado»)". No chat: `cria um evento Teste Viking amanhã às 10h` (conferir **10:00**) →
+`muda o Teste Viking para as 11h` → `desfaz` (voltou às 10:00?) → `apaga o Teste Viking` → `sair`.
 
 ### Riscos e o que é irreversível
 - `pkill` do daemon: inofensivo (a próxima tarefa o sobe de novo); o Chrome pode pedir "Allow remote

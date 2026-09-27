@@ -1046,6 +1046,34 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-27 — Sessão 6, commit 2: o Jev não recebe as chaves do Viking, e o Viking diz qual Jev roda
+
+**Feito.** `jev_runner.ambiente_do_jev(nonce)`: o Jev, o `--doctor` e o `git` da versão recebem só
+uma lista (sistema, `uv`, harness, rede, tela do Linux, o nonce); `GEMINI_*`, `PLUGGY_*`,
+`GOOGLE_*`, `VIKING_*`, as chaves do próprio Jev, `VIRTUAL_ENV`, `CONDA_*` e `PYTHON*` ficam de
+fora. O `--doctor` monta o `uv run` pelo mesmo trecho da tarefa (`_uv_run`) e passa a mandar o
+`--env-file` do Jev. `browser/versao_jev.py`: ramo, commit, mudanças não salvas e o patch
+OpenRouter pelo **conteúdo** do `model.py`; o `--doctor` mostra, cada tarefa avisa uma linha no
+stderr (o Gemini não vê), e nada disso levanta. D41.
+
+**Medido (VPS, 2026-09-27).** O harness também lê `BROWSER_USE_*` (navegador na nuvem; fica fora)
+e monta o socket do daemon com a pasta temporária (`TMPDIR` passa). Com o uv 0.12.10: um
+`UV_ENV_FILE` herdado é lido quando não há `--env-file`, e `UV_NO_ENV_FILE` desliga o `.env` do
+Jev — os dois viraram exceção dentro de `UV_*`. O clone do Jev daqui: `viking-openrouter`,
+`afbee69`, nada fora de commit, patch presente; o `.gitignore` do fork cobre `.env` e `.venv/`.
+
+**Revisão.** 1ª passada (*o que ainda chega ao Jev e ao daemon? quem mais abre subprocesso?*):
+achou o `UV_ENV_FILE` e confirmou que os três pontos que abrem o Jev passam pela lista; e um clone
+sem `.git` dentro do repo do Viking responderia com o ramo do Viking — `conferir` compara o
+`--show-toplevel`. 2ª passada (*o que isto tornou falso?*): no roteiro do Mac, `ps eww` não mostra o
+ambiente no macOS e daria "0" por outro motivo; virou `ps -wwE` com `HOME=` como controle.
+
+**Erros meus** (em `docs/erros.md`): o prefixo `UV_` inteiro na lista do plano (classe 7); o
+roteiro do C7 medindo antes do `git pull` (classe 1); e a URL sem aspas do commit 1, que o diário
+dizia registrada e não estava (classe 1, registrada agora).
+
+**Não medido:** o Jev e o daemon de verdade com o ambiente novo — o `.venv` do clone é do Mac (C7).
+
 ### 2026-09-27 — Sessão 6, commit 1: um navegador por vez, e só a saída desta execução vale
 
 **Decidido pelo dono (7 respostas na abertura):** recusar na hora dizendo quem usa, desde quando e

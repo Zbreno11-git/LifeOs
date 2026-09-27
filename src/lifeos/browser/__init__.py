@@ -11,7 +11,7 @@ import sys
 from collections.abc import Sequence
 
 from lifeos import custos
-from lifeos.browser import _redacao, liberacao
+from lifeos.browser import _redacao, liberacao, versao_jev
 from lifeos.browser.jev_runner import BrowserResult, run_jev
 from lifeos.browser.mensagens import formatar
 
@@ -50,6 +50,8 @@ def executar_no_navegador(
     código mostrado só no terminal (`liberacao`); o texto devolvido — o que o Gemini lê — nunca
     leva o código."""
     objetivos = [objetivo] if isinstance(objetivo, str) else list(objetivo)
+    if not silencioso:
+        versao_jev.avisar()
     resultado = run_jev(
         url,
         objetivos,

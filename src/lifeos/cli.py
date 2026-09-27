@@ -15,9 +15,9 @@ from dataclasses import asdict
 def _doctor() -> int:
     """Diagnóstico do Browser Harness, usando a ferramenta do próprio fornecedor. Respeita a
     trava do navegador: o doctor pode reiniciar o daemon, e derrubaria a tarefa de outro terminal."""
-    from lifeos.browser import trava
+    from lifeos.browser import jev_runner, trava, versao_jev
     from lifeos.browser._redacao import limpar_controles
-    from lifeos.config import JEV_DIR, UV_BIN
+    from lifeos.config import UV_BIN
 
     try:
         with trava.ocupar("diagnóstico (viking browser --doctor)") as ocupado:
@@ -25,10 +25,12 @@ def _doctor() -> int:
                 descricao = limpar_controles(trava.descrever(ocupado))
                 print(f"❌ Não rodei o diagnóstico: {descricao}. Espere terminar.", file=sys.stderr)
                 return 2
-            cmd = [UV_BIN, "run", "--directory", str(JEV_DIR), "browser-harness", "doctor"]
+            print(versao_jev.texto(versao_jev.conferir()))
+            cmd = jev_runner.comando_doctor()
             print(f"$ {' '.join(cmd)}", file=sys.stderr)
             try:
-                return subprocess.call(cmd)
+                # O doctor pode subir o daemon, que guarda este ambiente: o mesmo da tarefa (D41).
+                return subprocess.call(cmd, env=jev_runner.ambiente_do_jev())
             except FileNotFoundError:
                 print(f"❌ Não encontrei o executável '{UV_BIN}' no PATH.", file=sys.stderr)
                 return 2
@@ -43,9 +45,10 @@ def _browser(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     if not args.url or not args.goals:
         parser.error("--url e --goal são obrigatórios (ou use --doctor)")
 
-    from lifeos.browser import formatar, imprimir_progresso, run_jev
+    from lifeos.browser import formatar, imprimir_progresso, run_jev, versao_jev
     from lifeos.browser.jev_runner import BrowserResult
 
+    versao_jev.avisar()
     resultado: BrowserResult = run_jev(
         args.url,
         args.goals,
@@ -352,7 +355,9 @@ def main() -> None:
         "--quiet", action="store_true", help="Não imprime o progresso passo a passo"
     )
     navegador.add_argument(
-        "--doctor", action="store_true", help="Diagnostica o Browser Harness e sai"
+        "--doctor",
+        action="store_true",
+        help="Mostra a versão do Jev, diagnostica o Browser Harness e sai",
     )
 
     gmail = subparsers.add_parser(

@@ -92,7 +92,8 @@ daemon, com retentativas limitadas. Ver `docs/fontes/browser-harness.md`.
 Um navegador por vez (Sessão 6, D40): como esse preflight pode reiniciar o daemon, duas tarefas
 de `viking` diferentes derrubariam uma à outra. Toda tarefa (e o `--doctor`) pega uma trava do
 kernel em `data/navegador.lock` e, se outro processo a segura, recusa na hora dizendo quem usa. O
-stdout do Jev só vale com o nonce sorteado para aquela execução.
+stdout do Jev só vale com o nonce sorteado para aquela execução. O Jev recebe do ambiente só uma
+lista (D41): as chaves do Viking não chegam a ele nem ao daemon, e as dele vêm do `.env` dele.
 
 Isto substitui o controle local de PC via Windows-MCP como caminho padrão de execução. Detalhes do
 stack e do incidente do daemon: `docs/arquitetura/browser-automation-stack.md`;

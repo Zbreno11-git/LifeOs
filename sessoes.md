@@ -18,8 +18,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 - **Sessão:** 6 — runner em concorrência (a 5 fechou no Mac em 2026-09-27).
 - **Primeiro passo:** a Sessão 6 está em curso — plano aprovado em 2026-09-27 no `PROGRESSO.md`
-  (trava entre terminais, protocolo estrito, chaves cortadas, versão do Jev; teste no Mac no fim).
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D36–D39),
+  (trava entre terminais, protocolo estrito, chaves cortadas, versão do Jev). Os dois commits estão
+  feitos (2026-09-27); falta o teste no Mac (C7), com o roteiro no `PROGRESSO.md`.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D36–D41),
   `src/lifeos/browser/jev_runner.py`.
 - **Depende do dono:** o teste no Mac no fim (as perguntas da abertura já foram respondidas).
 

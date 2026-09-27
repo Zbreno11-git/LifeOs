@@ -51,6 +51,13 @@ def _trava_do_navegador_de_teste(monkeypatch, tmp_path):
     monkeypatch.setattr("lifeos.browser.trava.TRAVA_PATH", tmp_path / "navegador.lock")
 
 
+@pytest.fixture(autouse=True)
+def _versao_do_jev_de_teste(monkeypatch, tmp_path):
+    """A conferência da versão do Jev (Sessão 6) nunca no clone de quem roda os testes: o resultado
+    dependeria da máquina. Aqui cai no caminho de "não consegui conferir" (pasta que não existe)."""
+    monkeypatch.setattr("lifeos.browser.versao_jev.JEV_DIR", tmp_path / "sem-jev")
+
+
 # --- Google Calendar falso, compartilhado pelos testes de calendário e do MCP -------------
 
 
