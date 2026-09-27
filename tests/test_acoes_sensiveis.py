@@ -6,6 +6,7 @@ Unicode direto já gravou o caractere literal no código-fonte três vezes (ver 
 classe 5).
 """
 
+import json
 import re
 import sys
 import time
@@ -276,3 +277,152 @@ def test_freio_so_usa_stdlib():
     assert re.findall(r"^\s*(?:from|import)\s+lifeos", fonte, re.MULTILINE) == []
     modulos = re.findall(r"^\s*(?:from|import)\s+([a-zA-Z_][\w]*)", fonte, re.MULTILINE)
     assert set(modulos) <= set(sys.stdlib_module_names)
+
+
+# --- sinais e liberação (Sessão 5) ---------------------------------------------------------
+
+
+def _sinais(rotulo, guard=None, kind="click"):
+    return a.sinais({"kind": kind, "label": rotulo}, guard)
+
+
+@pytest.mark.parametrize(
+    ("rotulo", "guard"),
+    [
+        ("Sair", None),
+        ("link", _guard(href="/logout")),
+        ("Excluir minha conta", None),
+        ("Alterar senha", None),
+        ("Finalizar compra", None),
+        ("Excluir", _guard(escopo="Tem certeza que deseja excluir sua conta?")),
+        ("Confirmar", _guard(escopo="Resumo do pedido Total R$ 50,00")),
+        ("Conta → Sair", None),
+    ],
+)
+def test_a_categoria_do_motivo_esta_nos_sinais(rotulo, guard):
+    """`sinais` nunca vê menos que `motivo`: a digital leva a categoria dele."""
+    kind = "select" if " → " in rotulo else "click"
+    recusado = a.motivo({"kind": kind, "label": rotulo}, guard)
+    assert recusado.split(":")[0] in _sinais(rotulo, guard, kind)
+
+
+def test_sair_e_pagar_tem_os_dois_sinais():
+    """`motivo` diz só "sair" (a primeira categoria); a liberação precisa ver o dinheiro."""
+    assert a.motivo({"kind": "click", "label": "Sair e pagar"}).startswith("sair: ")
+    assert _sinais("Sair e pagar") == {"sair", "dinheiro"}
+
+
+@pytest.mark.parametrize(
+    ("rotulo", "guard"),
+    [
+        ("Sair", _guard(escopo="Resumo do pedido\nTotal R$ 50,00")),
+        ("Sair", _guard(href="/checkout/pagar")),
+        ("Sair e pagar a fatura agora mesmo com o cartão salvo", _guard(href="/logout")),
+        ("Opções → Pagar e sair", None),
+    ],
+)
+def test_dinheiro_em_qualquer_lugar_do_botao(rotulo, guard):
+    """Sem o teto de palavras e sem exigir botão genérico: dinheiro nunca se libera."""
+    kind = "select" if " → " in rotulo else "click"
+    assert "dinheiro" in _sinais(rotulo, guard, kind)
+
+
+def test_sinais_sem_dinheiro():
+    assert _sinais("Sair") == {"sair"}
+    assert _sinais("Excluir minha conta") == {"conta"}
+    assert _sinais("Buscar") == set()
+    assert a.sinais({"kind": "fill", "label": "Pagar"}) == set()
+
+
+@pytest.mark.parametrize(
+    ("url", "esperado"),
+    [
+        ("https://Loja.Example/conta?x=1", "https://loja.example"),
+        ("https://loja.example:8443/", "https://loja.example:8443"),
+        ("http://user:senha@loja.example/", "http://loja.example"),
+        ("http://[::1]:8000/", "http://[::1]:8000"),
+        ("data:text/html,<button>Sair</button>", "data:"),
+        ("DATA:text/html,x", "data:"),
+        ("file:///tmp/x.html", ""),
+        ("about:blank", ""),
+        ("chrome://settings", ""),
+        ("https:///sem-host", ""),
+        ("https://loja.example:99999/", ""),
+        ("", ""),
+        (None, ""),
+    ],
+)
+def test_esquema_host(url, esperado):
+    assert a.esquema_host(url) == esperado
+
+
+def test_digital_ida_e_volta():
+    """A digital da recusa, serializada e lida de volta, é a mesma: é ela que casa."""
+    acao = {"kind": "click", "label": "  SAIR  "}
+    impressao, liberavel = a.digital("https://loja.example/c", acao, "sair: SAIR")
+    assert impressao == {
+        "esquema_host": "https://loja.example",
+        "categoria": "sair",
+        "rotulo": "sair",
+    }
+    assert liberavel is True
+    assert a.ler_liberacao(json.dumps(impressao)) == impressao
+
+
+@pytest.mark.parametrize(
+    ("url", "rotulo", "recusado", "guard"),
+    [
+        ("https://loja.example/", "Finalizar compra", "dinheiro: Finalizar compra", None),
+        ("https://loja.example/", "Sair", "sair: Sair", _guard(escopo="Total do pedido")),
+        ("about:blank", "Sair", "sair: Sair", None),
+        ("https://loja.example/", "", "sair: ", _guard(href="/logout")),
+        ("https://loja.example/", "sair " * 20, "sair: sair", None),
+    ],
+)
+def test_nao_liberavel(url, rotulo, recusado, guard):
+    _impressao, liberavel = a.digital(url, {"kind": "click", "label": rotulo}, recusado, guard)
+    assert liberavel is False
+
+
+def test_rotulo_longo_nao_libera_por_um_prefixo():
+    """A digital corta em 80, mas um rótulo que passa disso nunca é liberável: dois botões com o
+    mesmo começo não se confundem."""
+    longo = "sair " + "x" * 90
+    impressao, liberavel = a.digital(
+        "https://loja.example/", {"kind": "click", "label": longo}, "sair: x"
+    )
+    assert len(impressao["rotulo"]) == a.MAX_ROTULO_DIGITAL
+    assert liberavel is False
+    with pytest.raises(ValueError, match="rótulo"):
+        a.ler_liberacao(json.dumps({**impressao, "rotulo": longo}))
+
+
+@pytest.mark.parametrize(
+    ("texto", "motivo_esperado"),
+    [
+        ('{"esquema_host": "data:", "categoria": "dinheiro", "rotulo": "pagar"}', "categoria"),
+        ('{"esquema_host": "data:", "categoria": "sair", "rotulo": "sair e pagar"}', "dinheiro"),
+        ('{"esquema_host": "data:", "categoria": "sair", "rotulo": "Sair"}', "rótulo"),
+        ('{"esquema_host": "data:x", "categoria": "sair", "rotulo": "sair"}', "site"),
+        ('{"esquema_host": "data:", "categoria": "sair"}', "campos"),
+        ('{"esquema_host": "data:", "categoria": "sair", "rotulo": null}', "texto"),
+        ("nada", "JSON"),
+    ],
+)
+def test_liberacao_recusada(texto, motivo_esperado):
+    with pytest.raises(ValueError, match=motivo_esperado):
+        a.ler_liberacao(texto)
+
+
+def test_liberacao_em_pagina_data():
+    """A página de teste do Mac (C9) é `data:`, que não tem host."""
+    impressao = {"esquema_host": "data:", "categoria": "sair", "rotulo": "sair"}
+    assert a.ler_liberacao(json.dumps(impressao)) == impressao
+
+
+def test_sinais_com_entrada_gigante_nao_explode():
+    inicio = time.perf_counter()
+    _sinais("sair " * 40_000)
+    _sinais("Sair", _guard(href="/" + "a/" * 20_000, escopo="pagar " * 5_000))
+    a.ler_liberacao(json.dumps({"esquema_host": "data:", "categoria": "sair", "rotulo": "sair"}))
+    assert time.perf_counter() - inicio < 2

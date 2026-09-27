@@ -96,8 +96,19 @@ O Jev dirige a Chrome **logada** do dono. O mesmo envelope confere a decisão qu
   pode enviar nesse evento (menu "Ações → Excluir conta"). O `fill` fica de fora: o Jev não
   aperta Enter depois de digitar, então o envio seria o clique seguinte, que passa pelo freio.
 - **Reação:** a tarefa para (`acao_sensivel`), a aba fica aberta e a mensagem nomeia o botão; o
-  custo da decisão recusada entra no `/custos`. Não há liberação — ela virá da confirmação em duas
-  etapas da Sessão 5.
+  custo da decisão recusada entra no `/custos`. O evento de erro traz a **digital** do clique
+  (`acao_sensivel`: esquema+host, categoria, rótulo normalizado, e a URL) e se ele é `liberavel`.
+- **Liberar um clique (Sessão 5, D38):** sair e conta, nunca dinheiro. `sinais()` julga cada
+  categoria por conta própria (`motivo` para na primeira: "Sair e pagar" seria só "sair"); para
+  liberar, qualquer sinal de dinheiro — rótulo, opção do `select`, link ou contêiner — veta.
+  Com terminal interativo, o Viking (`browser/liberacao.py`) propõe e mostra o código só ao dono;
+  aprovado, reabre a URL **redigida** da recusa com o objetivo "clicar no botão «rótulo»" (5 ações,
+  60 s) e `--liberar-uma=<digital>`. O subprocesso confere a digital de novo antes de navegar
+  (forma, dinheiro, mesmo site de `--url`) e deixa passar só o **primeiro** clique recusado, se
+  casar exato; a liberação se gasta nele, case ou não (evento `liberado` quando passa). `--url=` e
+  `--goal=` vão colados ao valor e o argparse do runner tem `allow_abbrev=False`: um objetivo
+  escrito pelo Gemini nunca vira `--liberar-uma`. Não medido ao vivo: o C9 da Sessão 5 testa numa
+  página `data:` com um botão "Sair".
 - **Falso positivo aceito:** "Sair do modo tela cheia" é recusado (erra para o lado de parar).
 - **Contrato:** `test_contrato_do_freio_com_o_jev_real` confere no clone que o `agent.py` executa
   `a["id"] == decision["choice"]` e que o `guard` do `snapshot.js` tem 14 itens com `href` no 12 e

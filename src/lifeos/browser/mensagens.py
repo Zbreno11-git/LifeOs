@@ -81,7 +81,8 @@ MENSAGENS: dict[str, str] = {
     "acao_sensivel": (
         "Parei antes de um clique que age sobre a conta do usuário (sair, mexer na conta ou gastar "
         "dinheiro): o navegador do Viking não faz isso sozinho, e nada foi clicado. Não mande "
-        "repetir — ele para no mesmo ponto. Se era isso mesmo, o usuário faz esse clique."
+        "repetir — ele para no mesmo ponto. Se era isso mesmo, o usuário faz esse clique (sair e "
+        "mexer na conta ele também pode liberar uma vez, pelo código que o Viking mostra só a ele)."
     ),
 }
 

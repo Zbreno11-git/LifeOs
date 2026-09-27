@@ -5,73 +5,66 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5: commit 1 feito, commit 2 (navegador) a começar — antes de um compact
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5: commits 1 e 2 feitos, falta o teste no Mac (C9)
 
-**Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
-anterior é `1b05733`, o commit 1 da sessão) · igual ao remoto · travas: nenhuma · execuções em
-background: nenhuma.
+**Estado do repositório:** o commit 2 da Sessão 5 (conferir com `git log -1`; o anterior é
+`6491136`, checkpoint) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** commit 1 da Sessão 5 fechado e no ar (C0–C5 ✅): registro de ações
-(`registro.py`, `registro_texto.py`), `aprovacoes.py`, `desfaz` do calendário no chat
-(`calendar/service.restaurar`), pedidos pelo MCP + `viking aprovar`; D36, D37, D30 atualizada.
-`894 passed`; mutações `98/98` + 1 (`desfazer: resposta ambígua…`, 1/1). Nada do commit 2 foi
-editado ainda — só lido.
+**Onde parou:** C0–C8 ✅. Commit 1 (`1b05733`): registro de ações, `desfaz` do calendário, pedidos
+pelo MCP + `viking aprovar` (D36, D37). Commit 2: liberar um clique de sair/conta, uma vez, com
+código (D38, D18 reescrita) — `_acoes_sensiveis.sinais`/`digital`/`ler_liberacao`,
+`_jev_subprocess --liberar-uma`, `jev_runner` com `--url=`/`--goal=` colados,
+`browser/liberacao.py`, aprovação no chat e em `viking browser`. Medido em 2026-09-27:
+`1003 passed` (0 pulados, com o clone do Jev); `ruff check` limpo; formatação `7 files would be
+reformatted` (baseline); `python scripts/mutacoes.py` → saída 0, 120 mutações;
+`python scripts/mutacoes.py liberar "chat: c" freio` → `mutações: 26 · mortas pelo teste
+esperado: 26`.
 
-**Próximo passo exato (C6, só o subprocesso):**
-1. `src/lifeos/browser/_acoes_sensiveis.py`: nova `sinais(acao, guard) -> set[str]` — cada
-   categoria julgada POR CONTA PRÓPRIA (hoje `_categoria_do_rotulo`, l.~259, devolve a primeira:
-   sair → conta → dinheiro, então "Sair e pagar" sairia como `sair`). Dinheiro: `_DINHEIRO_ROTULO`
-   no rótulo normalizado (e na opção do `select`) OU `_DINHEIRO_ESCOPO` no contêiner
-   (`contexto(guard)[1]`). `motivo` não muda por fora (6 âncoras de mutação "freio:" nele).
-2. `src/lifeos/browser/_jev_subprocess.py`: `instalar_protecao(bloqueados, liberar=None)`;
-   `_frear(page, decisao)` (l.~184): quando `motivo` recusa, montar a impressão digital
-   `{"esquema_host": esquema+host de page["url"] (data: → "data:"), "categoria": motivo.split(":")[0],
-   "rotulo": _acoes_sensiveis.normalizar(label)[:80]}`; se `liberar` casa EXATO, a liberação ainda
-   não foi usada e `"dinheiro" not in sinais(...)` → deixa passar uma vez e `emit(type="liberado",
-   ...)`; senão `AcaoSensivel(motivo, usage, digital)`. `AcaoSensivel` (l.53) ganha `.digital`; o
-   `except` do `main()` (l.~421) põe `acao_sensivel: digital` no evento `error`. Argumento novo
-   `--liberar-uma=JSON` no argparse (l.~307, com `allow_abbrev=False`): JSON inválido, categoria
-   `dinheiro` ou host vazio fora de `data:` → `protecao-indisponivel` ANTES de navegar.
-3. Testes em `tests/test_jev_subprocess_main.py` (fixture `jev_falso`, helpers
-   `_pagina_com_clique`/`_rodar_decidindo`, modelo `test_clique_em_sair_e_recusado_antes_de_executar`
-   l.~288): libera uma vez; o 2º sensível recusa; outro host/porta/esquema, outro rótulo ("Sair" ×
-   "Sair de todos os dispositivos"), outra categoria → recusa; "Sair e pagar" e contêiner de
-   checkout → recusa; `dinheiro` no argumento → recusa antes de navegar; o evento `error` traz a
-   digital. Rodar a suíte COM o clone do Jev (`test_contrato_do_freio_com_o_jev_real`).
-Depois C7 (pai: `jev_runner` com `--goal=`/`--url=`, `result_from` lê `acao_sensivel`,
-`executar_no_navegador` propõe `navegador.clique` e mostra o código só com TTY via `_ao_dono`,
-aprovação no laço do chat e no `viking browser`, execução curta com objetivo escrito pelo Viking
-"clicar no botão «rótulo»" na URL da recusa; tipo `navegador.clique` em `aprovacoes.TIPOS`
-(no_chat=True, janela 0) e despacho em `agent.aprovacao_local` — hoje `_aprovar_limpeza` é o único
-ramo), C8 (mutações ≥7, D38, docs, revisão, commit 2), C9 (Mac).
+**Próximo passo exato (C9):** o dono roda no Mac o roteiro abaixo e cola a saída. Conferir:
+(1) `viking browser` numa `data:` com "Sair" → recusa + 🔐 com código → digitado → `✅ Cliquei em
+«Sair», uma vez.` e a página final com título `Sair1`; (2) "Pagar" → recusa **sem** 🔐; (3) no
+chat, apagar o "Teste Viking" e `desfaz` → anotar se diz "voltou ao calendário" (restaurado pelo
+`patch`, mesmo ID) ou "Recriei" (decide o gatilho da D37); (4) o pedido pelo MCP deixa o evento lá
+até `viking aprovar`. Tudo verde → fechar a Sessão 5: barra (8 fechadas + 2 parciais), `sessoes.md`
+(próxima = 6), diário. Algo vermelho → consertar antes, com teste que caia.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (armadilhas novas: stdout do MCP, régua do
-registro); este bloco e o plano abaixo; `docs/decisoes.md` (D18, D26–D30, D36, D37); o índice de
-`docs/erros.md` (classes 4, 6, 7, 8 bateram nesta sessão); `src/lifeos/browser/_acoes_sensiveis.py`,
-`_jev_subprocess.py`, `jev_runner.py`, `browser/__init__.py`, `mensagens.py`;
-`src/lifeos/assistant/agent.py` (`aprovacao_local`); `tests/test_jev_subprocess_main.py`.
+**Roteiro do Mac (C9):**
+```
+cd ~/LifeOs
+git pull && git log --oneline -1
+source .venv/bin/activate
+which python
+python -m pytest -q
+viking browser --url 'data:text/html,<title>Antes</title><button%20onclick="document.title=this.textContent+1">Sair</button>' --goal 'clicar no botão Sair'
+viking browser --url 'data:text/html,<button>Pagar</button>' --goal 'clicar no botão Pagar'
+viking chat
+```
+No chat: `cria um evento Teste Viking amanhã às 10h` → `apaga o evento Teste Viking de amanhã` (e
+confirmar qual) → `desfaz` → `o que você fez hoje?` → `sair`. Depois, fora do chat, o pedido pelo
+MCP (imprime só estado e título, nunca o ID): `python scripts/pedido_mcp_de_teste.py`, depois
+`viking aprovar` e `viking registro`.
 
-**Decisões (onde estão):** todas as do dono na tabela "Respostas do dono" do plano abaixo e em
-D36/D37; as do commit 2 (só sair/conta; refazer só aquele clique na URL da recusa, objetivo do
-Viking) viram D38 no C8.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
+(D36–D38); o índice de `docs/erros.md`; e, se algo do Mac falhar, o módulo da parte que falhou
+(`browser/liberacao.py` e `_jev_subprocess.py` para o navegador; `calendar/service.restaurar` para
+o `desfaz`; `calendar/service.pedir_mudanca`/`executar_aprovado` para o MCP).
+
+**Decisões (onde estão):** as do dono na tabela "Respostas do dono" do plano abaixo e em D36–D38.
+Mudança minha sobre o plano, escrita na D38: a reexecução abre a URL **redigida**, não a bruta.
 
 **Não pode ser esquecido:**
 - Código de aprovação nunca ao Gemini, ao cliente MCP, ao registro nem à nota; mostrar só com TTY.
-- `_jev_subprocess.py` e `_acoes_sensiveis.py` só stdlib, nunca `lifeos`; sem future import em
-  módulo de tool; `agent.py`, `calendar/tools.py`, `custos.py` e 2 testes estão no baseline de
-  formatação: em arquivo do baseline, aplicar só os próprios trechos do `ruff format --diff`
-  (reincidência da classe 8 nesta sessão). Baseline = 7.
-- Âncoras de mutação: editar `motivo`, `_frear` (`"        _frear(page, decisao)\n"`) ou o
-  `choose_protegido` quebra âncoras "freio:" — rodar `python -m pytest tests/test_mutacoes_ancoras.py`
-  logo depois. Mutações sem `timeout`; travou → matar só o `pytest` filho.
-- `or` em asserção é proibido (3 vezes na classe 4). Dublê de teste com todos os campos do real.
-- Repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
+- `_jev_subprocess.py` e `_acoes_sensiveis.py` só stdlib; sem future import em módulo de tool;
+  em arquivo do baseline de formatação (`agent.py`, `calendar/tools.py`, `custos.py`,
+  `tests/test_browser_jev_runner.py`…), só os próprios trechos do `ruff format --diff`. Baseline = 7.
+- Mutações sem `timeout`; e não cortar a saída com `tail` — a linha de resumo fica no topo.
+- Texto com heredoc dentro não vai num heredoc: escrever num arquivo e ler dele.
+- `or` em asserção é proibido. Repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
 
-**Depende do dono:** nada até o C9 (Mac): então criar/apagar/`desfaz` um evento "Teste Viking",
-um pedido pelo MCP + `viking aprovar`, e um "Sair" numa página `data:`.
+**Depende do dono:** rodar o roteiro do C9 e colar a saída.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `894 passed`; `python -m ruff format --check . | tail -1` → `7 files
+`python -m pytest -q` → `1003 passed`; `python -m ruff format --check . | tail -1` → `7 files
 would be reformatted`.
 
 ## Plano — Sessão 5: confirmação mecânica (registro de ações, MCP com aprovação, liberar um clique)
@@ -155,9 +148,9 @@ e "o que você fez hoje?" listam as ações, e um erro do Gemini depois de uma a
 | C3 | chat: aviso pós-erro, `desfaz` do calendário, `acoes_recentes`; `viking registro [--desfazer ID]` | ✅ |
 | C4 | MCP propõe; `viking aprovar` (TTY, releitura, 1 h, limites) | ✅ |
 | C5 | mutações, docs, revisão em 2 passadas, **commit 1 + push** | ✅ |
-| C6 | subprocesso: recusa estruturada, `--liberar-uma` de uso único, dinheiro recusado em qualquer sinal | ⬜ |
-| C7 | pai: proposta, código só ao dono (TTY), aprovação no chat e no `viking browser`, execução curta | ⬜ |
-| C8 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ⬜ |
+| C6 | subprocesso: recusa estruturada, `--liberar-uma` de uso único, dinheiro recusado em qualquer sinal | ✅ |
+| C7 | pai: proposta, código só ao dono (TTY), aprovação no chat e no `viking browser`, execução curta | ✅ |
+| C8 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ✅ |
 | C9 | Mac: roteiro abaixo | ⬜ |
 
 ### Commit 1 — registro, calendário e MCP

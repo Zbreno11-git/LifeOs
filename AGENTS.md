@@ -67,7 +67,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
     `_redacao.py` e `_acoes_sensiveis.py` (freio de clique que sai da conta, mexe nela ou gasta
     dinheiro) são módulos irmãos dele, também só stdlib; `mensagens.py` traduz códigos de erro
-    para português
+    para português; `liberacao.py` libera **uma vez**, com código, um clique de sair/conta que o
+    freio recusou (dinheiro nunca; D38)
   - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
@@ -301,6 +302,15 @@ da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se 
 (D26). `tests/test_gmail_aprovacao.py` confere quem chama `confirmar`/`arquivar`/`batchModify`
 lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza
 também enviar e mover para a lixeira: `test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar`.
+Vale igual para liberar um clique do navegador (D38): o código sai por `browser/liberacao.ao_dono`
+só com terminal interativo, e `liberacao.clicar_aprovado` só é chamado pelo laço do chat e pela
+CLI (`tests/test_browser_liberacao.py`).
+
+**Texto do Gemini vai colado ao `=` no argv do runner do Jev.** `jev_runner.build_command` passa
+`--url=`/`--goal=`, e o argparse do `_jev_subprocess.py` tem `allow_abbrev=False`: separado, um
+objetivo "--liberar-uma=..." viraria a opção que libera um clique, e com abreviação até
+"--lib=..." viraria. `test_objetivo_que_parece_opcao_continua_objetivo`,
+`test_opcao_abreviada_nao_vira_liberacao`.
 
 **A cota do Gmail é pequena para ler e-mail um por um.** 6.000 unidades por minuto por usuário e
 `messages.get` custa 20 (300 e-mails/min; o raio-x sozinho gasta 4.000). A primeira limpeza relia

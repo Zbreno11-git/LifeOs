@@ -45,6 +45,7 @@ def descrever(a: registro.Acao) -> str:
         "navegador.executar": (
             f"usou o navegador: {'; '.join(p.get('objetivos') or [])} "
             f"({r.get('status', '?')}, {r.get('passos', 0)} passo(s))"
+            + (" — clique liberado pelo dono" if p.get("liberar") else "")
         ),
     }
     return frases.get(a.operacao, a.operacao) + _estado(a)

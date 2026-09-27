@@ -341,6 +341,168 @@ def test_layout_de_guards_diferente_recusa_navegar(jev_falso, monkeypatch, capsy
     assert _linhas(capsys)[-1]["code"] == "protecao_indisponivel"
 
 
+# --- liberar um clique recusado, uma vez (Sessão 5) ---------------------------------------
+
+_LOJA = "https://loja.example"
+_SAIR = {"esquema_host": _LOJA, "categoria": "sair", "rotulo": "sair"}
+
+
+def _rodar_liberando(jev_falso, monkeypatch, paginas: list[dict], liberar) -> int:
+    """Cada página vira um passo em andamento; o `choose` de cada uma decide clicar em `e1`. O
+    Viking passa `--url=`/`--goal=`/`--liberar-uma=` colados (C7)."""
+    jev_falso.proximos_estados = [{**_estado("running", 1), "page": p} for p in paginas]
+    jev_falso.decisao = {"choice": "e1", "usage": {}}
+    argv = ["jev-runner", f"--url={_LOJA}/conta", "--goal=clicar", "--timeout", "5"]
+    if liberar is not None:
+        texto = liberar if isinstance(liberar, str) else json.dumps(liberar)
+        argv.append(f"--liberar-uma={texto}")
+    monkeypatch.setattr(sys, "argv", argv)
+    return runner.main()
+
+
+def _na_pagina(rotulo: str, url: str = f"{_LOJA}/conta", escopo: str | None = None) -> dict:
+    pagina = _pagina_com_clique(rotulo)
+    pagina["url"] = url
+    pagina["guards"]["7"][13] = escopo
+    return pagina
+
+
+def test_recusa_traz_a_digital_e_a_url(jev_falso, monkeypatch, capsys):
+    """É o que o Viking propõe ao dono (C7): a digital sai daqui, normalizada uma vez só."""
+    _rodar_liberando(jev_falso, monkeypatch, [_na_pagina("SAIR")], None)
+    terminal = _linhas(capsys)[-1]
+    assert terminal["code"] == "acao_sensivel"
+    assert terminal["acao_sensivel"] == {**_SAIR, "url": f"{_LOJA}/conta"}
+    assert terminal["liberavel"] is True
+
+
+def test_liberacao_deixa_passar_so_o_primeiro_clique(jev_falso, monkeypatch, capsys):
+    """O mesmo "Sair" duas vezes: o primeiro passa (e avisa), o segundo é recusado."""
+    paginas = [_na_pagina("Sair"), _na_pagina("Sair")]
+    _rodar_liberando(jev_falso, monkeypatch, paginas, _SAIR)
+    eventos = _linhas(capsys)
+    tipos = [e["type"] for e in eventos]
+    assert tipos == ["start", "health", "liberado", "step", "error"]
+    assert eventos[2]["acao_sensivel"] == _SAIR
+    assert eventos[-1]["code"] == "acao_sensivel"
+
+
+@pytest.mark.parametrize(
+    ("url", "rotulo"),
+    [
+        ("https://outra.example/conta", "Sair"),
+        ("https://loja.example:8443/conta", "Sair"),
+        ("http://loja.example/conta", "Sair"),
+        (f"{_LOJA}/conta", "Sair de todos os dispositivos"),
+        (f"{_LOJA}/conta", "Log out"),
+    ],
+)
+def test_outro_site_ou_outro_botao_nao_e_liberado(jev_falso, monkeypatch, capsys, url, rotulo):
+    _rodar_liberando(jev_falso, monkeypatch, [_na_pagina(rotulo, url)], _SAIR)
+    eventos = _linhas(capsys)
+    assert [e["type"] for e in eventos] == ["start", "health", "error"]
+    assert eventos[-1]["code"] == "acao_sensivel"
+
+
+def test_outra_categoria_nao_e_liberada(jev_falso, monkeypatch, capsys):
+    """Mesmo site e mesmo rótulo, mas a liberação diz "conta" e o freio recusou por "sair"."""
+    _rodar_liberando(jev_falso, monkeypatch, [_na_pagina("Sair")], {**_SAIR, "categoria": "conta"})
+    assert [e["type"] for e in _linhas(capsys)] == ["start", "health", "error"]
+
+
+def test_caixa_do_host_e_vizinho_legitimo(jev_falso, monkeypatch, capsys):
+    """O host se compara em minúsculas: a página em "LOJA.example" é o mesmo site."""
+    _rodar_liberando(jev_falso, monkeypatch, [_na_pagina("Sair", "https://LOJA.example/c")], _SAIR)
+    assert "liberado" in [e["type"] for e in _linhas(capsys)]
+
+
+@pytest.mark.parametrize(
+    "escopo",
+    [
+        "Resumo do pedido\nTotal R$ 50,00\nSair",
+        "Pague com PIX antes de sair",
+    ],
+)
+def test_dinheiro_no_conteiner_nunca_e_liberado(jev_falso, monkeypatch, capsys, escopo):
+    """A categoria recusada é "sair", mas o botão mora num checkout: dinheiro nunca (dono)."""
+    _rodar_liberando(jev_falso, monkeypatch, [_na_pagina("Sair", escopo=escopo)], _SAIR)
+    eventos = _linhas(capsys)
+    assert [e["type"] for e in eventos] == ["start", "health", "error"]
+    assert eventos[-1]["liberavel"] is False
+
+
+@pytest.mark.parametrize(
+    "liberar",
+    [
+        {**_SAIR, "categoria": "dinheiro"},
+        {**_SAIR, "rotulo": "sair e pagar"},
+        {**_SAIR, "rotulo": "Sair"},
+        {**_SAIR, "rotulo": ""},
+        {**_SAIR, "esquema_host": "https://LOJA.example"},
+        {**_SAIR, "esquema_host": ""},
+        {**_SAIR, "esquema_host": "file://"},
+        {**_SAIR, "esquema_host": "https://outra.example"},
+        {**_SAIR, "extra": "x"},
+        {"esquema_host": _LOJA, "categoria": "sair"},
+        {**_SAIR, "rotulo": 1},
+        "{",
+        "",
+        "[]",
+    ],
+)
+def test_liberacao_invalida_recusa_antes_de_navegar(jev_falso, monkeypatch, capsys, liberar):
+    """Nem o daemon é tocado: nenhuma aba, nenhum `choose`, nada sai para o modelo."""
+    _rodar_liberando(jev_falso, monkeypatch, [_na_pagina("Sair")], liberar)
+    eventos = _linhas(capsys)
+    assert [e["type"] for e in eventos] == ["start", "error"]
+    assert eventos[-1]["code"] == "protecao_indisponivel"
+    assert eventos[-1]["kept_open"] is False
+    assert jev_falso.enviados["choose"] == []
+
+
+def test_a_liberacao_se_gasta_no_primeiro_recusado(jev_falso):
+    """Se o primeiro clique recusado não é o liberado, a liberação acaba ali: um "Sair" depois
+    não passa. (Numa execução real a recusa já encerra a tarefa; aqui o envelope, sozinho.)"""
+    runner.instalar_protecao([], _SAIR)
+    choose = sys.modules["jev_ultrafast.agent"].choose
+    jev_falso.decisao = {"choice": "e1"}
+    with pytest.raises(runner.AcaoSensivel):
+        choose(_na_pagina("Excluir minha conta"), "g", [])
+    with pytest.raises(runner.AcaoSensivel):
+        choose(_na_pagina("Sair"), "g", [])
+
+
+def test_sem_recusa_a_liberacao_nao_e_usada(jev_falso, capsys):
+    """Um clique comum não gasta a liberação; o "Sair" seguinte ainda passa."""
+    runner.instalar_protecao([], _SAIR)
+    choose = sys.modules["jev_ultrafast.agent"].choose
+    jev_falso.decisao = {"choice": "e1"}
+    choose(_na_pagina("Buscar"), "g", [])
+    assert choose(_na_pagina("Sair"), "g", []) == {"choice": "e1"}
+    assert [e["type"] for e in _linhas(capsys)] == ["liberado"]
+
+
+def test_objetivo_que_parece_opcao_continua_objetivo(jev_falso, monkeypatch, capsys):
+    """`--goal=` colado: um objetivo "--liberar-uma=..." (texto do Gemini) não libera nada."""
+    jev_falso.proximos_estados = [{**_estado("running", 1), "page": _na_pagina("Sair")}]
+    jev_falso.decisao = {"choice": "e1"}
+    objetivo = f"--liberar-uma={json.dumps(_SAIR)}"
+    monkeypatch.setattr(sys, "argv", ["jev-runner", f"--url={_LOJA}/conta", f"--goal={objetivo}"])
+    runner.main()
+    eventos = _linhas(capsys)
+    assert eventos[0]["goals"] == [objetivo]
+    assert eventos[-1]["code"] == "acao_sensivel"
+
+
+def test_opcao_abreviada_nao_vira_liberacao(jev_falso, monkeypatch, capsys):
+    monkeypatch.setattr(
+        sys, "argv", ["jev-runner", "--url=x", "--goal=g", f"--liberar={json.dumps(_SAIR)}"]
+    )
+    with pytest.raises(SystemExit):
+        runner.main()
+    assert capsys.readouterr().out == ""
+
+
 def _itens_do_array_js(fonte: str, abre: int) -> list[str]:
     """Itens de nível zero de um array literal de JS que começa em `fonte[abre] == "["`. Conta
     parênteses/colchetes/chaves e ignora vírgulas dentro de strings — `slice(0,6000)` tem uma."""

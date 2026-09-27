@@ -11,7 +11,7 @@ import sys
 from collections.abc import Sequence
 
 from lifeos import custos
-from lifeos.browser import _redacao
+from lifeos.browser import _redacao, liberacao
 from lifeos.browser.jev_runner import BrowserResult, run_jev
 from lifeos.browser.mensagens import formatar
 
@@ -44,7 +44,11 @@ def executar_no_navegador(
     manter_aberta: bool = True,
     silencioso: bool = False,
 ) -> str:
-    """Persegue um objetivo em linguagem natural num navegador real e resume o que aconteceu."""
+    """Persegue um objetivo em linguagem natural num navegador real e resume o que aconteceu.
+
+    Um clique de sair ou de mexer na conta recusado pelo freio vira proposta de liberação, com o
+    código mostrado só no terminal (`liberacao`); o texto devolvido — o que o Gemini lê — nunca
+    leva o código."""
     objetivos = [objetivo] if isinstance(objetivo, str) else list(objetivo)
     resultado = run_jev(
         url,
@@ -60,7 +64,12 @@ def executar_no_navegador(
         print(
             f"   💸 navegador: {consumo.resumo()} em {consumo.chamadas} chamadas", file=sys.stderr
         )
-    return formatar(resultado)
+    texto = formatar(resultado)
+    proposta = liberacao.propor(resultado) if liberacao.terminal_interativo() else None
+    if proposta is not None:
+        liberacao.ao_dono(liberacao.texto_da_proposta(proposta))
+        texto = f"{texto}\n{liberacao.AVISO_AO_GEMINI}"
+    return texto
 
 
 __all__ = ["BrowserResult", "executar_no_navegador", "formatar", "imprimir_progresso", "run_jev"]

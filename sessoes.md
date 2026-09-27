@@ -17,11 +17,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** 5 — confirmação mecânica (a Pluggy fechou no Mac em 2026-09-27).
-- **Primeiro passo:** o da seção da Sessão 5 abaixo (liberação do freio de cliques pela mesma
-  confirmação, adiado da 4b).
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D26, D30: o
-  modelo de confirmação da Gmail 2, que esta sessão generaliza), `src/lifeos/confirmacao.py`.
-- **Depende do dono:** sim — as perguntas da abertura (o que confirma, por quanto tempo, onde).
+- **Primeiro passo:** o teste da Sessão 5 no Mac (roteiro no C9 do `PROGRESSO.md`); com ele
+  verde, a Sessão 5 fecha e a próxima é a 6.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D36–D38).
+- **Depende do dono:** sim — rodar o roteiro do Mac e colar a saída.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -271,11 +270,13 @@ Pedida pelo dono como "bem importante". Medição completa, com fontes e datas:
 - **Fica para depois:** categorização/recorrências pela Enrichment API, alertas de gasto, cópia
   local para RAG. Webhook não serve (o Viking não tem servidor público).
 
-## Sessão 5 — confirmação mecânica (commit 1 feito em 2026-09-27; commit 2 e Mac em curso)
+## Sessão 5 — confirmação mecânica (commits 1 e 2 feitos em 2026-09-27; falta o Mac)
 
 **Commit 1 (2026-09-27):** registro de ações (D37), `desfaz` do calendário no chat, pedidos pelo
-MCP aprovados em `viking aprovar` (D36). Falta o commit 2 (liberar um clique do navegador) e o
-teste no Mac. Plano completo no `PROGRESSO.md`. O que estava escrito na abertura:
+MCP aprovados em `viking aprovar` (D36).
+**Commit 2 (2026-09-27):** liberar, com código e uma vez, um clique de sair ou de mexer na conta
+que o freio recusou; dinheiro nunca (D38, D18 reescrita). Falta o teste no Mac (C9 do plano no
+`PROGRESSO.md`). O que estava escrito na abertura:
 
 
 - **Primeiro passo (adiado da 4b por decisão do dono, 2026-09-26):** a liberação do freio de

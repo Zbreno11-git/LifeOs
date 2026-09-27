@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import time
@@ -26,8 +27,11 @@ def test_build_command_shape(jev_falso):
     assert "--env-file" in cmd and str(jev_falso / ".env") in cmd
     assert Path(cmd[cmd.index("python") + 1]).is_absolute()
     assert cmd[cmd.index("python") + 1].endswith("_jev_subprocess.py")
-    assert [cmd[i + 1] for i, v in enumerate(cmd) if v == "--goal"] == ["a", "b"]
+    # Colados (Sessão 5): um objetivo "--liberar-uma=..." continua objetivo no argparse do filho.
+    assert [v for v in cmd if v.startswith("--goal")] == ["--goal=a", "--goal=b"]
+    assert [v for v in cmd if v.startswith("--url")] == ["--url=https://x.com"]
     assert cmd[cmd.index("--timeout") + 1] == "30"
+    assert not any(v.startswith("--liberar-uma") for v in cmd)
 
 
 def test_build_command_omite_env_file_inexistente(jev_falso):
@@ -354,9 +358,10 @@ def test_execucao_fica_no_registro_com_a_url_redigida(monkeypatch, jev_falso):
     (a,) = registro.do_turno("s:9")
     assert (a.operacao, a.resultado) == (
         "navegador.executar",
-        {"status": "done", "erro": "", "passos": 2},
+        {"status": "done", "erro": "", "passos": 2, "liberado": False},
     )
     assert "segredo123" not in a.parametros["url"]
+    assert "liberar" not in a.parametros
 
 
 def test_recusa_antes_de_abrir_nao_entra_no_registro(monkeypatch, jev_falso):
@@ -372,3 +377,89 @@ def test_recusa_antes_de_abrir_nao_entra_no_registro(monkeypatch, jev_falso):
         jev_runner._EXECUCAO.release()
         registro.TURNO.reset(token)
     assert registro.do_turno("s:10") == []
+
+
+# --- liberar um clique recusado (Sessão 5) --------------------------------------------------
+
+_DIGITAL = {"esquema_host": "https://x.com", "categoria": "sair", "rotulo": "sair"}
+
+
+def _recusa(**extra) -> dict:
+    return {
+        "type": "error",
+        "code": "acao_sensivel",
+        "message": "acao-sensivel: sair: Sair",
+        "acao_sensivel": {**_DIGITAL, "url": "https://x.com/conta?token=segredo123"},
+        "liberavel": True,
+        **extra,
+    }
+
+
+def test_a_recusa_traz_a_digital_com_a_url_redigida():
+    """A URL vai ao banco da proposta e é reaberta: o token não pode ir junto."""
+    resultado = result_from([_recusa()], 2, None, ["g"])
+    assert resultado.liberavel is True
+    assert {k: resultado.acao_sensivel[k] for k in _DIGITAL} == _DIGITAL
+    assert resultado.acao_sensivel["url"].startswith("https://x.com/conta?token=")
+    assert "segredo123" not in resultado.acao_sensivel["url"]
+
+
+@pytest.mark.parametrize(
+    "acao_sensivel",
+    [None, "x", {**_DIGITAL}, {**_DIGITAL, "url": 3}, {"url": "https://x.com"}],
+)
+def test_digital_malformada_nao_e_liberavel(acao_sensivel):
+    resultado = result_from([_recusa(acao_sensivel=acao_sensivel)], 2, None, ["g"])
+    assert resultado.acao_sensivel is None
+    assert resultado.liberavel is False
+
+
+def test_liberavel_so_com_true_de_verdade():
+    assert result_from([_recusa(liberavel="sim")], 2, None, ["g"]).liberavel is False
+
+
+def test_liberado_vem_do_evento_do_subprocesso():
+    liberado = {"type": "liberado", "acao_sensivel": _DIGITAL}
+    fim = {"type": "result", "status": "done", "steps": 1}
+    assert result_from([liberado, fim], 0, None, ["g"]).liberado is True
+    assert result_from([fim], 0, None, ["g"]).liberado is False
+
+
+def test_build_command_com_liberacao_e_curto(jev_falso):
+    cmd = build_command("u", ["clicar"], timeout_s=60, max_acoes=5, liberar=_DIGITAL)
+    (liberar,) = [v for v in cmd if v.startswith("--liberar-uma")]
+    assert json.loads(liberar.removeprefix("--liberar-uma=")) == _DIGITAL
+    assert cmd[cmd.index("--max-acoes") + 1] == "5"
+
+
+def test_objetivo_e_url_que_parecem_opcao_nao_viram_liberacao(jev_falso):
+    """O texto do Gemini (objetivo, URL) chega colado ao `=`: nunca um argumento sozinho."""
+    falso = f"--liberar-uma={json.dumps(_DIGITAL)}"
+    cmd = build_command(falso, [falso], timeout_s=1)
+    assert f"--goal={falso}" in cmd
+    assert f"--url={falso}" in cmd
+    assert not any(v.startswith("--liberar-uma") for v in cmd)
+
+
+def test_clique_liberado_aparece_no_registro(monkeypatch, jev_falso):
+    """ "O que você fez hoje?" diz que o clique foi liberado pelo dono; o código não está lá."""
+    from lifeos import registro, registro_texto
+
+    script = (
+        "import json\n"
+        "print(json.dumps({'schema':1,'type':'liberado'}))\n"
+        "print(json.dumps({'schema':1,'type':'result','status':'done','steps':1,'url':'u'}))\n"
+    )
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+    monkeypatch.setattr(jev_runner, "build_command", lambda *a, **k: _fake_cmd(script))
+    token = registro.TURNO.set("s:10")
+    try:
+        run_jev("https://x.com/conta", ["clicar no botão «Sair»"], timeout_s=30, liberar=_DIGITAL)
+    finally:
+        registro.TURNO.reset(token)
+    (a,) = registro.do_turno("s:10")
+    assert a.parametros["liberar"] == _DIGITAL
+    assert a.resultado["liberado"] is True
+    assert registro_texto.descrever(a) == (
+        "usou o navegador: clicar no botão «Sair» (done, 1 passo(s)) — clique liberado pelo dono"
+    )

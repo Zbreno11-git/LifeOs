@@ -20,8 +20,8 @@
 | 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 12 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 4 | escapes gerados por script; varredura de caracteres de controle antes do commit |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 6 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 7 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 7 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei — e em arquivo do baseline, só os meus trechos do `--diff`; conferir com `git status` depois |
 
@@ -211,12 +211,28 @@ timeout.
 ferramenta, gravou o caractere literal; o `ruff` pegou (`PLE2502`) e o escape foi gerado por
 script. A armadilha já estava no `AGENTS.md`: o antídoto que vale é o script, não lembrar.
 
+**2026-09-27 — edição por script que não rodou, e o verde depois dela (Sessão 5, C6).** O script
+de edição do subprocesso foi num comando que só ativava o venv **depois** dele: `python: command
+not found` na primeira linha da saída, e logo abaixo `128 passed` — verde porque nada tinha
+mudado. Notei só ao conferir com `grep` que o argumento novo não existia. O que tem de novo: a
+falha não era da ferramenta de escrita, e sim da ordem do comando, e o verde parecia confirmar a
+edição.
+
+**2026-09-27 — heredoc dentro de heredoc (Sessão 5, C8).** Escrevi o bloco do `PROGRESSO.md`
+num `python - <<'EOF'`, e o bloco trazia o roteiro do Mac com o seu próprio `<<'EOF'`. O
+`EOF` de dentro fechou o de fora e o bash executou o resto do texto como comandos. Conferido com
+`git status`: nada mudou (`viking` não estava no PATH daquele shell, o resto era texto que o bash
+rejeitou). O roteiro do MCP virou `scripts/pedido_mcp_de_teste.py`, e o bloco foi escrito num
+arquivo antes.
+
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 
 **O antídoto, concreto:** nunca escrever uma sequência de escape Unicode em parâmetro de
 ferramenta, nem em prosa; gerar por script (`chr(92)`); varredura de C0/C1/bidi em todo arquivo
 alterado antes do commit, sempre, inclusive em commit só de documentação; nada de `cat >` para
-criar arquivo.
+criar arquivo; `source .venv/bin/activate` no começo do comando, e `git diff --stat` (ou `grep`
+da mudança) antes de ler o resultado dos testes. Texto que contém um heredoc nunca vai dentro de outro: escrever
+num arquivo e ler dele.
 
 ### 6. Conserto que cobriu um ponto e não o vizinho
 
@@ -245,6 +261,13 @@ aprovaria a segunda. O teste antigo `test_proposta_nova_invalida_o_codigo_velho`
 do mesmo commit, outro do tipo: o desfazer que falhava de modo ambíguo voltava a ser desfazível, e
 um segundo `desfaz` recriaria a cópia duas vezes. O que tem de novo: uma otimização de limite
 (reserva, retentativa) é exatamente onde a garantia de "uma vez só" se perde.
+
+**2026-09-27 — nome repetido que cegava uma régua vizinha (Sessão 5, C7).** Chamei a aprovação
+do clique de `liberacao.executar_aprovado`, o mesmo nome da do calendário. A régua do MCP
+(`test_so_a_cli_executa_um_pedido_aprovado`) procura pelo **nome** do atributo e caiu: `agent.py`
+passou a "chamar" `executar_aprovado`. O teste estava certo; ajustar o conjunto esperado teria
+deixado a régua sem distinguir as duas funções. Renomeada para `clicar_aprovado`, com régua
+própria.
 
 > **O que este conserto tornou falso, e onde mais a mesma falha nasce?** É a segunda passada de
 > revisão.

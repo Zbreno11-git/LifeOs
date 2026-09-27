@@ -6,8 +6,13 @@ O Jev dirige a Chrome **logada** do dono: um clique em "Sair" desloga em todos o
 inteira se houver motivo — a aba fica aberta e o dono clica, se era isso mesmo.
 
 Categorias decididas pelo dono em 2026-09-26: sair, mexer na conta, dinheiro. "Publicar em seu
-nome" ficou de fora de propósito ("Enviar" é o botão de muita busca). Não há liberação: a
-confirmação em duas etapas da Sessão 5 é o caminho para isso.
+nome" ficou de fora de propósito ("Enviar" é o botão de muita busca).
+
+Liberação (Sessão 5, dono em 2026-09-27): um clique recusado de **sair** ou **conta** pode ser
+liberado uma vez, com código, numa execução nova (`--liberar-uma`); **dinheiro nunca** — nem
+quando a categoria recusada é outra e o dinheiro aparece só no contêiner ou no link (`sinais`).
+A execução não pausa na recusa e o Jev não decide igual duas vezes, então a liberação casa pela
+`digital` (esquema+host, categoria, rótulo normalizado), produzida aqui dos dois lados.
 
 Só stdlib e nunca `lifeos`: roda dentro do ambiente do Jev, como módulo irmão de
 `_jev_subprocess.py` (mesma regra de `_redacao.py`).
@@ -22,6 +27,7 @@ Erra para o lado de parar: um falso positivo custa uma tarefa interrompida com o
 mensagem; um falso negativo custa a conta. Ex.: "Sair do modo tela cheia" é recusado.
 """
 
+import json
 import re
 import unicodedata
 from urllib.parse import parse_qsl, urlsplit
@@ -268,6 +274,15 @@ def _categoria_do_rotulo(rotulo: str) -> str | None:
     return None
 
 
+def _candidatos(acao: dict, original: str) -> list[str]:
+    """Os rótulos normalizados a julgar. No `select` o Jev monta "Campo → Opção": a opção é
+    julgada também sozinha ("Conta → Sair")."""
+    candidatos = [normalizar(original)]
+    if acao.get("kind") == "select" and " → " in original:
+        candidatos.append(normalizar(original.rsplit(" → ", 1)[1]))
+    return candidatos
+
+
 def motivo(acao: dict, guard=None) -> str | None:
     """`"<categoria>: <rótulo>"` se a ação age sobre a conta; `None` se pode seguir.
 
@@ -284,10 +299,7 @@ def motivo(acao: dict, guard=None) -> str | None:
     visivel = (c for c in original if c.isspace() or unicodedata.category(c) not in _INVISIVEIS)
     exibido = " ".join("".join(visivel).split())[:80]
 
-    # No `select` o Jev monta "Campo → Opção": a opção é julgada também sozinha ("Conta → Sair").
-    candidatos = [rotulo]
-    if acao.get("kind") == "select" and " → " in original:
-        candidatos.append(normalizar(original.rsplit(" → ", 1)[1]))
+    candidatos = _candidatos(acao, original)
     categoria = next(filter(None, map(_categoria_do_rotulo, candidatos)), None)
     if categoria is None and _href_de_sair(href):
         categoria = "sair"
@@ -302,3 +314,106 @@ def motivo(acao: dict, guard=None) -> str | None:
         if generico == "confirmar" and _DINHEIRO_ESCOPO.search(escopo):
             return f"dinheiro: {exibido}"
     return None
+
+
+# --- liberar um clique recusado (Sessão 5) --------------------------------------------------
+
+LIBERAVEIS = frozenset({"sair", "conta"})
+CAMPOS_DIGITAL = frozenset({"esquema_host", "categoria", "rotulo"})
+# Rótulo mais longo que isto não se libera: a digital o guarda inteiro, sem corte que junte dois
+# botões diferentes.
+MAX_ROTULO_DIGITAL = 80
+
+
+def sinais(acao: dict, guard=None) -> set[str]:
+    """Todas as categorias que a ação toca, cada uma julgada por conta própria.
+
+    `motivo` para na primeira (sair → conta → dinheiro), o que basta para recusar e não basta para
+    liberar: "Sair e pagar" seria só "sair". Aqui dinheiro é **qualquer** sinal — no rótulo (sem o
+    teto de palavras), na opção do `select`, no link ou no contêiner, com botão genérico ou não.
+    """
+    if (acao or {}).get("kind") not in JULGADAS:
+        return set()
+    candidatos = _candidatos(acao, str(acao.get("label") or ""))
+    href, escopo_bruto = contexto(guard)
+    escopo = normalizar(escopo_bruto[:MAX_ESCOPO])
+    achados = set()
+    for rotulo in candidatos:
+        if _palavras(rotulo) > MAX_PALAVRAS:
+            continue
+        if any(r.search(rotulo) for r in _SAIR_ROTULO):
+            achados.add("sair")
+        if any(r.search(rotulo) for r in _CONTA_REGRAS):
+            achados.add("conta")
+    if _href_de_sair(href):
+        achados.add("sair")
+    if _generico(candidatos[0]) and any(regra.search(escopo) for regra in _CONTA_REGRAS):
+        achados.add("conta")
+    textos = [*candidatos, normalizar(href), escopo]
+    if any(r.search(t) for t in textos for r in [*_DINHEIRO_ROTULO, _DINHEIRO_ESCOPO]):
+        achados.add("dinheiro")
+    return achados
+
+
+def esquema_host(url) -> str:
+    """`https://loja.example:8443` (porta incluída, minúsculas, sem usuário), `data:` para página
+    `data:`; vazio para o que não se libera (sem host, `file:`, `chrome:`, `about:`)."""
+    try:
+        partes = urlsplit(str(url or "").strip())
+        porta = partes.port
+    except ValueError:
+        return ""
+    esquema = partes.scheme.casefold()
+    if esquema == "data":
+        return "data:"
+    host = partes.hostname or ""
+    if esquema not in {"http", "https"} or not host:
+        return ""
+    host = f"[{host}]" if ":" in host else host
+    return f"{esquema}://{host}" + (f":{porta}" if porta is not None else "")
+
+
+def digital(url, acao: dict, recusado: str, guard=None) -> tuple[dict, bool]:
+    """(impressão digital, liberável) de um clique que `motivo` recusou com `recusado`.
+
+    A digital volta ao Viking no evento de erro e, aprovada, volta intacta em `--liberar-uma`:
+    a normalização acontece só aqui. Liberável = categoria sair/conta, site com host, rótulo
+    curto e nenhum sinal de dinheiro."""
+    rotulo = normalizar(acao.get("label"))
+    impressao = {
+        "esquema_host": esquema_host(url),
+        "categoria": recusado.split(":", 1)[0],
+        "rotulo": rotulo[:MAX_ROTULO_DIGITAL],
+    }
+    liberavel = (
+        impressao["categoria"] in LIBERAVEIS
+        and bool(impressao["esquema_host"])
+        and 0 < len(rotulo) <= MAX_ROTULO_DIGITAL
+        and "dinheiro" not in sinais(acao, guard)
+    )
+    return impressao, liberavel
+
+
+def ler_liberacao(texto: str) -> dict:
+    """A digital de `--liberar-uma`, conferida campo a campo; `ValueError` se não serve.
+
+    Mesmo vindo do Viking, confere tudo de novo: categoria de dinheiro, rótulo com sinal de
+    dinheiro, site sem host ou digital que esta normalização não produziria são recusados."""
+    try:
+        dados = json.loads(texto)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("liberação não é JSON") from exc
+    if not isinstance(dados, dict) or set(dados) != CAMPOS_DIGITAL:
+        raise ValueError("liberação sem os campos da digital")
+    if not all(isinstance(v, str) for v in dados.values()):
+        raise ValueError("liberação com campo que não é texto")
+    if dados["categoria"] not in LIBERAVEIS:
+        raise ValueError(f"categoria não liberável: {dados['categoria'][:20]}")
+    rotulo = dados["rotulo"]
+    if not rotulo or len(rotulo) > MAX_ROTULO_DIGITAL or normalizar(rotulo) != rotulo:
+        raise ValueError("rótulo fora da forma normalizada")
+    if "dinheiro" in sinais({"kind": "click", "label": rotulo}):
+        raise ValueError("rótulo com sinal de dinheiro")
+    if not dados["esquema_host"] or esquema_host(dados["esquema_host"]) != dados["esquema_host"]:
+        raise ValueError("site da liberação inválido")
+    return dados

@@ -44,10 +44,36 @@ def _browser(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
 
     if args.json:
         print(json.dumps(asdict(resultado), ensure_ascii=False, indent=2))
-    else:
-        print(formatar(resultado))
+        return _saida_do_navegador(resultado)
+    print(formatar(resultado))
+    return _liberar_clique(resultado, on_progress=None if args.quiet else imprimir_progresso)
 
+
+def _saida_do_navegador(resultado) -> int:
     return {"done": 0, "blocked": 1}.get(resultado.status, 2)
+
+
+def _liberar_clique(resultado, *, on_progress) -> int:
+    """O freio recusou um clique de sair ou de mexer na conta: propõe liberar só esse clique e pede
+    o código aqui mesmo (como `--arquivar`). Sem terminal interativo, nem propõe."""
+    from lifeos import confirmacao
+    from lifeos.browser import liberacao
+
+    proposta = liberacao.propor(resultado) if liberacao.terminal_interativo() else None
+    if proposta is None:
+        return _saida_do_navegador(resultado)
+    print(liberacao.texto_da_proposta(proposta, no_chat=False))
+    digitado = input("Código (Enter cancela): ").strip()
+    if not digitado:
+        print("Cancelado: nada foi clicado.")
+        return _saida_do_navegador(resultado)
+    try:
+        texto, novo = liberacao.clicar_aprovado(digitado, on_progress=on_progress)
+    except (confirmacao.ErroConfirmacao, ValueError) as exc:
+        print(f"❌ Não cliquei: {exc}.", file=sys.stderr)
+        return 2
+    print(texto)
+    return 0 if novo.liberado else 2
 
 
 def _arquivar(remetentes: str) -> int:

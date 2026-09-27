@@ -56,6 +56,12 @@ class BrowserResult:
     error_code: str | None = None
     error_detail: str | None = None
     stderr_tail: str | None = None
+    # Recusa do freio: a digital do clique (esquema+host, categoria, rótulo normalizado) e a URL
+    # redigida da página, e se o subprocesso a julgou liberável. `liberado`: nesta execução o
+    # subprocesso deixou passar o clique liberado (`--liberar-uma`).
+    acao_sensivel: dict | None = None
+    liberavel: bool = False
+    liberado: bool = False
 
 
 def build_command(
@@ -67,20 +73,27 @@ def build_command(
     jev_dir: Path | None = None,
     env_file: Path | None = None,
     uv_bin: str | None = None,
+    max_acoes: int | None = None,
+    liberar: dict | None = None,
 ) -> list[str]:
+    """URL e objetivos vão **colados** (`--goal=...`): um objetivo escrito pelo Gemini que comece
+    com "--" ("--liberar-uma=...") continua sendo objetivo. `--liberar-uma` só sai daqui com
+    `liberar`, que só o caminho de aprovação passa (`liberacao.clicar_aprovado`)."""
     jev_dir = Path(jev_dir or JEV_DIR)
     env_file = Path(env_file) if env_file is not None else Path(JEV_ENV_FILE)
     cmd = [uv_bin or UV_BIN, "run", "--directory", str(jev_dir)]
     if env_file.is_file():
         cmd += ["--env-file", str(env_file)]
-    cmd += ["python", str(SCRIPT_PATH), "--url", url]
-    for goal in goals:
-        cmd += ["--goal", goal]
-    cmd += ["--timeout", str(timeout_s), "--max-acoes", str(BROWSER_MAX_ACOES)]
+    cmd += ["python", str(SCRIPT_PATH), f"--url={url}"]
+    cmd += [f"--goal={goal}" for goal in goals]
+    teto = max_acoes if max_acoes is not None else BROWSER_MAX_ACOES
+    cmd += ["--timeout", str(timeout_s), "--max-acoes", str(teto)]
     for dominio in BROWSER_BLOQUEADOS:
         cmd += ["--bloquear", dominio]
     if fechar:
         cmd.append("--fechar")
+    if liberar is not None:
+        cmd.append(f"--liberar-uma={json.dumps(liberar, sort_keys=True)}")
     return cmd
 
 
@@ -93,6 +106,21 @@ def parse_event(linha: str) -> dict | None:
     except json.JSONDecodeError:
         return None
     return evento if isinstance(evento, dict) and "type" in evento else None
+
+
+_CAMPOS_DIGITAL = ("esquema_host", "categoria", "rotulo")
+
+
+def _acao_sensivel(evento: dict) -> dict | None:
+    """A digital da recusa, só com os campos esperados e todos texto; qualquer outra forma é
+    ignorada (sem digital não há proposta de liberação)."""
+    bruto = evento.get("acao_sensivel")
+    if not isinstance(bruto, dict):
+        return None
+    campos = (*_CAMPOS_DIGITAL, "url")
+    if not all(isinstance(bruto.get(c), str) for c in campos):
+        return None
+    return {c: bruto[c] for c in campos}
 
 
 def _limpo(texto: str | None) -> str | None:
@@ -129,6 +157,11 @@ def _higienizar(resultado: BrowserResult) -> BrowserResult:
         history=tuple(_passo_limpo(p) for p in resultado.history),
         error_detail=_limpo(resultado.error_detail),
         stderr_tail=_limpo(resultado.stderr_tail),
+        acao_sensivel=(
+            {**resultado.acao_sensivel, "url": _url_limpa(resultado.acao_sensivel["url"])}
+            if resultado.acao_sensivel
+            else None
+        ),
     )
 
 
@@ -172,12 +205,16 @@ def _montar_resultado(
         "page_text": final.get("page_text") or None,
         "kept_open": bool(final.get("kept_open")),
         "usage": dict(final.get("usage") or {}),
+        "liberado": any(e.get("type") == "liberado" for e in eventos),
     }
     if final["type"] == "error":
+        acao_sensivel = _acao_sensivel(final)
         return BrowserResult(
             status="error",
             error_code=final.get("code") or "unknown",
             error_detail=final.get("message"),
+            acao_sensivel=acao_sensivel,
+            liberavel=acao_sensivel is not None and final.get("liberavel") is True,
             **comum,
             **base,
         )
@@ -261,6 +298,8 @@ def run_jev(
     timeout_s: float | None = None,
     fechar: bool = False,
     on_progress: Callable[[dict], None] | None = None,
+    max_acoes: int | None = None,
+    liberar: dict | None = None,
 ) -> BrowserResult:
     """Roda um objetivo no navegador. Bloqueia; devolve sempre um `BrowserResult` — inclusive se
     o subprocesso não conseguir nem iniciar (`spawn_failed`) ou se `on_progress` levantar. Em
@@ -284,9 +323,14 @@ def run_jev(
         if not (Path(JEV_DIR) / "pyproject.toml").is_file():
             return _erro("jev_dir_missing", str(JEV_DIR), goals)
 
-        cmd = build_command(url, goals, timeout_s=limite, fechar=fechar)
-        # Registrado só daqui em diante: as recusas acima não abriram nada.
+        cmd = build_command(
+            url, goals, timeout_s=limite, fechar=fechar, max_acoes=max_acoes, liberar=liberar
+        )
+        # Registrado só daqui em diante: as recusas acima não abriram nada. A digital liberada
+        # entra no registro; o código que a aprovou nunca chega aqui.
         parametros = {"url": _redacao.redigir_url(url), "objetivos": goals}
+        if liberar is not None:
+            parametros["liberar"] = liberar
         with registro.acao("navegador.executar", parametros) as marca:
             resultado = _rodar(cmd, goals, limite, on_progress)
             marca.feito(
@@ -294,6 +338,7 @@ def run_jev(
                     "status": resultado.status,
                     "erro": resultado.error_code or "",
                     "passos": resultado.steps,
+                    "liberado": resultado.liberado,
                 }
             )
         return resultado

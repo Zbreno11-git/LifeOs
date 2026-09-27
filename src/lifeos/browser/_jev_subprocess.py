@@ -52,11 +52,14 @@ def _on_signal(_signum, _frame):
 
 class AcaoSensivel(RuntimeError):
     """O freio recusou um clique que age sobre a conta. Carrega o `usage` da decisão recusada:
-    ela foi paga e não entra em `state["decisions"]` (o Jev só anexa depois que `choose` volta)."""
+    ela foi paga e não entra em `state["decisions"]` (o Jev só anexa depois que `choose` volta).
+    E a digital do clique, com a URL da página, para o Viking poder propor a liberação."""
 
-    def __init__(self, motivo, usage):
+    def __init__(self, motivo, usage, digital=None, liberavel=False):
         super().__init__(f"acao-sensivel: {motivo}")
         self.usage = usage if isinstance(usage, dict) else {}
+        self.digital = digital
+        self.liberavel = liberavel
 
 
 def emit(**evento):
@@ -145,7 +148,7 @@ def preparar_navegador():
     return "reiniciado"
 
 
-def instalar_protecao(bloqueados):
+def instalar_protecao(bloqueados, liberar=None):
     """Envolve as duas únicas saídas de conteúdo de página do Jev para modelos remotos: `choose`
     (decisões, OpenRouter) e `field_context` (contexto do modelo de texto — `field_text` recebe o
     que ela monta). O Jev as chama como globais de `jev_ultrafast.agent`, então trocar o nome ali
@@ -159,6 +162,10 @@ def instalar_protecao(bloqueados):
     O freio de cliques que agem sobre a conta (`_acoes_sensiveis`) também mora aqui: o Jev só
     executa a ação que `choose` devolveu, então conferir a decisão antes de devolvê-la é o único
     caminho até o clique.
+
+    `liberar` (a digital lida por `_liberacao`) deixa passar **um** clique recusado, o primeiro,
+    se for exatamente aquele e não tiver sinal de dinheiro; a liberação se gasta nesse primeiro
+    recusado, case ou não.
 
     Fecha em falha: se o Jev mudar e as funções sumirem, recusamos navegar em vez de navegar sem
     redação.
@@ -175,6 +182,8 @@ def instalar_protecao(bloqueados):
         raise RuntimeError(  # noqa: TRY004
             "protecao-indisponivel: jev_ultrafast.agent sem choose/field_context"
         )
+
+    pendente = [liberar] if liberar is not None else []
 
     def _checar(page):
         dominio = _redacao.dominio_bloqueado((page or {}).get("url") or "", bloqueados)
@@ -193,12 +202,20 @@ def instalar_protecao(bloqueados):
         guards = (page or {}).get("guards")
         if not isinstance(guards, dict):
             raise RuntimeError("protecao-indisponivel: página do Jev sem 'guards'")  # noqa: TRY004
+        guard = guards.get(str(acao.get("node")))
         try:
-            motivo = _acoes_sensiveis.motivo(acao, guards.get(str(acao.get("node"))))
+            motivo = _acoes_sensiveis.motivo(acao, guard)
+            if not motivo:
+                return
+            url = (page or {}).get("url") or ""
+            digital, liberavel = _acoes_sensiveis.digital(url, acao, motivo, guard)
         except ValueError as exc:
             raise RuntimeError(f"protecao-indisponivel: {exc}") from exc
-        if motivo:
-            raise AcaoSensivel(motivo, decisao.get("usage"))
+        liberacao = pendente.pop() if pendente else None
+        if liberavel and liberacao == digital:
+            emit(type="liberado", acao_sensivel=digital)
+            return
+        raise AcaoSensivel(motivo, decisao.get("usage"), {**digital, "url": url}, liberavel)
 
     def choose_protegido(page, goal, history):
         _checar(page)
@@ -212,6 +229,20 @@ def instalar_protecao(bloqueados):
 
     agente.choose = choose_protegido
     agente.field_context = field_context_protegido
+
+
+def _liberacao(texto, url):
+    """A digital de `--liberar-uma`, ou `None` sem o argumento. Inválida, com dinheiro ou para
+    outro site que não o de `--url`: recusa navegar, antes de abrir qualquer aba."""
+    if texto is None:
+        return None
+    try:
+        liberar = _acoes_sensiveis.ler_liberacao(texto)
+    except ValueError as exc:
+        raise RuntimeError(f"protecao-indisponivel: liberação recusada ({exc})") from exc
+    if _acoes_sensiveis.esquema_host(url) != liberar["esquema_host"]:
+        raise RuntimeError("protecao-indisponivel: liberação para outro site que não o de --url")
+    return liberar
 
 
 def _normalizar(url):
@@ -309,13 +340,16 @@ def _passos(state):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="jev-runner")
+    # Sem abreviação: `--lib=...` nunca vira `--liberar-uma`. O Viking passa `--goal=`/`--url=`
+    # colados, então um objetivo que comece com "--" continua sendo objetivo.
+    parser = argparse.ArgumentParser(prog="jev-runner", allow_abbrev=False)
     parser.add_argument("--url", required=True)
     parser.add_argument("--goal", action="append", dest="goals", required=True)
     parser.add_argument("--timeout", type=float, default=180.0)
     parser.add_argument("--fechar", action="store_true", help="fecha a aba ao terminar")
     parser.add_argument("--max-acoes", type=int, default=30, dest="max_acoes")
     parser.add_argument("--bloquear", action="append", default=[], metavar="DOMINIO")
+    parser.add_argument("--liberar-uma", dest="liberar_uma", metavar="JSON", default=None)
     args = parser.parse_args()
 
     signal.signal(signal.SIGTERM, _on_signal)
@@ -332,7 +366,7 @@ def main():
     amplas = []
 
     try:
-        instalar_protecao(args.bloquear)
+        instalar_protecao(args.bloquear, _liberacao(args.liberar_uma, args.url))
         emit(type="health", state=preparar_navegador())
         agent = Agent(args.url, args.goals)
         state = agent.snapshot()
@@ -442,6 +476,11 @@ def main():
             kept_open=agent is not None and not args.fechar,
             # A página de um domínio bloqueado não sai deste processo nem pro Viking.
             **({} if codigo == "dominio_bloqueado" else _pagina(final)),
+            **(
+                {"acao_sensivel": exc.digital, "liberavel": exc.liberavel}
+                if isinstance(exc, AcaoSensivel)
+                else {}
+            ),
         )
         return EXIT_ERROR
 

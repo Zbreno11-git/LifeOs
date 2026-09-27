@@ -21,6 +21,7 @@ from datetime import timedelta
 GMAIL_ARQUIVAR = "gmail.arquivar"
 CALENDARIO_APAGAR = "calendario.apagar"
 CALENDARIO_REAGENDAR = "calendario.reagendar"
+NAVEGADOR_CLIQUE = "navegador.clique"  # D38: um clique recusado pelo freio, uma vez
 VALIDADE_MCP = timedelta(hours=1)  # decisão do dono, 2026-09-27
 JANELA_GMAIL = timedelta(days=7)  # D27: desfazer uma limpeza por 7 dias
 
@@ -36,6 +37,8 @@ TIPOS: tuple[Tipo, ...] = (
     Tipo(GMAIL_ARQUIVAR, janela=JANELA_GMAIL, no_chat=True),
     Tipo(CALENDARIO_APAGAR, janela=timedelta(0), no_chat=False),
     Tipo(CALENDARIO_REAGENDAR, janela=timedelta(0), no_chat=False),
+    # Um clique não se desfaz: o código só vive enquanto a proposta está aberta.
+    Tipo(NAVEGADOR_CLIQUE, janela=timedelta(0), no_chat=True),
 )
 
 

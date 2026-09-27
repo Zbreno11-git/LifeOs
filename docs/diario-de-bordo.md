@@ -993,3 +993,34 @@ docstrings reformatadas de novo (classe 8).
 **Não medido:** restaurar evento pelo `patch status=confirmed`, a mescla do `patch` com `null` no
 horário e o fluxo do MCP com um cliente de verdade — no Mac (C9).
 
+
+### 2026-09-27 — Sessão 5, commit 2: liberar um clique do navegador, uma vez
+
+**Decidido pelo dono (na abertura):** liberar só **sair** e **conta**, **dinheiro nunca**; com
+código; refazer **só aquele clique**. Meu (D38): a liberação casa por uma digital (esquema+host,
+categoria, rótulo normalizado) feita pelo subprocesso; o Viking reabre a URL **redigida** da recusa
+(o plano dizia a bruta — mudei: URL com token ou código de login não vai ao banco nem é reaberta);
+objetivo escrito pelo Viking ("clicar no botão «rótulo»", 5 ações, 60 s); sem reproposta.
+
+**Feito.** `_acoes_sensiveis.sinais` julga cada categoria por conta própria ("Sair e pagar" era só
+"sair" para o `motivo`) e dinheiro em qualquer lugar do botão veta; `digital`/`ler_liberacao`/
+`esquema_host`. `_jev_subprocess`: `--liberar-uma=JSON` conferido antes de navegar (forma,
+dinheiro, mesmo site do `--url`), o primeiro clique recusado passa se casar exato (evento
+`liberado`), e a liberação se gasta ali; `allow_abbrev=False`. `jev_runner`: `--url=`/`--goal=`
+colados, `BrowserResult.acao_sensivel`/`liberavel`/`liberado`. `scripts/pedido_mcp_de_teste.py` para o teste do
+MCP no Mac. `browser/liberacao.py`: proposta só
+com terminal interativo, código só no terminal, `clicar_aprovado`. Chat (`confirma NNNN`, só o
+número, `desfaz` recusa) e `viking browser` (pede o código ali); `--json` não propõe. Registro diz
+"clique liberado pelo dono".
+
+**Portões.** `1003 passed` (contratos com o clone do Jev incluídos, zero pulados); `ruff check`
+limpo; formatação no baseline 7; `python scripts/mutacoes.py` → saída 0 com 120 mutações (21
+novas neste commit).
+
+**Erros meus** (em `docs/erros.md`): script de edição rodado antes de ativar o venv, com um verde
+de testes que não tinha nada a ver com a edição, e um heredoc dentro de outro que fez o bash
+executar texto como comando, sem estrago (classe 5); nome `executar_aprovado` repetido, que
+deixaria ambígua a régua do MCP (classe 6, pega pelo teste).
+
+**Não medido:** a liberação numa Chrome de verdade (o Jev real achando o botão na reexecução) — no
+Mac (C9), numa página `data:`.
