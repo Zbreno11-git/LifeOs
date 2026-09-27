@@ -562,6 +562,20 @@ MUTACOES = [
         "        if False:",
         "tests/test_financas_respostas.py::test_conexao_com_erro_de_login_e_avisada",
     ),
+    Mutacao(
+        "pluggy: escrita repetida depois de falha de conexão",
+        "src/lifeos/financas/pluggy.py",
+        '    esperas = ESPERAS_S if metodo == "GET" else ()',
+        "    esperas = ESPERAS_S",
+        "tests/test_financas.py::test_escrita_com_falha_de_conexao_nunca_repete",
+    ),
+    Mutacao(
+        "pluggy: leitura desiste na primeira falha de conexão",
+        "src/lifeos/financas/pluggy.py",
+        '    esperas = ESPERAS_S if metodo == "GET" else ()',
+        "    esperas = ()",
+        "tests/test_financas.py::test_leitura_com_falha_de_conexao_e_tentada_de_novo",
+    ),
 ]
 
 

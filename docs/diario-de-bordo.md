@@ -928,3 +928,11 @@ código, cópia rasa que vazou entre testes, e um teste que não conferia o que 
 
 **Não medido:** as respostas no Mac, com o Gemini de verdade e os números conferidos com o app do
 banco (C7) — em especial se "compras sem fatura" bate com a fatura aberta no app.
+
+**Primeiro teste no Mac (2026-09-27, saída colada pelo dono).** `797 passed`; `viking financas`,
+`--saldo` e `--fatura` responderam, com o aviso de fatura atrasada nos dois cartões (32 e 38
+dias). `--gastos` e `--buscar pix` deram `sem resposta da Pluggy (URLError)`, sem o motivo. Os
+mesmos dois comandos, com as mesmas conexões, passaram no VPS (10 chamadas cada, todas abaixo de
+0,5 s): falha de conexão do lado do Mac, causa não medida. Conserto: leitura (`GET`) com falha
+de conexão é tentada mais duas vezes (1 s e 3 s), escrita nunca; a mensagem passa a trazer o
+motivo e o número de tentativas. `801 passed`; mutações da Pluggy 5/5 (2 novas).

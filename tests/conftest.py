@@ -31,6 +31,7 @@ def _sem_google_de_verdade(monkeypatch):
     )
     # A chave da Pluggy alcança PIX: nenhum teste fala com a Pluggy de verdade.
     monkeypatch.setattr("lifeos.financas.pluggy._abrir", _proibido)
+    monkeypatch.setattr("lifeos.financas.pluggy._esperar", lambda _s: None)
 
 
 @pytest.fixture(autouse=True)

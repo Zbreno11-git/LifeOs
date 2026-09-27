@@ -164,6 +164,52 @@ def test_resposta_sem_json_vira_falha_clara(api, monkeypatch):
         _cliente().conexao(ITEM)
 
 
+def _falhando(estado, vezes, erro):
+    """Troca o `_abrir` da Pluggy falsa por um que falha `vezes` vezes antes de responder."""
+    responder = pluggy._abrir
+
+    def abrir(pedido):
+        estado["tentativas"] = estado.get("tentativas", 0) + 1
+        if estado["tentativas"] <= vezes:
+            raise erro
+        return responder(pedido)
+
+    return abrir
+
+
+def test_leitura_com_falha_de_conexao_e_tentada_de_novo(api, monkeypatch):
+    esperas = []
+    monkeypatch.setattr(pluggy, "_esperar", esperas.append)
+    cliente = _cliente()
+    cliente._chave_valida()  # a chave antes, para contar só o GET
+    monkeypatch.setattr(pluggy, "_abrir", _falhando(api, 2, urllib.error.URLError("timed out")))
+    assert cliente.conexao(ITEM)["status"] == "UPDATED"
+    assert (api["tentativas"], esperas) == (3, list(pluggy.ESPERAS_S))
+
+
+def test_leitura_que_nao_volta_diz_o_motivo_e_as_tentativas(api, monkeypatch):
+    cliente = _cliente()
+    cliente._chave_valida()
+    monkeypatch.setattr(pluggy, "_abrir", _falhando(api, 9, urllib.error.URLError("timed out")))
+    with pytest.raises(pluggy.FalhaDaPluggy) as erro:
+        cliente.conexao(ITEM)
+    assert str(erro.value) == "sem resposta da Pluggy (URLError: timed out, 3 tentativas)"
+    assert SEGREDO not in str(erro.value) and "chave-1" not in str(erro.value)
+
+
+def test_escrita_com_falha_de_conexao_nunca_repete(api, monkeypatch):
+    monkeypatch.setattr(pluggy, "_abrir", _falhando(api, 1, urllib.error.URLError("reset")))
+    with pytest.raises(pluggy.FalhaDaPluggy, match=r"^sem resposta da Pluggy \(URLError: reset\)$"):
+        _cliente().token_de_conexao()  # o POST /auth falhou uma vez: não tenta de novo
+    assert api["tentativas"] == 1
+
+
+def test_erro_http_nao_repete(api):
+    with pytest.raises(pluggy.FalhaDaPluggy, match="404"):
+        _cliente().conexao(OUTRO)
+    assert [p[1] for p in api["pedidos"]].count(f"/items/{OUTRO}") == 1
+
+
 # --- a página local ---------------------------------------------------------------------------
 
 

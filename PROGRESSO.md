@@ -15,6 +15,10 @@ anterior é `d00abcc`) · igual ao remoto · travas: nenhuma · execuções em b
 esperado: 71` (13 de finanças; a parcial das 13 repetida depois da última mudança: 13/13, 40 s).
 Decisões D31–D35 em `docs/decisoes.md`; medições novas em `docs/fontes/pluggy-open-finance.md`.
 
+**C7, primeira rodada no Mac (2026-09-27):** `797 passed`; saldo e fatura responderam; gastos e
+busca deram `URLError` sem motivo (no VPS passaram). Consertado: `GET` tenta de novo em falha de
+conexão, e a mensagem diz o motivo. Falta a segunda rodada.
+
 **Próximo passo exato:** C7 — o dono roda no Mac o roteiro abaixo e responde, para cada item, se
 bateu com o app do banco (sem colar valores). Se "compras sem fatura" não bater com a fatura
 aberta no app, reabrir D35 (gatilho escrito). Se tudo bater: Pluggy vira "fechada" em

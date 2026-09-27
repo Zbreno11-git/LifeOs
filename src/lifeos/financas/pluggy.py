@@ -22,6 +22,9 @@ API = "https://api.pluggy.ai"
 MEUPLUGGY = 200  # o conector "espelho" das conexões do Meu Pluggy
 VALIDADE_CHAVE_S = 110 * 60  # a chave de `/auth` vale 2 h (documentação); renova antes
 TEMPO_LIMITE_S = 30
+# Falha de conexão numa LEITURA é tentada de novo (o Mac do dono teve `URLError` em dois de
+# quatro comandos seguidos, 2026-09-27, e o mesmo pedido passou no VPS). Escrita nunca repete.
+ESPERAS_S = (1.0, 3.0)
 _ESCRITAS_PERMITIDAS = frozenset({("POST", "/auth"), ("POST", "/connect_token")})
 _UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
@@ -59,6 +62,18 @@ def _abrir(pedido: urllib.request.Request):
     return urllib.request.urlopen(pedido, timeout=TEMPO_LIMITE_S)
 
 
+def _esperar(segundos: float) -> None:
+    time.sleep(segundos)
+
+
+def _motivo(exc: Exception) -> str:
+    """O porquê de uma falha de conexão (`timed out`, erro de DNS ou de SSL), curto e imprimível.
+    Vem da biblioteca de rede, não do corpo do pedido: não carrega a chave nem o segredo."""
+    texto = " ".join(str(getattr(exc, "reason", None) or exc).split())
+    texto = "".join(c for c in texto if c.isprintable())[:120]
+    return f"{type(exc).__name__}: {texto}" if texto else type(exc).__name__
+
+
 def _pedir(metodo: str, caminho: str, *, corpo: dict | None = None, chave: str = "") -> dict:
     if metodo != "GET" and (metodo, caminho) not in _ESCRITAS_PERMITIDAS:
         raise PermissionError(f"o Viking não escreve na Pluggy: {metodo} {caminho}")
@@ -66,23 +81,32 @@ def _pedir(metodo: str, caminho: str, *, corpo: dict | None = None, chave: str =
     if chave:
         cabecalhos["X-API-KEY"] = chave
     dados = json.dumps(corpo).encode() if corpo is not None else None
-    pedido = urllib.request.Request(API + caminho, data=dados, headers=cabecalhos, method=metodo)
-    try:
-        with _abrir(pedido) as resposta:
-            return json.loads(resposta.read() or b"{}")
-    except urllib.error.HTTPError as exc:
-        # Só o código e a descrição curta da Pluggy: o corpo pode ecoar o que foi enviado.
+    esperas = ESPERAS_S if metodo == "GET" else ()
+    for tentativa in range(len(esperas) + 1):
+        pedido = urllib.request.Request(
+            API + caminho, data=dados, headers=cabecalhos, method=metodo
+        )
         try:
-            detalhe = json.loads(exc.read() or b"{}").get("codeDescription") or ""
-        except (ValueError, AttributeError):
-            detalhe = ""
-        raise FalhaDaPluggy(
-            f"a Pluggy respondeu {exc.code}" + (f" ({detalhe})" if detalhe else ""), exc.code
-        ) from None
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise FalhaDaPluggy(f"sem resposta da Pluggy ({type(exc).__name__})") from None
-    except ValueError:
-        raise FalhaDaPluggy("a Pluggy respondeu algo que não é JSON") from None
+            with _abrir(pedido) as resposta:
+                return json.loads(resposta.read() or b"{}")
+        except urllib.error.HTTPError as exc:
+            # Só o código e a descrição curta da Pluggy: o corpo pode ecoar o que foi enviado.
+            try:
+                detalhe = json.loads(exc.read() or b"{}").get("codeDescription") or ""
+            except (ValueError, AttributeError):
+                detalhe = ""
+            raise FalhaDaPluggy(
+                f"a Pluggy respondeu {exc.code}" + (f" ({detalhe})" if detalhe else ""), exc.code
+            ) from None
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            if tentativa < len(esperas):
+                _esperar(esperas[tentativa])
+                continue
+            vezes = f", {tentativa + 1} tentativas" if tentativa else ""
+            raise FalhaDaPluggy(f"sem resposta da Pluggy ({_motivo(exc)}{vezes})") from None
+        except ValueError:
+            raise FalhaDaPluggy("a Pluggy respondeu algo que não é JSON") from None
+    raise AssertionError("inalcançável")  # o laço sempre devolve ou levanta
 
 
 class Cliente:
