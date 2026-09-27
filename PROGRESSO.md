@@ -8,42 +8,19 @@
 ## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy: falta só o teste no Mac (C7)
 
 **Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
-anterior é `d00abcc`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+anterior é `0126535`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** C1–C6 ✅ (código, testes, mutações, docs, commit e push em 2026-09-27). Suíte
-`797 passed`; `ruff check` limpo; formatação no baseline 7; mutações `71 · mortas pelo teste
-esperado: 71` (13 de finanças; a parcial das 13 repetida depois da última mudança: 13/13, 40 s).
-Decisões D31–D35 em `docs/decisoes.md`; medições novas em `docs/fontes/pluggy-open-finance.md`.
+**Onde parou:** C1–C6 ✅; C7 com a CLI ✅ no Mac (três rodadas, 2026-09-27: saldo, fatura,
+gastos, busca; consertos de conexão, de pagamento de fatura do Nubank e a linha própria das
+transferências, decisão do dono). Falta só ver o **chat** responder (nenhuma pergunta de
+finanças colada ainda). Suíte `807 passed`; mutações `78 · mortas pelo teste esperado: 78`.
 
-**C7, primeira rodada no Mac (2026-09-27):** `797 passed`; saldo e fatura responderam; gastos e
-busca deram `URLError` sem motivo (no VPS passaram). Consertado: `GET` tenta de novo em falha de
-conexão, e a mensagem diz o motivo. Falta a segunda rodada.
-
-**C7, segunda rodada (2026-09-27):** gastos e busca responderam; o dono: "tudo certo". Achado na
-saída: pagamento de fatura do Nubank contado como gasto (vem `Transfers`/`OUTROS`) — consertado
-pela descrição exata, D34 atualizada. Falta: o dono conferir `viking financas --gastos` com o
-conserto (o pagamento de 18/09 tem de sair de "Transferências" e ir para "Fora do total"; e as
-transferências para outras pessoas aparecem numa linha própria, decisão do dono do mesmo dia).
-
-**Roteiro original do C7 (feito):** o dono roda no Mac o roteiro abaixo e responde, para cada item, se
-bateu com o app do banco (sem colar valores). Se "compras sem fatura" não bater com a fatura
-aberta no app, reabrir D35 (gatilho escrito). Se tudo bater: Pluggy vira "fechada" em
-`sessoes.md` e na barra (7 fechadas + 2 parciais), e o bloco passa a apontar para a Sessão 5.
-
-```
-git pull && git log --oneline -1
-source .venv/bin/activate
-which python
-python -m pytest -q
-viking financas
-viking financas --saldo
-viking financas --gastos
-viking financas --fatura
-viking financas --buscar pix
-viking chat
-```
-No chat: "quanto tenho?", "quanto gastei este mês e em quê?", "paguei o <algo que ele saiba>?",
-"como está a fatura do cartão?", e "sair".
+**Próximo passo exato:** o dono cola uma conversa do `viking chat` com "quanto gastei este mês e
+em quê?" e "como está a fatura do cartão?". Esperado: o Gemini repete os números da ferramenta
+(os mesmos do `--gastos`/`--fatura`), cita a data da sincronização, não soma o que está "fora do
+total" e não inventa vencimento. Se sim: Pluggy fechada em `sessoes.md` e na barra (7 fechadas +
+2 parciais = 8 de 12), e este bloco passa a apontar para a Sessão 5. Se não: o texto do prompt
+ou das docstrings é o suspeito (a conta já bate na CLI).
 
 **Erros desta sessão (vão para `docs/erros.md` no C6):** (1) `service.py` tratou `dueDate` de
 fatura como instante sem medir a hora, e o teste que escrevi logo depois afirmava o dia errado
@@ -81,7 +58,7 @@ do gasto, PIX para outros conta como gasto em linha própria, parcela futura for
 **Depende do dono:** o C7 — rodar o roteiro acima no Mac e conferir os números com o app do banco.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `797 passed`; `python -c "import lifeos.financas.service"` sem erro.
+`python -m pytest -q` → `807 passed`; `python -c "import lifeos.financas.service"` sem erro.
 
 ## Plano — Sessão Pluggy: finanças no chat, só leitura
 
@@ -123,7 +100,7 @@ própria ou pela Enrichment API; alertas; qualquer escrita (PIX, mudar categoria
 | C4 | `viking financas --saldo/--gastos/--buscar/--fatura` + testes | ✅ |
 | C5 | mutações novas mortas; suíte; ruff; baseline 7 | ✅ 71/71 |
 | C6 | docs + revisão em duas passadas + commit + push | ✅ |
-| C7 | Mac: as quatro perguntas no CLI e no chat, conferidas com o app do banco | ⬜ |
+| C7 | Mac: as quatro perguntas no CLI e no chat, conferidas com o app do banco | CLI ✅ · chat ⬜ |
 
 ### 🐞 Previsto → Depurar
 - Total de gasto que não bate com o app do banco → primeiro o sinal por tipo, depois fatura paga

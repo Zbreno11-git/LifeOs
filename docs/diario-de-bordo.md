@@ -948,3 +948,9 @@ Separadas pela família `05…` da taxonomia da Pluggy (sem boleto, câmbio, mes
 cartão); de brinde, a família "mesma titularidade" inteira (`04…`, com PIX/TED/dinheiro) passou
 a ser interna — antes só a categoria-mãe. Setembro do dono (contagens): 4 transferências, 12
 compras e contas em 9 categorias. `807 passed`; mutações de finanças 18/18.
+
+**Terceira rodada no Mac (2026-09-27, `0126535`).** `viking financas --gastos`: o pagamento de
+fatura do Nubank saiu do gasto (o total caiu exatamente o valor dele) e entrou nos 5 movimentos
+fora do total; as transferências para outras pessoas numa linha própria (4), com 9 categorias
+de compra — o mesmo que as contagens do VPS. CLI validada. **Não visto:** as perguntas de
+finanças no `viking chat` (o chat abriu nas duas rodadas, nenhuma pergunta colada).
