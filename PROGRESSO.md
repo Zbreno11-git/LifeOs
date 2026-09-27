@@ -23,6 +23,27 @@ rodei o diagnóstico: … pelo terminal (viking browser) …", 10:00 no evento e
 reagendamento. Depois fechar a sessão: diário (validação no Mac), barra de progresso (conta 9 de 12 +
 a 6), `sessoes.md` (Sessão 6 feita, ▶️ para a 7), este bloco para a Sessão 7.
 
+**Resultado do C7 (Mac, `ba860fa`, 2026-09-27, colado pelo dono):** `1078 passed`; `HOME` 1/1 e
+`GEMINI_API_KEY` 1 antes → 0 depois do `pkill` ✅; doctor mostrou `ramo: viking-openrouter · commit:
+afbee69`, "nenhuma" não salva, "patch OpenRouter: presente" ✅ (o harness disse "daemon alive FAIL"
+logo depois do `pkill`: esperado, o doctor não sobe o daemon; a tarefa seguinte subiu); nenhuma linha
+"⚠️  Jev:" ✅; segundo doctor: "Não rodei o diagnóstico: … pelo terminal (viking browser) desde 15:49
+(tarefa: «abrir o primeiro resultado»)" ✅; "amanhã às 10h" criou às 10:00 ✅.
+**Dois achados abertos:**
+1. **YouTube em loop até o teto de 30 ações** ("abrir o primeiro resultado" já na página de busca):
+   clicou o primeiro vídeo na ação 1, não declarou concluído e ficou em vídeo → Search → "lofi" → …
+   O detector de ciclo não pegou: (a) hipótese medida no rastro — o mesmo `n` aparece em 1 ou 2
+   eventos `step` e `assinaturas` cresce por evento, não por ação, o que quebra a periodicidade; (b)
+   o ciclo varia de tamanho (3 a 5 ações). O teto (3ª camada) conteve. `_jev_subprocess.py` só
+   mudou o `emit` nesta sessão (conferido com `git diff cafe704 HEAD`): defeito anterior à 6.
+   **Decisão do dono pendente:** consertar agora ou numa sessão própria.
+2. **Dois "Teste Viking" no dia 28:** o reagendar e o apagar acharam o evento **das 15:00** — hipótese:
+   é o da Sessão 5 (criado às 15h pelo fuso inventado, apagado e devolvido pelo `desfaz`). Então o
+   `desfaz` do reagendamento funcionou (15:00 → 11:00 → 15:00, confirmado pelo "apaga" achando 15:00),
+   e o das 10:00 criado hoje ficou na agenda. **A medir:** o dono olhar a agenda do dia 28. A busca
+   (`service.buscar`) devolve todos os que casam; o Gemini mostrou só um — se confirmado, a tool
+   deveria dizer "há N eventos com esse nome".
+
 **Se o Mac mostrar:**
 - uma linha "⚠️  Jev: N mudança(s) não salva(s)" → pedir `git -C jev-ultrafast status --porcelain |
   cut -c1-3 | sort | uniq -c` (só o tipo, sem nomes) e decidir se conta só rastreados
