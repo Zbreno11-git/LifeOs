@@ -5,35 +5,74 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5 em curso (commit 1 feito; C6 a seguir)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 5: commit 1 feito, commit 2 (navegador) a começar — antes de um compact
 
-**Estado do repositório:** conferir com `git log -1` (o último commit antes da sessão é `34d680f`)
-· travas: nenhuma · execuções em background: nenhuma.
+**Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
+anterior é `1b05733`, o commit 1 da sessão) · igual ao remoto · travas: nenhuma · execuções em
+background: nenhuma.
 
-**Onde parou:** commit 1 da Sessão 5 fechado (C0–C5 ✅): registro de ações, `desfaz` do
-calendário, pedidos pelo MCP e `viking aprovar`; D36, D37, D30 atualizada; `894 passed`; mutações
-`98/98` + 1. Detalhes no diário (2026-09-27, "Sessão 5, commit 1").
+**Onde parou:** commit 1 da Sessão 5 fechado e no ar (C0–C5 ✅): registro de ações
+(`registro.py`, `registro_texto.py`), `aprovacoes.py`, `desfaz` do calendário no chat
+(`calendar/service.restaurar`), pedidos pelo MCP + `viking aprovar`; D36, D37, D30 atualizada.
+`894 passed`; mutações `98/98` + 1 (`desfazer: resposta ambígua…`, 1/1). Nada do commit 2 foi
+editado ainda — só lido.
 
-**Próximo passo exato:** C6 — `_acoes_sensiveis.sinais(acao, guard)` (todas as categorias que
-casam no rótulo, contêiner e `href`); `_frear` leva `{esquema_host, categoria, rotulo}` no evento
-`error` (`acao_sensivel`); `--liberar-uma=JSON` de uso único, recusando `dinheiro` em qualquer
-sinal, JSON malformado e host vazio fora de `data:`; `allow_abbrev=False`. Testes em
-`tests/test_jev_subprocess_main.py` e o contrato com o Jev real. Depois C7 (pai), C8, C9 (Mac).
+**Próximo passo exato (C6, só o subprocesso):**
+1. `src/lifeos/browser/_acoes_sensiveis.py`: nova `sinais(acao, guard) -> set[str]` — cada
+   categoria julgada POR CONTA PRÓPRIA (hoje `_categoria_do_rotulo`, l.~259, devolve a primeira:
+   sair → conta → dinheiro, então "Sair e pagar" sairia como `sair`). Dinheiro: `_DINHEIRO_ROTULO`
+   no rótulo normalizado (e na opção do `select`) OU `_DINHEIRO_ESCOPO` no contêiner
+   (`contexto(guard)[1]`). `motivo` não muda por fora (6 âncoras de mutação "freio:" nele).
+2. `src/lifeos/browser/_jev_subprocess.py`: `instalar_protecao(bloqueados, liberar=None)`;
+   `_frear(page, decisao)` (l.~184): quando `motivo` recusa, montar a impressão digital
+   `{"esquema_host": esquema+host de page["url"] (data: → "data:"), "categoria": motivo.split(":")[0],
+   "rotulo": _acoes_sensiveis.normalizar(label)[:80]}`; se `liberar` casa EXATO, a liberação ainda
+   não foi usada e `"dinheiro" not in sinais(...)` → deixa passar uma vez e `emit(type="liberado",
+   ...)`; senão `AcaoSensivel(motivo, usage, digital)`. `AcaoSensivel` (l.53) ganha `.digital`; o
+   `except` do `main()` (l.~421) põe `acao_sensivel: digital` no evento `error`. Argumento novo
+   `--liberar-uma=JSON` no argparse (l.~307, com `allow_abbrev=False`): JSON inválido, categoria
+   `dinheiro` ou host vazio fora de `data:` → `protecao-indisponivel` ANTES de navegar.
+3. Testes em `tests/test_jev_subprocess_main.py` (fixture `jev_falso`, helpers
+   `_pagina_com_clique`/`_rodar_decidindo`, modelo `test_clique_em_sair_e_recusado_antes_de_executar`
+   l.~288): libera uma vez; o 2º sensível recusa; outro host/porta/esquema, outro rótulo ("Sair" ×
+   "Sair de todos os dispositivos"), outra categoria → recusa; "Sair e pagar" e contêiner de
+   checkout → recusa; `dinheiro` no argumento → recusa antes de navegar; o evento `error` traz a
+   digital. Rodar a suíte COM o clone do Jev (`test_contrato_do_freio_com_o_jev_real`).
+Depois C7 (pai: `jev_runner` com `--goal=`/`--url=`, `result_from` lê `acao_sensivel`,
+`executar_no_navegador` propõe `navegador.clique` e mostra o código só com TTY via `_ao_dono`,
+aprovação no laço do chat e no `viking browser`, execução curta com objetivo escrito pelo Viking
+"clicar no botão «rótulo»" na URL da recusa; tipo `navegador.clique` em `aprovacoes.TIPOS`
+(no_chat=True, janela 0) e despacho em `agent.aprovacao_local` — hoje `_aprovar_limpeza` é o único
+ramo), C8 (mutações ≥7, D38, docs, revisão, commit 2), C9 (Mac).
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
-(D18, D26–D30); o índice de `docs/erros.md` (classes 4, 6, 7); `src/lifeos/confirmacao.py`,
-`src/lifeos/assistant/agent.py` (laço e `aprovacao_local`), `src/lifeos/gmail/limpeza.py`,
-`src/lifeos/calendar/service.py`, `src/lifeos/mcp_server/server.py`, `src/lifeos/browser/_jev_subprocess.py`.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (armadilhas novas: stdout do MCP, régua do
+registro); este bloco e o plano abaixo; `docs/decisoes.md` (D18, D26–D30, D36, D37); o índice de
+`docs/erros.md` (classes 4, 6, 7, 8 bateram nesta sessão); `src/lifeos/browser/_acoes_sensiveis.py`,
+`_jev_subprocess.py`, `jev_runner.py`, `browser/__init__.py`, `mensagens.py`;
+`src/lifeos/assistant/agent.py` (`aprovacao_local`); `tests/test_jev_subprocess_main.py`.
 
-**Não pode ser esquecido:** código nunca ao Gemini nem ao cliente MCP; `_jev_subprocess.py` e
-`_acoes_sensiveis.py` só stdlib; sem future import em módulo de tool; `agent.py` no baseline de
-formatação (não formatar); âncoras de mutação atingidas (lista no plano); mutações sem `timeout`;
-repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
+**Decisões (onde estão):** todas as do dono na tabela "Respostas do dono" do plano abaixo e em
+D36/D37; as do commit 2 (só sair/conta; refazer só aquele clique na URL da recusa, objetivo do
+Viking) viram D38 no C8.
 
-**Depende do dono:** nada até o C9 (Mac).
+**Não pode ser esquecido:**
+- Código de aprovação nunca ao Gemini, ao cliente MCP, ao registro nem à nota; mostrar só com TTY.
+- `_jev_subprocess.py` e `_acoes_sensiveis.py` só stdlib, nunca `lifeos`; sem future import em
+  módulo de tool; `agent.py`, `calendar/tools.py`, `custos.py` e 2 testes estão no baseline de
+  formatação: em arquivo do baseline, aplicar só os próprios trechos do `ruff format --diff`
+  (reincidência da classe 8 nesta sessão). Baseline = 7.
+- Âncoras de mutação: editar `motivo`, `_frear` (`"        _frear(page, decisao)\n"`) ou o
+  `choose_protegido` quebra âncoras "freio:" — rodar `python -m pytest tests/test_mutacoes_ancoras.py`
+  logo depois. Mutações sem `timeout`; travou → matar só o `pytest` filho.
+- `or` em asserção é proibido (3 vezes na classe 4). Dublê de teste com todos os campos do real.
+- Repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
 
-**Antes de confiar neste bloco:** `git status --short` só com o trabalho da etapa; `ls
-.mutacao.lock` → não existe; `python -m pytest -q` → `894 passed`.
+**Depende do dono:** nada até o C9 (Mac): então criar/apagar/`desfaz` um evento "Teste Viking",
+um pedido pelo MCP + `viking aprovar`, e um "Sair" numa página `data:`.
+
+**Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
+`python -m pytest -q` → `894 passed`; `python -m ruff format --check . | tail -1` → `7 files
+would be reformatted`.
 
 ## Plano — Sessão 5: confirmação mecânica (registro de ações, MCP com aprovação, liberar um clique)
 
