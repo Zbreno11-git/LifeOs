@@ -615,3 +615,13 @@ def test_contrato_com_o_jev_real():
     for nome in ("choose", "field_context"):
         assert nome in importados, f"{nome} não vem mais de `from .model import`"
         assert nome in chamados, f"{nome} não é mais chamado como nome global"
+
+
+def test_todo_evento_leva_o_nonce_da_execucao(jev_falso, monkeypatch, capsys):
+    """O Viking descarta linha sem o nonce que ele sorteou (Sessão 6, §10.10)."""
+    monkeypatch.setenv("VIKING_JEV_NONCE", "abc123")
+    jev_falso.proximos_estados = [_estado("running", 1), _estado("done", 2)]
+    _rodar(monkeypatch, "--timeout", "5")
+    eventos = _linhas(capsys)
+    assert [e["type"] for e in eventos] == ["start", "health", "step", "step", "result"]
+    assert {e["nonce"] for e in eventos} == {"abc123"}

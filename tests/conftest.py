@@ -44,6 +44,13 @@ def _confirmacoes_em_banco_de_teste(monkeypatch, tmp_path):
     monkeypatch.setattr("lifeos.registro.DB_PATH", tmp_path / "viking.db")
 
 
+@pytest.fixture(autouse=True)
+def _trava_do_navegador_de_teste(monkeypatch, tmp_path):
+    """A trava do navegador (Sessão 6) nunca em `data/` do repo: um teste segurando a trava real
+    faria o `viking` do dono dizer "ocupado"."""
+    monkeypatch.setattr("lifeos.browser.trava.TRAVA_PATH", tmp_path / "navegador.lock")
+
+
 # --- Google Calendar falso, compartilhado pelos testes de calendário e do MCP -------------
 
 

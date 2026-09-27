@@ -173,6 +173,12 @@ def test_o_codigo_nunca_chega_ao_executor(navegador):
             "Não cliquei em «Sair»: o executor não chegou a esse botão.",
             "nada mudou",
         ),
+        # Sessão 6: aprovado enquanto outra tarefa usava o navegador — nem começou.
+        (
+            BrowserResult(status="error", goals=(), error_code="busy"),
+            "Não cliquei em «Sair»: a tarefa não chegou a começar, e o código foi gasto.",
+            "nada mudou",
+        ),
     ],
 )
 def test_o_texto_diz_o_que_aconteceu_com_o_clique(navegador, resposta, comeca, nota):

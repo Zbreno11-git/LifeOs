@@ -89,6 +89,11 @@ Antes de qualquer tarefa, o runner faz a supervisão de saúde que o relatório 
 `daemon vivo != navegador pronto`: probe CDP real, tentativa de reattach, e no limite um restart do
 daemon, com retentativas limitadas. Ver `docs/fontes/browser-harness.md`.
 
+Um navegador por vez (Sessão 6, D40): como esse preflight pode reiniciar o daemon, duas tarefas
+de `viking` diferentes derrubariam uma à outra. Toda tarefa (e o `--doctor`) pega uma trava do
+kernel em `data/navegador.lock` e, se outro processo a segura, recusa na hora dizendo quem usa. O
+stdout do Jev só vale com o nonce sorteado para aquela execução.
+
 Isto substitui o controle local de PC via Windows-MCP como caminho padrão de execução. Detalhes do
 stack e do incidente do daemon: `docs/arquitetura/browser-automation-stack.md`;
 referências: `docs/fontes/browser-harness.md` e `docs/fontes/jev-typesafe.md`.

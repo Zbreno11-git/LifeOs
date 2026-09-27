@@ -19,6 +19,8 @@ _COM_DETALHE = {
     "spawn_failed",
     "unknown",
     "dominio_bloqueado",
+    "busy",
+    "trava_indisponivel",
 }
 
 MENSAGENS: dict[str, str] = {
@@ -64,7 +66,14 @@ MENSAGENS: dict[str, str] = {
     "harness_ipc": "Perdi a comunicação com o Browser Harness no meio da tarefa.",
     "timeout": "A tarefa passou do tempo limite e foi interrompida.",
     "timeout_terminated": "A tarefa foi interrompida antes de concluir.",
-    "busy": "Já tem uma tarefa de navegador em andamento — espere ela terminar.",
+    "busy": (
+        "Outra tarefa de navegador está usando o Chrome agora, e nada foi feito nesta. Não repita "
+        "sozinho: diga ao usuário quem está usando e espere ele pedir de novo."
+    ),
+    "trava_indisponivel": (
+        "Não naveguei: não consegui travar o navegador para esta tarefa (o arquivo da trava em "
+        "data/ não abriu). Sem a trava, outra tarefa poderia usar o mesmo Chrome ao mesmo tempo."
+    ),
     "uv_missing": "Não encontrei o `uv` no PATH — ele é necessário para rodar o Jev.",
     "jev_dir_missing": "Não encontrei a pasta do Jev. Configure `VIKING_JEV_DIR` no .env.",
     "bad_output": "O executor do navegador devolveu uma saída que não consegui interpretar.",

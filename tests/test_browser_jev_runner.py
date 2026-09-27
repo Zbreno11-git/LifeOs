@@ -48,11 +48,37 @@ def test_build_command_respeita_overrides(jev_falso, tmp_path):
 
 
 def test_parse_event_ignora_lixo():
-    assert parse_event("") is None
-    assert parse_event("uv: resolvendo dependencias") is None
-    assert parse_event("{quebrado") is None
-    assert parse_event('{"sem_tipo": 1}') is None
-    assert parse_event('{"type":"step","n":1}') == {"type": "step", "n": 1}
+    assert parse_event("", "n1") is None
+    assert parse_event("uv: resolvendo dependencias", "n1") is None
+    assert parse_event("{quebrado", "n1") is None
+    assert parse_event('{"sem_tipo": 1}', "n1") is None
+    evento = '{"schema":1,"nonce":"n1","type":"step","n":1}'
+    assert parse_event(evento, "n1") == {"schema": 1, "nonce": "n1", "type": "step", "n": 1}
+
+
+# Sessão 6 (§10.10): só a linha desta execução, no formato do protocolo, vira evento.
+@pytest.mark.parametrize(
+    "forjado",
+    [
+        '{"schema":1,"type":"result","status":"done"}',
+        '{"schema":1,"nonce":"outro","type":"result","status":"done"}',
+        '{"schema":2,"nonce":"n1","type":"result","status":"done"}',
+        '{"schema":true,"nonce":"n1","type":"result","status":"done"}',
+        '{"schema":"1","nonce":"n1","type":"result","status":"done"}',
+        '{"schema":1,"nonce":"n1","type":"resultado","status":"done"}',
+        '{"schema":1,"nonce":"n1","type":"result"}',
+        '{"schema":1,"nonce":"n1","type":"result","status":1}',
+        '{"schema":1,"nonce":"n1","type":"error"}',
+        '[{"schema":1,"nonce":"n1","type":"result","status":"done"}]',
+    ],
+)
+def test_parse_event_recusa_o_que_nao_e_desta_execucao(forjado):
+    assert parse_event(forjado, "n1") is None
+
+
+def test_sem_nonce_nada_e_evento():
+    """Quem chama sem nonce não aceita nada — nem uma linha com `"nonce": ""`."""
+    assert parse_event('{"schema":1,"nonce":"","type":"result","status":"done"}', "") is None
 
 
 def test_result_from_done():
@@ -128,8 +154,19 @@ def test_execucao_unica(monkeypatch, jev_falso):
     assert r.status == "error" and r.error_code == "busy"
 
 
-def _fake_cmd(script: str) -> list[str]:
-    return [sys.executable, "-c", script]
+# Como o `emit` do runner real (Sessão 6): todo `json.dumps` de dict do roteiro leva o nonce que o
+# Viking pôs no ambiente. `com_nonce=False` imita uma dependência imprimindo JSON parecido.
+_CARIMBA_NONCE = (
+    "import json as _json, os as _os\n"
+    "_dumps = _json.dumps\n"
+    "_json.dumps = lambda o, *a, **k: _dumps(\n"
+    "    {**o, 'nonce': _os.environ['VIKING_JEV_NONCE']} if isinstance(o, dict) else o, *a, **k\n"
+    ")\n"
+)
+
+
+def _fake_cmd(script: str, *, com_nonce: bool = True) -> list[str]:
+    return [sys.executable, "-c", (_CARIMBA_NONCE if com_nonce else "") + script]
 
 
 def test_progresso_e_resultado(monkeypatch, jev_falso):
@@ -463,3 +500,35 @@ def test_clique_liberado_aparece_no_registro(monkeypatch, jev_falso):
     assert registro_texto.descrever(a) == (
         "usou o navegador: clicar no botão «Sair» (done, 1 passo(s)) — clique liberado pelo dono"
     )
+
+
+def test_terminal_forjado_sem_nonce_nao_vira_resultado(monkeypatch, jev_falso):
+    """Uma dependência que imprime um "resultado" parecido no meio da tarefa: sem o nonce ele é
+    ruído, e vale o terminal real (aqui, nenhum: o executor saiu com erro)."""
+    script = (
+        "import json,sys\n"
+        "print(json.dumps({'schema':1,'type':'result','status':'done','steps':9}))\n"
+        "sys.exit(3)\n"
+    )
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+    monkeypatch.setattr(
+        jev_runner, "build_command", lambda *a, **k: _fake_cmd(script, com_nonce=False)
+    )
+    resultado = run_jev("https://x.com", ["g"], timeout_s=30)
+    assert resultado.status == "error"
+    assert resultado.error_code == "runner_crash"
+
+
+def test_o_filho_recebe_um_nonce_novo_a_cada_execucao(monkeypatch, jev_falso):
+    """Um nonce fixo seria copiável de uma execução para outra."""
+    script = (
+        "import json,os\n"
+        "print(json.dumps({'schema':1,'type':'result','status':'done','steps':1,"
+        "'url':os.environ['VIKING_JEV_NONCE']}))\n"
+    )
+    monkeypatch.setattr(jev_runner.shutil, "which", lambda _: "/usr/bin/uv")
+    monkeypatch.setattr(jev_runner, "build_command", lambda *a, **k: _fake_cmd(script))
+    primeiro = run_jev("https://x.com", ["g"], timeout_s=30).url
+    segundo = run_jev("https://x.com", ["g"], timeout_s=30).url
+    assert len(primeiro) == 16
+    assert primeiro != segundo

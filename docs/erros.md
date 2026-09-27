@@ -21,7 +21,7 @@
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 12 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 8 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 7 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei — e em arquivo do baseline, só os meus trechos do `--diff`; conferir com `git status` depois |
 
@@ -255,6 +255,20 @@ antes, sem estrago. O jeito certo, usado na rodada travada: matar só o `pytest`
 (600 s). Terminou em segundos, sem estrago; mas estourar mataria o processo como o `timeout 900`.
 O que tem de novo: não era o comando `timeout`, era o limite da própria ferramenta. Rodada de
 mutações vai em background, sem limite.
+
+**2026-09-27 — teste que trava sob a mutação (Sessão 6, C3).** A mutação "a trava espera o outro
+em vez de recusar" fez `test_segunda_abertura_no_mesmo_processo_tambem_ve_ocupado` (duas aberturas
+aninhadas no mesmo processo) esperar por si mesmo: a rodada ficou parada 1 h. Matei só o `pytest`
+filho, como manda a regra; o script restaurou o arquivo. O que tem de novo: eu tinha previsto no
+plano que essa mutação esperaria o *outro processo* (15 s) e não vi o teste que esperaria por
+**ele mesmo**. Agora a segunda abertura roda numa thread com prazo (5 s), e cai em vez de travar.
+Antídoto: para cada mutação que muda "recusa" em "espera", perguntar *qual teste esperaria para
+sempre?* antes de rodar.
+
+**2026-09-27 — a trava nova quebrava "sempre devolve `BrowserResult`" (Sessão 6, C3; pego na
+revisão, antes do commit).** `trava.ocupar` abre um arquivo; um `OSError` (pasta sem permissão,
+`flock` recusado) escaparia de `run_jev` como exceção — o §10.8 da auditoria, já consertado uma vez.
+Agora vira `trava_indisponivel` e não navega; o `--doctor` também.
 
 **2026-09-20 — `fastmcp.md` fora do formato (Sessão 3).** Rodei o `ruff format` só nos `.py`; ele
 também formata o Python dentro dos `.md`. Formatado na Sessão 4.

@@ -1046,3 +1046,31 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-27 — Sessão 6, commit 1: um navegador por vez, e só a saída desta execução vale
+
+**Decidido pelo dono (7 respostas na abertura):** recusar na hora dizendo quem usa, desde quando e
+a tarefa (curta, marcada não confiável); o `--doctor` também respeita; allowlist de ambiente; versão
+do Jev só avisa; teste adiado só com o reagendamento; os 4 itens em 2 commits. Viram D40 (este
+commit) e D41 (o próximo).
+
+**Medido na abertura** (lendo o clone e o `uv` daqui): o ambiente do pai **vence** o `--env-file`;
+o daemon do Browser Harness herda o ambiente da primeira tarefa e sobrevive a ela; no caminho do
+runner nada escreve no stdout além do `emit`.
+
+**Feito.** `browser/trava.py`: `flock` em `data/navegador.lock`, sem espera, dono escrito no arquivo
+(pid, origem, desde, objetivo redigido ≤60), arquivo nunca apagado, `Indisponivel` quando não abre.
+`run_jev` e `viking browser --doctor` pegam a trava; `busy` mostra quem usa (neutralizado) e
+`trava_indisponivel` recusa navegar. Protocolo: nonce por execução em `VIKING_JEV_NONCE` (ambiente,
+não argv), `parse_event(linha, nonce)` exige `schema` 1, nonce, `type` conhecido e `status`/`code`.
+O texto do clique aprovado distingue "a tarefa nem começou" de "não achou o botão".
+
+**Portões.** `1047 passed`; `ruff check` limpo; formatação no baseline 7; mutações
+`135 · mortas pelo teste esperado: 135` (10 novas) + 1 da revisão.
+
+**Erros meus** (em `docs/erros.md`): um teste que esperava por si mesmo sob a mutação "espera" —
+a rodada ficou 1 h parada (classe 6); a trava nova deixava um `OSError` escapar do `run_jev`, pego
+na revisão (classe 6); o roteiro do Mac no plano tinha uma URL com `?` sem aspas, pego antes de
+entregar (classe 1).
+
+**Não medido:** dois `viking` de verdade disputando o Chrome no Mac (C7).
+

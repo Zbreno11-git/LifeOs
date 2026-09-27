@@ -9,6 +9,7 @@ Protocolo (uma linha JSON por evento, stdout; stderr fica para ruído humano):
   {"schema":1,"type":"step",   ...}   zero ou mais
   {"schema":1,"type":"result", ...}   terminal
   {"schema":1,"type":"error",  ...}   terminal (alternativo)
+Toda linha leva também `"nonce"`, lido de `VIKING_JEV_NONCE` (sorteado pelo Viking por execução).
 
 Exit codes: 0 done · 1 blocked · 2 erro classificado · 3 crash antes de classificar ·
 4 interrompido por prazo/sinal. Erro de uso do argparse sai com 2 e SEM linha JSON nenhuma --
@@ -18,6 +19,7 @@ linha terminal.
 
 import argparse
 import json
+import os
 import signal
 import sys
 import time
@@ -63,7 +65,11 @@ class AcaoSensivel(RuntimeError):
 
 
 def emit(**evento):
-    sys.stdout.write(json.dumps({"schema": SCHEMA, **evento}, ensure_ascii=False) + "\n")
+    # O nonce da execução (Sessão 6): o Viking só aceita linha com ele, então um JSON parecido
+    # impresso por uma dependência nunca vira resultado.
+    nonce = os.environ.get("VIKING_JEV_NONCE", "")
+    linha = json.dumps({"schema": SCHEMA, "nonce": nonce, **evento}, ensure_ascii=False)
+    sys.stdout.write(linha + "\n")
     sys.stdout.flush()
 
 

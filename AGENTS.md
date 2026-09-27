@@ -68,7 +68,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `_redacao.py` e `_acoes_sensiveis.py` (freio de clique que sai da conta, mexe nela ou gasta
     dinheiro) são módulos irmãos dele, também só stdlib; `mensagens.py` traduz códigos de erro
     para português; `liberacao.py` libera **uma vez**, com código, um clique de sair/conta que o
-    freio recusou (dinheiro nunca; D38)
+    freio recusou (dinheiro nunca; D38); `trava.py` é a trava entre processos: um navegador por
+    vez, e quem está usando na mensagem de "ocupado" (D40)
   - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
@@ -339,6 +340,15 @@ vencimento e o fechamento de fatura vêm às `T00:00:00.000Z` e **não** se conv
 dia antes). O `balance` do cartão é o limite usado, com as parcelas, e o `balanceDueDate` é o
 vencimento da fatura já fechada. Tudo medido em 2026-09-27 (`docs/fontes/pluggy-open-finance.md`);
 os testes fixam `service.TIMEZONE` em Brasília porque o VPS está em UTC.
+
+**A trava do navegador é do kernel: nunca apague o arquivo.** `browser/trava.py` usa `flock` em
+`data/navegador.lock`; o kernel a solta quando o processo morre, então não existe trava velha — e
+apagar o arquivo abriria uma corrida (um terceiro travaria um arquivo novo com o dono ainda no
+velho). O conteúdo (pid, origem, desde, objetivo) só serve à mensagem. `jev_runner._EXECUCAO`
+continua na frente (dentro do processo). Teste de "ocupado" com **outro processo** de verdade
+(`tests/test_browser_trava.py`): uma thread passaria pela trava de dentro e o teste ficaria verde
+por outro motivo. O stdout do runner só vale com o nonce da execução (`VIKING_JEV_NONCE`): roteiro
+falso de teste passa por `_fake_cmd`, que o carimba.
 
 **O Gemini inventa fuso horário.** Para "amanhã às 10h" ele mandou `10:00:00-08:00` e o evento
 caiu às 15h de Brasília (Mac, 2026-09-27). As tools do Gemini recebem horário **sem fuso** e

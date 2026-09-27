@@ -131,6 +131,12 @@ def texto_do_clique(botao: str, resultado: BrowserResult) -> str:
             f"⚠️ Liberei o clique em «{botao}», e depois o executor falhou: o clique pode ter "
             f"acontecido — confira a aba.\n{formatar(resultado)}"
         )
+    if resultado.status == "error" and not resultado.steps:
+        # Ocupado por outra tarefa (Sessão 6), sem uv, sem Chrome...: nem abriu a página.
+        return (
+            f"Não cliquei em «{botao}»: a tarefa não chegou a começar, e o código foi gasto. Se "
+            f"ainda quiser, peça a tarefa de novo.\n{formatar(resultado)}"
+        )
     return f"Não cliquei em «{botao}»: o executor não chegou a esse botão.\n{formatar(resultado)}"
 
 

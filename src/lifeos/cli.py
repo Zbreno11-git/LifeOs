@@ -13,15 +13,27 @@ from dataclasses import asdict
 
 
 def _doctor() -> int:
-    """Diagnóstico do Browser Harness, usando a ferramenta do próprio fornecedor."""
+    """Diagnóstico do Browser Harness, usando a ferramenta do próprio fornecedor. Respeita a
+    trava do navegador: o doctor pode reiniciar o daemon, e derrubaria a tarefa de outro terminal."""
+    from lifeos.browser import trava
+    from lifeos.browser._redacao import limpar_controles
     from lifeos.config import JEV_DIR, UV_BIN
 
-    cmd = [UV_BIN, "run", "--directory", str(JEV_DIR), "browser-harness", "doctor"]
-    print(f"$ {' '.join(cmd)}", file=sys.stderr)
     try:
-        return subprocess.call(cmd)
-    except FileNotFoundError:
-        print(f"❌ Não encontrei o executável '{UV_BIN}' no PATH.", file=sys.stderr)
+        with trava.ocupar("diagnóstico (viking browser --doctor)") as ocupado:
+            if ocupado is not None:
+                descricao = limpar_controles(trava.descrever(ocupado))
+                print(f"❌ Não rodei o diagnóstico: {descricao}. Espere terminar.", file=sys.stderr)
+                return 2
+            cmd = [UV_BIN, "run", "--directory", str(JEV_DIR), "browser-harness", "doctor"]
+            print(f"$ {' '.join(cmd)}", file=sys.stderr)
+            try:
+                return subprocess.call(cmd)
+            except FileNotFoundError:
+                print(f"❌ Não encontrei o executável '{UV_BIN}' no PATH.", file=sys.stderr)
+                return 2
+    except trava.Indisponivel as exc:
+        print(f"❌ Não rodei o diagnóstico: {limpar_controles(str(exc))}.", file=sys.stderr)
         return 2
 
 

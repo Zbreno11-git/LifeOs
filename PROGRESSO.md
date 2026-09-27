@@ -5,26 +5,28 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 6: plano aprovado, C1 (trava) a começar
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 6: commit 1 feito (trava + protocolo), C4 (ambiente) a começar
 
-**Estado do repositório:** o commit que pôs este plano aqui (conferir com `git log -1`; o anterior é
-`cafe704`, fechamento da Sessão 5) · igual ao remoto · travas: nenhuma · execuções em background:
-nenhuma.
+**Estado do repositório:** o commit 1 da Sessão 6 (conferir com `git log -1`; o anterior é
+`7f018f6`, C0) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Onde parou:** Sessão 6 planejada e aprovada pelo dono (plano logo abaixo; respostas na tabela
-dele). C0 ✅. Nada de código editado ainda.
+**Onde parou:** C0–C3 ✅. Commit 1: `browser/trava.py` (flock, sem espera, quem usa na mensagem,
+`trava_indisponivel`), `run_jev` e `--doctor` com a trava, protocolo com nonce
+(`VIKING_JEV_NONCE`) e `parse_event(linha, nonce)` estrito; D40. Medido em 2026-09-27:
+`1047 passed`; `ruff check` limpo; baseline 7; `python scripts/mutacoes.py` →
+`mutações: 135 · mortas pelo teste esperado: 135` + `"navegador ocupado"` 1/1.
 
-**Próximo passo exato (C1):** criar `src/lifeos/browser/trava.py` (`TRAVA_PATH` em `data/`,
-`Ocupado`, `ocupar(objetivo)` com `fcntl.flock(LOCK_EX|LOCK_NB)`, `descrever`) e
-`tests/test_browser_trava.py` com um **segundo processo de verdade** segurando a trava → `run_jev`
-devolve `busy` "ocupado por … desde … (tarefa: «…»)" sem abrir o Jev. Depois ligar em
-`jev_runner.run_jev` e `cli._doctor`, `busy` em `mensagens._COM_DETALHE`, `TRAVA_PATH` em
-`tmp_path` no `conftest.py`.
+**Próximo passo exato (C4):** `jev_runner.ambiente_do_jev(nonce)` com a allowlist da tabela do plano
+(fonte única), usada no `Popen` de `_rodar` (hoje `{**os.environ, "VIKING_JEV_NONCE": nonce}`) e no
+`subprocess.call` de `cli._doctor` (que também passa a mandar `--env-file` quando existe);
+`tests/test_browser_ambiente.py` com as variáveis de fora e de dentro do plano e um roteiro falso que
+imprime só os **nomes** que recebeu. Depois C5 (`browser/versao_jev.py`), C6 (fechar commit 2), C7 (Mac).
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
 (D7, D36–D39); o índice de `docs/erros.md` (classes 1, 4, 6, 7, 8); `src/lifeos/browser/jev_runner.py`,
-`_jev_subprocess.py` (`emit`), `mensagens.py`, `cli.py` (`_doctor`, `_browser`);
-`tests/test_browser_jev_runner.py` (`_fake_cmd`, testes de `busy`).
+`_jev_subprocess.py` (`emit`), `trava.py`, `mensagens.py`, `cli.py` (`_doctor`, `_browser`);
+`tests/test_browser_jev_runner.py` (`_fake_cmd` + `_CARIMBA_NONCE`), `tests/test_browser_trava.py`.
+Skills: `pre-compact` ("Depois do compact") e `software-build`.
 
 **Decisões (onde estão):** as do dono na tabela "Respostas do dono" do plano abaixo; as técnicas na
 tabela seguinte. Viram D40 (commit 1) e D41 (commit 2).
@@ -38,11 +40,20 @@ tabela seguinte. Viram D40 (commit 1) e D41 (commit 2).
 - Mutações em background, sem `timeout` (nem o da ferramenta); não cortar a saída com `tail`.
 - Texto com heredoc dentro não vai num heredoc. URL com `?` no roteiro do Mac vai entre aspas.
 - `or` em asserção é proibido. Repo público; roteiro do Mac começa com `git pull && git log --oneline -1`.
+- Para o C4: o nonce hoje entra por `{**os.environ, "VIKING_JEV_NONCE": nonce}` em `_rodar` — a
+  allowlist tem de manter `VIKING_JEV_NONCE` (os roteiros falsos de teste o leem do ambiente) e
+  bloquear o resto de `VIKING_*`. O dublê de `_rodar` em `test_browser_trava.py` recebe `nonce`.
+- Mutação que troca "recusa" por "espera": antes de rodar, perguntar *qual teste esperaria para
+  sempre?* (a rodada ficou 1 h parada nesta sessão; `docs/erros.md`, classe 6). Travou → matar só o
+  `pytest` filho e conferir o arquivo restaurado.
+- A 2ª passada da revisão do commit 1 achou o texto do clique aprovado com o navegador ocupado
+  (consertado). Na do commit 2, conferir `docs/fontes/jev-typesafe.md` ("Egress"), a D7 no
+  `AGENTS.md` e a doc do `--doctor`.
 
 **Depende do dono:** nada até o C7 (Mac).
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1015 passed`; `python -m ruff format --check . | tail -1` → `7 files
+`python -m pytest -q` → `1047 passed`; `python -m ruff format --check . | tail -1` → `7 files
 would be reformatted`.
 
 ## Plano — Sessão 6: o navegador com duas tarefas ao mesmo tempo (trava, protocolo, chaves, versão do Jev)
@@ -104,9 +115,9 @@ presente"; (d) `desfaz` de um reagendamento volta o horário exato; (e) "amanhã
 | C | Fecha quando | Estado |
 |---|---|---|
 | C0 | este plano no `PROGRESSO.md` (bloco ▶️ + plano), acima do da 5 | ✅ |
-| C1 | trava entre processos + `--doctor` com a trava + mensagem "ocupado" | ⬜ |
-| C2 | protocolo estrito (schema + nonce + campos mínimos) | ⬜ |
-| C3 | mutações, docs, revisão em 2 passadas, **commit 1 + push** | ⬜ |
+| C1 | trava entre processos + `--doctor` com a trava + mensagem "ocupado" | ✅ |
+| C2 | protocolo estrito (schema + nonce + campos mínimos) | ✅ |
+| C3 | mutações, docs, revisão em 2 passadas, **commit 1 + push** | ✅ |
 | C4 | ambiente allowlisted no Jev e no `--doctor` | ⬜ |
 | C5 | versão do Jev no `--doctor` + aviso por tarefa | ⬜ |
 | C6 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ⬜ |

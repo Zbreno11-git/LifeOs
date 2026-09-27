@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import secrets
 import shutil
 import signal
 import subprocess
@@ -22,7 +23,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from lifeos import registro
-from lifeos.browser import _redacao
+from lifeos.browser import _redacao, trava
 from lifeos.config import (
     BROWSER_BLOQUEADOS,
     BROWSER_MAX_ACOES,
@@ -97,15 +98,34 @@ def build_command(
     return cmd
 
 
-def parse_event(linha: str) -> dict | None:
+SCHEMA = 1
+TIPOS = frozenset({"start", "health", "step", "liberado", "result", "error"})
+
+
+def parse_event(linha: str, nonce: str) -> dict | None:
+    """O evento, se a linha é do protocolo DESTA execução; `None` para qualquer outra coisa.
+
+    Estrito (Sessão 6, auditoria §10.10): `schema` 1, o `nonce` sorteado para esta execução, `type`
+    conhecido e os campos que decidem o resultado com o tipo certo. Uma dependência que imprima um
+    JSON parecido no stdout não produz um terminal falso: sem o nonce, é ruído.
+    """
     linha = linha.strip()
-    if not linha or not linha.startswith("{"):
+    if not nonce or not linha or not linha.startswith("{"):
         return None
     try:
         evento = json.loads(linha)
     except json.JSONDecodeError:
         return None
-    return evento if isinstance(evento, dict) and "type" in evento else None
+    if not isinstance(evento, dict) or evento.get("nonce") != nonce:
+        return None
+    schema = evento.get("schema")
+    if type(schema) is not int or schema != SCHEMA or evento.get("type") not in TIPOS:
+        return None
+    if evento["type"] == "result" and not isinstance(evento.get("status"), str):
+        return None
+    if evento["type"] == "error" and not isinstance(evento.get("code"), str):
+        return None
+    return evento
 
 
 _CAMPOS_DIGITAL = ("esquema_host", "categoria", "rotulo")
@@ -323,27 +343,40 @@ def run_jev(
         if not (Path(JEV_DIR) / "pyproject.toml").is_file():
             return _erro("jev_dir_missing", str(JEV_DIR), goals)
 
-        cmd = build_command(
-            url, goals, timeout_s=limite, fechar=fechar, max_acoes=max_acoes, liberar=liberar
-        )
-        # Registrado só daqui em diante: as recusas acima não abriram nada. A digital liberada
-        # entra no registro; o código que a aprovou nunca chega aqui.
-        parametros = {"url": _redacao.redigir_url(url), "objetivos": goals}
-        if liberar is not None:
-            parametros["liberar"] = liberar
-        with registro.acao("navegador.executar", parametros) as marca:
-            resultado = _rodar(cmd, goals, limite, on_progress)
-            marca.feito(
-                {
-                    "status": resultado.status,
-                    "erro": resultado.error_code or "",
-                    "passos": resultado.steps,
-                    "liberado": resultado.liberado,
-                }
-            )
-        return resultado
+        # A trava entre processos (outro `viking` usando o mesmo Chrome): sem espera, e antes de
+        # qualquer coisa que abra o subprocesso — o preflight dele reiniciaria o daemon do outro.
+        try:
+            with trava.ocupar(goals[0] if goals else "") as ocupado:
+                if ocupado is not None:
+                    return _erro("busy", trava.descrever(ocupado), goals)
+                return _executar(url, goals, limite, fechar, on_progress, max_acoes, liberar)
+        except trava.Indisponivel as exc:
+            # "Sempre devolve BrowserResult" (§10.8): e sem trava não se navega.
+            return _erro("trava_indisponivel", str(exc), goals)
     finally:
         _EXECUCAO.release()
+
+
+def _executar(url, goals, limite, fechar, on_progress, max_acoes, liberar) -> BrowserResult:
+    cmd = build_command(
+        url, goals, timeout_s=limite, fechar=fechar, max_acoes=max_acoes, liberar=liberar
+    )
+    # Registrado só daqui em diante: as recusas acima não abriram nada. A digital liberada
+    # entra no registro; o código que a aprovou nunca chega aqui.
+    parametros = {"url": _redacao.redigir_url(url), "objetivos": goals}
+    if liberar is not None:
+        parametros["liberar"] = liberar
+    with registro.acao("navegador.executar", parametros) as marca:
+        resultado = _rodar(cmd, goals, limite, on_progress, secrets.token_hex(8))
+        marca.feito(
+            {
+                "status": resultado.status,
+                "erro": resultado.error_code or "",
+                "passos": resultado.steps,
+                "liberado": resultado.liberado,
+            }
+        )
+    return resultado
 
 
 def _rodar(
@@ -351,11 +384,13 @@ def _rodar(
     goals: list[str],
     limite: float,
     on_progress: Callable[[dict], None] | None,
+    nonce: str,
 ) -> BrowserResult:
     """O subprocesso do Jev, do `Popen` ao resultado; o processo nunca fica vivo depois."""
     try:
         proc = subprocess.Popen(
             cmd,
+            env={**os.environ, "VIKING_JEV_NONCE": nonce},
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -394,7 +429,7 @@ def _rodar(
                     continue
                 if item is _FIM:
                     break
-                evento = parse_event(item)
+                evento = parse_event(item, nonce)
                 if evento is None:
                     continue
                 eventos.append(evento)
