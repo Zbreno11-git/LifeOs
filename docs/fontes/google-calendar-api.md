@@ -33,3 +33,18 @@
 - Testes nunca falam com o Google de verdade: `tests/conftest.py` troca `get_calendar_service` por
   uma função que falha alto, e o fake (`calendario`) entra por cima. No Mac, onde o token existe,
   um teste que escapasse do fake criaria evento na agenda real.
+
+## Restaurar um evento apagado (lido em 2026-09-27 para a Sessão 5; **não medido**)
+
+A referência do recurso `Events` diz que, no calendário do organizador, um evento cancelado
+(`events.delete`) continua expondo os detalhes "so that they can be restored (undeleted)", e que
+esses eventos "will eventually disappear". O método não é nomeado; o caminho provável é
+`events.patch` com `{"status": "confirmed"}` no mesmo ID. Para evento em que o dono é só
+convidado, os detalhes não ficam. Um `insert` com o ID antigo tende a dar 409 (cópia precisa de ID
+novo).
+
+A validar no Mac (C9 da Sessão 5), no evento "Teste Viking": `get` depois do `delete` devolve
+`status=cancelled`?; o `patch` volta o mesmo ID e ele reaparece no `list`?; convidados recebem
+aviso (`sendUpdates`)?. Até medir, o desfazer do Viking tenta restaurar e, se não der, recria uma
+cópia **sem convidados** e com `sendUpdates="none"` (reconvidar mandaria e-mail em nome do dono),
+avisando "ID novo"; recusa evento recorrente e de outro organizador.

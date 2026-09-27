@@ -327,6 +327,10 @@ de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
 o clique destrutivo num site não bloqueado (§5.2) foi feito na Sessão 4b; ficou de fora, por
 decisão do dono, "publicar em seu nome" (postar, enviar mensagem).
 
+Da Sessão 5 (planejamento, 2026-09-27): aprovação fora do terminal (elicitation do MCP, web) —
+hoje `viking aprovar` exige terminal interativo; idempotência automática de criar (devolver o já
+criado) cortada: exige reler o Google para não mostrar evento fantasma.
+
 Da Pluggy (vistos no Mac, 2026-09-27, sem conserto agora): "cartão nubank" não achou o cartão,
 que o banco chama de "gold" (a docstring já avisa; agrupar contas por conexão resolveria); a
 fatura que fechou e ainda não venceu está dentro de "compras sem fatura" — dá para separar pelo

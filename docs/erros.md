@@ -269,6 +269,7 @@ no Itaú. No Nubank, os 33 pagamentos de fatura vêm como `Transfers`/`OUTROS`, 
 montada com o caso típico. Agora a descrição exata também reconhece, e o disfarce ("Pagamento de
 fatura VIVO", que é conta de telefone) tem teste e mutação. O que tem de novo: medir **por
 conexão**, não no agregado das duas.
+
 > **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
 > nem o vizinho inocente nem o disfarce.**
 
