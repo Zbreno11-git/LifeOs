@@ -5,20 +5,55 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy aberta (plano escrito, código começando)
+## ▶️ RETOMAR AQUI — 2026-09-27, Sessão Pluggy em curso — antes de um compact
 
-**Estado:** conexões validadas no Mac (Nubank e Itaú; IDs no `.env` do Mac, e também ditos pelo
-dono no chat — nunca em commit). Credenciais no `.env` do VPS; os IDs **não** estão no `.env` do
-VPS (medições passam por variável de ambiente no comando).
+**Estado do repositório:** o commit de checkpoint deste bloco (conferir com `git log -1`; o
+anterior é `ca76a8b`) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
 
-**Próximo passo exato:** o primeiro checkpoint não marcado abaixo.
+**Onde parou:** C1 pela metade. `src/lifeos/financas/service.py` está **escrito e sem teste**
+(ruff limpo, importa; ninguém o chama ainda, então a suíte segue `668 passed`). Tem: `Financas`
+(conexões, contas, categorias em português, transações com cursor e período cortado no fuso),
+`gastos()` e `buscar()`. Falta dele: a fatura como resposta (`ultima_fatura_fechada` existe).
+
+**Próximo passo exato:** escrever `tests/test_financas_dados.py` com uma Pluggy falsa **no formato
+medido** (ver `docs/fontes/pluggy-open-finance.md`, "Formato real dos dados"): gasto negativo na
+conta e positivo no cartão; `Credit card payment` nas duas contas; parcelas `PENDING` com data no
+futuro; transação sem categoria; `paymentData` com `documentNumber`; datas `...T03:00:00.000Z` e
+`...T02:59:00.000Z`; descrição com CPF e com injeção. Esperado: os testes de `gastos()` caem se o
+sentido vier do sinal, se a fatura paga contar em dobro ou se parcela futura entrar no total.
+**Fixar `service.TIMEZONE` em `ZoneInfo("America/Sao_Paulo")` nos testes:** o VPS está em UTC
+(sem `VIKING_TIMEZONE`, o Viking usa o fuso da máquina) e ali `02:59Z` cai no mesmo dia — medido.
+Depois, C2–C7 do plano abaixo.
+
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo;
+`docs/fontes/pluggy-open-finance.md` (custo, caminho, formato real); `docs/decisoes.md` (D21,
+D22, D30 servem de modelo: só chat, redação, nada de escrita); `docs/erros.md` (índice; classes 4 e
+7 bateram nesta semana); `src/lifeos/financas/{pluggy,conectar,service}.py`;
+`src/lifeos/gmail/tools.py` (modelo de texto para o Gemini: bloco de não confiável + redação).
+
+**Decisões (e onde estão escritas):** do dono em 2026-09-27 — saldo, gastos, busca e fatura;
+valores e descrições podem ir ao Gemini; consultar toda vez, nada em disco; só no chat (tabela
+"Respostas do dono" do plano). Minhas — sentido pela `type`, movimento interno e investimento fora
+do gasto, PIX para outros conta como gasto em linha própria, parcela futura fora do total (tabela
+"Decisões técnicas minhas"). Faltam virar linha em `docs/decisoes.md` no fechamento (D31+).
+
+**Não pode ser esquecido:**
+- Repo público: nada de ID de conexão, nome de conta, valor ou descrição real em commit nem nos
+  testes. Os IDs estão no `.env` do Mac (e o dono os mandou no chat); o `.env` do VPS tem só as
+  credenciais — para medir daqui, passar `PLUGGY_ITEM_IDS=...` no próprio comando, sem gravar.
+- Medir só a estrutura (campos, contagens, formatos com dígitos trocados por 9), nunca imprimir
+  valor, descrição ou saldo.
+- O cliente só lê: escrita fora de `/auth` e `/connect_token` é recusada antes da rede.
+- `scripts/mutacoes.py`: sem `timeout`; travou → matar só o `pytest` filho. Teste de tempo tem de
+  ser determinístico (uma mutação morta uma vez não prova).
+- Formatar só os arquivos editados (baseline 7). Roteiro do Mac começa com
+  `git pull && git log --oneline -1`.
+
+**Depende do dono:** nada para seguir no VPS. No fim (C7), rodar no Mac e conferir os números com
+o app do banco.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → 668 passed ou mais.
-
-**Não pode ser esquecido:** repo público — nada de ID de conexão, nome de conta, valor ou
-descrição real em commit, nem nos testes; o cliente só lê (escrita fora de `/auth`/`/connect_token`
-recusada antes da rede); `scripts/mutacoes.py` nunca com `timeout`.
+`python -m pytest -q` → `668 passed`; `python -c "import lifeos.financas.service"` sem erro.
 
 ## Plano — Sessão Pluggy: finanças no chat, só leitura
 
