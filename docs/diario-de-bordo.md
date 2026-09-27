@@ -936,3 +936,9 @@ mesmos dois comandos, com as mesmas conexões, passaram no VPS (10 chamadas cada
 0,5 s): falha de conexão do lado do Mac, causa não medida. Conserto: leitura (`GET`) com falha
 de conexão é tentada mais duas vezes (1 s e 3 s), escrita nunca; a mensagem passa a trazer o
 motivo e o número de tentativas. `801 passed`; mutações da Pluggy 5/5 (2 novas).
+
+**Segunda rodada no Mac (2026-09-27).** Com a nova tentativa, `--gastos` e `--buscar pix`
+responderam; o dono: "tudo certo". Lendo a saída, o "Pagamento de fatura" do Nubank estava no
+gasto, em "Transferências": medido, os 33 do histórico vêm `Transfers`/`OUTROS` (erro meu,
+classe 7). Reconhecido agora pela descrição exata; nos dados de setembro, internos 4 → 5 e
+gastos contados 17 → 16 (contagens, no VPS). `804 passed`; mutações de finanças 16/16.

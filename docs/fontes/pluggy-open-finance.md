@@ -100,6 +100,12 @@ item de verdade): não autenticar esse MCP numa sessão de agente sem necessidad
   investimentos (`Investments`, `Fixed income`, `Variable income`, `Proceeds interests and
   dividends`) e `operationType` `RESGATE_APLIC_FINANCEIRA`/`RENDIMENTO_APLIC_FINANCEIRA`/
   `PAGAMENTO_FATURA`/`TRANSFERENCIA_MESMA_INSTITUICAO`. Nada disso é gasto.
+- **Pagamento de fatura nem sempre vem categorizado:** na conta do Nubank, os 33 do histórico
+  vêm como `Transfers`/`OUTROS`, com a descrição exata "Pagamento de fatura" (no Itaú, 13 de 13
+  como `Credit card payment`). No lado do cartão, os créditos de pagamento começam todos por
+  "pagamento" ("pagamento recebido" em 34+6, "pagamento com…" 13, "pagamento debito…" 6), e 19
+  do Itaú vêm `Transfers` ou sem categoria (medido em 2026-09-27, contagens). Achado no primeiro
+  `--gastos` do dono: o pagamento do Nubank entrava como gasto.
 - **Categoria:** em inglês (`category`), com `categoryId`; `/categories` tem 130, com
   `descriptionTranslated`. Faltam em parte: 6 de 65 numa conta, 31 de 265 num cartão.
 - **`merchant` sempre vazio**; quem diz o que foi é `description`.

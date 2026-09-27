@@ -474,14 +474,15 @@ MUTACOES = [
     Mutacao(
         "finanças: sentido pelo sinal (o do cartão vem positivo)",
         "src/lifeos/financas/service.py",
-        '            saida=bruta.get("type") == "DEBIT",',
-        "            saida=valor < 0,",
+        '        saida = bruta.get("type") == "DEBIT"',
+        "        saida = valor < 0",
         "tests/test_financas_dados.py::test_gasto_no_cartao_conta_mesmo_vindo_positivo",
     ),
     Mutacao(
         "finanças: fatura paga e movimento entre contas próprias viram gasto",
         "src/lifeos/financas/service.py",
-        '            interna=interna(categoria, bruta.get("operationType")),',
+        '            interna=interna(categoria, bruta.get("operationType"))\n'
+        "            or paga_fatura(descricao, cartao=conta.cartao, saida=saida),",
         "            interna=False,",
         "tests/test_financas_dados.py::test_fatura_paga_nao_conta_em_dobro",
     ),
@@ -575,6 +576,27 @@ MUTACOES = [
         '    esperas = ESPERAS_S if metodo == "GET" else ()',
         "    esperas = ()",
         "tests/test_financas.py::test_leitura_com_falha_de_conexao_e_tentada_de_novo",
+    ),
+    Mutacao(
+        "finanças: pagamento de fatura do Nubank (sem categoria certa) vira gasto",
+        "src/lifeos/financas/service.py",
+        '    return saida and texto == "pagamento de fatura"',
+        "    return False",
+        "tests/test_financas_dados.py::test_pagamento_de_fatura_do_nubank_pela_descricao_nao_e_gasto",
+    ),
+    Mutacao(
+        "finanças: qualquer 'pagamento de fatura ...' na conta some do gasto",
+        "src/lifeos/financas/service.py",
+        '    return saida and texto == "pagamento de fatura"',
+        '    return saida and texto.startswith("pagamento de fatura")',
+        "tests/test_financas_dados.py::test_conta_paga_como_pagamento_de_fatura_de_outra_coisa_e_gasto",
+    ),
+    Mutacao(
+        "finanças: pagamento chegando no cartão sem fatura vira estorno",
+        "src/lifeos/financas/service.py",
+        '        return not saida and texto.startswith("pagamento")',
+        "        return False",
+        "tests/test_financas_dados.py::test_pagamento_no_cartao_sem_categoria_nao_desconta_da_fatura",
     ),
 ]
 

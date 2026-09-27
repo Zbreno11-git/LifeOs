@@ -433,6 +433,43 @@ def test_pagamento_de_fatura_so_pela_operacao_tambem_e_interno(pluggy_falsa):
     assert (_gastos().total, _gastos().internas) == (0.0, 1)
 
 
+def test_pagamento_de_fatura_do_nubank_pela_descricao_nao_e_gasto(pluggy_falsa):
+    # Medido: no Nubank vem "Transfers"/OUTROS, e só a descrição diz que é a fatura.
+    pluggy_falsa["transacoes"] = {
+        CONTA: [
+            _t(
+                "nu",
+                "2026-09-18",
+                -895.0,
+                "DEBIT",
+                "Transfers",
+                categoryId="05000000",
+                operationType="OUTROS",
+                description="Pagamento de fatura",
+            )
+        ],
+        CARTAO: [DO_CARTAO[0]],
+    }
+    g = _gastos()
+    assert (g.total, g.internas, g.internas_total) == (80.0, 1, 895.0)
+
+
+def test_conta_paga_como_pagamento_de_fatura_de_outra_coisa_e_gasto(pluggy_falsa):
+    vivo = _t(
+        "vivo", "2026-09-18", -120.0, "DEBIT", "Transfers", description="Pagamento de fatura VIVO"
+    )
+    pluggy_falsa["transacoes"] = {CONTA: [vivo]}
+    assert (_gastos().total, _gastos().internas) == (120.0, 0)
+
+
+def test_pagamento_no_cartao_sem_categoria_nao_desconta_da_fatura(ciclo):
+    # Medido: do lado do cartão do Itaú, 19 pagamentos vêm "Transfers" ou sem categoria.
+    ciclo["transacoes"][CARTAO].append(
+        _t("pag", "2026-09-11", 300.0, "CREDIT", "Transfers", description="PAGAMENTO RECEBIDO")
+    )
+    assert _fatura_do_cartao(ciclo).sem_fatura == 125.0
+
+
 def test_parcela_futura_fica_fora_do_total_e_e_contada(pluggy_falsa):
     pluggy_falsa["transacoes"] = {CARTAO: [DO_CARTAO[3], DO_CARTAO[4]]}  # 1/10 paga, 2/10 futura
     g = _gastos()

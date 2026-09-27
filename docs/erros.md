@@ -22,7 +22,7 @@
 | 4 | Teste que não separava o certo do errado | 10 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 4 | escapes gerados por script; varredura de caracteres de controle antes do commit |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 4 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 5 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 6 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 1 | formatador e afins só nos arquivos que eu editei; conferir com `git status` depois |
 
 ---
@@ -261,6 +261,14 @@ exigia a linha inteira no formato: "desfaz 8768 do gmail" e "você arquivou - de
 ter feito a lista de vizinhos e disfarces antes: feita agora, virou a regra "número que é código
 **vivo** nunca sai do Viking" e teste parametrizado dos dois lados.
 
+
+**2026-09-27 — pagamento de fatura reconhecido só pela categoria (Sessão Pluggy).** Medi as
+categorias e operações internas e escrevi "`Credit card payment` nas duas contas" — era verdade
+no Itaú. No Nubank, os 33 pagamentos de fatura vêm como `Transfers`/`OUTROS`, e o primeiro
+`--gastos` do dono no Mac contou um deles como gasto. Nenhum teste pegaria: a Pluggy falsa foi
+montada com o caso típico. Agora a descrição exata também reconhece, e o disfarce ("Pagamento de
+fatura VIVO", que é conta de telefone) tem teste e mutação. O que tem de novo: medir **por
+conexão**, não no agregado das duas.
 > **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
 > nem o vizinho inocente nem o disfarce.**
 

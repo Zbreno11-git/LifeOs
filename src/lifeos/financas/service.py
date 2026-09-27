@@ -156,6 +156,18 @@ def normalizar(texto: str) -> str:
     return "".join(c for c in sem_acento if not unicodedata.combining(c)).casefold()
 
 
+def paga_fatura(descricao: str, *, cartao: bool, saida: bool) -> bool:
+    """Pagamento de fatura que a Pluggy não categoriza (medido em 2026-09-27): na conta do
+    Nubank, os 33 vêm como "Transfers"/`OUTROS`, com a descrição exata "Pagamento de fatura"; do
+    lado do cartão, os créditos de pagamento começam por "pagamento" ("pagamento recebido", no
+    Itaú também "pagamento com…"/"pagamento debito…") e 19 vêm sem a categoria certa. Na conta,
+    só a frase exata: "Pagamento de fatura VIVO" é conta de telefone, e é gasto."""
+    texto = normalizar(descricao).strip()
+    if cartao:
+        return not saida and texto.startswith("pagamento")
+    return saida and texto == "pagamento de fatura"
+
+
 def interna(categoria: str | None, operacao: str | None) -> bool:
     return categoria in _CATEGORIAS_INTERNAS or operacao in _OPERACOES_INTERNAS
 
@@ -266,6 +278,8 @@ class Financas:
         if dia is None or valor is None:
             return None
         categoria = bruta.get("category")
+        saida = bruta.get("type") == "DEBIT"
+        descricao = _texto(bruta.get("description") or "(sem descrição)")
         metadado = bruta.get("creditCardMetadata") or {}
         total = metadado.get("totalInstallments")
         numero = metadado.get("installmentNumber")
@@ -275,11 +289,12 @@ class Financas:
             conta=conta.nome,
             cartao=conta.cartao,
             dia=dia,
-            descricao=_texto(bruta.get("description") or "(sem descrição)"),
+            descricao=descricao,
             valor=abs(valor),
-            saida=bruta.get("type") == "DEBIT",
+            saida=saida,
             categoria=nomes.get(str(bruta.get("categoryId"))) or _texto(categoria) or "",
-            interna=interna(categoria, bruta.get("operationType")),
+            interna=interna(categoria, bruta.get("operationType"))
+            or paga_fatura(descricao, cartao=conta.cartao, saida=saida),
             pendente=bruta.get("status") == "PENDING",
             parcela=parcela,
             fatura=_texto(metadado.get("billId")),

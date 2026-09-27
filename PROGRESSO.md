@@ -19,7 +19,13 @@ Decisões D31–D35 em `docs/decisoes.md`; medições novas em `docs/fontes/plug
 busca deram `URLError` sem motivo (no VPS passaram). Consertado: `GET` tenta de novo em falha de
 conexão, e a mensagem diz o motivo. Falta a segunda rodada.
 
-**Próximo passo exato:** C7 — o dono roda no Mac o roteiro abaixo e responde, para cada item, se
+**C7, segunda rodada (2026-09-27):** gastos e busca responderam; o dono: "tudo certo". Achado na
+saída: pagamento de fatura do Nubank contado como gasto (vem `Transfers`/`OUTROS`) — consertado
+pela descrição exata, D34 atualizada. Falta: o dono conferir `viking financas --gastos` com o
+conserto (o pagamento de 18/09 tem de sair de "Transferências" e ir para "Fora do total") e
+responder se PIX para outras pessoas conta como gasto (gatilho de D34).
+
+**Roteiro original do C7 (feito):** o dono roda no Mac o roteiro abaixo e responde, para cada item, se
 bateu com o app do banco (sem colar valores). Se "compras sem fatura" não bater com a fatura
 aberta no app, reabrir D35 (gatilho escrito). Se tudo bater: Pluggy vira "fechada" em
 `sessoes.md` e na barra (7 fechadas + 2 parciais), e o bloco passa a apontar para a Sessão 5.
