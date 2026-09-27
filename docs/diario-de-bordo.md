@@ -889,3 +889,9 @@ as conexões (banco, estado, contas — sem saldo). Nenhum teste fala com a Plug
 achados porque a rodada completa discordou da parcial. **Não medido:** o OAuth do widget numa
 página em `127.0.0.1`.
 
+**Validado no Mac (2026-09-27, saída colada pelo dono).** Duas rodadas de `viking financas
+--conectar`, Nubank e Itaú: o login do Meu Pluggy voltou para a página em `127.0.0.1` (o risco
+não medido), e cada uma mostrou o ID, `UPDATED` e as contas. Com os dois IDs no `.env`,
+`viking financas` listou as duas conexões: 2 contas correntes e 2 cartões. IDs e nomes de conta
+não entram no repo.
+

@@ -74,8 +74,11 @@ dizia nessa data.
   já em `connectorIds: [200]`/`selectedConnectorId: 200`, sem sandbox → no `onSuccess`, o ID
   volta ao processo, que o confere com `GET /items/{id}`. Medido em `GET /connectors/200`: o
   MeuPluggy é **OAuth** (sem campos de credencial), então o widget abre o login do Meu Pluggy.
-  **Não medido:** se o OAuth do widget funciona com a página em `http://127.0.0.1` sem
-  `oauthRedirectUri` — é a primeira coisa que o teste no Mac mostra.
+  **Medido no Mac (2026-09-27):** o OAuth do widget funciona com a página em `http://127.0.0.1`,
+  sem `oauthRedirectUri` — duas rodadas, uma por banco (Nubank e Itaú), cada uma voltou com o ID
+  e `status: UPDATED`; cada conexão traz uma conta corrente (`BANK/CHECKING_ACCOUNT`) e um cartão
+  (`CREDIT/CREDIT_CARD`). O `lastUpdatedAt` era o da hora da conexão (19:44 e 19:51 UTC de
+  2026-09-26). IDs e nomes das contas ficam só no `.env` do dono.
 
 ## MCP de documentação
 
