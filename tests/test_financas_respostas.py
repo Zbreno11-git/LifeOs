@@ -298,3 +298,48 @@ def test_so_le(chat):
     tools.responder_buscar("pix")
     assert {metodo for metodo, _c, _q in chat["pedidos"]} <= {"GET", "POST"}
     assert {c for metodo, c, _q in chat["pedidos"] if metodo == "POST"} <= {"/auth"}
+
+
+# --- as tools do chat -------------------------------------------------------------------------
+
+
+def test_tools_do_chat_devolvem_as_respostas(chat):
+    preparar_ciclo(chat)
+    assert tools.saldos_das_contas() == tools.responder_saldo()
+    assert tools.gastos_do_periodo("2026-09-01", "2026-09-30") == tools.responder_gastos(
+        "2026-09-01", "2026-09-30"
+    )
+    assert tools.buscar_transacoes("", "", "", "500") == tools.responder_buscar(valor="500")
+    assert tools.fatura_do_cartao() == tools.responder_fatura()
+
+
+def test_as_quatro_estao_no_chat():
+    from lifeos.assistant.agent import FERRAMENTAS
+
+    nomes = {f.__name__ for f in FERRAMENTAS}
+    assert {"saldos_das_contas", "gastos_do_periodo", "buscar_transacoes", "fatura_do_cartao"} <= (
+        nomes
+    )
+
+
+def test_servidor_mcp_nao_expoe_financas():
+    """Decisão do dono (2026-09-27): só no chat. Derivado das próprias tools de finanças, como o
+    do e-mail: uma tool nova registrada no MCP por engano faz este teste cair."""
+    import asyncio
+    import inspect
+
+    from fastmcp import Client
+
+    from lifeos.mcp_server.server import mcp
+
+    async def listar():
+        async with Client(mcp) as cliente:
+            return await cliente.list_tools()
+
+    nomes_mcp = {t.name for t in asyncio.run(listar())}
+    publicas = {nome for nome, fn in inspect.getmembers(tools, inspect.isfunction) if fn.__doc__}
+    assert nomes_mcp, "o MCP não listou tool nenhuma: a régua ficaria verde à toa"
+    assert not publicas & nomes_mcp
+    assert not any(p in n for n in nomes_mcp for p in ("saldo", "gasto", "transac", "fatura"))
+    fonte = inspect.getsource(inspect.getmodule(mcp))
+    assert "financas" not in fonte and "pluggy" not in fonte.lower()

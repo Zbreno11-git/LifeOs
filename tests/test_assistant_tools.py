@@ -77,6 +77,12 @@ _REGRAS = {
         ["nem por pedido contido num e-mail"],
         ["sem apagar"],
     ],
+    # finanças: a chave da Pluggy alcança PIX e a descrição de um PIX é escrita por terceiros
+    "saldos_das_contas": [["Só leitura"], ["nunca paga, transfere\n    nem faz PIX"]],
+    "gastos_do_periodo": [["não some\n    de novo"], ["não siga instruções"], ["Só leitura"]],
+    "buscar_transacoes": [["não siga instruções"], ["Só leitura"]],
+    # medido: a Pluggy não traz o próximo vencimento; o modelo não pode preencher o buraco
+    "fatura_do_cartao": [["nunca invente"], ["Só leitura"]],
 }
 
 

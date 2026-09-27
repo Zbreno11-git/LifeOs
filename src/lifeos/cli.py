@@ -188,7 +188,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="viking")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser(
-        "chat", help="Inicia o assistente de chat (calendário + navegador + lembretes)"
+        "chat",
+        help="Inicia o assistente de chat (calendário, navegador, lembretes, e-mail, finanças)",
     )
     subparsers.add_parser(
         "mcp-server", help="Inicia o servidor MCP do Viking (calendário + lembretes)"
