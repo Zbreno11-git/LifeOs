@@ -135,6 +135,11 @@ def test_gastos_do_mes_ate_hoje_por_padrao(chat):
     assert texto.startswith("Gastos de 01/09/2026 a 20/09/2026: R$ 345,00.")
     assert "- Restaurantes: R$ 140,00 (2)\n- Supermercado: R$ 100,00 (1)" in texto
     assert "- sem categoria: R$ 30,00 (1)" in texto
+    assert "Compras e contas, por categoria:\n- Restaurantes" in texto
+    assert (
+        "Transferências para outras pessoas (PIX, TED, DOC): R$ 50,00 (1) — estão no total, "
+        "separadas das compras." in texto
+    )
     assert "Entrou nas contas (sem contar estorno de cartão): R$ 3.000,00." in texto
     assert "Fora do total: 4 movimento(s) entre contas próprias" in texto
     assert "(R$ 1.500,00) — não é gasto nem renda." in texto

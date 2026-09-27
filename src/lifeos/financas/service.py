@@ -59,6 +59,27 @@ _OPERACOES_INTERNAS = frozenset(
         "TRANSFERENCIA_MESMA_INSTITUICAO",
     }
 )
+# Na taxonomia da Pluggy (`/categories`, lida em 2026-09-27), `04…` é "transferência mesma
+# titularidade" com subcategorias (PIX, TED, dinheiro): a família inteira é interna.
+_PREFIXO_MESMA_TITULARIDADE = "04"
+# Transferência para outra pessoa: é gasto (decisão do dono, 2026-09-27), mas numa linha própria,
+# fora das categorias de compra. Boleto (`05010000`, `05090001`) é pagamento de conta e fica na
+# categoria; câmbio (`05050000`) também; mesma instituição e cartão já são internos.
+_TRANSFERENCIA_A_OUTROS = frozenset(
+    {
+        "05000000",  # Transfers
+        "05020000",  # Transfer - Cash
+        "05030000",  # Transfer - Check
+        "05040000",  # Transfer - DOC
+        "05070000",  # Transfer - PIX
+        "05080000",  # Transfer - TED
+        "05090000",  # Third party transfers
+        "05090002",  # Third party transfer - Debit Card
+        "05090003",  # Third party transfer - DOC
+        "05090004",  # Third party transfer - PIX
+        "05090005",  # Third party transfer - TED
+    }
+)
 
 
 class SemConexoes(pluggy.ErroPluggy):
@@ -99,6 +120,7 @@ class Transacao:
     pendente: bool
     parcela: str = ""  # "3/10"
     fatura: str = ""  # `creditCardMetadata.billId`; vazio = ainda sem fatura fechada
+    transferencia: bool = False  # para outra pessoa (PIX, TED...): gasto, em linha própria
 
 
 @dataclass(frozen=True)
@@ -168,8 +190,12 @@ def paga_fatura(descricao: str, *, cartao: bool, saida: bool) -> bool:
     return saida and texto == "pagamento de fatura"
 
 
-def interna(categoria: str | None, operacao: str | None) -> bool:
-    return categoria in _CATEGORIAS_INTERNAS or operacao in _OPERACOES_INTERNAS
+def interna(categoria: str | None, operacao: str | None, categoria_id: str = "") -> bool:
+    return (
+        categoria in _CATEGORIAS_INTERNAS
+        or operacao in _OPERACOES_INTERNAS
+        or categoria_id.startswith(_PREFIXO_MESMA_TITULARIDADE)
+    )
 
 
 # --- leitura ---------------------------------------------------------------------------------
@@ -279,6 +305,7 @@ class Financas:
             return None
         categoria = bruta.get("category")
         saida = bruta.get("type") == "DEBIT"
+        categoria_id = str(bruta.get("categoryId") or "")
         descricao = _texto(bruta.get("description") or "(sem descrição)")
         metadado = bruta.get("creditCardMetadata") or {}
         total = metadado.get("totalInstallments")
@@ -293,8 +320,9 @@ class Financas:
             valor=abs(valor),
             saida=saida,
             categoria=nomes.get(str(bruta.get("categoryId"))) or _texto(categoria) or "",
-            interna=interna(categoria, bruta.get("operationType"))
+            interna=interna(categoria, bruta.get("operationType"), categoria_id)
             or paga_fatura(descricao, cartao=conta.cartao, saida=saida),
+            transferencia=categoria_id in _TRANSFERENCIA_A_OUTROS,
             pendente=bruta.get("status") == "PENDING",
             parcela=parcela,
             fatura=_texto(metadado.get("billId")),
@@ -320,7 +348,10 @@ class Gastos:
     desde: date
     ate: date
     total: float
-    por_categoria: tuple[tuple[str, float, int], ...]  # (categoria, total, quantas), maior primeiro
+    # Compras e contas: (categoria, total, quantas), maior primeiro. Sem as transferências.
+    por_categoria: tuple[tuple[str, float, int], ...]
+    transferencias: float  # para outras pessoas: dentro do total, fora das categorias
+    transferencias_n: int
     maiores: tuple[Transacao, ...]
     entradas: float
     internas: int
@@ -339,8 +370,11 @@ def gastos(financas: Financas, desde: date, ate: date, *, hoje: date | None = No
     futuras = [t for t in externas if t.saida and t.dia > hoje]
     # Crédito no cartão que não é pagamento de fatura (estorno) não é renda: fica fora.
     entradas = [t for t in externas if not t.saida and not t.cartao and t.dia <= hoje]
+    transferencias = [t for t in saidas if t.transferencia]
     grupos: dict[str, list[Transacao]] = {}
     for t in saidas:
+        if t.transferencia:
+            continue
         grupos.setdefault(t.categoria or "sem categoria", []).append(t)
     por_categoria = sorted(
         (
@@ -355,6 +389,8 @@ def gastos(financas: Financas, desde: date, ate: date, *, hoje: date | None = No
         ate=ate,
         total=round(sum(t.valor for t in saidas), 2),
         por_categoria=tuple(por_categoria),
+        transferencias=round(sum(t.valor for t in transferencias), 2),
+        transferencias_n=len(transferencias),
         maiores=tuple(sorted(saidas, key=lambda t: -t.valor)[:5]),
         entradas=round(sum(t.valor for t in entradas), 2),
         internas=len(internas),

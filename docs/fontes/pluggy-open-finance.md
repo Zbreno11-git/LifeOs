@@ -106,6 +106,11 @@ item de verdade): não autenticar esse MCP numa sessão de agente sem necessidad
   "pagamento" ("pagamento recebido" em 34+6, "pagamento com…" 13, "pagamento debito…" 6), e 19
   do Itaú vêm `Transfers` ou sem categoria (medido em 2026-09-27, contagens). Achado no primeiro
   `--gastos` do dono: o pagamento do Nubank entrava como gasto.
+- **Taxonomia de transferências (`/categories`, 2026-09-27):** `04…` é "Same person transfer" com
+  filhas (CASH, PIX, TED); `05…` é "Transfers": boleto (`05010000`), dinheiro, cheque, DOC,
+  câmbio (`05050000`), mesma instituição (`05060000`), PIX (`05070000`), TED, "para terceiros"
+  (`05090000` e filhas) e pagamento de cartão (`05100000`). No histórico do dono: `05000000`
+  147, `05100000` 53, `04000000` 21, `05070000` 18, `05060000` 7, `05050000` 1.
 - **Categoria:** em inglês (`category`), com `categoryId`; `/categories` tem 130, com
   `descriptionTranslated`. Faltam em parte: 6 de 65 numa conta, 31 de 265 num cartão.
 - **`merchant` sempre vazio**; quem diz o que foi é `description`.

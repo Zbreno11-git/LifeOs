@@ -71,7 +71,7 @@ def _parcela(n, total, id_fatura="f1"):
 
 # Conta corrente: gasto vem NEGATIVO. Pagar a fatura sai daqui e aparece de novo no cartão.
 DA_CONTA = [
-    _t("c1", "2026-09-10", -100.0, "DEBIT", "Groceries", categoryId="05050000"),
+    _t("c1", "2026-09-10", -100.0, "DEBIT", "Groceries", categoryId="10000000"),
     _t(
         "c2",
         "2026-09-10",
@@ -114,7 +114,7 @@ DO_CARTAO = [
 ]
 
 CATEGORIAS = [
-    {"id": "05050000", "description": "Groceries", "descriptionTranslated": "Supermercado"},
+    {"id": "10000000", "description": "Groceries", "descriptionTranslated": "Supermercado"},
     {"id": "08010000", "description": "Restaurants", "descriptionTranslated": "Restaurantes"},
     {"id": "05070000", "description": "Transfer - PIX", "descriptionTranslated": "PIX"},
     {"id": "01010000", "description": "Salary", "descriptionTranslated": "Salário"},
@@ -503,15 +503,39 @@ def test_gastos_por_categoria_maior_primeiro_com_sem_categoria(pluggy_falsa):
     assert _gastos().por_categoria == (
         ("Restaurantes", 140.0, 2),
         ("Supermercado", 100.0, 1),
-        ("PIX", 50.0, 1),
         ("sem categoria", 30.0, 1),
         ("Electronics", 25.0, 1),
     )
 
 
+def test_pix_para_outra_pessoa_e_gasto_em_linha_propria(pluggy_falsa):
+    # Decisão do dono (2026-09-27): dinheiro que saiu, mas não é compra.
+    g = _gastos()
+    assert (g.transferencias, g.transferencias_n) == (50.0, 1)
+    assert g.total == 345.0  # continua no total
+    assert "PIX" not in {nome for nome, _v, _n in g.por_categoria}
+
+
+def test_boleto_fica_na_categoria_dele(pluggy_falsa):
+    boleto = _t("b", "2026-09-10", -70.0, "DEBIT", "Transfer - Bank Slip", categoryId="05010000")
+    pluggy_falsa["transacoes"] = {CONTA: [boleto]}
+    g = _gastos()
+    assert (g.transferencias_n, g.por_categoria) == (0, (("Transfer - Bank Slip", 70.0, 1),))
+
+
+def test_mesma_titularidade_por_pix_e_interna(pluggy_falsa):
+    # `/categories`: "Same person transfer - PIX" (04020000) é filha de "Same person transfer".
+    mesma = _t(
+        "m", "2026-09-10", -400.0, "DEBIT", "Same person transfer - PIX", categoryId="04020000"
+    )
+    pluggy_falsa["transacoes"] = {CONTA: [mesma]}
+    g = _gastos()
+    assert (g.total, g.internas, g.transferencias_n) == (0.0, 1, 0)
+
+
 def test_categorias_somam_o_total(pluggy_falsa):
     g = _gastos()
-    assert round(sum(linha[1] for linha in g.por_categoria), 2) == g.total
+    assert round(sum(linha[1] for linha in g.por_categoria) + g.transferencias, 2) == g.total
 
 
 def test_cinco_maiores(pluggy_falsa):

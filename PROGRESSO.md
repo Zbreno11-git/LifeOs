@@ -22,8 +22,8 @@ conexão, e a mensagem diz o motivo. Falta a segunda rodada.
 **C7, segunda rodada (2026-09-27):** gastos e busca responderam; o dono: "tudo certo". Achado na
 saída: pagamento de fatura do Nubank contado como gasto (vem `Transfers`/`OUTROS`) — consertado
 pela descrição exata, D34 atualizada. Falta: o dono conferir `viking financas --gastos` com o
-conserto (o pagamento de 18/09 tem de sair de "Transferências" e ir para "Fora do total") e
-responder se PIX para outras pessoas conta como gasto (gatilho de D34).
+conserto (o pagamento de 18/09 tem de sair de "Transferências" e ir para "Fora do total"; e as
+transferências para outras pessoas aparecem numa linha própria, decisão do dono do mesmo dia).
 
 **Roteiro original do C7 (feito):** o dono roda no Mac o roteiro abaixo e responde, para cada item, se
 bateu com o app do banco (sem colar valores). Se "compras sem fatura" não bater com a fatura

@@ -481,7 +481,7 @@ MUTACOES = [
     Mutacao(
         "finanças: fatura paga e movimento entre contas próprias viram gasto",
         "src/lifeos/financas/service.py",
-        '            interna=interna(categoria, bruta.get("operationType"))\n'
+        '            interna=interna(categoria, bruta.get("operationType"), categoria_id)\n'
         "            or paga_fatura(descricao, cartao=conta.cartao, saida=saida),",
         "            interna=False,",
         "tests/test_financas_dados.py::test_fatura_paga_nao_conta_em_dobro",
@@ -597,6 +597,20 @@ MUTACOES = [
         '        return not saida and texto.startswith("pagamento")',
         "        return False",
         "tests/test_financas_dados.py::test_pagamento_no_cartao_sem_categoria_nao_desconta_da_fatura",
+    ),
+    Mutacao(
+        "finanças: PIX para outra pessoa misturado às compras",
+        "src/lifeos/financas/service.py",
+        "            transferencia=categoria_id in _TRANSFERENCIA_A_OUTROS,",
+        "            transferencia=False,",
+        "tests/test_financas_dados.py::test_pix_para_outra_pessoa_e_gasto_em_linha_propria",
+    ),
+    Mutacao(
+        "finanças: 'mesma titularidade - PIX' vira gasto",
+        "src/lifeos/financas/service.py",
+        "        or categoria_id.startswith(_PREFIXO_MESMA_TITULARIDADE)",
+        "        or False",
+        "tests/test_financas_dados.py::test_mesma_titularidade_por_pix_e_interna",
     ),
 ]
 

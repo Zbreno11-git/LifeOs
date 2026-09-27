@@ -210,9 +210,14 @@ def _texto_dos_gastos(g: service.Gastos, hoje: date) -> str:
     ate = f"{_data(g.ate)} (contados até hoje, {_data(hoje)})" if g.ate > hoje else _data(g.ate)
     linhas = [f"Gastos de {_data(g.desde)} a {ate}: {_reais(g.total)}."]
     if g.por_categoria:
-        linhas.append("Por categoria:")
+        linhas.append("Compras e contas, por categoria:")
         linhas += [f"- {_limpo(nome)}: {_reais(v)} ({n})" for nome, v, n in g.por_categoria]
-    else:
+    if g.transferencias_n:
+        linhas.append(
+            f"Transferências para outras pessoas (PIX, TED, DOC): {_reais(g.transferencias)} "
+            f"({g.transferencias_n}) — estão no total, separadas das compras."
+        )
+    if not g.por_categoria and not g.transferencias_n:
         linhas.append("Nenhum gasto no período.")
     linhas.append(f"Entrou nas contas (sem contar estorno de cartão): {_reais(g.entradas)}.")
     if g.internas:
