@@ -17,11 +17,11 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** 6 — runner em concorrência (a 5 fechou no Mac em 2026-09-27).
-- **Primeiro passo:** abrir a sessão com a skill `software-build` (perguntas ao dono e plano no
-  `PROGRESSO.md`), a partir da seção da Sessão 6 abaixo.
+- **Primeiro passo:** a Sessão 6 está em curso — plano aprovado em 2026-09-27 no `PROGRESSO.md`
+  (trava entre terminais, protocolo estrito, chaves cortadas, versão do Jev; teste no Mac no fim).
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D36–D39),
   `src/lifeos/browser/jev_runner.py`.
-- **Depende do dono:** sim — as perguntas da abertura.
+- **Depende do dono:** o teste no Mac no fim (as perguntas da abertura já foram respondidas).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -294,7 +294,7 @@ abertura:
   confirmado, o que rodou, o resultado) — cobre o caso de uma tool funcionar e a chamada seguinte
   ao Gemini falhar, hoje sem rastro de que a mutação já aconteceu.
 
-## Sessão 6 — runner em concorrência
+## Sessão 6 — runner em concorrência (em curso desde 2026-09-27; plano no `PROGRESSO.md`)
 
 - **Primeiro passo (adiado da 5, 2026-09-27):** no Mac, medir o que o teste da 5 não alcançou —
   reagendar o "Teste Viking" pelo chat e `desfaz` (o `patch` com `{"date": null}`/`dateTime` volta
