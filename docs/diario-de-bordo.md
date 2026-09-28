@@ -1046,6 +1046,14 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 6 fechada
+
+O dono autorizou fechar ("pode fechar a sessão") sem a conferência das datas das finanças, porque
+não tinha o app do banco à mão; ela é o primeiro passo da Sessão 7 (`sessoes.md`) e a 6 conta como
+parcial na barra até lá. Entregue: D40–D44 e a D39 revista. Portões no fechamento: `1118 passed`,
+`ruff` limpo, baseline 7, mutações 157/157. Erros meus da sessão, em `docs/erros.md`: classes 1, 2
+(três, e a maior: presumir Brasília), 4 (duas), 6 (duas) e 7.
+
 ### 2026-09-28 — Sessão 6: três fusos medidos, e o dono não está em Brasília
 
 **Medido no Mac (`b52b3b8`, `1102 passed`).** `date +%z` → `-0800` (AKDT); o fuso do Viking →

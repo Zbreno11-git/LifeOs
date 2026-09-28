@@ -7,12 +7,34 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-27 (Sessão 5, testada no seu Mac).**
+**Última atualização: 2026-09-28 (Sessão 6, testada no seu Mac, menos uma conferência).**
 
-`███████████████░░░░░ 8 de 12 sessões fechadas + 2 parciais (= 9 de 12)`
+`████████████████░░░░ 8 de 12 sessões fechadas + 3 parciais (= 9,5 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy e 5; parciais 4 e 3b;
-na fila 6 e 7. Cada parcial vale meia sessão na barra.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy e 5; parciais 4, 3b e 6;
+na fila 7. Cada parcial vale meia sessão na barra. A 6 conta como parcial até você comparar as
+datas das finanças com o app do banco (é o primeiro passo da 7).
+
+## 2026-09-28 — um navegador por vez, suas chaves longe dele, e o seu fuso de verdade
+
+**O que mudou:**
+- **Um navegador por vez.** Se você pedir uma tarefa enquanto outra usa o Chrome (de outro
+  terminal, ou o `--doctor`), o Viking recusa na hora e diz quem está usando, desde quando e para
+  quê. Antes, uma derrubava a outra.
+- **Suas chaves longe do navegador.** O programa que dirige o Chrome recebia a chave do Gemini e a
+  da Pluggy sem precisar. No seu Mac, a chave estava lá antes e sumiu depois.
+- **Qual navegador está rodando.** O `viking browser --doctor` mostra a versão e se a correção do
+  OpenRouter está lá; se algo destoar, cada tarefa avisa numa linha.
+- **O YouTube em loop.** "Abrir o primeiro resultado" ficou indo e voltando até o limite de 30
+  ações. Agora o Viking percebe quando volta ao mesmo lugar pela terceira vez e para (no seu teste
+  seguinte a tarefa deu certo em 5 ações, então o conserto está provado só pelo teste).
+
+**O fuso — um erro meu desde o começo.** Eu escrevi o Viking como se você estivesse em Brasília.
+Seu teste mostrou três fusos diferentes: o seu, o do relógio do Mac (Alasca) e o da sua agenda do
+Google (Brasília). Por isso "amanhã às 10h" caía às 15h. Agora: com `VIKING_TIMEZONE` no seu `.env`,
+o evento cai no seu horário e a lista mostra o seu horário (a reunião das 13h da agenda aparece às
+9h); se o fuso faltar, o chat avisa ao abrir. As datas das compras passam a ser as do banco (antes,
+toda compra sem hora aparecia um dia antes) — **falta você conferir isso no app do banco.**
 
 ## 2026-09-27 — o Viking pede antes, lembra o que fez e desfaz
 

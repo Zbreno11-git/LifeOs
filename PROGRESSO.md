@@ -5,50 +5,32 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 6: fusos medidos e consertados; falta o dono pôr o fuso e conferir
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 6 fechada; a próxima é a 7 (manutenção)
 
-**Estado do repositório:** o commit "Sessão 6: o dono não está em Brasília" (conferir com `git log -1`;
-o anterior é `b52b3b8`) · igual ao remoto · travas: nenhuma · background: nenhum.
+**Estado do repositório:** o commit de fechamento da Sessão 6 (conferir com `git log -1`; o anterior
+é `957c08e`) · igual ao remoto · travas: nenhuma · background: nenhum.
 
-**Onde parou:** C0–C6 ✅; C7 rodado no Mac (2026-09-27) e o C7-bis (2026-09-28) mediu os fusos:
-relógio do Mac em -08:00, agenda do Google em `America/Sao_Paulo`, sem `VIKING_TIMEZONE`, e o dono
-**não** está em Brasília (ver memória do Claude, "Fuso do dono"; a cidade não vai para o repo).
-Consertado: D42 revista, D43, D44. `1118 passed`; `ruff` limpo; baseline 7; mutações 157/157.
+**Onde parou:** a Sessão 6 fechou em 2026-09-28 com o "pode fechar" do dono; testada no Mac menos a
+data das finanças (D44), que ele adiou ("não consigo ver o banco agora") — é o primeiro passo da 7,
+escrito em `sessoes.md`. Medido no fechamento: `1118 passed`; `ruff` limpo; baseline 7; mutações
+157/157.
 
-**Próximo passo exato (C7-ter, depende do dono):** o roteiro da resposta de 2026-09-28 (segunda
-parte). Conferir: (1) a linha "⚠️  Fuso: sem VIKING_TIMEZONE…" aparece no chat **antes** de ele pôr a
-variável; (2) depois de `VIKING_TIMEZONE` no `.env` dele, `python -c` mostra o fuso dele e o aviso
-some; (3) "amanhã às 10h" → o Viking diz 10:00, a busca seguinte diz 10:00 (convertida), e a agenda
-do Google (em São Paulo) mostra o horário correspondente de Brasília; (4) as datas de
-`viking financas --gastos` batem com o app do banco (ele confere e diz, sem colar valores). Com
-tudo certo: fechar a Sessão 6 — diário, barra de progresso, `sessoes.md` (▶️ para a 7), este bloco.
+**Próximo passo exato:** abrir a Sessão 7 pela skill `software-build`: primeiro o dono confere as
+datas de `viking financas --gastos` no app do banco; depois perguntas de abertura e plano da
+manutenção (§15.1–15.4), escrito aqui abaixo, acima do plano da 6.
 
-**Medido no Mac (2026-09-28, `4d5e48b`, `1118 passed`):** com `VIKING_TIMEZONE` no `.env`, o fuso
-do Viking é `America/Los_Angeles …-07:00` e "amanhã às 10h" caiu às 14:00 da agenda (-03:00) = 10:00
-do dono ✅; `VIKING_TIMEZONE= viking chat` mostrou "⚠️  Fuso: sem VIKING_TIMEZONE… (-08:00)… agenda
-em America/Sao_Paulo (-03:00)" ✅ (o token renovado em silêncio); "eventos de amanhã" trouxe a reunião
-das 13:00 da agenda às **09:00** ✅. A listagem que tinha dito "14:00" era do Mac ainda em
-`b52b3b8` (confirmado pelo `git pull` desta rodada). **Falta só:** o dono comparar as datas de
-`viking financas --gastos` com o app do banco.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; `sessoes.md` (▶️ e Sessão 7); `docs/decisoes.md`
+(D39–D44); o índice de `docs/erros.md`; a memória do Claude (fuso do dono).
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (armadilha "Três fusos"); este bloco;
-`docs/decisoes.md` (D39 revista, D40–D44); `docs/erros.md` (classes 2 e 4, 2026-09-28);
-`calendar/service.no_fuso_do_dono`, `calendar/tools.aviso_de_fuso`, `financas/service.FUSO_DOS_BANCOS`,
-`google_auth.credenciais_sem_login`, `_jev_subprocess._revisitando`.
-
-**Não pode ser esquecido:**
-- Nunca presumir o fuso do dono; "criei às 10:00" do Gemini não é medida (conferir na busca/agenda).
-- Repo público: nada de cidade, conta ou valor real; o `.env` é do dono (ele acrescenta a linha).
-- Roteiro do Mac começa com `cd ~/LifeOs` e `git pull && git log --oneline -1`; URL com `?` entre aspas.
-- Mutações em background, sem `timeout`; baseline 7 (`agent.py`, `calendar/tools.py` nele).
-
-**Depende do dono:** o roteiro e a conferência das datas no app do banco.
+**Não pode ser esquecido:** nunca presumir o fuso do dono (o `.env` dele tem `VIKING_TIMEZONE`
+desde 2026-09-28); repo público (nada de cidade, conta ou valor real); roteiro do Mac começa com
+`cd ~/LifeOs` e `git pull && git log --oneline -1`; mutações em background, sem `timeout`.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1118 passed`; `python -m ruff format --check . | tail -1` → `7 files would
 be reformatted`.
 
-## Plano — Sessão 6: o navegador com duas tarefas ao mesmo tempo (trava, protocolo, chaves, versão do Jev)
+## Plano — Sessão 6: o navegador com duas tarefas ao mesmo tempo (trava, protocolo, chaves, versão do Jev) (fechada em 2026-09-28)
 
 ### Context
 
@@ -113,7 +95,7 @@ presente"; (d) `desfaz` de um reagendamento volta o horário exato; (e) "amanhã
 | C4 | ambiente allowlisted no Jev e no `--doctor` | ✅ |
 | C5 | versão do Jev no `--doctor` + aviso por tarefa | ✅ |
 | C6 | mutações, docs, revisão em 2 passadas, **commit 2 + push** | ✅ |
-| C7 | Mac: roteiro abaixo | ⬜ |
+| C7 | Mac: roteiro abaixo | ✅ (menos a data das finanças, adiada para a 7) |
 
 ### Commit 1 — trava e protocolo
 
