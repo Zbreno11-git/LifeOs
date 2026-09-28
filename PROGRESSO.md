@@ -5,48 +5,344 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 6 fechada inteira; próximo: planejar a Sessão 7
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7 em curso (plano aprovado); próximo: C1
 
-**Estado do repositório:** o checkpoint antes do compact (conferir com `git log -1`; o anterior é
-`c93279c`, fechamento da 6) · igual ao remoto · travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (o anterior é `b894956`, checkpoint antes do
+compact) · travas: nenhuma · background: nenhum.
 
-**Onde parou:** a Sessão 6 fechou em 2026-09-28 e está toda testada no Mac — o último item, as
-datas de `viking financas --gastos`, o dono conferiu no app do banco: "tudo certo". Barra: 9
-fechadas + 2 parciais (4 e 3b) = 10 de 12. Medido no fechamento: `1118 passed`; `ruff check` limpo;
-`ruff format --check` → 7 (o baseline); `python scripts/mutacoes.py` → `157 · mortas pelo teste
-esperado: 157`.
+**Onde parou:** o plano da Sessão 7 (abaixo) foi aprovado pelo dono em 2026-09-28. C0 ✅.
 
-**Próximo passo exato:** abrir e **planejar** a Sessão 7 (manutenção, `sessoes.md`) com a skill
-`software-build` e o formato de `referencia/plano-de-sessao.md`: medir a abertura, fazer as rodadas
-de perguntas ao dono, somar as respostas e escrever o plano aqui, acima do plano da 6, **antes de
-qualquer código**. Nada de implementar antes do "pode seguir" do dono.
+**Próximo passo exato:** C1 — medir o que faltou, tudo no scratchpad: a suíte num `git archive HEAD`
+sem `.env` e sem o clone do Jev (esperado `1116 passed, 2 skipped`), `mypy` fixado em `src` (o
+número vai ao dono, que decide se vira portão), `pip-audit` da exportação, e se o `uv sync` mantém o
+`pip` na venv.
 
-**Candidatos a assunto da 7, para as perguntas** (o escopo é decisão do dono):
-- §15.1 lockfile do projeto (hoje `pip install -e .`; o Mac tem conda junto do venv);
-- §15.3 CI (repo público no GitHub), scanner de dependências, checagem de tipos;
-- §15.4 os 7 arquivos fora da formatação (um commit só de formatação acabaria com a regra "só os
-  meus trechos do `--diff`");
-- §15.2 teste que usa API privada do google-genai;
-- achado da 6, não é dívida mas vale olhar: `calendar/service` compara `inicio` como **texto**
-  ao aprovar um pedido do MCP (`_evento_de(atual).inicio != dados["inicio"]`); se o fuso do dono
-  mudar entre o pedido e a aprovação, recusa um pedido válido (erra para o lado seguro).
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/erros.md`
+(classes 2, 4, 5, 8); as skills `software-build`, `testes-que-provam`, `nuvem-e-deploy` (§10, CI) e
+`integracoes` (§6, dependências).
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e Sessão 7);
-`docs/decisoes.md` (índice; D39–D44); o índice de `docs/erros.md`; a memória do Claude (fuso do
-dono, fluxo de entrega, perguntar antes de assumir); as skills `software-build` (abrir/planejar,
-`referencia/plano-de-sessao.md`, `referencia/revisao.md`) e `testes-que-provam`.
+**Não pode ser esquecido:** ligar os alertas do Dependabot só com o ok do dono na hora; nada de
+`secrets.` no CI (log público); formatador só nos arquivos nomeados; mutações em background, sem
+`timeout`; repo público (nada de cidade, conta, valor ou ID real); nunca presumir o fuso do dono.
 
-**Não pode ser esquecido:** nunca presumir o fuso do dono (o `.env` dele tem `VIKING_TIMEZONE`
-desde 2026-09-28); repo público (nada de cidade, conta ou valor real); roteiro do Mac começa com
-`cd ~/LifeOs` e `git pull && git log --oneline -1`, sem `#` na linha, `python -m`, URL com `?` entre
-aspas; mutações em background, sem `timeout`, e antes de uma "recusa → espera", perguntar qual teste
-esperaria para sempre; `or` em asserção é proibido; texto com heredoc dentro não vai num heredoc.
-
-**Depende do dono:** as respostas da abertura da 7.
+**Depende do dono:** a decisão sobre a checagem de tipos (no C1) e o ok para ligar os alertas (C8).
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1118 passed`; `python -m ruff format --check . | tail -1` → `7 files would
-be reformatted`.
+`python -m pytest -q` → `1118 passed`.
+
+## Plano — Sessão 7: manutenção (versões travadas, CI, scanner, formatação e três consertos pequenos) (aprovado em 2026-09-28)
+
+### Context
+Sessão 7 de `sessoes.md` (auditoria do Codex §15.1–15.4) mais o achado da 6: a aprovação do MCP
+compara `inicio` como texto. Nada aqui é funcionalidade nova. O objetivo é tornar seguro continuar
+mexendo:
+- a mesma versão de cada pacote em toda máquina;
+- os testes rodando no GitHub a cada push;
+- aviso de pacote com falha conhecida;
+- formatação sem baseline;
+- dois testes que provam o que dizem.
+
+Abertura conferida em 2026-09-28, e tudo bate com o bloco de retomada:
+- HEAD `b894956` = origin, árvore limpa, sem `.mutacao.lock`;
+- `1118 passed`, `7 files would be reformatted`, `ruff check` limpo.
+
+Este plano mora aqui desde o C0; os planos anteriores ficam abaixo, como nas outras sessões.
+
+### O que esta sessão entrega (verificável)
+(a) `uv sync --locked --extra dev` no Mac instala exatamente o `uv.lock`, e a suíte passa lá.
+(b) O commit do topo no GitHub tem o run do CI **verde, conferido pelo `headSha`**: testes, `ruff check`, `ruff format --check` com zero arquivos a formatar, e `pip-audit` do lock.
+(c) Os alertas do Dependabot estão ligados: `gh api …/vulnerability-alerts` → 204.
+(d) Uma aprovação do MCP pedida com o dono num fuso e aprovada noutro executa. Um evento que mudou de hora continua recusado.
+(e) Nenhum teste importa API privada do google-genai.
+(f) O número de erros de tipos está medido e na mão do dono, que decide se ele vira portão.
+
+### O que NÃO faz
+- **Bloquear o master** (branch protection) → recusado pelo dono; entra em D45 como recusa, com o motivo.
+- **PRs automáticos do Dependabot** → recusado pelo dono (D45).
+- **Corrigir todos os erros de tipos:** depende do número medido no C1.
+  - Se o dono não quiser na 7, vira item do backlog de `sessoes.md`, escrito na hora com o número.
+- **Mutações no CI** → continuam à mão (cerca de 10 min; o `scripts/mutacoes.py` diz "não no CI").
+
+### Respostas do dono (2026-09-28)
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| Escopo | todos: pequenos + lock + CI + scanner. A 1ª rodada marcou só os pequenos; a 2ª desfez a contradição: "entram todos" | sessão cheia, 2 entregas |
+| Checagem de tipos | medir e trazer o número antes de prometer | C1 mede; decisão do dono ali |
+| Formatação | commit só de formatação | fim do baseline de 7 e da regra "só os meus trechos do `--diff`" |
+| Commits | 2 | reconciliado com "commit só de formatação": entrega 1 = commit 1a (só formatação) + 1b (pequenos), num push só; entrega 2 = commit 2 |
+| Instalar no Mac | pelo `uv` (`uv sync`) | `python -m pip install -e` sai da doc; `python -m pytest` fica |
+| Scanner | alertas do GitHub + verificação no CI, sem PRs automáticos | eu ligo pelo `gh`, **com o ok do dono na hora** |
+| CI vermelho | só marca ❌ e avisa | sem branch protection; push direto no master continua |
+| Atualizar versões | quando o scanner avisar + ao abrir cada sessão | rotina de abertura ganha "há versão nova?"; a atualização vai num commit próprio, com a suíte antes e depois |
+
+### Decisões técnicas minhas
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| Lock pelo `uv` (`uv lock`), build continua setuptools, sem `[tool.uv]` especial; CI e Mac usam `--locked` | o `uv` já existe nas duas máquinas; `--locked` falha se o lock não bate com o `pyproject` | o `uv` do Mac velho demais para ler o lock (o roteiro mede `uv --version`) |
+| CI: `.github/workflows/testes.yml`, `on: push` (todas as branches) + `pull_request` + `workflow_dispatch`, **sem filtro de caminho**, Python 3.12, `permissions: contents: read`, actions fixadas por **SHA de 40 caracteres**, sem nenhum `secrets.` | os testes leem `.md` (âncoras), então filtro de caminho erraria; repo público = log público e cadeia de suprimentos; o CI verifica, não publica (`nuvem-e-deploy` §10) | — |
+| Um teste lê o workflow: SHA fixado, `contents: read`, sem `secrets`, sem `pull_request_target`, `--locked`, e os mesmos portões do `AGENTS.md` | estrutura vence disciplina: o workflow não pode afrouxar calado | — |
+| `pip-audit` fixado por versão, rodado pelo `uvx` sobre a exportação do lock (`uv export --frozen`), fora das dependências do Viking | audita o que o Viking instala, sem pôr a árvore do `pip-audit` na venv | a medição do C1 mostrar que a exportação não serve ao `pip-audit` |
+| No CI, `skipped` esperado = 2 (os contratos com o clone do Jev, `test_jev_subprocess_main.py:699,757`) | "skipped > 0 numa suíte que não pula é vermelho": o número fica escrito e conferido | — |
+| Checagem de tipos: medir com `mypy` fixado, modo padrão (não strict), pelo `uvx`, sem instalar na venv | maduro, e mede sem compromisso | — |
+| `.md` fora do `ruff format` (`[tool.ruff.format] exclude`) | o único `.md` apontado cita o código do patch do Jev como ele é; o ruff 0.16 formata blocos Python de `.md` | — |
+| `.git-blame-ignore-revs` com o SHA do commit 1a (no commit 2, que é quando o SHA existe) | o GitHub esconde a formatação no blame | — |
+| §15.2: **trocar** `_parse_schema_from_parameter("VERTEX_AI", …)` por `types.FunctionDeclaration.from_callable_with_api_option(callable=fn, api_option="GEMINI_API")`; `test_anotacoes_sao_tipos_reais` fica | o privado valida contra o backend errado e quebra se o google-genai renomear; o público aceita 21/21 (medido); o do future import é outro teste | — |
+| `_REGRAS`: cada regra vira uma frase só, comparada com espaços normalizados dos dois lados | todas as listas de "alternativas" têm 1 item (lido); o `or` da linha 96 some sem perder regra | — |
+| `inicio`: `_mesmo_instante(a, b)`. Os dois aware → compara o instante (`datetime ==`); senão (dia inteiro, texto) → compara o texto | recusa falsa com texto falso ("mudou") é defeito; o `etag`/`updated` continuam; nunca afrouxa um evento que mudou | — |
+| Rotina de abertura (`sessoes.md` ▶️ e `AGENTS.md`): `uv lock --upgrade --dry-run` (ou `uv tree --outdated`); se houver versão nova → commit próprio `uv lock --upgrade`, suíte antes e depois | resposta do dono | — |
+
+### Medido na abertura (2026-09-28, VPS, HEAD `b894956`)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Arquivos fora da formatação | `ruff format --check --output-format concise .` e `ruff format --diff F \| grep -c '^[-+] '` | 7 arquivos, uns 35 trechos no total (lista abaixo) | um commit só de formatação é pequeno; o `.md` é citação e sai da formatação |
+| Ferramentas | `ruff --version`, `pip list` | ruff 0.16.8, pytest 9.1.1, google-genai 2.24.0, 102 pacotes; **nada fixado** | outra máquina pode ter outro ruff e outro número |
+| Instalação | `pyproject.toml`, `.venv/pyvenv.cfg` | setuptools; `pip install -e ".[dev]"`; venv por `python3 -m venv`, Python 3.12.3; sem lock, sem `requirements*.txt` | §15.1 procede |
+| `uv` | `uv --version` | 0.12.10 no VPS | — |
+| Mac | diário (Sessões 4–6) | `uv` existe (o Jev roda por `uv run`); conda `base` ativo junto do venv | versões do Python e do `uv` **não medidas**: o roteiro mede antes de trocar |
+| GitHub | `gh api repos/Zbreno11-git/LifeOs …` | ver abaixo | CI e alertas partem do zero |
+| Tempo da suíte | `time python -m pytest -q` | `1118 passed in 16.11s` (17,05 s real) | cabe num CI a cada push |
+| Tempo das mutações | carimbos de 3 rodadas no transcrito (27–28/09) | 9 min 23 s, 9 min 39 s, 10 min 03 s | ficam à mão |
+| API privada do google-genai | `grep` | `tests/test_assistant_tools.py:6,28` usa `"VERTEX_AI"`; o Viking usa a API de desenvolvedor (`agent.py:144`) | o teste confere contra o backend errado |
+| API pública | script contra as 21 tools | `from_callable_with_api_option(..., "GEMINI_API")` aceita 21/21; **não** pega anotação-string | complementa o teste do future import, não o substitui |
+| `or` em asserção | leitura | `tests/test_assistant_tools.py:96`, de antes da regra; todas as alternativas têm 1 item | conserto no mesmo arquivo |
+| `inicio` | `calendar/service.py:608`; `grep` de quem mais lê um início guardado | ver abaixo | defeito latente; conserto pequeno |
+| Suíte sem o clone do Jev | `grep skip` | 2 testes pulam | `skipped` = 2 no CI |
+| Suíte sem `.env` | — | **não medido** (no plano não copio o repo) | C1 |
+| Tipos | `which mypy pyright ty` | nenhum instalado; `src` 8.290 linhas, `tests` 9.286 | C1 mede |
+
+Os 7 arquivos fora da formatação e quantos trechos cada um muda:
+- `archive/.../serial_mcp_bridge.py`: 10;
+- `docs/arquitetura/browser-automation-stack.md`: bloco Python que **cita** o patch do Jev (4 → 1 linha);
+- `agent.py`: 3;
+- `calendar/tools.py`: 6;
+- `custos.py`: 4;
+- `tests/test_assistant_tools.py`: 8;
+- `tests/test_browser_jev_runner.py`: 4.
+
+O que o GitHub tem hoje:
+- repositório público, sem `.github/`;
+- Actions ligado, com todas as actions permitidas;
+- secret scanning e push protection **ligados**;
+- alertas do Dependabot **desligados** (a API responde 404) e security updates desligados.
+
+O `inicio` na aprovação do MCP:
+- os dois lados saem de `no_fuso_do_dono` e são comparados como texto;
+- recusa falsa quando o fuso do processo do MCP é diferente do fuso do `viking aprovar`, ou quando a `VIKING_TIMEZONE` muda dentro da 1 h de validade;
+- nunca aprova errado, e a mensagem diria "mudou" sem ter mudado;
+- é o único lugar que compara um início guardado.
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | plano no `PROGRESSO.md` (bloco ▶️ + plano), acima da 6 | — | ✅ |
+| C1 | medições que faltaram + número de tipos levado ao dono | C0 | ⬜ |
+| C2 | commit 1a: só formatação, zero a formatar, âncoras de mutação intactas | C1 | ⬜ |
+| C3 | §15.2 público + `_REGRAS` sem `or` | C2 | ⬜ |
+| C4 | `inicio` por instante | C2 | ⬜ |
+| C5 | mutações, docs, revisão em 2 passadas, commits 1a+1b, push | C3, C4 | ⬜ |
+| C6 | `uv.lock` + `uv sync --locked` reproduz a suíte no VPS | C5 | ⬜ |
+| C7 | CI (workflow + teste que o lê + `.git-blame-ignore-revs`) | C6 | ⬜ |
+| C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ⬜ |
+| C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ⬜ |
+| C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ⬜ |
+| C11 | Mac: roteiro abaixo | C10 | ⬜ |
+
+### Fase 0 — C1: medir o que faltou (nada commitado)
+**Faz (tudo no scratchpad, nada no repo):**
+- **Suíte num export limpo, como o CI vê o repo.** `git archive HEAD` → pasta no scratchpad, venv nova com `uv venv` + `uv pip install -e ".[dev]"`, e `env -u GEMINI_API_KEY -u PLUGGY_CLIENT_ID -u PLUGGY_CLIENT_SECRET -u PLUGGY_API python -m pytest -q -rs`, sem `.env` e sem o clone.
+- **Tipos:** `uvx mypy==<fixada> src` → número de erros por arquivo.
+- **Scanner:** `uv export` do ambiente atual + `uvx pip-audit==<fixada>` → achados.
+- **`uv sync` na cópia:** o `pip` sobrevive? (decide se o `python -m pip` some da doc).
+- **GitHub:** se o grafo de dependências lê o `uv.lock`, pela documentação e depois por `gh api …/dependency-graph/sbom` no C8.
+
+**✅:**
+- `N passed, 2 skipped` no export, com N = 1118 − 2. Se der outro número, a diferença é o achado: teste que dependia do `.env` do VPS **é defeito** e se conserta no commit 1b.
+- O número de tipos vai ao dono (pergunta com o dado na mão).
+
+**🐞:**
+- **Classe 2:** afirmar "o GitHub lê o `uv.lock`" sem conferir → só a medida do C8 conta.
+- **Classe 4:** um teste passando aqui por causa do `.env` do VPS → é justamente o que o export mede.
+
+### Entrega 1 — formatação e consertos pequenos
+
+#### C2 — commit 1a, só formatação
+**Faz:**
+- `[tool.ruff.format] exclude = ["*.md"]`;
+- `ruff format` **só nos 6 `.py` listados** (nome por nome, não `.`).
+
+**✅:**
+- `ruff format --check .` → nenhum "would be reformatted";
+- `git diff --stat` → exatamente os 6 `.py` + `pyproject.toml`;
+- `python -m pytest -q` → 1118 passed;
+- `python -m pytest tests/test_mutacoes_ancoras.py -q` verde.
+
+**🐞:**
+- **Classe 8:** formatador com alcance maior que a mudança → nomes explícitos e `git status` depois.
+- **Classe 5:** âncora de `scripts/mutacoes.py` num trecho reformatado (agent, tools, custos, `test_browser_jev_runner`) → o teste de âncoras primeiro, e depois a rodada **completa**, porque a mudança é ampla.
+
+#### C3 — §15.2 e o `or`
+**Faz:** em `tests/test_assistant_tools.py`:
+- `test_schema_aceito_pela_api_do_gemini` com a API pública `GEMINI_API`, sem o import privado;
+- `_REGRAS` com uma frase por regra, normalizada dos dois lados, numa asserção só.
+
+**✅:**
+- `grep -rn '_automatic_function_calling_util' src tests` → 0;
+- `grep -n ' or ' tests/test_assistant_tools.py` → só o `(fn.__doc__ or "")`, que é um padrão e não uma asserção;
+- os testes parametrizados continuam com 21 tools e 14 regras (contados pelo `-v`).
+
+**🐞:**
+- **Classe 4:** a API pública aceita qualquer coisa e o teste fica verde à toa → antes de confiar, medir qual anotação ela **recusa** (por exemplo, um tipo não suportado) e usá-la na mutação.
+- **Classe 7:** uma regra com `\n    ` no meio perde o casamento após normalizar → uma asserção por regra, com a mensagem dizendo qual.
+
+#### C4 — `inicio` por instante
+**Faz:**
+- `calendar/service._mesmo_instante(a, b)`;
+- a linha 608 passa a usá-lo;
+- docstring com o porquê (fuso do dono em processos diferentes).
+
+**✅:** em `tests/test_mcp_aprovacao.py`, ou onde o dublê de aprovação já vive:
+- pedido com o dono em São Paulo, aprovação com o dono em Los Angeles, **mesmo `etag`** → executa (antes: recusava);
+- evento que andou 1 h com o `etag` **igual** → recusa (isola a regra do `inicio` da do `etag`);
+- dia inteiro igual → executa;
+- dia inteiro mudado → recusa.
+
+**🐞:**
+- **Classe 4:** o teste de "andou 1 h" passa pela regra do `etag` → o dublê mantém o `etag`, e a mutação `_mesmo_instante → True` tem de derrubar **esse** teste.
+- **Classe 6:** outro lugar que compara início guardado → já medido: único (`grep` na abertura).
+
+#### C5 — fechar a entrega 1
+**Mutações novas (≥4):**
+- `_mesmo_instante` volta a comparar texto → cai o teste de fuso cruzado;
+- `_mesmo_instante` devolve sempre `True` → cai o de "andou 1 h";
+- anotação de uma tool trocada pelo tipo que o Gemini recusa → cai `test_schema_aceito_pela_api_do_gemini`;
+- regra de docstring apagada → cai a regra certa.
+
+Rodada completa de `python scripts/mutacoes.py` **em background, sem timeout** (esperado: `161 · mortas pelo teste esperado: 161`). Antes, a pergunta "qual teste esperaria para sempre?": nenhuma mutação aqui é "recusa → espera".
+
+**Docs:**
+- `AGENTS.md`: tirar "baseline de 7 arquivos" e o "só os meus trechos";
+- `docs/erros.md`: o antídoto da classe 8 perde a cláusula do baseline, e classe nova só se eu errar;
+- `sessoes.md`: §15.2 e §15.4 riscados, com data;
+- D45 parcial: formatação;
+- diário e `PROGRESSO.md`.
+
+**Revisão, 1ª passada:**
+- O diff do 1a é **só** formatação? `git diff -w --stat` e leitura.
+- E se o fuso do dono for o mesmo dos dois lados? (o teste antigo continua verde)
+- E se um dos dois horários vier sem fuso? (cai no texto)
+
+**Revisão, 2ª passada, "o que isto tornou falso?":**
+- as regras de formatação no `AGENTS.md`, no `docs/erros.md`, na memória e no bloco de retomada;
+- o número "baseline 7" no `PROGRESSO.md`;
+- `sessoes.md` §15.4.
+
+Varredura de caracteres de controle e de dados reais no diff. Commits 1a e 1b, push.
+
+### Entrega 2 — versões travadas, CI e scanner
+
+#### C6 — `uv.lock`
+**Faz:**
+- `uv lock` com os extras `dev` e `hardware`;
+- `README.md`, `AGENTS.md` ("Comandos") e `CLAUDE.md`: instalar com `uv sync --locked --extra dev`, e `python -m pytest` continua. O `python -m pip` fica ou sai conforme o C1.
+
+**✅:**
+- `uv lock --check` → ok;
+- venv nova no scratchpad com `uv sync --locked --extra dev` → `N passed`;
+- `git diff --stat` → `uv.lock` + docs.
+
+**🐞:**
+- **Classe 3:** o `uv lock` resolvendo versões diferentes das instaladas hoje (google-genai mais novo) → comparar `uv export` com o `pip freeze` de hoje, e a suíte decide.
+- `uv sync` removendo o `pip` → medido no C1.
+
+#### C7 — CI
+**Faz:**
+- `.github/workflows/testes.yml`, conforme as decisões;
+- `tests/test_ci_workflow.py`, que lê o YAML como texto e não precisa de dependência nova. Ele confere:
+  - `uses:` com SHA de 40 hex;
+  - `permissions: contents: read`;
+  - nenhum `secrets.` nem `pull_request_target`;
+  - `--locked`;
+  - os comandos `pytest`, `ruff check`, `ruff format --check` e `pip-audit`;
+- `.git-blame-ignore-revs` com o SHA do 1a.
+
+**✅:**
+- `python -m pytest tests/test_ci_workflow.py -q` verde;
+- mutações: tirar `--locked`, trocar um SHA por `@v4`, `contents: write` → cada uma cai.
+
+**🐞:**
+- **Classe 2:** SHA de action copiado de memória → conferir por `gh api repos/actions/checkout/git/ref/tags/<tag>` e escrever a tag no comentário.
+- **Classe 7:** o teste lê o YAML por regex e casa um comentário → recortar as linhas `uses:`.
+
+#### C8 — alertas do Dependabot
+**Faz:** eu **peço o ok na hora** e depois `gh api -X PUT repos/Zbreno11-git/LifeOs/vulnerability-alerts`.
+
+**✅:**
+- `gh api …/vulnerability-alerts -i` → `204`;
+- `gh api …/dependency-graph/sbom` lista pacotes do `uv.lock` (sim/não, anotado com a data).
+
+**🐞:**
+- **Classe 2:** o grafo não ler o `uv.lock` → os alertas veem só o `pyproject`, e o `pip-audit` do CI cobre o lock. Isso vai escrito na D45.
+
+#### C9 — tipos
+**Faz:** o que o dono decidir no C1.
+- **Portão:** consertar e pôr `mypy` no CI.
+- **Backlog:** escrever em `sessoes.md` com o número e a data.
+
+**✅ e 🐞:** definidos com o número. Não prometo o portão antes (sem limiar inventado).
+
+#### C10 — fechar a entrega 2
+**Mutações novas:** as 3 do C7 (esperado: 164, todas mortas; rodada completa em background, sem timeout).
+
+**Docs:**
+- D45 inteira: lock, CI, scanner, atualização, e as recusas (branch protection, PRs automáticos);
+- `AGENTS.md`: estrutura (`.github/`, `uv.lock`), comandos, armadilha nova só se houver incidente;
+- `sessoes.md`: ▶️ com a rotina de abertura ("há versão nova?"), §15.1 e §15.3 riscados;
+- barra de progresso, diário (com "Erros desta sessão") e `PROGRESSO.md`.
+
+**Revisão, 1ª passada:**
+- O CI roda os mesmos portões que eu rodo aqui? Ler lado a lado o workflow e o "Comandos".
+- O log público do CI mostra algo que não devia? Ler o log do 1º run.
+- O que aparece se o lock ficar desatualizado? O `--locked` falha.
+
+**Revisão, 2ª passada, "o que isto tornou falso?":**
+- `python -m pip install` em `README.md`, `AGENTS.md`, `CLAUDE.md` e nas armadilhas do conda;
+- "sem CI" no `sessoes.md` e no `scripts/mutacoes.py` (que diz "não no CI": continua verdade?);
+- o roteiro-padrão do Mac em `docs/erros.md` classe 1.
+
+Commit 2, push. **Fecha só com o run do CI do HEAD verde, conferido pelo `headSha`** (`gh run list --commit <sha>`), não com "a lista está vazia".
+
+### Verificação ponta a ponta — C11, Mac
+```
+cd ~/LifeOs
+git pull && git log --oneline -1
+uv --version
+source .venv/bin/activate
+which python
+python --version
+uv pip list | wc -l
+uv sync --locked --extra dev
+which python
+uv pip list | wc -l
+python -m pytest -q
+viking browser --doctor
+viking chat
+```
+Esperado:
+- o `git log` mostra o commit 2;
+- o `which python` aponta para `~/LifeOs/.venv/bin/python` **antes e depois** do `uv sync`;
+- o `pytest` dá `N passed` sem pulados (o clone está lá);
+- o `--doctor` mostra o Jev como antes;
+- no chat: `/custos`, depois `sair`.
+
+No GitHub (site): o commit do topo com ✅; aba Security → Dependabot alerts ligada.
+
+### Riscos e o que é irreversível
+- **`uv sync` no Mac remove pacote que não está no lock** (exato por padrão). O que alguém instalou à mão na venv some. A contagem antes/depois mostra, e reinstalar é possível. O Jev tem venv própria e não é tocado.
+- **O `.venv` do Mac pode ter sido criado pelo Python do conda,** e o `uv` pode recriá-lo. O `which python` e o `python --version` antes e depois mostram.
+- **Ligar os alertas do Dependabot** muda uma configuração da conta do dono, embora reversível. Só com o ok na hora.
+- **O log do CI é público** (repo público): nada de segredo no CI, nenhum `secrets.`, e o teste do C7 prende isso.
+- **Custo:** Actions em repo público com runner padrão é de graça, segundo a documentação do GitHub (não medido aqui). Nenhum outro gasto.
+- **`.env` do dono:** nunca tocado. Nenhuma variável nova nesta sessão.
 
 ## Plano — Sessão 6: o navegador com duas tarefas ao mesmo tempo (trava, protocolo, chaves, versão do Jev) (fechada em 2026-09-28)
 

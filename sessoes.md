@@ -16,8 +16,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 7 — manutenção (a 6 fechou no Mac em 2026-09-28).
-- **Primeiro passo:** abrir e planejar pela skill `software-build` (perguntas ao dono antes do plano).
+- **Sessão:** 7 — manutenção, **em curso**: plano aprovado pelo dono em 2026-09-28, no
+  `PROGRESSO.md` (versões travadas pelo `uv`, CI no GitHub, alertas de dependência, formatação sem
+  baseline, teste público do google-genai, `inicio` por instante).
+- **Primeiro passo:** o primeiro checkpoint não marcado do plano da 7 no `PROGRESSO.md`.
   O adiado da 6 (datas das finanças no app do banco) foi conferido pelo dono em 2026-09-28: bateu.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D39–D44), a
   seção da Sessão 7 abaixo, e a memória do Claude sobre o fuso do dono.
