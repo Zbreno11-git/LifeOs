@@ -1068,6 +1068,11 @@ pelo rastro reconstruído, não por uma rodada no Mac.
 
 **Portões.** `1118 passed`; `ruff` limpo; baseline 7; mutações 157/157.
 
+**Conferido no Mac depois (`4d5e48b`).** Com `VIKING_TIMEZONE` no `.env` do dono: "amanhã às 10h"
+caiu às 10:00 dele (14:00 na agenda, que está em São Paulo); a reunião das 13:00 da agenda veio às
+09:00 na listagem; com a variável vazia só num comando, o aviso de fuso apareceu. Uma listagem
+intermediária ainda dizia "14:00" — era o Mac um commit atrás, não o código.
+
 ### 2026-09-28 — Sessão 6, teste no Mac: chaves e trava ok; o YouTube em loop e o fuso da máquina
 
 **Medido no Mac (`ba860fa`, `1078 passed`).** `HOME` 1/1 e `GEMINI_API_KEY` 1 → 0 no ambiente do

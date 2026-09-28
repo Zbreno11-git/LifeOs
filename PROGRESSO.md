@@ -23,13 +23,13 @@ do Google (em São Paulo) mostra o horário correspondente de Brasília; (4) as 
 `viking financas --gastos` batem com o app do banco (ele confere e diz, sem colar valores). Com
 tudo certo: fechar a Sessão 6 — diário, barra de progresso, `sessoes.md` (▶️ para a 7), este bloco.
 
-**Medido no Mac (2026-09-28, depois de o dono pôr `VIKING_TIMEZONE`):** `grep -c` → 1; o fuso
-do Viking → `America/Los_Angeles …-07:00`; "amanhã às 10h" criou o evento que a listagem trouxe como
-14:00 da agenda (-03:00) = 10:00 do dono ✅. **Mas a listagem disse "14:00", não "10:00"**: no VPS,
-o `0ab566d` converte (`10:00:00-07:00`, reproduzido com uma agenda falsa); a saída do dono não mostra
-a parte 1 do roteiro (o `git pull`) — hipótese: o Mac não estava no `0ab566d`. A conferir: `git log`
-no Mac, `VIKING_TIMEZONE= viking chat` (aviso) e a listagem de amanhã (a reunião das 13:00 da
-agenda tem de aparecer às 09:00).
+**Medido no Mac (2026-09-28, `4d5e48b`, `1118 passed`):** com `VIKING_TIMEZONE` no `.env`, o fuso
+do Viking é `America/Los_Angeles …-07:00` e "amanhã às 10h" caiu às 14:00 da agenda (-03:00) = 10:00
+do dono ✅; `VIKING_TIMEZONE= viking chat` mostrou "⚠️  Fuso: sem VIKING_TIMEZONE… (-08:00)… agenda
+em America/Sao_Paulo (-03:00)" ✅ (o token renovado em silêncio); "eventos de amanhã" trouxe a reunião
+das 13:00 da agenda às **09:00** ✅. A listagem que tinha dito "14:00" era do Mac ainda em
+`b52b3b8` (confirmado pelo `git pull` desta rodada). **Falta só:** o dono comparar as datas de
+`viking financas --gastos` com o app do banco.
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (armadilha "Três fusos"); este bloco;
 `docs/decisoes.md` (D39 revista, D40–D44); `docs/erros.md` (classes 2 e 4, 2026-09-28);
