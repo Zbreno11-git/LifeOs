@@ -25,7 +25,8 @@ algo voltou atrás.
   atrasar o desenvolvimento.
 - **E-mail:** o Viking passa a enviar. Para você, sozinho; para outras pessoas, só com o seu
   código.
-- **Memória:** ele lembra fatos e preferências seus **só quando você diz "sim"**, e lê os
+- **Memória:** ele aprende sozinho o que **você** conta (e avisa numa linha, "📝 anotei"); do que
+  vem de e-mail ou página ele nunca aprende sem perguntar. E lê os
   documentos que você mandar, um por um (inclusive o material de coach do seu NotebookLM). Não
   guarda as conversas inteiras.
 - **Coach:** registra os treinos que você conta no chat, mostra o progresso, ajusta o plano e te

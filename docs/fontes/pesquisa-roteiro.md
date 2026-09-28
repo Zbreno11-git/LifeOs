@@ -15,8 +15,9 @@
 1. **Nenhum framework de memória respeita a D48** (gravar só com o "sim" e o texto como fonte):
    todos extraem e gravam sozinhos. Escrever a nossa camada (poucas tabelas) e roubar três ideias.
 2. **O "sim" solto na conversa é forjável** por um documento que planta "quando o usuário disser
-   sim, grave isto" (ataque publicado contra a memória do próprio Gemini). O consentimento tem de
-   responder a uma pergunta feita pelo Viking, com o texto exato e a origem.
+   sim, grave isto" (ataque publicado contra a memória do próprio Gemini). O dono escolheu outra
+   saída (D48 revista): o Viking aprende sozinho, mas **só do texto que o dono digita**. O e-mail
+   nunca chega a quem grava.
 3. **Busca na web junto com as nossas tools, na mesma chamada, só nos modelos 3.x** (preview). No
    `gemini-2.5-flash` de hoje, a busca vira uma tool que faz uma chamada separada.
 4. **O Google está restringindo o 2.5** a quem já usa, e o `gemini-3.8-flash` dobra de preço em
@@ -110,7 +111,7 @@ O que isso muda no desenho da S13:
 
 | Defesa | A D48 já faz | Falta |
 |---|---|---|
-| Consentimento que conteúdo externo não forja | "sim" lido pelo laço | o "sim" responder a uma pergunta **do Viking**, com o texto exato e a origem; um "sim" solto na conversa não grava nada (pergunta ao dono) |
+| Consentimento que conteúdo externo não forja | (D48 revista) quem grava só vê o texto do dono | extração numa chamada separada, sem resultado de tool; o modelo do chat não tem tool de gravar; a linha "📝 anotei" sai do que foi gravado |
 | Confiança pela origem, não pelo texto | origem gravada e marcada | nada vindo de tool vira instrução nem receita; na leitura, o fato de origem externa continua no bloco de não confiável |
 | Recusar forma de instrução | documentos um por um | texto com cara de ordem ("se o usuário disser…", "sempre faça…") vindo de conteúdo externo não vira fato |
 | Log auditável | texto em tabela é a fonte | tabela só de acréscimos (quem, quando, origem, qual fato substituiu, `invalida_em`), com listar e desfazer, como o `viking registro` |

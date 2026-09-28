@@ -23,7 +23,7 @@ igual ao remoto · travas: nenhuma · background: nenhum. Só docs mudaram: `155
 
 | Pergunta | Resposta | Onde |
 |---|---|---|
-| O "sim" da memória | só como resposta a uma pergunta do Viking, com o texto exato e a origem; receita só de mensagem dele | D48, Sessão 13 |
+| O "sim" da memória | primeiro: só como resposta ao Viking; **revisto em seguida**: aprende sozinho do que ele escreve, com a linha "📝 anotei" e "esquece isso"; de e-mail/página/documento nunca sozinho; receitas com pergunta; resumo semanal | D48, Sessão 13 |
 | Repo privado | no começo da Sessão 10, antes de qualquer infraestrutura, com scanner de segredos nosso antes | D50, Sessões 10 e 11 |
 | Credencial do deploy | nenhuma fixa no VPS: token de 1 h gerado por ele no Mac a cada deploy | D47, Sessão 10 |
 | Relógio | **direto pelo Strava oficial**, sem pedir à Garmin | D54, Sessões 19 e 21 |

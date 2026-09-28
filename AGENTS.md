@@ -189,7 +189,7 @@ não reescritos). Código funcional em `archive/wristband-fail-test/`.
 
 > **Desde 2026-09-28 o roteiro vigente, sessão por sessão, é o de `sessoes.md` (Sessões 8–21,
 > D46–D52):** e-mail que sai → fundação de dados → nuvem no GCP com o Mac como "mãos" do navegador
-> → agente geral com busca na web → memória (só com o "sim" do dono) e documentos → coach de
+> → agente geral com busca na web → memória (aprende sozinho só do que o dono escreve) e documentos → coach de
 > treino → app (iPhone, web, voz) → Claude como segundo agente → auto-diagnóstico → relógio (Strava). A
 > lista abaixo é a visão de 2026-09-20: os itens 1, 2 e 4 já existem.
 

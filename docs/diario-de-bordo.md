@@ -1081,7 +1081,9 @@ só Python 3.12 e não listava `gmail/` e `financas/`.
 
 **Perguntas ao dono** (as que tocam decisões dele): o "sim" da memória, quando o repo vira privado,
 a credencial do deploy e o plano B da Garmin. Respondidas no mesmo dia:
-- o "sim" só como resposta a uma pergunta do Viking (D48);
+- memória: primeiro "sim" só como resposta ao Viking; logo depois o dono reabriu a D48 ("tenho medo
+  de ter que ficar respondendo sim toda hora"), e agora o Viking aprende sozinho só do que o dono
+  escreve, avisando numa linha; de e-mail, página e documento, nunca sozinho;
 - o repo privado no começo da 10 (D50);
 - nenhuma credencial fixa no VPS (D47);
 - o relógio direto pelo Strava, sem pedir à Garmin (D54).

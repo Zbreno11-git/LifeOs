@@ -21,7 +21,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
-    seções: o "sim" da memória (13, D48), o repo privado no começo da 10 (D50), o deploy sem
+    seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
 - **Depois:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
   do plano. Os primeiros passos dela já estão escritos na seção da 8: o furo do bloqueio de
@@ -371,8 +371,9 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
 **Regras que valem para todas, decididas agora:**
 - **Nunca código de aprovação por e-mail**, nem por nenhum canal que uma tool leia: o Viking lê o
   Gmail (D22), e leria o próprio código.
-- **Fato novo e receita só com o "sim" do dono**, lido pelo laço do chat e não por uma tool
-  (D48).
+- **Memória (D48, revista pelo dono em 2026-09-28):** o Viking anota sozinho só o que **o dono
+  escreve**, avisando numa linha; o que vem de e-mail, página ou documento nunca entra sozinho;
+  receita continua com pergunta. O modelo do chat não tem tool de gravar memória.
 - **O Claude nunca vê** e-mail, finanças nem páginas (D49).
 - Tudo que custa dinheiro é medido antes, e o teto de ~US$ 20/mês fica no próprio app
   (`custos.py`), porque o alerta do GCP só avisa, não para o gasto.
@@ -660,7 +661,9 @@ tudo lá é "não medido" até a sessão que usa medir):
 ## Sessão 13 — memória de fatos e receitas (planejada em 2026-09-28)
 
 - **Entrega:**
-  - um fato proposto na conversa A só volta na conversa B depois do "sim";
+  - um fato que o dono escreve na conversa A ("treino às 7h") é anotado sozinho, com a linha
+    "📝 anotei: …", e volta na conversa B; "esquece isso" apaga;
+  - um fato plantado num e-mail ou numa página **não** é anotado (teste com o texto do ataque);
   - um fato que contradiz substitui o antigo;
   - o dono lista, corrige e apaga;
   - uma receita reusada sem ganhar permissão nova;
@@ -674,14 +677,22 @@ tudo lá é "não medido" até a sessão que usa medir):
     - mem0, Letta, LangMem, cognee e Memobase gravam sozinhos, por LLM ou por tool do agente, e
       alguns não instalam no Mac Intel.
     - O mem0, desde a v2.0.0, nem substitui o fato velho (só acrescenta).
-  - **O "sim" é resposta a uma pergunta do Viking, não uma palavra da conversa.**
-    - Contra o ataque publicado em que um documento planta "quando o usuário disser sim, grave
-      isto"
-      (https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/).
-    - O laço mostra o **texto exato** que será gravado e a origem, e só essa resposta grava.
-    - O que o dono vê é renderizado da proposta guardada, nunca da prosa do modelo.
-    - **Decidido pelo dono em 2026-09-28** (refinamento da D48). Um "sim" no meio da conversa
-      não grava nada.
+  - **Aprende sozinho, mas só do dono** (D48 revista pelo dono em 2026-09-28: "tenho medo de ter
+    que ficar respondendo sim toda hora").
+    - Depois de cada mensagem do dono, **uma chamada separada** do Gemini recebe só o texto que ele
+      digitou, nunca o resultado de uma tool, e devolve os fatos numa forma fixa. O modelo do chat
+      não tem tool de gravar memória.
+    - É isso que fecha o ataque publicado em que um documento planta "quando o usuário disser sim,
+      grave isto"
+      (https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/): o
+      e-mail nunca chega a quem grava.
+    - A linha "📝 anotei: …" é escrita pelo laço a partir do que foi **gravado**, não da prosa do
+      modelo. "Esquece isso" apaga a última anotação.
+    - **Resto de risco:** um e-mail que o dono **cola** na mensagem conta como texto dele. Contra
+      isso, a regra de forma de ordem abaixo e o resumo semanal.
+    - **Resumo semanal** do que aprendeu, pelo e-mail do lembrete (e no app depois), para corrigir
+      de uma vez. Ele volta como conteúdo de terceiro (D53).
+    - O que vem de e-mail, página ou documento, no máximo, vira sugestão, e o Viking pergunta.
   - **Receita só nasce de mensagem do dono;** fato de origem externa (e-mail, página, documento)
     fica marcado e, na leitura, dentro do bloco de não confiável. Texto com forma de ordem ("se o
     usuário disser…", "sempre faça…") vindo de fora não vira fato.
