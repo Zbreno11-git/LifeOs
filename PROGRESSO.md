@@ -10,7 +10,7 @@
 **Estado:** plano abaixo, aprovado em 2026-09-28. Abertura conferida: HEAD `7f1145f` = origin,
 árvore limpa, sem `.mutacao.lock`, `1553 passed`, CI `success` pelo SHA inteiro.
 
-**Checkpoints:** C0 ✅ · C1 ✅ · C2 ⬜ · C3 ⬜ · C4 ⬜ · C5 ⬜ · C6 (Mac) ⬜ — a retomada começa pelo
+**Checkpoints:** C0 ✅ · C1 ✅ · C2 ✅ · C3 ⬜ · C4 ⬜ · C5 ⬜ · C6 (Mac) ⬜ — a retomada começa pelo
 primeiro não marcado; o estado de cada um está no mapa do plano.
 
 **Não pode ser esquecido:** as regras da sessão estão nas "Decisões técnicas" do plano; o código
@@ -104,7 +104,7 @@ sessões. Depois disso, execução até o fim sem pedir confirmação a cada fas
 |---|---|---|---|
 | C0 | plano no `PROGRESSO.md`; S8/D11 corrigidas; logo no backlog; `erros.md` classe 2 (18) | — | ✅ 2026-09-28 (e classe 5: o hífen invisível no próprio plano) |
 | C1 | teste vermelho do bloqueio → conserto → verde; mutações novas mortas; commit 1 | C0 | ✅ 2026-09-28: 17 de 20 disfarces vermelhos antes; `1607 passed` depois; 11/11 mutações `bloqueio`/`view-source` mortas pelo teste esperado |
-| C2 | lock atualizado, suíte antes e depois, `test_lock` verde; commit 2 | C1 | ⬜ |
+| C2 | lock atualizado, suíte antes e depois, `test_lock` verde; commit 2 | C1 | ✅ 2026-09-28: **5** pacotes (o `google-auth` 2.59.0 saiu às 21:49Z, depois da abertura: só declara Python 3.15); `1607 passed` antes e depois; lock/MCP `443 passed` |
 | C3 | `service.enviar` + `envio.py` (montar, livre, propor, confirmar) com testes; régua do `send` trocada | C2 | ⬜ |
 | C4 | tools no chat, `aprovacao_local`, CLI `--enviar`/`--responder`, leitura de volta com a etiqueta; mutações | C3 | ⬜ |
 | C5 | portões, duas passadas de revisão, docs, commit(s), push, CI pelo SHA | C4 | ⬜ |
