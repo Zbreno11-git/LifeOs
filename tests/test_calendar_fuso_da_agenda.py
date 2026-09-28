@@ -24,20 +24,53 @@ MENOS_OITO = timezone(timedelta(hours=-8))
 
 @pytest.fixture()
 def agenda(monkeypatch):
-    def configurar(fuso_do_viking, fuso_da_agenda):
+    def configurar(fuso_do_viking, fuso_da_agenda, escolhido=False):
         monkeypatch.setattr(tools, "TIMEZONE", fuso_do_viking)
+        monkeypatch.setattr(tools, "TIMEZONE_ESCOLHIDO", escolhido)
         monkeypatch.setattr(service, "fuso_da_agenda", lambda: fuso_da_agenda)
 
     return configurar
 
 
-def test_viking_no_fuso_da_maquina_e_agenda_em_brasilia_avisa(agenda):
+PACIFICO = ZoneInfo("America/Los_Angeles")
+
+
+def test_horario_da_agenda_chega_no_fuso_do_dono(monkeypatch):
+    """A agenda do dono está em São Paulo e ele no fuso do Pacífico: o Google devolve 15:00-03:00,
+    que é 11:00 dele. Sem converter, o Gemini disse "às 15:00" (Mac, 2026-09-27)."""
+    monkeypatch.setattr(service, "TIMEZONE", PACIFICO)
+    evento = service._evento_de(
+        {
+            "id": "e1",
+            "summary": "Teste Viking",
+            "start": {"dateTime": "2026-09-28T15:00:00-03:00"},
+            "end": {"dateTime": "2026-09-28T16:00:00-03:00"},
+        }
+    )
+    assert (evento.inicio, evento.fim) == ("2026-09-28T11:00:00-07:00", "2026-09-28T12:00:00-07:00")
+
+
+@pytest.mark.parametrize("valor", ["2026-09-28", "sem data", None, "2026-09-28T10:00:00"])
+def test_dia_inteiro_e_texto_estranho_passam_como_vieram(monkeypatch, valor):
+    monkeypatch.setattr(service, "TIMEZONE", PACIFICO)
+    assert service.no_fuso_do_dono(valor) == valor
+
+
+def test_fuso_adivinhado_pela_maquina_e_agenda_noutro_avisa(agenda):
     agenda(MENOS_OITO, "America/Sao_Paulo")
     assert aviso_de_fuso(AGORA) == (
-        "⚠️  Fuso: o Viking está em -08:00 e a sua agenda do Google em America/Sao_Paulo "
-        "(-03:00). Um horário sem fuso vai para -08:00. Se o certo é o da agenda, ponha "
-        "VIKING_TIMEZONE=America/Sao_Paulo no .env."
+        "⚠️  Fuso: sem VIKING_TIMEZONE no .env, o Viking usa o do relógio desta máquina (-08:00), "
+        "e a sua agenda do Google está em America/Sao_Paulo (-03:00). Os horários que você pedir "
+        "vão para -08:00. Ponha no .env o fuso de onde você está (nome IANA, ex.: "
+        "VIKING_TIMEZONE=America/Los_Angeles ou America/Sao_Paulo)."
     )
+
+
+def test_fuso_escolhido_no_env_nao_avisa_mesmo_com_a_agenda_noutro(agenda):
+    """O dono escolheu o fuso dele e a agenda está noutro: é configuração, não erro; os horários
+    lidos da agenda já chegam convertidos."""
+    agenda(ZoneInfo("America/Los_Angeles"), "America/Sao_Paulo", escolhido=True)
+    assert aviso_de_fuso(AGORA) == ""
 
 
 @pytest.mark.parametrize(
@@ -102,12 +135,26 @@ def _token(caminho, expira):
     return caminho
 
 
-def test_token_vencido_nao_renova_nem_abre_login(tmp_path, monkeypatch):
-    """A abertura do chat não pode abrir a tela de login do Google nem renovar o token: o conftest
-    derruba o teste se o login for chamado, e a renovação derruba aqui."""
-    monkeypatch.setattr(
-        google_auth.Credentials, "refresh", lambda *a: pytest.fail("renovou o token")
-    )
+def test_token_vencido_renova_em_silencio(tmp_path, monkeypatch):
+    """Só com o token válido o aviso nunca aparecia: ele vence em 1 h (no Mac, o chat abriu 2 h
+    depois do último uso). Renovar é uma chamada sem tela; o login, o conftest derruba."""
+
+    def renova(self, _pedido):
+        self.token = "novo"
+        self.expiry = datetime.now(UTC).replace(tzinfo=None) + timedelta(hours=1)
+
+    monkeypatch.setattr(google_auth.Credentials, "refresh", renova)
+    vencido = _token(tmp_path / "t.json", datetime.now(UTC) - timedelta(hours=1))
+    creds = google_auth.credenciais_sem_login(["https://www.googleapis.com/auth/calendar"], vencido)
+    assert creds is not None
+    assert creds.token == "novo"
+
+
+def test_renovacao_recusada_nao_abre_login(tmp_path, monkeypatch):
+    def recusa(self, _pedido):
+        raise google_auth.RefreshError("revogado")
+
+    monkeypatch.setattr(google_auth.Credentials, "refresh", recusa)
     vencido = _token(tmp_path / "t.json", datetime.now(UTC) - timedelta(hours=1))
     escopos = ["https://www.googleapis.com/auth/calendar"]
     assert google_auth.credenciais_sem_login(escopos, vencido) is None

@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 10 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 11 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -114,6 +114,13 @@ Viking com o relógio em -08:00 produz exatamente isso. A D39 ficou de pé por o
 fuso como cumprida porque o Viking **disse** "às 10:00"; duas linhas depois a busca mostrava 15:00. E
 a primeira explicação que dei (dois eventos com o mesmo nome) o dono derrubou olhando a agenda. O que
 tem de novo: a frase do modelo sobre o que ele fez é o relato de quem fez, não a medida.
+
+**2026-09-28 — presumi que o dono está em Brasília (Sessões 1–6).** Bancos brasileiros e português
+bastaram para eu escrever "Brasília" em comentários, testes, decisões e no diagnóstico da D39, sem
+perguntar. Ele não está. A agenda do Google dele está em São Paulo, o relógio do Mac em -08:00, e
+os três fusos só apareceram quando o roteiro mediu cada um (`date +%z`, o fuso do Viking, o
+registro com `-03:00`). O que tem de novo: a suposição não estava em nenhuma frase que eu pudesse
+conferir — estava no desenho dos testes (todos fixavam Brasília como "o fuso do dono").
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.

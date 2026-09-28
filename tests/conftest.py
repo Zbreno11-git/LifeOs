@@ -132,7 +132,8 @@ class _Service:
 def calendario(monkeypatch):
     """Fake do Google no lugar do `get_calendar_service` que o serviço usa. `estado` registra o
     que foi enviado e permite configurar o evento do `get`, os itens do `list` e falhas."""
-    # O fuso do dono (Brasília): os horários dos testes vêm com -03:00, e o VPS está em UTC. Sem
+    # O fuso do dono no dublê: Brasília, porque os horários dos testes vêm com -03:00 e o VPS está em
+    # UTC (o dono real está noutro fuso; os testes de fuso cobrem esse caso). Sem
     # isto a régua do fuso (`service.fuso_diferente`) recusaria todos eles.
     monkeypatch.setattr("lifeos.calendar.service.TIMEZONE", ZoneInfo("America/Sao_Paulo"))
     estado = {

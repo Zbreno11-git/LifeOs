@@ -1046,6 +1046,28 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 6: três fusos medidos, e o dono não está em Brasília
+
+**Medido no Mac (`b52b3b8`, `1102 passed`).** `date +%z` → `-0800` (AKDT); o fuso do Viking →
+`AKDT …-08:00`; `VIKING_TIMEZONE` no `.env`: 0; o registro mostra os eventos da agenda com
+`-03:00`. O dono disse que **não** está no fuso de Brasília. A hipótese de ontem se confirmou e
+cresceu: "10h" foi 10:00 do relógio do Mac, que a agenda (em São Paulo) mostra como 15:00; o Gemini
+repetiu "15:00" porque recebia o horário no fuso da agenda. Eu presumia Brasília desde a Sessão 1
+(erro meu, classe 2).
+
+**Consertado (D42 revista, D44).** Horário lido da agenda chega no fuso do dono (`_evento_de`);
+dia de transação da Pluggy no fuso do banco (Brasília), porque no do dono toda transação sem hora
+caía um dia antes do extrato; o aviso de fuso renova o token em silêncio (no Mac ficou mudo: token
+vencido) e só aparece quando o Viking adivinhou o fuso, sem sugerir o da agenda. A cidade do dono
+não entra no repositório (público).
+
+**YouTube.** Desta vez "abrir o primeiro resultado" concluiu em 5 ações (`done`). O rastro real
+(`--json`: passo, tipo, URL, rótulo) virou teste de vizinho legítimo — a regra de volta não pode
+cortar uma tarefa que conclui. O loop de 30 não se repetiu ao vivo: o conserto da D43 segue provado
+pelo rastro reconstruído, não por uma rodada no Mac.
+
+**Portões.** `1118 passed`; `ruff` limpo; baseline 7; mutações 157/157.
+
 ### 2026-09-28 — Sessão 6, teste no Mac: chaves e trava ok; o YouTube em loop e o fuso da máquina
 
 **Medido no Mac (`ba860fa`, `1078 passed`).** `HOME` 1/1 e `GEMINI_API_KEY` 1 → 0 no ambiente do

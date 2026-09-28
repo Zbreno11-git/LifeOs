@@ -24,6 +24,7 @@ import math
 import unicodedata
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from lifeos.browser._redacao import limpar_controles
 from lifeos.config import TIMEZONE
@@ -133,23 +134,30 @@ class Fechada:
 # --- tradução do formato da Pluggy -----------------------------------------------------------
 
 
+# O dia de uma transação é o dia civil do banco, e os bancos do dono são brasileiros: vale o fuso
+# de Brasília, não o do Viking. O dono não está nesse fuso (2026-09-28), e a Pluggy manda transação sem
+# hora como meia-noite de Brasília (`T03:00:00Z`): convertida para o fuso dele, toda ela caía um dia
+# antes do extrato. "Hoje" e a hora da sincronização seguem no fuso do dono (`TIMEZONE`).
+FUSO_DOS_BANCOS = ZoneInfo("America/Sao_Paulo")
+
+
 def _instante(texto) -> datetime | None:
     try:
         instante = datetime.fromisoformat(str(texto))
     except (TypeError, ValueError):
         return None
-    return instante if instante.tzinfo else instante.replace(tzinfo=TIMEZONE)
+    return instante if instante.tzinfo else instante.replace(tzinfo=FUSO_DOS_BANCOS)
 
 
 def _dia(texto) -> date | None:
-    """Dia no fuso do Viking. `"2026-09-01T02:59:00.000Z"` é 31/08 em Brasília."""
+    """Dia civil do banco (Brasília). `"2026-09-01T02:59:00.000Z"` é 31/08."""
     if isinstance(texto, str) and len(texto) == 10:
         try:
             return date.fromisoformat(texto)
         except ValueError:
             return None
     instante = _instante(texto)
-    return instante.astimezone(TIMEZONE).date() if instante else None
+    return instante.astimezone(FUSO_DOS_BANCOS).date() if instante else None
 
 
 def _data(texto) -> date | None:

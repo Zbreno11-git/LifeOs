@@ -89,11 +89,17 @@ def credenciais(scopes: list[str], token_path: Path) -> Credentials:
 
 
 def credenciais_sem_login(scopes: list[str], token_path: Path) -> Credentials | None:
-    """O token salvo, só se já vale agora: sem renovar e sem abrir o login. Para conferências que
-    não podem interromper o dono (o aviso de fuso na abertura do chat)."""
+    """O token salvo, renovado em silêncio se venceu; nunca abre o login. Para conferências que não
+    podem interromper o dono (o aviso de fuso na abertura do chat). Só com o token válido o aviso
+    nunca aparecia: o token vence em 1 h, e no Mac o chat abriu 2 h depois do último uso."""
     if not (token_path.exists() and set(scopes) <= _escopos_do_arquivo(token_path)):
         return None
     creds = Credentials.from_authorized_user_file(str(token_path), scopes)
+    if not creds.valid and creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(Request())
+        except Exception:  # noqa: BLE001 - renovação recusada (ou sem rede): sem aviso, sem login
+            return None
     return creds if creds.valid else None
 
 

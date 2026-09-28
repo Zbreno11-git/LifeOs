@@ -53,6 +53,8 @@ def _timezone():
 
 
 TIMEZONE = _timezone()
+# False: o Viking adivinhou o fuso pelo relógio da máquina (sem VIKING_TIMEZONE).
+TIMEZONE_ESCOLHIDO = bool(os.getenv("VIKING_TIMEZONE"))
 
 
 def _float_env(name: str, default: str, *, minimo: float = 0.0, inclusive: bool = False) -> float:

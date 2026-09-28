@@ -341,7 +341,9 @@ esgotado) é `incerta` (`FalhaDaApi.incerta`), e o texto diz "Não sei se…", n
 `desfaz` sozinho é lido pelo laço do chat, não por uma tool — como a aprovação da limpeza.
 
 **Na Pluggy, transação é instante e fatura é data.** A data da transação vem em UTC
-(`03:00Z` é meia-noite em Brasília, `02:59Z` é o dia anterior) e se converte para o fuso; o
+(`03:00Z` é meia-noite em Brasília, `02:59Z` é o dia anterior) e se converte para **Brasília, o
+fuso do banco** — não para o do dono, que está noutro (convertida para o dele, toda transação sem
+hora caía um dia antes do extrato; 2026-09-28); o
 vencimento e o fechamento de fatura vêm às `T00:00:00.000Z` e **não** se convertem (cairiam um
 dia antes). O `balance` do cartão é o limite usado, com as parcelas, e o `balanceDueDate` é o
 vencimento da fatura já fechada. Tudo medido em 2026-09-27 (`docs/fontes/pluggy-open-finance.md`);
@@ -364,14 +366,18 @@ chaves dele vêm só do `.env` dele. O daemon do Browser Harness nasce com o amb
 o subiu e sobrevive a ela: depois de mudar a lista, o daemon velho continua com o ambiente velho
 até reiniciar (`pkill -f browser_harness.daemon`; a próxima tarefa o sobe de novo).
 
-**O fuso do Viking pode não ser o do dono.** Sem `VIKING_TIMEZONE`, o Viking usa o fuso do relógio
-da máquina. No Mac, "amanhã às 10h" caiu às 15h de Brasília duas vezes (2026-09-27): na 1ª eu culpei o
-Gemini por mandar `-08:00` e fiz a D39; na 2ª ele mandou sem fuso, como a D39 pede, e deu igual — com
-o relógio em -08:00 o próprio Viking produz isso (reproduzido no VPS com `TZ=America/Anchorage`; a
-medir no Mac). A D39 continua (as tools recebem horário **sem fuso** e recusam fuso diferente do do
-dono, o da **data** do horário), mas não protege quando o fuso "do dono" está errado: por isso a
-abertura do chat compara com o fuso da agenda do Google (`calendar/tools.aviso_de_fuso`) e avisa. Os testes do calendário fixam
-`service.TIMEZONE` em Brasília no dublê (`conftest.calendario`), porque o VPS está em UTC.
+**Três fusos, e nenhum é "o de Brasília" por padrão.** Medido em 2026-09-28: o dono **não** está no
+fuso de Brasília; a agenda do Google dele está em `America/Sao_Paulo` (os eventos voltam com
+`-03:00`); o relógio do Mac estava em outro fuso (-08:00); os bancos da Pluggy são brasileiros. Eu
+presumi Brasília nas Sessões 1–6 sem perguntar, e "amanhã às 10h" caiu às 15h da agenda duas vezes
+(na 1ª culpei o Gemini e fiz a D39). O que vale agora: o fuso do dono é `VIKING_TIMEZONE` (sem ela,
+o do relógio da máquina, e a abertura do chat avisa se ele não bate com o da agenda —
+`calendar/tools.aviso_de_fuso`); todo horário lido da agenda é convertido para o fuso do dono antes
+de chegar a alguém (`calendar/service.no_fuso_do_dono`, em `_evento_de`); o dia de uma transação é o
+do banco, em Brasília (`financas/service.FUSO_DOS_BANCOS`), não o do dono. A D39 continua (as tools
+recebem horário sem fuso e recusam fuso diferente do do dono). Os testes fixam `service.TIMEZONE` em
+Brasília no dublê do calendário porque o VPS está em UTC — e os de fuso rodam também com o dono
+noutro fuso, que é o caso real.
 
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela

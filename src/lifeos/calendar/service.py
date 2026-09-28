@@ -105,14 +105,29 @@ def _executar(montar):
         raise FalhaDaApi(str(exc), incerta=not (status and 400 <= status < 500)) from exc
 
 
+def no_fuso_do_dono(valor: str | None) -> str | None:
+    """Um horário lido da agenda, no fuso do dono (o mesmo instante).
+
+    O Google devolve cada horário no fuso da AGENDA, não no de quem pergunta: a do dono está em
+    São Paulo e ele está em outro fuso (2026-09-28), e o Gemini leu "15:00-03:00" como 15h dele. Data
+    sem hora (dia inteiro) e texto que não é ISO passam como vieram."""
+    try:
+        dt = datetime.fromisoformat(str(valor))
+    except (TypeError, ValueError):
+        return valor
+    if dt.tzinfo is None or "T" not in str(valor):
+        return valor
+    return dt.astimezone(TIMEZONE).isoformat()
+
+
 def _evento_de(item: dict) -> Evento:
     inicio = item.get("start", {})
     fim = item.get("end", {})
     return Evento(
         id=item.get("id"),
         titulo=limpar_controles(item.get("summary", "Sem título")),
-        inicio=inicio.get("dateTime") or inicio.get("date") or "sem data",
-        fim=fim.get("dateTime") or fim.get("date"),
+        inicio=no_fuso_do_dono(inicio.get("dateTime")) or inicio.get("date") or "sem data",
+        fim=no_fuso_do_dono(fim.get("dateTime")) or fim.get("date"),
         dia_inteiro="date" in inicio and "dateTime" not in inicio,
         link=item.get("htmlLink"),
     )
@@ -155,9 +170,10 @@ def fuso_diferente(valor: str) -> tuple[str, str] | None:
     """(fuso que veio, fuso do dono naquela data) se `valor` traz um fuso diferente do do dono.
     `None` sem fuso, com o mesmo fuso ou se não for ISO (o formato é validado por quem cria).
 
-    Existe porque o Gemini inventou `-08:00` para "amanhã às 10h" e o evento caiu às 15h de
-    Brasília (Mac, 2026-09-27). O fuso do dono é o da data do horário, não o de hoje (horário de
-    verão)."""
+    Nasceu de "amanhã às 10h" com `-08:00` que caiu às 15h da agenda (Mac, 2026-09-27) — e o
+    `-08:00` era o fuso do próprio Viking (relógio da máquina), não invenção do Gemini (D39 revista).
+    Continua valendo contra fuso que o modelo mande. O fuso do dono é o da data do horário, não o de
+    hoje (horário de verão)."""
     try:
         dt = datetime.fromisoformat(str(valor or "").strip())
     except ValueError:

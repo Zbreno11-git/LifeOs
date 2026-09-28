@@ -124,7 +124,8 @@ item de verdade): não autenticar esse MCP numa sessão de agente sem necessidad
 - **Datas de fatura são datas, não instantes:** `dueDate` e `billClosingDate` vêm sempre às
   `T00:00:00.000Z` (25 de 25 faturas, medido em 2026-09-27; só a hora foi lida). Convertidas para
   Brasília, cairiam no dia anterior; `balanceDueDate` vem já sem hora. As transações, ao
-  contrário, são instantes (`03:00Z` é meia-noite em Brasília) e se convertem.
+  contrário, são instantes (`03:00Z` é meia-noite em Brasília) e se convertem — para Brasília,
+  o fuso do banco, e não para o do dono (2026-09-28: ele não está nesse fuso).
 - **`balance` do cartão é o limite usado, não a fatura do mês:** nos dois cartões,
   `balance == creditLimit − availableCreditLimit` (medido em 2026-09-27, só a comparação). A
   documentação diz o mesmo para conectores Open Finance. Inclui as parcelas futuras.

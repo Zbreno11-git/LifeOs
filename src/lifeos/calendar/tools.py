@@ -22,7 +22,7 @@ from lifeos.calendar.service import (
     FalhaDaApi,
     TituloDivergente,
 )
-from lifeos.config import TIMEZONE
+from lifeos.config import TIMEZONE, TIMEZONE_ESCOLHIDO
 
 
 @dataclass(frozen=True)
@@ -262,13 +262,18 @@ def recusa_de_fuso(nao_fiz: str, *horarios: str) -> str:
 
 
 def aviso_de_fuso(agora: datetime | None = None) -> str:
-    """Para o terminal, na abertura do chat: o fuso do Viking contra o da agenda do Google do dono.
+    """Para o terminal, na abertura do chat, quando o Viking ADIVINHOU o fuso (sem `VIKING_TIMEZONE`,
+    usa o do relógio da máquina) e ele não bate com o da agenda do Google do dono.
 
-    Os dois têm de concordar, e nada conferia: no Mac (2026-09-27), sem `VIKING_TIMEZONE`, o
-    Viking usou o fuso do relógio da máquina (-08:00), "amanhã às 10h" virou 10:00-08:00 e a agenda
-    mostrou 15:00. A D39 não pegou, porque para ela aquele era o fuso do dono. Não escolhe um dos
-    dois: diz qual é qual. Vazio quando concordam ou quando não deu para ler sem login.
+    No Mac (2026-09-27) o relógio estava em -08:00, fora do fuso do dono, e "amanhã às 10h" foi
+    para 10:00-08:00; a D39 não pegou, porque para ela aquele era o fuso do dono. A agenda também não
+    é o fuso do dono (a dele está em São Paulo, e ele não): o aviso não sugere nenhum dos dois como
+    certo. Com `VIKING_TIMEZONE` escolhido, agenda noutro fuso é configuração, não erro — e os
+    horários lidos já chegam convertidos (`service.no_fuso_do_dono`). Vazio também quando não deu
+    para ler a agenda sem login.
     """
+    if TIMEZONE_ESCOLHIDO:
+        return ""
     try:
         nome = service.fuso_da_agenda()
         zona = ZoneInfo(nome) if nome else None
@@ -282,9 +287,10 @@ def aviso_de_fuso(agora: datetime | None = None) -> str:
     if do_viking == da_agenda:
         return ""
     return (
-        f"⚠️  Fuso: o Viking está em {do_viking} e a sua agenda do Google em {nome} "
-        f"({da_agenda}). Um horário sem fuso vai para {do_viking}. Se o certo é o da agenda, "
-        f"ponha VIKING_TIMEZONE={nome} no .env."
+        f"⚠️  Fuso: sem VIKING_TIMEZONE no .env, o Viking usa o do relógio desta máquina "
+        f"({do_viking}), e a sua agenda do Google está em {nome} ({da_agenda}). Os horários que "
+        f"você pedir vão para {do_viking}. Ponha no .env o fuso de onde você está (nome IANA, ex.: "
+        f"VIKING_TIMEZONE=America/Los_Angeles ou America/Sao_Paulo)."
     )
 
 

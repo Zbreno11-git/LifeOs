@@ -261,6 +261,44 @@ def test_estado_sem_acao_nova_nao_desmancha_o_ciclo(jev_falso, monkeypatch, caps
     assert terminal["steps"] == 6
 
 
+_VIDEO_NA_PLAYLIST = "https://www.youtube.com/watch?v=sF80I-TQiW0&list=RDsF80I-TQiW0&start_radio=1"
+# Medido no Mac em 2026-09-28 (`b52b3b8`, `viking browser --json`): passo, tipo, URL e rótulo de
+# cada ação, e a ordem dos eventos `step` (o 1º e o 5º repetidos). A URL do vídeo veio cortada em
+# 70 caracteres; o fim é o da página final da rodada de 2026-09-27.
+_REAL_2026_09_28 = [
+    (1, "90's Chill Lofi Study Music", _VIDEO_NA_PLAYLIST),
+    (1, "90's Chill Lofi Study Music", _VIDEO_NA_PLAYLIST),
+    (2, "Search", _VIDEO_NA_PLAYLIST),
+    (3, "Open Pesquisar", _VIDEO_NA_PLAYLIST),
+    (4, "Search", _BUSCA),
+    (5, "90's Chill Lofi Study Music", _BUSCA),
+    (5, "90's Chill Lofi Study Music", _BUSCA),
+    (5, "90's Chill Lofi Study Music", _BUSCA),
+]
+
+
+def test_rastro_real_que_concluiu_continua_concluindo(jev_falso, monkeypatch, capsys):
+    """Vizinho legítimo da regra de volta: o mesmo vídeo clicado 2 vezes, e a tarefa terminou."""
+    estados, historico = [], []
+    for n, rotulo, url in _REAL_2026_09_28:
+        if n > len(historico):
+            historico = [*historico, {"action": rotulo, "kind": "click", "url": url}]
+        estados.append(
+            {
+                "status": "ready",
+                "elapsed_ms": 100 * len(estados),
+                "history": list(historico),
+                "page": {"url": url, "title": "YouTube", "text": ""},
+            }
+        )
+    estados[-1]["status"] = "done"
+    monkeypatch.setattr(sys, "argv", ["jev-runner", f"--url={_BUSCA}", "--goal=abrir o primeiro"])
+    jev_falso.proximos_estados = estados
+    runner.main()
+    terminal = _linhas(capsys)[-1]
+    assert (terminal["type"], terminal["status"], terminal["steps"]) == ("result", "done", 5)
+
+
 def test_mostrar_mais_seguido_nao_e_loop(jev_falso, monkeypatch, capsys):
     """Vizinho legítimo: o mesmo botão na mesma página, várias vezes seguidas."""
     rotulos = {

@@ -16,7 +16,7 @@ import json
 import re
 import urllib.error
 import urllib.parse
-from datetime import date
+from datetime import date, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -289,7 +289,19 @@ def test_sentido_vem_do_tipo_e_valor_e_sempre_positivo(pluggy_falsa):
         ("2026-09-15", date(2026, 9, 15)),  # só a data: é esse o dia, sem fuso
     ],
 )
-def test_dia_no_fuso_de_brasilia(data, dia):
+@pytest.mark.parametrize(
+    "fuso_do_dono",
+    [
+        ZoneInfo("America/Sao_Paulo"),
+        ZoneInfo("America/Los_Angeles"),
+        timezone(timedelta(hours=-8)),
+    ],
+)
+def test_dia_da_transacao_e_o_do_banco_onde_quer_que_o_dono_esteja(
+    monkeypatch, data, dia, fuso_do_dono
+):
+    """O dono não está em Brasília, e o relógio do Mac estava em -08:00. O dia é o do extrato."""
+    monkeypatch.setattr(service, "TIMEZONE", fuso_do_dono)
     assert service._dia(data) == dia
 
 
