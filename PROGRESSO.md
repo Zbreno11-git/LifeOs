@@ -5,46 +5,73 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, roteiro das Sessões 8–21 escrito; próximo: abrir e planejar a Sessão 8
+## ▶️ RETOMAR AQUI — 2026-09-28, roteiro 8–21 escrito; próximo: revisão sênior + pesquisa do roteiro (antes da 8)
 
-**Estado do repositório:** conferir com `git log -1` (commit "roteiro das Sessões 8–21", depois
-de `bfb674b`) · igual ao remoto · travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (o checkpoint antes do compact, depois de
+`0cec657`) · igual ao remoto · travas: nenhuma · background: nenhum. CI do `0cec657`: `success`
+nos dois Pythons (conferido pelo SHA em 2026-09-28).
 
-**Onde parou:** a Sessão 7 fechou (testada no Mac). Em 2026-09-28 o dono planejou comigo, em
-várias rodadas de perguntas, o roteiro até a "versão de sucesso".
-- **Onde está escrito:** `sessoes.md` ("O roteiro de 2026-09-28", Sessões 8–21), `docs/decisoes.md`
-  D46–D52 e a barra (11 de 27).
-- **Em uma linha:** e-mail que sai → pequenos (8b) → fundação de dados → nuvem GCP (Mac como
-  "mãos", terminal como cliente) → agente geral com web → memória só com o "sim" → documentos →
-  coach → app no iPhone com Face ID e voz → Claude → auto-diagnóstico (repo privado) → Garmin.
-- **Nenhum código mudou.** Portões iguais aos do fechamento da 7: `1553 passed`, `ruff` limpo,
-  formatação zero.
+**Onde parou:** o roteiro das Sessões 8–21 foi planejado com o dono e escrito:
+- `sessoes.md`, "O roteiro de 2026-09-28";
+- `docs/decisoes.md`, D46–D52;
+- a barra, em 11 de 27;
+- a memória do Claude, `projeto-visao-do-dono.md`.
 
-**Próximo passo exato:** abrir e planejar a Sessão 8 ("e-mail que sai") pela skill `software-build`:
-1. rotina da D45 (`uv lock --upgrade --dry-run`; CI do último commit pelo SHA);
-2. medir a abertura: o teste que hoje proíbe `send`, `gmail/limpeza.py` como molde da aprovação
-   e o `registro`;
-3. perguntar ao dono, inclusive o status do app OAuth ("Testing"? o login venceria em 7 dias);
-4. escrever o plano aqui. Nada de código antes do "pode seguir".
+Nenhum código mudou desde a Sessão 7: `1553 passed`, `ruff` limpo, formatação zero.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️, "O roteiro de
-2026-09-28" e a Sessão 8); `docs/decisoes.md` (D22, D26, D29, D46–D52); o índice de
-`docs/erros.md`; a memória do Claude (visão do dono, fuso).
+**Próximo passo exato:** a revisão sênior com pesquisa pedida pelo dono (escopo no ▶️ de
+`sessoes.md`), antes de abrir a 8.
+1. **Rotina da D45:** `uv lock --upgrade --dry-run` e o CI do HEAD pelo SHA.
+2. **Revisão dos docs e da arquitetura,** com os olhos das skills `seguranca`, `falha-ruidosa`,
+   `integracoes` e `nuvem-e-deploy`:
+   - as fronteiras de aprovação (D26, D36, D38, D46, D52);
+   - a injeção de prompt persistente na memória (D48);
+   - os segredos na nuvem (D47, D51);
+   - o repo público até a S11;
+   - o custo contra os US$ 20.
+3. **Pesquisa na web, datada, com fonte:**
+   - assistentes tipo "Jarvis" open-source, e quais usam o Jev ou o `browser-use`;
+   - frameworks e libs de memória de agente, e o que fazem contra a deriva de contexto;
+   - busca na web do Gemini junto com function calling;
+   - API do NotebookLM para conta pessoal;
+   - PWA com passkey no iPhone;
+   - GCP barato (Cloud Run a zero, Firestore com busca vetorial, Scheduler);
+   - API de saúde da Garmin para uso pessoal;
+   - skills e repos de Claude Code que acelerem as sessões.
+4. **Escrever:**
+   - `docs/fontes/pesquisa-roteiro.md`, com as fontes datadas e o que se adota ou se recusa, e
+     por quê;
+   - em cada seção 8–21 de `sessoes.md`, "Escolhas de arquitetura previstas" e "Libs/repos a
+     reaproveitar";
+   - os achados de segurança como consertos ou como perguntas ao dono;
+   - depois, o resumo ao dono e o commit.
+
+**Reler, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md`;
+- este bloco;
+- `sessoes.md` (▶️ e o roteiro 8–21);
+- `docs/decisoes.md` (D3, D7, D22, D26, D29, D36, D38, D45–D52);
+- `docs/fontes/jev-typesafe.md` e `docs/arquitetura/viking-visao-e-arquitetura.md`;
+- o índice de `docs/erros.md` (a classe 2 tem 16 ocorrências: afirmar sem abrir, e na pesquisa
+  isso vira "afirmar sem fonte");
+- a memória do Claude (visão do dono, fuso);
+- as skills `evidencia`, `seguranca` e `integracoes` (§6, medir a árvore de uma dependência antes
+  de aceitá-la) e `software-build`.
 
 **Não pode ser esquecido:**
-- nunca código de aprovação por e-mail nem por canal que uma tool leia (D52);
-- fato novo só com o "sim" do dono, lido pelo laço do chat (D48);
-- o Claude nunca vê e-mail, finanças nem páginas (D49);
-- a issue de auto-diagnóstico só com campos técnicos, e em repo privado (D50);
-- o endereço de e-mail do dono vem da config, nunca de um literal no repo público;
-- instalar com `uv sync --locked --extra dev`;
-- nunca presumir o fuso do dono.
+- **Não decidir pelo dono:** decisão dele (D46–D52) só muda com o gatilho de reabertura, ou
+  perguntando a ele.
+- **Pesquisa não é medição:** uma afirmação de site ou README entra com o link e a data, e "não
+  medido" até alguém testar. Lib nova só entra no plano depois de conferir a árvore e se ela tem
+  wheel para Linux (nuvem) e para Mac Intel, se for rodar no Mac (o `tests/test_lock.py` cobra).
+- **O dono considera o Jev "muito mais rápido e barato":** o executor segue sendo o Jev (D3); a
+  pesquisa procura quem o usa, não um substituto.
+- Nunca código de aprovação por e-mail (D52); fato novo só com o "sim" (D48); o Claude nunca vê
+  e-mail, finanças nem páginas (D49).
+- Repo público: nada de dado real nos docs novos.
+- Nunca presumir o fuso do dono.
 
-**Depende do dono:** as perguntas da abertura da 8. Mais adiante:
-- S10: criar o projeto GCP com o faturamento dele;
-- S11: tornar o repo privado;
-- S12/S19: pôr a `ANTHROPIC_API_KEY`;
-- S19: pedir a API da Garmin.
+**Depende do dono:** as perguntas que a revisão levantar. Depois, as da abertura da 8.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1553 passed`.

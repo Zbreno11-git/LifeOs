@@ -17,8 +17,20 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** 8 — e-mail que sai, a primeira do roteiro de 2026-09-28 (Sessões 8–21, abaixo).
-- **Primeiro passo:** abrir e planejar pela skill `software-build`, com as perguntas ao dono
-  antes do plano; e conferir com ele o status do app OAuth ("Testing"?).
+- **Antes de abrir a 8 — revisão sênior e pesquisa do roteiro** (pedido do dono em 2026-09-28):
+  - **Revisar os docs** como engenheiro sênior, e se a arquitetura das 8–21 é segura mesmo.
+  - **Pesquisar na internet** libs, repos e skills que facilitem cada sessão: assistentes tipo
+    "Jarvis" open-source, inclusive os que usam o Jev ("muito mais rápido e barato"); memória de
+    agente; PWA com passkey; GCP barato.
+  - **Detalhar cada sessão como roadmap,** com as escolhas de arquitetura previstas.
+
+  Onde vai o resultado:
+  - as fontes, datadas, em `docs/fontes/pesquisa-roteiro.md`;
+  - as escolhas, na seção de cada sessão abaixo;
+  - achados de segurança: o que é dívida se conserta; o que muda uma decisão do dono (D46–D52)
+    vira pergunta a ele, nunca mudança calada.
+- **Depois:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
+  do plano; e conferir com ele o status do app OAuth ("Testing"?).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
