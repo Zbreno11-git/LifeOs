@@ -219,6 +219,17 @@ def recentes(*, dias: int = 1, limite: int = 50, agora: datetime | None = None) 
     return [_acao(linha) for linha in linhas]
 
 
+def contaveis(operacao: str, *, desde: datetime) -> list[Acao]:
+    """As ações desta operação desde `desde` que aconteceram ou PODEM ter acontecido (tudo menos
+    `falhou`): é o que conta num limite (e-mails para o dono por dia, D46)."""
+    with _sessao() as conn:
+        linhas = conn.execute(
+            "SELECT * FROM acoes WHERE operacao = ? AND criada_em >= ? AND estado != ? ORDER BY id",
+            (operacao, _agora(desde).isoformat(), FALHOU),
+        ).fetchall()
+    return [_acao(linha) for linha in linhas]
+
+
 def obter(acao_id: int) -> Acao | None:
     with _sessao() as conn:
         linha = conn.execute("SELECT * FROM acoes WHERE id = ?", (acao_id,)).fetchone()

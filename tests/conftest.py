@@ -8,6 +8,8 @@ um caminho novo que esqueça os dois nomes acima.
 """
 
 import base64
+import email
+import email.policy
 import json
 from zoneinfo import ZoneInfo
 
@@ -169,7 +171,7 @@ def _erro_http(status: int) -> HttpError:
 # fake cobra do mesmo jeito, num relógio falso que só anda quando o serviço "dorme": o 403 que o
 # dono viu no Mac (207 e-mails lidos duas vezes num minuto) vira reproduzível aqui.
 COTA_POR_MINUTO = 6000
-_CUSTOS = {"list": 5, "get": 20, "batchModify": 50, "getProfile": 1}
+_CUSTOS = {"list": 5, "get": 20, "batchModify": 50, "getProfile": 1, "send": 100}
 
 
 def erro_de_cota() -> HttpError:
@@ -328,6 +330,29 @@ class _GmailMensagens:
 
         return _GmailPedido(acao)
 
+    def send(self, userId, body):
+        """Como o Gmail real: `raw` em base64url; guarda a mensagem decodificada, e o `threadId`
+        que veio. `falhar_send` = lista de status HTTP das próximas chamadas (500 = pode ter
+        saído; 400 = recusado; 429 = cota)."""
+        estado = self._estado
+
+        def acao():
+            _cobrar(estado, "send")
+            if estado["falhar_send"]:
+                status = estado["falhar_send"].pop(0)
+                if status == 429:
+                    raise erro_de_cota()
+                raise _erro_http(status)
+            bruto = base64.urlsafe_b64decode(body["raw"])
+            mensagem = email.message_from_bytes(bruto, policy=email.policy.default)
+            numero = len(estado["enviados"]) + 1
+            estado["enviados"].append(
+                {"mensagem": mensagem, "bruto": bruto, "threadId": body.get("threadId")}
+            )
+            return {"id": f"enviado{numero}", "threadId": body.get("threadId") or f"t{numero}"}
+
+        return _GmailPedido(acao)
+
 
 class _GmailServico:
     def __init__(self, estado):
@@ -357,14 +382,17 @@ def mensagem_gmail(
     lista: bool = False,
     partes: list | None = None,
     quando_ms: int = 1_790_000_000_000,
+    extras: dict | None = None,
+    conversa: str | None = None,
 ) -> dict:
     cabecalhos = [{"name": "From", "value": de}, {"name": "Subject", "value": assunto}]
+    cabecalhos += [{"name": nome, "value": valor} for nome, valor in (extras or {}).items()]
     if lista:
         cabecalhos.append({"name": "List-Unsubscribe", "value": "<mailto:sair@loja.example>"})
     payload = {"mimeType": "multipart/alternative", "headers": cabecalhos, "parts": partes or []}
     return {
         "id": email_id,
-        "threadId": email_id,
+        "threadId": conversa or email_id,
         "labelIds": list(rotulos),
         "snippet": trecho,
         "internalDate": str(quando_ms),
@@ -376,8 +404,8 @@ def mensagem_gmail(
 def gmail(monkeypatch):
     """Gmail falso no lugar do `get_gmail_service` que o serviço usa. `estado["mensagens"]` é a
     caixa (id → mensagem no formato da API, na ordem da mais nova para a mais velha, como o
-    Gmail lista); o resto registra o que foi pedido e liga falhas. Não tem `send`, `trash` nem
-    `delete`: uma chamada dessas no serviço vira `AttributeError` no teste."""
+    Gmail lista); o resto registra o que foi pedido e liga falhas. `send` guarda em `enviados`;
+    não tem `trash` nem `delete`: uma chamada dessas no serviço vira `AttributeError` no teste."""
     estado = {
         "mensagens": {},
         "consultas": [],
@@ -397,6 +425,8 @@ def gmail(monkeypatch):
         "avisos": [],  # o que o serviço mostrou no terminal enquanto esperava
         "falhar_modify": 0,  # quantas chamadas de batchModify falham antes de funcionar
         "modificacoes": [],  # corpo de cada batchModify que deu certo
+        "falhar_send": [],  # status HTTP das próximas chamadas de send
+        "enviados": [],  # cada e-mail que o send aceitou, decodificado
     }
 
     def nova(email_id, **campos):

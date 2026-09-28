@@ -131,10 +131,48 @@ def _desfazer(codigo: str) -> int:
     return 0
 
 
+def _enviar(args: argparse.Namespace) -> int:
+    """O envio sem o Gemini (D46): para a própria conta sai na hora; para outro endereço, mostra o
+    e-mail inteiro e pede o código aqui mesmo — só num terminal interativo."""
+    from lifeos import confirmacao
+    from lifeos.gmail import envio, service, tools
+
+    if not (args.corpo and (args.responder or args.assunto)):
+        print("❌ --enviar pede --assunto e --corpo; --responder pede --corpo.", file=sys.stderr)
+        return 2
+    try:
+        if args.responder:
+            pedido = envio.resposta(args.responder, args.corpo)
+        else:
+            pedido = envio.novo(args.enviar, args.assunto, args.corpo)
+    except (service.ErroGmail, confirmacao.ErroConfirmacao) as exc:
+        erro = (
+            tools.mensagem_de_erro_do_envio(exc) if isinstance(exc, service.ErroGmail) else str(exc)
+        )
+        print(f"❌ {erro}", file=sys.stderr)
+        return 2
+    if pedido.enviado is not None:
+        print(f"✉️ Enviado para a sua conta: “{pedido.rascunho.assunto}”.")
+        return 0
+    print(tools.texto_do_envio(pedido))
+    digitado = input("Digite o código para enviar (Enter cancela): ").strip()
+    if not digitado:
+        print("Cancelado: nada foi enviado.")
+        return 1
+    try:
+        print(tools.texto_do_confirmado(envio.confirmar(digitado)))
+    except (service.ErroGmail, confirmacao.ErroConfirmacao) as exc:
+        print(f"❌ {tools.mensagem_de_envio_aprovado(exc)}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def _gmail(args: argparse.Namespace) -> int:
     """Gmail sem passar pelo Gemini: o texto impresso é o mesmo que o chat entrega ao modelo."""
     from lifeos.gmail import service, tools
 
+    if args.enviar is not None or args.responder is not None:
+        return _enviar(args)
     if args.arquivar is not None:
         return _arquivar(args.arquivar)
     if args.desfazer is not None:
@@ -145,7 +183,9 @@ def _gmail(args: argparse.Namespace) -> int:
         except service.ErroGmail as exc:
             print(f"❌ {tools.mensagem_de_erro(exc)}", file=sys.stderr)
             return 2
-        print(f"✅ Login do Gmail ok (ler e arquivar): {endereco}, {total} mensagens na conta.")
+        print(
+            f"✅ Login do Gmail ok (ler, arquivar e enviar): {endereco}, {total} mensagens na conta."
+        )
         return 0
     if args.buscar is not None:
         print(tools.buscar_emails(args.buscar, args.max))
@@ -378,7 +418,19 @@ def main() -> None:
         help="Propõe arquivar tudo destes remetentes (vírgula) e pede o código",
     )
     acao.add_argument("--desfazer", metavar="CODIGO", help="Desfaz uma limpeza (até 7 dias)")
+    acao.add_argument(
+        "--enviar",
+        metavar="PARA",
+        help="Envia um e-mail (com --assunto e --corpo); para outra pessoa, pede o código",
+    )
+    acao.add_argument(
+        "--responder",
+        metavar="ID",
+        help="Responde a um e-mail na mesma conversa (com --corpo); para outra pessoa, pede o código",
+    )
     gmail.add_argument("--max", type=int, default=10, help="Máximo de resultados da busca")
+    gmail.add_argument("--assunto", help="Assunto do e-mail (com --enviar)")
+    gmail.add_argument("--corpo", help="Texto do e-mail (com --enviar ou --responder)")
 
     financas = subparsers.add_parser(
         "financas",

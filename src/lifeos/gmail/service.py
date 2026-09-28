@@ -1,9 +1,10 @@
 """Serviço do Gmail: leitura pela API oficial, sem texto para o modelo (isso é `gmail/tools.py`).
 
 Mesmo desenho de `calendar/service.py`: devolve dados (`Email`, `EmailCompleto`, `RaioX`,
-`Selecao`) ou levanta um erro de domínio com `codigo`. A única escrita é tirar e devolver o
-rótulo `INBOX` (arquivar/desarquivar, Sessão Gmail 2), e só `gmail/limpeza.py` a chama, depois
-da aprovação do dono.
+`Selecao`) ou levanta um erro de domínio com `codigo`. As escritas são duas: tirar e devolver o
+rótulo `INBOX` (arquivar/desarquivar, Sessão Gmail 2), que só `gmail/limpeza.py` chama depois da
+aprovação do dono; e enviar (`enviar`, Sessão 8, D46), que só `gmail/envio.py` chama — livre só
+para a própria conta, com o código do dono para qualquer outro endereço.
 
 Falha nunca vira vazio: uma busca em que parte dos e-mails não pôde ser lida devolve quantos
 faltaram (`falharam`), e um raio-x que bateu no teto diz que é piso, não total (`no_teto`).
@@ -49,13 +50,21 @@ LOTE_MODIFY = 1000  # máximo de IDs por batchModify
 # mesmo dia, 207 e-mails lidos duas vezes em menos de um minuto voltaram 403 rateLimitExceeded.
 COTA_POR_MINUTO = 6000
 ORCAMENTO_POR_MINUTO = 4800  # 80%: outro processo do Viking pode estar gastando a mesma cota
-CUSTO_GET, CUSTO_LIST, CUSTO_MODIFY = 20, 5, 50
+CUSTO_GET, CUSTO_LIST, CUSTO_MODIFY, CUSTO_SEND = 20, 5, 50, 100
 ESPERAS_S = (2, 4, 8, 16, 32, 64)  # espera crescente no erro de cota (o Google recomenda ≤ 64 s)
 _MOTIVOS_DE_LIMITE = frozenset({"rateLimitExceeded", "userRateLimitExceeded"})
 MAX_REMETENTES_LIMPEZA = 10  # por proposta
 MAX_LISTAGEM = 5000  # IDs listados por consulta da limpeza; acima disso a contagem é piso
 
-_CABECALHOS = ["From", "Subject", "Date", "List-Unsubscribe", "List-Id"]
+# Cabeçalho que todo e-mail enviado pelo Viking leva (D53). Ele só INFORMA ("[enviado pelo
+# Viking]" na leitura): qualquer um escreve um cabeçalho, e o e-mail continua no bloco de não
+# confiável mesmo com o dono de remetente.
+MARCA = "X-Viking"
+MARCA_VALOR = "enviado-pelo-viking"
+_CABECALHOS = ["From", "Subject", "Date", "List-Unsubscribe", "List-Id", MARCA]
+_CABECALHOS_DA_RESPOSTA = ["From", "Reply-To", "To", "Subject", "Message-ID", "References"]
+_MESSAGE_ID = re.compile(r"<[^<>\s]{1,250}>")
+MAX_REFERENCIAS = 20
 _ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
 # Endereço exato, sem espaço nem operador: vira `from:<endereço>` numa consulta do Gmail, e
 # `a@b.com OR in:anywhere` ampliaria a seleção para a conta inteira.
@@ -73,8 +82,11 @@ class ErroGmail(Exception):
 
     codigo = "falha_api"
 
-    def __init__(self, mensagem: str, **dados: object) -> None:
+    def __init__(self, mensagem: str, *, incerta: bool = False, **dados: object) -> None:
         super().__init__(mensagem)
+        # `incerta`: a falha veio depois de o pedido sair (5xx, tempo, conexão) e o efeito pode
+        # ter acontecido; o registro grava "incerta" e o texto diz "Não sei se…".
+        self.incerta = incerta
         self.dados = dados
 
 
@@ -116,6 +128,7 @@ class Email:
     na_caixa: bool = False  # rótulo INBOX
     estrela: bool = False
     importante: bool = False
+    do_viking: bool = False  # tem a MARCA: informação, nunca confiança (D53)
 
 
 @dataclass(frozen=True)
@@ -231,11 +244,19 @@ _LIMITE = "o Gmail limitou as consultas por minuto; espere um minuto e tente de 
 
 def _executar(montar, custo: int = CUSTO_LIST):
     """Toda chamada ao Google passa por aqui (a falha pode vir já ao montar o pedido). Gasta da
-    cota antes; no erro de cota, espera cada vez mais (`ESPERAS_S`) e tenta de novo."""
+    cota antes; no erro de cota, espera cada vez mais (`ESPERAS_S`) e tenta de novo — a recusa por
+    cota é certeza de que nada foi feito, então repetir não duplica um envio.
+
+    Falha ao montar, ou um 4xx, é certeza de que nada mudou; qualquer outra falha depois de o
+    pedido sair (5xx, tempo esgotado, conexão) é `incerta` (como `calendar/service._executar`)."""
     for espera in (*ESPERAS_S, None):
         _COTA.gastar(custo)
         try:
-            return montar().execute()
+            pedido = montar()
+        except Exception as exc:
+            raise FalhaDaApi(_descrever(exc)) from exc
+        try:
+            return pedido.execute()
         except HttpError as exc:
             if _eh_limite(exc) and espera is not None:
                 _avisar(f"⏳ O Gmail pediu calma; tentando de novo em {espera} s.")
@@ -243,11 +264,13 @@ def _executar(montar, custo: int = CUSTO_LIST):
                 continue
             if _eh_limite(exc):
                 raise LimiteDoGmail(_LIMITE) from exc
-            if getattr(exc.resp, "status", None) == 404:
+            status = getattr(exc.resp, "status", None)
+            if status == 404:
                 raise NaoEncontrado(_descrever(exc)) from exc
-            raise FalhaDaApi(_descrever(exc)) from exc
+            certa = isinstance(status, int) and 400 <= status < 500
+            raise FalhaDaApi(_descrever(exc), incerta=not certa) from exc
         except Exception as exc:  # qualquer outra falha da API vira erro de domínio
-            raise FalhaDaApi(_descrever(exc)) from exc
+            raise FalhaDaApi(_descrever(exc), incerta=True) from exc
     raise AssertionError("inalcançável")  # pragma: no cover
 
 
@@ -366,6 +389,7 @@ def _email_de(mensagem: dict) -> Email:
         na_caixa="INBOX" in rotulos,
         estrela="STARRED" in rotulos,
         importante="IMPORTANT" in rotulos,
+        do_viking=bool(_cabecalho(cabecalhos, MARCA)),
     )
 
 
@@ -452,6 +476,14 @@ def _corpo(payload: dict) -> tuple[str, int]:
 # --- operações ------------------------------------------------------------------------------
 
 
+def _id_do_email(email_id) -> str:
+    """Um ID que veio do Gemini só vai à API na forma que o Gmail usa (nada de `/` nem `..`)."""
+    email_id = str(email_id or "").strip()
+    if not _ID.fullmatch(email_id):
+        raise EntradaInvalida("o ID do e-mail veio vazio ou com caracteres inesperados")
+    return email_id
+
+
 def perfil() -> tuple[str, int]:
     """(endereço da conta, total de mensagens) — a prova de que o login serve para o Gmail."""
     service = _servico()
@@ -482,9 +514,7 @@ def nao_lidos_de_hoje() -> Busca:
 
 
 def ler(email_id: str) -> EmailCompleto:
-    email_id = str(email_id or "").strip()
-    if not _ID.fullmatch(email_id):
-        raise EntradaInvalida("o ID do e-mail veio vazio ou com caracteres inesperados")
+    email_id = _id_do_email(email_id)
     service = _servico()
     mensagem = _executar(
         lambda: service.users().messages().get(userId="me", id=email_id, format="full"),
@@ -704,3 +734,100 @@ def arquivar(ids) -> Modificacao:
 
 def desarquivar(ids) -> Modificacao:
     return _rotular(ids, {"addLabelIds": ["INBOX"]})
+
+
+# --- enviar (Sessão 8, D46) -------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Original:
+    """O que uma resposta copia da mensagem original. O destinatário sai daqui (do cabeçalho), e
+    nunca do texto do Gemini: a tool de responder nem tem parâmetro de endereço."""
+
+    id: str
+    conversa: str  # threadId
+    destino: tuple[str, ...]  # `Reply-To`, senão `From`: só os endereços
+    para_original: tuple[
+        str, ...
+    ]  # o `To` da original: é o destino quando quem escreveu foi o dono
+    assunto: str
+    remetente: str  # o endereço do `From`, para o dono ver de quem é a conversa
+    message_id: str  # "" se o cabeçalho não tem a forma `<…>`
+    referencias: str
+
+
+@dataclass(frozen=True)
+class Enviado:
+    id: str
+    conversa: str
+
+
+def endereco_valido(bruto: str) -> str | None:
+    """O endereço normalizado (minúsculo, sem nome), ou `None` se não é um endereço simples em
+    ASCII. Não-ASCII fica de fora: corta sósias ("dоno" com "о" cirílico)."""
+    _nome, endereco = parseaddr(str(bruto or ""))
+    endereco = endereco.strip().lower()
+    return endereco if _ENDERECO.fullmatch(endereco) else None
+
+
+def _enderecos(cabecalho: str) -> tuple[str, ...]:
+    """Os endereços válidos de um cabeçalho (`a@x, Nome <b@y>`), sem repetir; o resto cai."""
+    validos = (endereco_valido(a) for a in cabecalho.split(","))
+    return tuple(dict.fromkeys(e for e in validos if e is not None))
+
+
+def para_responder(email_id: str) -> Original:
+    email_id = _id_do_email(email_id)
+    service = _servico()
+    mensagem = _executar(
+        lambda: (
+            service.users()
+            .messages()
+            .get(
+                userId="me",
+                id=email_id,
+                format="metadata",
+                metadataHeaders=_CABECALHOS_DA_RESPOSTA,
+            )
+        ),
+        CUSTO_GET,
+    )
+    cabecalhos = (mensagem.get("payload") or {}).get("headers") or []
+    fonte = _cabecalho(cabecalhos, "Reply-To") or _cabecalho(cabecalhos, "From")
+    destino = _enderecos(fonte)
+    if not destino:
+        raise EntradaInvalida("o e-mail original não tem um endereço de resposta válido")
+    conversa = str(mensagem.get("threadId") or "")
+    if not _ID.fullmatch(conversa):
+        raise EntradaInvalida("o e-mail original veio sem a conversa")
+    message_id = _MESSAGE_ID.search(_cabecalho(cabecalhos, "Message-ID"))
+    referencias = _MESSAGE_ID.findall(_cabecalho(cabecalhos, "References"))[-MAX_REFERENCIAS:]
+    remetente = endereco_valido(_cabecalho(cabecalhos, "From")) or ""
+    return Original(
+        id=email_id,
+        conversa=conversa,
+        destino=destino,
+        para_original=_enderecos(_cabecalho(cabecalhos, "To")),
+        assunto=" ".join(limpar_controles(_cabecalho(cabecalhos, "Subject")).split()),
+        remetente=remetente,
+        message_id=message_id.group() if message_id else "",
+        referencias=" ".join(referencias),
+    )
+
+
+def enviar(mensagem: bytes, *, para, assunto: str, conversa: str, livre: bool) -> Enviado:
+    """A ÚNICA chamada de envio do Viking (`tests/test_gmail_envio.py` confere), dentro do
+    registro. Quem monta a mensagem e decide se precisa do código é `gmail/envio.py`. Sem nova
+    tentativa depois de o pedido sair: um 5xx pode ter enviado, e repetir mandaria duas vezes."""
+    corpo = {"raw": base64.urlsafe_b64encode(mensagem).decode("ascii")}
+    if conversa:
+        corpo["threadId"] = conversa
+    service = _servico()
+    parametros = {"para": list(para), "assunto": assunto, "conversa": conversa, "livre": livre}
+    with registro.acao("gmail.enviar", parametros) as marca:
+        resposta = _executar(
+            lambda: service.users().messages().send(userId="me", body=corpo), CUSTO_SEND
+        )
+        enviado = Enviado(str(resposta.get("id") or ""), str(resposta.get("threadId") or ""))
+        marca.feito({"id": enviado.id, "conversa": enviado.conversa})
+    return enviado

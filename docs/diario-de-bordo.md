@@ -1046,6 +1046,73 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 8: o Viking manda e-mail; o furo do bloqueio fechado (falta o Mac)
+
+**Abertura, conferida contra o disco.** HEAD `7f1145f` = origin, árvore limpa, `1553 passed`, CI
+`success` pelo SHA inteiro. Duas divergências com o bloco de retomada:
+- **Versões:** o `uv lock --upgrade --dry-run` mostrou 4 atualizações, não 2 (entraram `pyjwt` e
+  `sse-starlette`, que vêm do MCP). Na hora do upgrade eram 5: o `google-auth` 2.59.0 saiu às
+  21:49Z.
+- **Login em "Testing":** o dono já tinha conferido em 2026-09-26 ("em produção, externo, só ele
+  de usuário"). O "nunca conferido" que escrevi na revisão estava errado (`docs/erros.md`, classe
+  2). O passo do Console saiu do plano; a prova de que o token não vence em 7 dias foi para o 1º
+  passo da Sessão 10.
+
+**Respostas do dono:**
+- "você" no envio livre é a própria conta do Gmail;
+- até 20 por dia;
+- a resposta não cita a original;
+- a linha visível "Escrito pelo Viking (Assistente AI)", com uma logo "bem depois" (backlog).
+
+Ele também descreveu o teste que quer fazer: um e-mail polido para a noiva, mostrado antes e
+enviado só se ele aceitar. O endereço dela não entra no repo, que é público.
+
+**C1, o furo do bloqueio (D8).**
+- Teste vermelho primeiro: 17 de 20 disfarces passavam — `view-source:`, `blob:`, `filesystem:`,
+  `https:banco`, barra invertida, `%69tau`, largura dupla, hífen invisível, ponto ideográfico.
+- O host agora é lido pela regra de URL que o Chrome segue (WHATWG; não medido no Chrome), num
+  ponto só (`_redacao`), dos dois lados.
+- O endereço inicial só aceita `http`/`https`/`data:`/`about:blank`: `file:` levaria um arquivo
+  do Mac aos modelos.
+- 11 mutações novas, mortas.
+
+**C2.** `uv lock --upgrade` com 5 pacotes, em commit próprio, com os changelogs lidos; a suíte
+passou antes e depois.
+
+**C3–C4, o envio (D46).**
+- `gmail/envio.py`: uma regra para e-mail novo e resposta. Todos os destinatários são a conta → sai
+  na hora, até 20 em 24 h (janela móvel, sem fuso). Qualquer outro → o e-mail inteiro e o código
+  vão só ao terminal, com terminal interativo.
+- `service.enviar` é o único `send`, dentro de `registro.acao`; 5xx é `incerta`, sem nova
+  tentativa.
+- Responder não tem parâmetro de destinatário: `Reply-To`, senão `From`; se quem escreveu foi o
+  dono, o `To` dela, como no Gmail. Achado na 1ª passada de revisão: antes disso, responder ao que
+  ele mandou ia para ele mesmo.
+- Texto com controle, bidi ou invisível é recusado, não limpo. Os emojis com ZWJ passam.
+- `X-Viking` em todo envio; lido de volta, vira a etiqueta "[enviado pelo Viking]" dentro do bloco
+  de não confiável (D53).
+- A régua do `send` mudou de forma: permitido uma vez, em `service.enviar`; lixeira, importar e
+  apagar continuam proibidos.
+- Achado nos testes: um código que não existe, com um e-mail aberto, recebia o texto da limpeza
+  ("digite o código da lista"). Agora a resposta é a da proposta aberta mais recente.
+
+**Portões (2026-09-28, VPS):** `1679 passed`; `ruff check` limpo; formatação zero; mutações
+**183/183** mortas pelo teste esperado (17 novas nesta sessão: 9 do bloqueio, 8 do envio).
+
+**Erros meus registrados:**
+- classe 2: "Testing nunca conferido";
+- classe 5: um hífen invisível escrito direto no plano, e o veredito das mutações cortado por um
+  `tail`;
+- classe 7: o bloqueio desenhado pelo caso típico.
+
+**Não verificado aqui:**
+- o envio de verdade;
+- se o Gmail mantém o `From` explícito;
+- o `view-source:` no Chrome real;
+- o `oauthlib` 4 no login do Mac.
+
+Tudo isso é o teste do dono.
+
 ### 2026-09-28 — Roteiro 8–21, e a revisão sênior com pesquisa antes da Sessão 8
 
 **Roteiro (`0cec657`).** Planejado com o dono em várias rodadas de perguntas: Sessões 8–21 em

@@ -20,9 +20,9 @@
 | 2 | Afirmei sem abrir o lugar onde estaria | 18 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 7 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 8 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 8 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 9 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
@@ -321,6 +321,14 @@ controle logo depois de copiar o plano. O que tem de novo: o caractere não veio
 convertido pela ferramenta, veio direto da minha escrita, num documento; a varredura roda também
 no plano, antes de copiá-lo.
 
+**2026-09-28 — o veredito das mutações passou por um `tail` (Sessão 8, C4).** Rodei a bateria
+inteira com `python scripts/mutacoes.py 2>&1 | tail -15` em segundo plano. O resumo ("mutações: N
+· mortas pelo teste esperado: N") sai no **topo** da lista, e o `tail` o jogou fora; e o "exit 0"
+que a notificação mostrou era o do `tail`, não o do script (sem `pipefail`). Pego ao ir contar as
+mortas. Rodei de novo com a saída inteira num arquivo. O que tem de novo: a skill manda ler a
+linha literal "do topo", e fui eu que cortei o topo; resultado de portão vai inteiro para um
+arquivo, e o status é o do comando, não o do pipe.
+
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 
 **O antídoto, concreto:** nunca escrever uma sequência de escape Unicode em parâmetro de
@@ -439,6 +447,16 @@ existe) ele é lido — e poderia apontar para o `.env` do Viking, com a chave d
 `UV_NO_ENV_FILE` desligaria o `.env` do Jev em silêncio. Viraram exceção dentro do prefixo
 (`AMBIENTE_EXCETO`), com teste e mutação. O que tem de novo: numa **lista do que passa**, o
 disfarce é um nome legítimo do mesmo dono (o `uv`) que muda o que a regra protege.
+
+**2026-09-28 — o bloqueio de banco lia o host com `urlsplit` (Sessão 4; achado na revisão do
+roteiro, consertado na 8).** A regra de 2026-09-26 foi desenhada por `https://banco/…` e pelos
+disfarces de *domínio* (sufixo solto, `@`, sem esquema); os disfarces de *endereço* ficaram de
+fora: `view-source:https://banco/` e `blob:` (o Chrome abre o de dentro), `https:banco` sem
+barras, `\`, `%69tau`, letras de largura dupla, hífen invisível — 17 de 20 passavam. O vizinho
+também: o endereço inicial aceitava `file:///…`, que levaria um arquivo do Mac aos modelos. O que
+tem de novo: o reconhecimento era de host, e o disfarce estava uma camada acima, no **endereço**,
+com uma especificação pública (WHATWG) que diz exatamente como o navegador o lê; a lista de
+disfarces tem de sair da regra do leitor de verdade, não da minha imaginação.
 
 > **Uma regra que reconhece algo é desenhada pelo exemplo que a motivou, e o exemplo não mostra
 > nem o vizinho inocente nem o disfarce.**

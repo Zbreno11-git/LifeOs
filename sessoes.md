@@ -23,16 +23,15 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
-  do plano (roteiro da abertura no bloco de `PROGRESSO.md`). Os primeiros passos dela já estão escritos na seção da 8: o furo do bloqueio de
-  domínio, o `oauthlib` 4.0.0 e o login "Testing".
+- **Agora:** o teste da **Sessão 8 no Mac** (roteiro no C6 do plano, em `PROGRESSO.md`). O
+  código foi feito e enviado em 2026-09-28; ela só fecha depois do teste. Depois: a 8b.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as perguntas da abertura da 8.
+- **Depende do dono:** o teste da 8 no Mac.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -390,12 +389,26 @@ tudo lá é "não medido" até a sessão que usa medir):
   da nuvem entram só onde rodam: o Mac é cliente e "mãos", não instala Firestore nem gRPC.
 - **Skills e plugins de terceiros** não se instalam: o texto útil se copia para `.claude/skills/`,
   com o commit de origem anotado. `/security-review` e `/code-review`, que a pesquisa diz virem no Claude Code
-  (conferir na abertura da 8), entram no fechamento de toda sessão a partir da 8.
+  (na 8 não estavam entre as skills que eu podia chamar: não conferidos), entram no fechamento de toda sessão em que estiverem disponíveis.
 - **Formato por sessão abaixo:** "Escolhas de arquitetura previstas" (o que eu já recomendo, com o
   gatilho que reabre) e "Libs/repos a reaproveitar". São a proposta de partida; o plano de cada
   sessão confirma ou derruba na abertura, com o dono.
 
-## Sessão 8 — e-mail que sai (planejada em 2026-09-28)
+## Sessão 8 — e-mail que sai (feita em 2026-09-28; falta o teste no Mac)
+
+**Feito em 2026-09-28** (plano e checkpoints em `PROGRESSO.md`):
+- o furo do bloqueio de banco/e-mail fechado, e o endereço inicial só `http`/`https`/`data:`/
+  `about:blank` (D8);
+- o lock atualizado em commit próprio (5 pacotes);
+- o envio: `gmail/envio.py`, as tools `enviar_email`/`responder_email`, `confirma NNNN` no chat e
+  `viking gmail --enviar/--responder` (D46 com as respostas do dono).
+
+Os comandos de revisão do Claude Code (D53): **não conferidos** nesta sessão. A lista de skills
+que esta sessão podia chamar não trazia `/security-review` nem `/code-review`, e um comando
+embutido do terminal eu não consigo chamar. Fica para o dono rodar, se quiser, ou para uma sessão
+em que apareçam.
+
+O que estava escrito na abertura:
 
 - **Entrega:** um e-mail para o próprio dono sai sem código; uma resposta a outra pessoa só sai
   depois do código dele, com a linha no `registro`.

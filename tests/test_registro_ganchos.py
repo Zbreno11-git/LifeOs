@@ -147,7 +147,7 @@ def test_arquivar_no_gmail_registra(gmail):
 
 # --- a régua: nenhum efeito externo sem registro -------------------------------------------
 
-_MUTACOES = {"delete", "patch", "insert", "batchModify", "add", "complete"}
+_MUTACOES = {"delete", "patch", "insert", "batchModify", "add", "complete", "send"}
 
 
 def _chama_registro(funcao: ast.AST) -> bool:
@@ -177,6 +177,7 @@ def _mutacoes_sem_registro() -> list[str]:
                 externo = (
                     (nome in {"delete", "patch", "insert"} and dono.endswith("events()"))
                     or nome == "batchModify"
+                    or (nome == "send" and dono.endswith("messages()"))
                     or (nome in {"add", "complete"} and dono == "store")
                 )
                 if externo and not _chama_registro(funcao):
@@ -192,7 +193,13 @@ def test_a_regua_enxerga_as_mutacoes():
     """Sem isto, uma régua que não acha nada ficaria verde à toa."""
     raiz = Path(registro.__file__).parent
     fonte = "\n".join(p.read_text() for p in raiz.rglob("*.py"))
-    for nome in ("events().delete", "events().patch", "events().insert", "batchModify"):
+    for nome in (
+        "events().delete",
+        "events().patch",
+        "events().insert",
+        "batchModify",
+        "messages().send",
+    ):
         assert nome in fonte
     assert "store.add(" in fonte and "store.complete(" in fonte
     assert _MUTACOES

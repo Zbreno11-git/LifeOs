@@ -7,14 +7,35 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-28 (roteiro novo: Sessões 8–21).**
+**Última atualização: 2026-09-28 (Sessão 8 pronta, esperando o seu teste no Mac).**
 
 `████████░░░░░░░░░░░░ 10 de 27 sessões fechadas + 2 parciais (= 11 de 27)`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6 e 7; parciais 4 e
-3b (falta só a validação ao vivo, que é a Sessão 8b); na fila: 8, 8b e 9 a 21. Cada parcial vale
+3b (falta só a validação ao vivo, que é a Sessão 8b); **a 8 está pronta e enviada, e só conta
+depois do seu teste no Mac**; na fila: 8b e 9 a 21. Cada parcial vale
 meia sessão na barra. A barra "encolheu" de 11/12 para 11/27 porque o roteiro cresceu, não porque
 algo voltou atrás.
+
+## 2026-09-28 — Sessão 8: o Viking manda e-mail (falta o seu teste)
+
+**O que ficou pronto:**
+- **E-mail para você:** "manda pra mim um e-mail…" sai na hora, sem código, até 20 por dia. O
+  limite existe para um e-mail malicioso não conseguir encher a sua caixa.
+- **E-mail para outra pessoa** (novo ou resposta): o Viking escreve o texto e mostra no terminal,
+  só para você, o e-mail inteiro e um código de 4 números. Nada sai até você digitar `confirma` e
+  o código; se quiser mudar, é só pedir outra versão, e o código velho deixa de valer.
+- **Resposta:** vai sempre para quem escreveu (não dá para o modelo trocar o destinatário), na
+  mesma conversa, sem citar a mensagem original.
+- **Todo e-mail leva no fim** "Escrito pelo Viking (Assistente AI)". A logo fica para depois.
+- **Um furo fechado no navegador:** o bloqueio de banco e e-mail podia ser contornado escrevendo
+  o endereço de outro jeito (17 de 20 formas passavam). Agora nenhuma passa, e o navegador também
+  não abre arquivos do seu computador.
+- **As peças de fora atualizadas** (5 bibliotecas, entre elas a do login do Google).
+
+**Números de hoje:** 1679 testes passando.
+
+**O que depende de você:** o teste no Mac (o roteiro está no `PROGRESSO.md`).
 
 ## 2026-09-28 — o roteiro até a versão de sucesso: agente geral, coach, nuvem e app
 

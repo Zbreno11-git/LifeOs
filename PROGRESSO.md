@@ -5,20 +5,54 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 8 aberta e planejada (plano aprovado pelo dono); em execução
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 8 feita e enviada; falta só o teste do dono no Mac (C6)
 
-**Estado:** plano abaixo, aprovado em 2026-09-28. Abertura conferida: HEAD `7f1145f` = origin,
-árvore limpa, sem `.mutacao.lock`, `1553 passed`, CI `success` pelo SHA inteiro.
+**Estado:** C0–C5 ✅ (mapa no plano abaixo). Commits da sessão: `975f1dd` (bloqueio + plano),
+`4c52b14` (lock) e o do envio (conferir com `git log --oneline -4`). Portões em 2026-09-28:
+`1679 passed`, `ruff` limpo, formatação zero, **mutações 183/183** mortas pelo teste esperado
+(saída inteira, status 0 do script). CI: conferir pelo SHA inteiro do HEAD.
 
-**Checkpoints:** C0 ✅ · C1 ✅ · C2 ✅ · C3 ⬜ · C4 ⬜ · C5 ⬜ · C6 (Mac) ⬜ — a retomada começa pelo
-primeiro não marcado; o estado de cada um está no mapa do plano.
+**Próximo passo exato: o dono roda no Mac o roteiro abaixo e cola a saída.** Se tudo bater: C6 ✅,
+a Sessão 8 fecha (diário, barra 11/27 → 12/27, `sessoes.md`), e a próxima é a 8b. Se algo
+divergir: o que apareceu decide o conserto, na mesma sessão.
 
-**Não pode ser esquecido:** as regras da sessão estão nas "Decisões técnicas" do plano; o código
-de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail (só com TTY); mutações em
-background e sem `timeout`; nunca presumir o fuso do dono.
+**Roteiro para o Mac (colar no terminal, uma linha por vez; nenhuma linha tem `#`):**
 
-**Antes de confiar neste bloco:** `git status --short`, `git log --oneline -3`, `ls
-.mutacao.lock` (não existe), `python -m pytest -q`.
+    cd ~/LifeOs
+    git pull && git log --oneline -1
+    uv sync --locked --extra dev
+    source .venv/bin/activate
+    which python
+    python -m pytest -q
+    viking gmail --login
+    viking browser --url "view-source:https://www.itau.com.br/" --goal "ler a página"
+    viking browser --url "file:///etc/hosts" --goal "ler a página"
+    viking chat
+
+Dentro do `viking chat`:
+1. `manda pra mim um e-mail com assunto Teste Viking dizendo oi` → esperado: "Enviei…", **sem
+   código**; o e-mail chega na caixa dele com a linha "Escrito pelo Viking (Assistente AI)".
+2. O pedido dele (a noiva, ou outro endereço seu), com o endereço digitado no chat → esperado: o
+   quadro "E-mail para aprovar" com Para, Assunto, o texto inteiro e `confirma NNNN`; **nada
+   enviado**.
+3. `confirma` com um código **diferente** do da tela (troque o último número) → "Não enviei
+   nada".
+4. `confirma` com o código certo → "✉️ Enviei…".
+5. `sair`, depois `viking registro` → as duas linhas "enviou o e-mail…", sem nenhum código.
+
+Esperado antes do chat: `python -m pytest -q` → `1679 passed` (ou mais, se o clone do Jev
+estiver presente); o login do Gmail com "ler, arquivar e enviar"; os dois `viking browser`
+recusados **sem abrir aba** (o `view-source:` como "endereço recusado", o `file:` também).
+
+**Não pode ser esquecido:**
+- O endereço da noiva **nunca** entra no repo (é público): nem teste, nem doc, nem roteiro.
+- Não medido no VPS: o envio real, o `From` explícito, o `view-source:` no Chrome, o
+  `oauthlib` 4 no login.
+- Mutações em background e sem `timeout`; a saída inteira num arquivo, nunca por `tail`.
+- Nunca presumir o fuso do dono.
+
+**Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` (não existe);
+`python -m pytest -q` → `1679 passed`; `gh run list --commit $(git rev-parse HEAD)` → `success`.
 
 ## Plano — Sessão 8: e-mail que sai, mais o furo do bloqueio e a rotina de versões (aberta em 2026-09-28)
 
@@ -105,10 +139,10 @@ sessões. Depois disso, execução até o fim sem pedir confirmação a cada fas
 | C0 | plano no `PROGRESSO.md`; S8/D11 corrigidas; logo no backlog; `erros.md` classe 2 (18) | — | ✅ 2026-09-28 (e classe 5: o hífen invisível no próprio plano) |
 | C1 | teste vermelho do bloqueio → conserto → verde; mutações novas mortas; commit 1 | C0 | ✅ 2026-09-28: 17 de 20 disfarces vermelhos antes; `1607 passed` depois; 11/11 mutações `bloqueio`/`view-source` mortas pelo teste esperado |
 | C2 | lock atualizado, suíte antes e depois, `test_lock` verde; commit 2 | C1 | ✅ 2026-09-28: **5** pacotes (o `google-auth` 2.59.0 saiu às 21:49Z, depois da abertura: só declara Python 3.15); `1607 passed` antes e depois; lock/MCP `443 passed` |
-| C3 | `service.enviar` + `envio.py` (montar, livre, propor, confirmar) com testes; régua do `send` trocada | C2 | ⬜ |
-| C4 | tools no chat, `aprovacao_local`, CLI `--enviar`/`--responder`, leitura de volta com a etiqueta; mutações | C3 | ⬜ |
-| C5 | portões, duas passadas de revisão, docs, commit(s), push, CI pelo SHA | C4 | ⬜ |
-| C6 | teste do dono no Mac (roteiro abaixo) | C5 | ⬜ |
+| C3 | `service.enviar` + `envio.py` (montar, livre, propor, confirmar) com testes; régua do `send` trocada | C2 | ✅ 2026-09-28: `tests/test_gmail_envio.py` (44) |
+| C4 | tools no chat, `aprovacao_local`, CLI `--enviar`/`--responder`, leitura de volta com a etiqueta; mutações | C3 | ✅ 2026-09-28: `tests/test_gmail_envio_chat.py` (21); 8 mutações do envio; achados: código inexistente caía no texto da limpeza (`_tipo_aberto`), e responder ao que o dono mandou ia para ele (agora o `To` da original) |
+| C5 | portões, duas passadas de revisão, docs, commit(s), push, CI pelo SHA | C4 | ✅ 2026-09-28: `1679 passed`, 183/183 mutações; `/security-review` não disponível para mim nesta sessão (não conferido) |
+| C6 | teste do dono no Mac (roteiro no bloco de retomada) | C5 | ⬜ esperando o dono |
 
 ### Fase 1 — o furo do bloqueio (C1)
 **Faz:**

@@ -322,19 +322,36 @@ def test_desfazer_proposta_nao_aprovada_recusado(gmail):
 
 # --- o escopo permite mais do que o Viking usa (D29) ------------------------------------------
 
-_PROIBIDAS = {"send", "trash", "untrash", "import_", "insert", "delete", "batchDelete", "drafts"}
+_PROIBIDAS = {"trash", "untrash", "import_", "insert", "delete", "batchDelete", "drafts"}
 
 
-def test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar():
-    """`gmail.modify` autoriza enviar e mover para a lixeira (medido em `gmail.v1.json`). O que
-    impede é não haver chamada: qualquer atributo com esses nomes em `gmail/` derruba o teste."""
+def _atributos(nomes) -> list[str]:
+    """`arquivo:linha função .atributo` de cada uso desses nomes em `gmail/`; a função é a de
+    nível mais alto que o contém (`<módulo>` fora de qualquer função)."""
     pasta = Path(oauth.__file__).parent
     achados = []
     for arquivo in sorted(pasta.glob("*.py")):
-        for no in ast.walk(ast.parse(arquivo.read_text())):
-            if isinstance(no, ast.Attribute) and no.attr in _PROIBIDAS:
-                achados.append(f"{arquivo.name}:{no.lineno} .{no.attr}")
-    assert achados == []
+        for topo in ast.parse(arquivo.read_text()).body:
+            dono = topo.name if isinstance(topo, ast.FunctionDef) else "<módulo>"
+            for no in ast.walk(topo):
+                if isinstance(no, ast.Attribute) and no.attr in nomes:
+                    achados.append(f"{arquivo.name}:{no.lineno} {dono} .{no.attr}")
+    return achados
+
+
+def test_codigo_do_gmail_nunca_chama_lixeira_ou_apagar():
+    """`gmail.modify` autoriza também mover para a lixeira e importar (medido em `gmail.v1.json`).
+    O que impede é não haver chamada: qualquer atributo com esses nomes em `gmail/` derruba."""
+    assert _atributos(_PROIBIDAS) == []
+
+
+def test_enviar_existe_em_um_lugar_so():
+    """Desde a Sessão 8 (D46) o Viking envia, e só por `service.enviar`, que abre o registro e é
+    chamada só por `gmail/envio.py` (`tests/test_gmail_aprovacao.py`). Um segundo `.send` em
+    qualquer lugar de `gmail/` derruba este teste."""
+    (achado,) = _atributos({"send"})
+    assert achado.startswith("service.py:")
+    assert achado.endswith(" enviar .send")
 
 
 def test_escopo_e_modify_e_nunca_o_de_acesso_total():

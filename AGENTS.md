@@ -61,7 +61,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     redigida e no bloco de não confiável. Consulta a cada pergunta, nada em disco; só no chat
   - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
-    desfazer por 7 dias). Só o `viking chat` registra essas tools, o MCP não (decisão do dono)
+    desfazer por 7 dias). Desde a Sessão 8, **enviar** (`envio.py`, D46): para a própria conta
+    sai na hora (até 20 em 24 h); para qualquer outro endereço, o e-mail inteiro e o código vão
+    só ao terminal, e sai depois de `confirma NNNN`; responder não tem parâmetro de destinatário
+    (sai do cabeçalho da original). Só o `viking chat` registra essas tools, o MCP não (decisão do
+    dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL, o ambiente que ele recebe); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
@@ -140,11 +144,15 @@ viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
 viking browser --doctor         # versão do Jev (ramo/commit/patch) + diagnóstico do Browser
                                # Harness (Chrome/daemon/conexão)
-viking gmail --login            # faz/confere o login do Gmail (ler e arquivar) e sai
+viking gmail --login            # faz/confere o login do Gmail (ler, arquivar e enviar) e sai
 viking gmail --raio-x           # Gmail sem o Gemini (também --buscar Q, --ler ID;
                                # sem opção: não lidos de hoje)
 viking gmail --arquivar A,B     # propõe arquivar tudo destes remetentes e pede o código
 viking gmail --desfazer CODIGO  # devolve à caixa o que aquele código arquivou (até 7 dias)
+viking gmail --enviar PARA --assunto A --corpo C
+                               # envia; para outra pessoa mostra o e-mail e pede o código
+viking gmail --responder ID --corpo C
+                               # responde na mesma conversa (o destinatário é o da original)
 viking financas --conectar      # abre a janela da Pluggy (MeuPluggy) e mostra o ID da conexão
 viking financas                 # confere as conexões de PLUGGY_ITEM_IDS (sem saldo nem extrato)
 viking registro                 # o que o Viking fez (7 dias; --dias N, --ids, --desfazer ID)
@@ -216,7 +224,11 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
   `viking` foi chamado.
 - Navegador: banco e e-mail são **bloqueados por padrão** (lista em `config._BLOQUEADOS_PADRAO`,
-  casa domínio e subdomínios). `VIKING_BROWSER_BLOQUEADOS` acrescenta domínios e
+  casa domínio e subdomínios, com o host lido como o Chrome o lê: `view-source:`/`blob:`/
+  `filesystem:` desembrulhados, `%XX`, largura dupla e invisíveis normalizados — Sessão 8). O
+  endereço inicial só aceita `http`/`https`/`data:`/`about:blank`
+  (`_redacao.esquema_permitido`): `file:` do Mac iria aos modelos. `VIKING_BROWSER_BLOQUEADOS`
+  acrescenta domínios e
   `VIKING_BROWSER_LIBERADOS` remove entradas exatas da lista (ambos separados por vírgula).
   O que sai para OpenRouter/Gemini e o que é redigido: `docs/fontes/jev-typesafe.md`, seção
   "Egress e redação".
@@ -328,7 +340,12 @@ seja código **vivo** (`confirmacao.vivo`), que com verbo age e sem verbo ganha 
 da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se autoaprovar
 (D26). `tests/test_gmail_aprovacao.py` confere quem chama `confirmar`/`arquivar`/`batchModify`
 lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza
-também enviar e mover para a lixeira: `test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar`.
+também enviar e mover para a lixeira: `test_codigo_do_gmail_nunca_chama_lixeira_ou_apagar`, e
+desde a Sessão 8 o envio existe em um lugar só (`test_enviar_existe_em_um_lugar_so`: `.send` só em
+`service.enviar`, dentro de `registro.acao`). O envio a outra pessoa segue a mesma regra da
+limpeza: o código de `gmail.enviar` vai só ao terminal, com terminal interativo, e se aprova no
+laço do chat; um e-mail que o próprio Viking mandou, lido de volta, continua no bloco de não
+confiável (a marca `X-Viking` só vira a etiqueta "[enviado pelo Viking]", D53).
 Vale igual para liberar um clique do navegador (D38): o código sai por `browser/liberacao.ao_dono`
 só com terminal interativo, e `liberacao.clicar_aprovado` só é chamado pelo laço do chat e pela
 CLI (`tests/test_browser_liberacao.py`).

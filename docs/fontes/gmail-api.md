@@ -8,7 +8,7 @@
   2026-09-26 no `gmail.v1.json` instalado: o Google o descreve como "Read, compose, and send
   emails from your Gmail account" e ele autoriza `send`, `trash`, `import`, `insert` e
   `drafts.send`; não autoriza `delete`/`batchDelete` (apagar de vez). É o menor escopo que tira
-  e-mail da caixa. O Viking não chama nada disso (teste que lê o código de `gmail/`; D29). Os dois
+  e-mail da caixa. O Viking não chama lixeira, importar nem apagar (teste que lê o código de `gmail/`; D29); desde a Sessão 8, envia por uma função só (`service.enviar`, D46). Os dois
   são escopos **restritos** do Google. Trocar o escopo força **um login novo** (a conferência de
   `google_auth` vê que o token salvo é de `readonly`).
 - **App OAuth:** o mesmo do calendário (`secrets/google_credentials.json`). Conferido pelo dono
@@ -98,3 +98,25 @@ cota num relógio falso. O corpo do erro traz o número do projeto OAuth: não s
   250 conferidos = 5.000 unidades, cerca de 1 minuto na cota.
 - **A confirmação não relê** e-mail por e-mail: refaz as buscas (a que exclui os protegidos e as
   que os listam) e intersecta com os aprovados. O remetente exato foi conferido na proposta.
+
+## Enviar (Sessão 8, 2026-09-28)
+
+- **Chamada:** `users.messages.send(userId="me", body={"raw": <base64url da mensagem>, "threadId":
+  <da original, na resposta>})`, com o escopo `gmail.modify` que já temos (ele autoriza `send`,
+  medido em 2026-09-26). Custa **100 unidades** da cota (a tabela de cota lida em 2026-09-26; o
+  dublê cobra o mesmo). Uma só chamada no código, dentro de `registro.acao("gmail.enviar")`.
+- **Mensagem:** `email.message.EmailMessage` com a política SMTP (linhas em CRLF no fio), só
+  `text/plain` UTF-8, `From` = a conta (`users.getProfile`), cabeçalho `X-Viking:
+  enviado-pelo-viking` e, no fim do corpo, "— Escrito pelo Viking (Assistente AI)". O
+  `EmailMessage` recusa CR/LF num cabeçalho (medido no Python 3.12.3); a nossa validação recusa
+  antes, com mensagem clara.
+- **Resposta na conversa:** `threadId` da original, `In-Reply-To` = o `Message-ID` dela e
+  `References` = as dela + o `Message-ID` (só o que tem a forma `<…>`; até 20), e o `Subject` com
+  "Re: " (sem duplicar) — https://developers.google.com/workspace/gmail/api/guides/threads.
+  Destinatário: `Reply-To`, senão `From`, só os endereços; se quem escreveu a original foi o
+  próprio dono, o `To` dela sem ele. Nunca `Cc`/`Cco`.
+- **Falha:** recusa por cota (429, ou 403 `rateLimitExceeded`) é certeza de que não saiu e se
+  repete com espera; 4xx é "não enviei"; 5xx, tempo esgotado ou conexão é `incerta` ("Não sei se
+  o e-mail saiu… confira em Enviados"), sem nova tentativa.
+- **Não medido aqui (VPS):** o envio de verdade (o teste é no Mac); se o Gmail mantém o `From`
+  explícito; como a marca `X-Viking` aparece ao ler de volta pela API (esperado: nos `headers`).

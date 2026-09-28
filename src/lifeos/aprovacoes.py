@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 GMAIL_ARQUIVAR = "gmail.arquivar"
+GMAIL_ENVIAR = "gmail.enviar"  # D46: e-mail para qualquer endereço que não seja a própria conta
 CALENDARIO_APAGAR = "calendario.apagar"
 CALENDARIO_REAGENDAR = "calendario.reagendar"
 NAVEGADOR_CLIQUE = "navegador.clique"  # D38: um clique recusado pelo freio, uma vez
@@ -39,6 +40,8 @@ TIPOS: tuple[Tipo, ...] = (
     Tipo(CALENDARIO_REAGENDAR, janela=timedelta(0), no_chat=False),
     # Um clique não se desfaz: o código só vive enquanto a proposta está aberta.
     Tipo(NAVEGADOR_CLIQUE, janela=timedelta(0), no_chat=True),
+    # E-mail enviado não se desfaz: o código só vive enquanto a proposta está aberta.
+    Tipo(GMAIL_ENVIAR, janela=timedelta(0), no_chat=True),
 )
 
 

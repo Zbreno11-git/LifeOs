@@ -72,6 +72,18 @@ preencheu pareceria errado e ele tenderia a repreencher em loop. É consequênci
 prompt, **não observada ao vivo**. Banco e e-mail ficam fora por bloqueio de domínio,
 não por redação.
 
+**O bloqueio lê o endereço como o Chrome o lê (Sessão 8, 2026-09-28).** Até então o host saía do
+`urlsplit`, e um endereço embrulhado ou escrito de outro jeito passava (17 de 20 disfarces
+medidos): `view-source:https://banco/` e `blob:`/`filesystem:` (o Chrome abre o endereço de
+dentro), `https:banco` sem barras, `\` no lugar de `/`, `%69tau`, letras de largura dupla, hífen
+invisível, ponto ideográfico. `_redacao._host` agora desembrulha (até 8 camadas; além disso,
+bloqueia), aplica a regra de barras dos esquemas especiais, decodifica `%XX` no host, NFKC com
+casefold, tira os invisíveis e troca o ponto ideográfico — a regra da especificação de URL da
+WHATWG, que o Chrome segue (**não medido no Chrome**). É a mesma função dos dois lados (preflight
+do runner e `_checar` no envelope). E o endereço **inicial** só aceita `http`/`https`/`data:`/
+`about:blank` (`_redacao.esquema_permitido`, erro `endereco_recusado`): um `file:///…/.env` no
+Mac iria ao OpenRouter e ao Gemini. Um domínio sósia em punycode é outro domínio, e não é pego.
+
 ### O que o Jev recebe do ambiente (Sessão 6, 2026-09-27, D41)
 
 Até a Sessão 6 o subprocesso herdava o ambiente inteiro do Viking — `GEMINI_API_KEY`,

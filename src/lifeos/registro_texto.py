@@ -42,6 +42,10 @@ def descrever(a: registro.Acao) -> str:
         "lembrete.concluir": f"concluiu o lembrete {p.get('id', '')}",
         "gmail.arquivar": f"arquivou {r.get('feitos', p.get('quantos', '?'))} e-mail(s)",
         "gmail.desarquivar": f"devolveu {r.get('feitos', p.get('quantos', '?'))} e-mail(s)",
+        "gmail.enviar": (
+            f"enviou o e-mail «{p.get('assunto', '')}» para {', '.join(p.get('para') or [])}"
+            + (" (para o dono, sem código)" if p.get("livre") else " (aprovado com código)")
+        ),
         "navegador.executar": (
             f"usou o navegador: {'; '.join(p.get('objetivos') or [])} "
             f"({r.get('status', '?')}, {r.get('passos', 0)} passo(s))"
