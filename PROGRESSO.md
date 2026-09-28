@@ -5,20 +5,28 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: entregas 1 e 2 no remoto e CI verde; próximo: o Mac (C11)
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: o Mac achou dois defeitos; consertados, falta a decisão do cryptography e o 2º teste
 
-**Estado do repositório:** conferir com `git log -1` (commit da entrega 2, depois de `be47ab4`) ·
-travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (commit do conserto do Mac, depois de
+`23a2a79`) · travas: nenhuma · background: nenhum.
 
-**Onde parou:** C0–C10 ✅. Entrega 2 (lock, CI, alertas) no remoto, CI do HEAD verde pelo SHA. Medido:
-- `1158 passed` no `.venv` do VPS, já sincronizado com o lock;
-- `ruff` limpo, formatação zero, `uv lock --check` ok;
-- mutações: 162/162 na rodada completa + 3/3 do CI, isoladas.
+**Onde parou:** C0–C10 ✅. C11 no Mac (`23a2a79`):
+- `uv sync` recusou o próprio Viking por causa do `no-build` (uv 0.11.24 no Mac, 0.12.10 aqui);
+  o resto rodou no ambiente antigo;
+- o Mac tem Python **3.13.5** e já tinha o **cryptography 50.0.1**, compilado lá ou vindo do conda
+  (a premissa da decisão do dono estava errada: erros, classe 2).
 
-**Próximo passo exato:** C11 — o dono roda no Mac o roteiro do plano abaixo ("Verificação ponta a
-ponta — C11"); esperado `1158 passed` sem pulados e `cryptography 48.0.1` na venv. Divergência →
-consertar na 7 (sessão só fecha sem dívida). Depois: barra (7 fechada), diário, `sessoes.md` ▶️
-para a próxima sessão.
+Consertado:
+- o `no-build` saiu, e no lugar entrou `tests/test_lock.py` (wheel para Mac Intel ≤ 13 e Linux,
+  Pythons 3.12 e 3.13; 396 casos);
+- o CI roda nos dois Pythons.
+Medido: `1555 passed`; no Python 3.13, pelo lock, `1553 passed, 2 skipped`.
+
+**Próximo passo exato:**
+1. Conferir o CI do HEAD pelo SHA; esperado `success` nos dois Pythons.
+2. O dono roda no Mac o diagnóstico da origem do cryptography 50 (`WHEEL`/`INSTALLER` do
+   `dist-info`, `which cargo rustc`) e decide de novo.
+3. Depois, o 2º roteiro do Mac.
 
 **Não pode ser esquecido:**
 - o cryptography fica na 48.0.1 (última com wheel para Mac Intel), com 3 falhas ignoradas no CI por
@@ -28,7 +36,7 @@ para a próxima sessão.
 - repo público;
 - nunca presumir o fuso do dono.
 
-**Depende do dono:** o teste no Mac (C11).
+**Depende do dono:** o diagnóstico do cryptography no Mac, a decisão de novo com o dado, e o 2º teste.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1158 passed`.
@@ -148,7 +156,7 @@ O `inicio` na aprovação do MCP:
 | C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ✅ ok do dono; `vulnerability-alerts` → 204 |
 | C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ✅ dono: backlog (2026-09-28); escrito no backlog de `sessoes.md` |
 | C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ✅ `0a1d122`: run 36381073572 `success` (`1156 passed, 2 skipped`, 37 s); grafo lê o lock; 3 alertas = os da D45 |
-| C11 | Mac: roteiro abaixo | C10 | ⬜ |
+| C11 | Mac: roteiro abaixo | C10 | ⏳ 1º teste achou 2 defeitos (`no-build` no uv 0.11; Python 3.13) — consertados; falta a decisão do cryptography e o 2º teste |
 
 ### Fase 0 — C1: medir o que faltou (nada commitado)
 **Faz (tudo no scratchpad, nada no repo):**

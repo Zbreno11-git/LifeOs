@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 13 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 15 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -121,6 +121,18 @@ perguntar. Ele não está. A agenda do Google dele está em São Paulo, o relóg
 os três fusos só apareceram quando o roteiro mediu cada um (`date +%z`, o fuso do Viking, o
 registro com `-03:00`). O que tem de novo: a suposição não estava em nenhuma frase que eu pudesse
 conferir — estava no desenho dos testes (todos fixavam Brasília como "o fuso do dono").
+
+**2026-09-28 — "seu Mac já está na 48" (Sessão 7, pergunta ao dono).** Para o dono decidir entre
+travar o cryptography na 48.0.1 e outras saídas, escrevi na opção recomendada que o Mac "já está
+nessa situação hoje, sem saber (não há versão nova para ele)". Não medi: deduzi do PyPI (a 50 não
+tem wheel para Mac Intel). O Mac tinha a 50.0.1, compilada lá ou vinda do conda. A premissa de uma
+decisão do dono estava errada; a decisão volta para ele com o dado medido.
+
+**2026-09-28 — `no-build` provado num `uv` só (Sessão 7).** O `no-build = true` resolveu o lock
+e instalou no VPS (uv 0.12.10). No Mac (uv 0.11.24), `uv sync` recusou o próprio Viking ("marked as
+`--no-build` but has no binary distribution"), e o roteiro seguiu no ambiente antigo. A versão do
+`uv` do Mac estava na tabela "não medido" do plano, e mesmo assim a regra entrou como se valesse em
+qualquer `uv`. Trocado por `tests/test_lock.py`, que lê o lock e não depende da versão do `uv`.
 
 **2026-09-28 — um número escrito antes do último caso (Sessão 7).** Escrevi `1148 passed` no
 diário e no bloco de retomada; depois acrescentei um caso ao teste de `_mesmo_instante` (a mutação

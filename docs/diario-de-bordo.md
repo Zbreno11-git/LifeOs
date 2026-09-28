@@ -1046,6 +1046,29 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 7, teste no Mac: o `uv sync` recusou, e o Mac já tinha o cryptography 50
+
+**Medido no Mac (`23a2a79`).**
+- **`uv sync --locked --extra dev` falhou:** "Distribution `lifeos==0.1.0 @ editable+.` can't be
+  installed because it is marked as `--no-build`". O uv do Mac é o 0.11.24; o do VPS e o do CI,
+  o 0.12.10.
+- **O resto rodou no ambiente antigo:** `1158 passed`, `cryptography 50.0.1`, `google-genai
+  2.24.0`, Python **3.13.5**.
+- O `--doctor` e o `viking financas` ficaram como antes. O chat leu a agenda de amanhã, o que
+  testa o login do Google, mas com as bibliotecas antigas.
+
+**O que muda.**
+- O `no-build` saiu. No lugar, `tests/test_lock.py` lê o lock e exige wheel de todo pacote para
+  Mac Intel (macOS ≤ 13) e Linux x86_64, nos Pythons 3.12 e 3.13.
+- As plataformas saem dos marcadores do próprio lock (um pacote só do Windows não conta).
+  Resultado: 396 casos. Num lock sem a trava, o teste cai exatamente no `cryptography 50.0.1`
+  para Mac, nos dois Pythons.
+- O CI passa a rodar nos dois Pythons, com um teste que amarra essa lista à do lock. No VPS, com
+  Python 3.13 pelo lock: `1553 passed, 2 skipped`.
+
+**A premissa errada.** Eu tinha dito ao dono que o Mac já estava na 48 "sem saber". Estava na 50,
+compilada lá ou vinda do conda. A decisão sobre o cryptography volta para o dono com esse dado.
+
 ### 2026-09-28 — Sessão 7, entrega 2: versões travadas, CI e alertas de dependência (falta o Mac)
 
 **Lock (`uv.lock`, 103 pacotes).**

@@ -33,9 +33,9 @@ required-environments = [
     "sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
-# E nenhuma dependência se compila na instalação: sem isto o código-fonte conta como "compatível",
-# e a lista de cima não impede a 50.0.1.
-no-build = true
+# O código-fonte conta como "compatível" com essas plataformas, então esta lista sozinha não impede
+# uma versão sem wheel: quem impede é `tests/test_lock.py`, que lê o lock (`no-build = true` fazia
+# isso no uv 0.12, mas o uv 0.11 do Mac o aplica ao próprio Viking e recusa instalar; 2026-09-28).
 # A mesma versão em toda máquina: sem esta linha o lock se divide (48.0.1 no Mac, 50.0.1 no Linux) e
 # o CI testaria outra coisa. Tirar quando o cryptography voltar a publicar wheel para Mac Intel ou
 # o Mac do dono deixar de ser Intel (D45).

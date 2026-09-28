@@ -75,6 +75,14 @@ def test_ci_roda_os_portoes_do_agents():
         assert f"uv run --locked {portao}" in codigo, portao
 
 
+def test_ci_testa_os_pythons_das_nossas_maquinas():
+    """O Mac do dono roda Python 3.13 e o VPS 3.12: o CI testa os dois, e a régua do lock também."""
+    from tests.test_lock import PYTHONS
+
+    (lista,) = re.findall(r"^\s+python: \[(.*)\]$", _codigo(), re.MULTILINE)
+    assert [v.strip().strip('"') for v in lista.split(",")] == [f"3.{m}" for m in PYTHONS]
+
+
 def _ignorados() -> list[str]:
     return re.findall(r"--ignore-vuln (\S+)", _codigo())
 

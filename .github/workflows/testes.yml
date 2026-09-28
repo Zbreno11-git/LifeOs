@@ -19,6 +19,11 @@ jobs:
   portoes:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.12 no VPS, 3.13 no Mac do dono (medido em 2026-09-28); `tests/test_lock.py` usa os mesmos
+        python: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,7 +31,7 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.10"
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
       - name: Instalar exatamente o uv.lock
         run: uv sync --locked --extra dev
       - name: Testes (2 pulados esperados, os contratos com o clone do Jev)
