@@ -7,13 +7,42 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-28 (Sessão 7, testada no seu Mac por inteiro).**
+**Última atualização: 2026-09-28 (roteiro novo: Sessões 8–21).**
 
-`██████████████████░░ 10 de 12 sessões fechadas + 2 parciais (= 11 de 12)`
+`████████░░░░░░░░░░░░ 10 de 27 sessões fechadas + 2 parciais (= 11 de 27)`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6 e 7; parciais 4 e
-3b (falta só a validação ao vivo, escrita lá); na fila: nenhuma — a próxima sai do backlog, por
-escolha sua. Cada parcial vale meia sessão na barra.
+3b (falta só a validação ao vivo, que é a Sessão 8b); na fila: 8, 8b e 9 a 21. Cada parcial vale
+meia sessão na barra. A barra "encolheu" de 11/12 para 11/27 porque o roteiro cresceu, não porque
+algo voltou atrás.
+
+## 2026-09-28 — o roteiro até a versão de sucesso: agente geral, coach, nuvem e app
+
+**O que você decidiu, em uma linha cada:**
+- **Onde:** o Viking vai morar na nuvem (Google Cloud) e usar o seu Mac como "mãos" para o
+  navegador, porque o Chrome logado é seu. Até o app existir, você conversa pelo terminal do Mac.
+- **A ordem:** e-mail → fundação → nuvem → features → app, com a nuvem cedo para o Mac velho não
+  atrasar o desenvolvimento.
+- **E-mail:** o Viking passa a enviar. Para você, sozinho; para outras pessoas, só com o seu
+  código.
+- **Memória:** ele lembra fatos e preferências seus **só quando você diz "sim"**, e lê os
+  documentos que você mandar, um por um (inclusive o material de coach do seu NotebookLM). Não
+  guarda as conversas inteiras.
+- **Coach:** registra os treinos que você conta no chat, mostra o progresso, ajusta o plano e te
+  cobra por e-mail. Com dor, ajusta o treino e sugere um profissional se persistir. O Garmin vem
+  pela API oficial, no fim.
+- **Agente geral:** conversa de verdade, num tom caloroso, e busca na web sempre mostrando a fonte.
+- **O Claude:** entra como segunda opinião e para o que for difícil, sem nunca ver e-mail nem
+  finanças.
+- **Consertar a si mesmo:** ele acha os próprios erros e propõe o conserto, mas o código passa por
+  você.
+- **App:** no iPhone, com Face ID para aprovar, notificação e voz.
+- **Custo:** até ~US$ 20 por mês, medido antes de cada escolha.
+
+**Por que a nuvem vem cedo:** seu Mac é um Intel de 2017 que não atualiza mais, e as peças de
+terceiros estão deixando de funcionar nele (a de criptografia já compila à força; a da memória
+"vetorial" que você citou, o Chroma, nem instala mais nele). Na nuvem esse problema some, e o
+lembrete na hora, a cobrança do coach e o Garmin deixam de esperar o fim.
 
 ## 2026-09-28 — Sessão 7 (manutenção): mesma versão em toda máquina e testes no GitHub
 

@@ -5,40 +5,46 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7 fechada (testada no Mac); próximo: o dono escolhe a próxima sessão
+## ▶️ RETOMAR AQUI — 2026-09-28, roteiro das Sessões 8–21 escrito; próximo: abrir e planejar a Sessão 8
 
-**Estado do repositório:** conferir com `git log -1` (o fechamento da 7, depois de `069fe2a`) ·
-igual ao remoto · travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (commit "roteiro das Sessões 8–21", depois
+de `bfb674b`) · igual ao remoto · travas: nenhuma · background: nenhum.
 
-**Onde parou:** a Sessão 7 fechou em 2026-09-28, testada no Mac em `069fe2a`:
-- `uv sync` ok, 20 versões trocadas;
-- `cryptography 50.0.1`, `google-genai 2.25.0`, Python 3.13.5;
-- `1553 passed`; o chat leu a agenda.
-CI do `069fe2a` verde nos dois Pythons, e os 3 alertas do Dependabot `fixed`. Barra: 10 fechadas
-+ 2 parciais (4 e 3b) = 11 de 12.
+**Onde parou:** a Sessão 7 fechou (testada no Mac). Em 2026-09-28 o dono planejou comigo, em
+várias rodadas de perguntas, o roteiro até a "versão de sucesso".
+- **Onde está escrito:** `sessoes.md` ("O roteiro de 2026-09-28", Sessões 8–21), `docs/decisoes.md`
+  D46–D52 e a barra (11 de 27).
+- **Em uma linha:** e-mail que sai → pequenos (8b) → fundação de dados → nuvem GCP (Mac como
+  "mãos", terminal como cliente) → agente geral com web → memória só com o "sim" → documentos →
+  coach → app no iPhone com Face ID e voz → Claude → auto-diagnóstico (repo privado) → Garmin.
+- **Nenhum código mudou.** Portões iguais aos do fechamento da 7: `1553 passed`, `ruff` limpo,
+  formatação zero.
 
-**Portões no fechamento:**
-- `1553 passed`, `ruff` limpo, formatação zero, `uv lock --check` ok, `pip-audit` sem falhas;
-- mutações 162/162 (rodada completa, `src/` igual desde `be47ab4`) + CI 4/4.
+**Próximo passo exato:** abrir e planejar a Sessão 8 ("e-mail que sai") pela skill `software-build`:
+1. rotina da D45 (`uv lock --upgrade --dry-run`; CI do último commit pelo SHA);
+2. medir a abertura: o teste que hoje proíbe `send`, `gmail/limpeza.py` como molde da aprovação
+   e o `registro`;
+3. perguntar ao dono, inclusive o status do app OAuth ("Testing"? o login venceria em 7 dias);
+4. escrever o plano aqui. Nada de código antes do "pode seguir".
 
-**Próximo passo exato:** perguntar ao dono qual é a próxima sessão. Não há sessão numerada na
-fila: vem do backlog de `sessoes.md` ou da validação ao vivo das parciais 4 e 3b. Na abertura, a
-rotina da D45: `uv lock --upgrade --dry-run` (em 2026-09-28 já mostrava platformdirs 4.12.0 →
-4.12.1) e o CI do último commit pelo SHA.
-
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e backlog);
-`docs/decisoes.md` (D45); o índice de `docs/erros.md` (classe 2: cinco ocorrências nesta sessão);
-a memória do Claude.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️, "O roteiro de
+2026-09-28" e a Sessão 8); `docs/decisoes.md` (D22, D26, D29, D46–D52); o índice de
+`docs/erros.md`; a memória do Claude (visão do dono, fuso).
 
 **Não pode ser esquecido:**
-- instalar é `uv sync --locked --extra dev`, e a venv do `uv` não tem `pip` (`uv pip …`);
-- o Mac tem uv 0.11.24 (o `no-build` não serve), Python 3.13.5 e Rust, e compila o cryptography
-  (exceção em `tests/test_lock.py`, D45);
-- o CI não ignora nenhuma falha;
-- repo público;
+- nunca código de aprovação por e-mail nem por canal que uma tool leia (D52);
+- fato novo só com o "sim" do dono, lido pelo laço do chat (D48);
+- o Claude nunca vê e-mail, finanças nem páginas (D49);
+- a issue de auto-diagnóstico só com campos técnicos, e em repo privado (D50);
+- o endereço de e-mail do dono vem da config, nunca de um literal no repo público;
+- instalar com `uv sync --locked --extra dev`;
 - nunca presumir o fuso do dono.
 
-**Depende do dono:** a escolha da próxima sessão.
+**Depende do dono:** as perguntas da abertura da 8. Mais adiante:
+- S10: criar o projeto GCP com o faturamento dele;
+- S11: tornar o repo privado;
+- S12/S19: pôr a `ANTHROPIC_API_KEY`;
+- S19: pedir a API da Garmin.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1553 passed`.

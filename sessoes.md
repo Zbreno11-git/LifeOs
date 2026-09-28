@@ -16,22 +16,23 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** nenhuma numerada na fila — a 7 (manutenção) fechou no Mac em 2026-09-28. A próxima
-  sai do "Backlog sem sessão marcada" abaixo (ex.: checagem de tipos, com o número medido;
-  paginação e recorrência no calendário; notas buscáveis; RAG) ou da validação ao vivo que falta
-  nas parciais 4 e 3b. **Quem escolhe é o dono.**
-- **Primeiro passo:** perguntar ao dono qual assunto, e abrir pela skill `software-build`.
+- **Sessão:** 8 — e-mail que sai, a primeira do roteiro de 2026-09-28 (Sessões 8–21, abaixo).
+- **Primeiro passo:** abrir e planejar pela skill `software-build`, com as perguntas ao dono
+  antes do plano; e conferir com ele o status do app OAuth ("Testing"?).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D39–D45), a
-  seção da Sessão 7 abaixo, e a memória do Claude sobre o fuso do dono.
-- **Depende do dono:** a escolha da próxima sessão.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
+  roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
+- **Depende do dono:** as perguntas da abertura da 8.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
-> Pluggy logo depois da Gmail 2 e antes da Sessão 5, por decisão do dono ("bem importante").
+> Pluggy logo depois da Gmail 2 e antes da Sessão 5, por decisão do dono ("bem importante"). 2026-09-28:
+> roteiro das Sessões 8–21, com a **nuvem cedo** (S10–11, antes das features), por decisão do dono
+> ("o meu Mac vai atrasar o dev"); documentos antes do coach, porque o material do NotebookLM dele
+> é o que faz o coach "não ser genérico".
 
 ## Sessão 1 — correção, custos e runner (feita em 2026-09-20)
 
@@ -344,6 +345,196 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
   (`FunctionDeclaration.from_callable_with_api_option`, com `GEMINI_API`, a API que o chat usa; a
   privada conferia contra o Vertex AI) e exige o conversor estrito.
 
+## O roteiro de 2026-09-28: do terminal a um agente geral na nuvem (Sessões 8–21)
+
+Planejado com o dono em 2026-09-28, depois da Sessão 7. A "versão de sucesso final" dele:
+- um agente geral, que conversa de verdade e busca na web;
+- um profissional em alguns assuntos, a começar por **personal trainer/coach** a partir dos
+  treinos dele;
+- aprende coisas novas;
+- se diagnostica e propõe consertos, com o código passando pelo dono;
+- ganha um segundo agente (Claude);
+- tem app no iPhone, no navegador e por voz;
+- mora na nuvem (GCP), com o Mac como "mãos" do navegador.
+
+As decisões estão na D46–D52 (`docs/decisoes.md`). Cada sessão abre e planeja do jeito de
+sempre (skill `software-build`): a entrega abaixo é o alvo, e o tamanho sai da medição da
+abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 são as candidatas.
+
+**Regras que valem para todas, decididas agora:**
+- **Nunca código de aprovação por e-mail**, nem por nenhum canal que uma tool leia: o Viking lê o
+  Gmail (D22), e leria o próprio código.
+- **Fato novo e receita só com o "sim" do dono**, lido pelo laço do chat e não por uma tool
+  (D48).
+- **O Claude nunca vê** e-mail, finanças nem páginas (D49).
+- Tudo que custa dinheiro é medido antes, e o teto de ~US$ 20/mês fica no próprio app
+  (`custos.py`), porque o alerta do GCP só avisa, não para o gasto.
+- A nuvem roda em UTC: `VIKING_TIMEZONE` explícito, sempre. Os logs dela não guardam prompt nem
+  conteúdo.
+
+## Sessão 8 — e-mail que sai (planejada em 2026-09-28)
+
+- **Entrega:** um e-mail para o próprio dono sai sem código; uma resposta a outra pessoa só sai
+  depois do código dele, com a linha no `registro`.
+- **Decidido (D46):**
+  - para ele, livre, com o endereço vindo da config (o repo é público) e um limite de envios por
+    dia;
+  - para outros, com código, e-mail novo e resposta na conversa certa, sem anexo por construção.
+- **Travas:**
+  - o código liga destinatários, assunto, corpo e conversa;
+  - CRLF nos cabeçalhos é recusado, e a resposta nunca acrescenta Cc/Cco;
+  - o teste que hoje proíbe enviar (`test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar`)
+    vira um que permite `send` em **uma** função, dentro de `registro.acao`. Lixeira e apagar
+    continuam proibidos.
+- **Medido:** o `gmail.modify` já autoriza enviar (D29), então não precisa de login novo para isso.
+- **Primeiro passo:** conferir com o dono se o app OAuth está em "Testing" no Google Cloud
+  Console (D11 nunca conferiu). Nesse status, o login vence em 7 dias, o que na nuvem é fatal.
+- **Lembretes:** até a nuvem, o disparo por e-mail é manual (`viking lembretes --enviar`); o
+  automático vem na 11.
+
+## Sessão 8b — pequenos (curta, planejada em 2026-09-28)
+
+- **Entrega:** uma série semanal de 300 ocorrências aparece inteira na busca; os testes ao vivo
+  que faltam nas parciais 4 (redação de CPF/cartão numa página real) e 3b (tools de calendário
+  do MCP contra o Google real, evento de dia inteiro conferido no Google Calendar) estão feitos.
+- **Medido:** `calendar/service.buscar()` não tem `timeMax` e usa `singleEvents=True`. Lê só a
+  1ª página (até 250 resultados), e uma série pode enchê-la em silêncio (§4.5).
+
+## Sessão 9 — fundação de dados (planejada em 2026-09-28)
+
+- **Entrega:**
+  - migrations numeradas em todos os módulos que usam o `viking.db`, e um banco no formato antigo
+    migra (§12.6);
+  - uma interface de store com UUID e UTC;
+  - "o que mora onde" escrito numa decisão;
+  - lembrete com `enviado_em`: `viking lembretes --enviar` rodado duas vezes manda uma.
+- **Por que antes da nuvem:** texto em tabelas normais é a fonte, e o índice vetorial é
+  descartável. A troca de banco vira reconstruir um índice, não migrar dados. É também a defesa
+  estrutural contra a deriva de contexto.
+- **O que mora onde, proposto:** no Mac ficam o navegador, a trava, a liberação de clique (D38) e
+  o Chrome logado. Na nuvem ficam o cérebro, os lembretes, a memória, os treinos e os documentos.
+  A aprovação mora onde a ação roda.
+- **Pergunta na abertura:** a checagem de tipos (backlog, 67 erros) antes desta refatoração?
+
+## Sessão 10 — nuvem 1: o motor (planejada em 2026-09-28)
+
+- **Entrega:**
+  - projeto GCP (criado pelo dono, com o faturamento dele) com a infraestrutura em script;
+  - o `describe` mostra a imagem do commit;
+  - um pedido sem login responde 401;
+  - `viking chat` no Mac conversa com a nuvem, e o código de aprovação aparece só no terminal, por
+    um canal que o modelo não vê;
+  - alerta de faturamento ligado.
+- **Decidido (D47):**
+  - Cloud Run com mínimo de 0 instâncias, Cloud Scheduler e Secret Manager;
+  - sem load balancer nem IAP (~US$ 18/mês, fora do orçamento);
+  - o deploy sou eu, do VPS, com uma conta de serviço limitada ao projeto e o ok do dono a cada
+    deploy; o script mostra o que muda antes.
+- **Banco:** escolhido na abertura pelo custo medido: Firestore com busca vetorial, Cloud SQL +
+  pgvector (~US$ 9–10+/mês) ou Chroma numa VM gratuita. Na nuvem o Chroma instala; no Mac Intel
+  não, porque o `onnxruntime` só publicou até a 1.23.2 (medido em 2026-09-28).
+
+## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
+
+- **Entrega:**
+  - os dados do Mac migrados;
+  - lembrete por e-mail em ±2 min com o Mac desligado;
+  - `viking maos` liga o navegador do Mac à nuvem;
+  - backup no Drive (`drive.file`) que restaura num banco novo;
+  - o repo privado, depois de conferir as consequências (cota do CI, secret scanning).
+- **O navegador (mãos no Mac):** o Mac **puxa** as tarefas, numa saída autenticada e sem porta
+  aberta. A tarefa expira, e todas as travas do navegador continuam rodando no Mac. Só funciona
+  enquanto o dono deixa `viking maos` ligado: ele recusou processo em segundo plano.
+- **Finanças (D51):** vão para a nuvem só se a medição, feita só lendo, disser que é seguro:
+  - o produto de pagamentos está desligado na aplicação Pluggy dele?
+  - a documentação oficial diz que o PIX exige autorização no banco?
+
+  Se sim, a chave vai para um serviço isolado de leitura. Se não, fica no Mac até ele pedir à
+  Pluggy que desligue os pagamentos.
+
+## Sessão 12 — agente geral (planejada em 2026-09-28)
+
+- **Entrega:**
+  - uma pergunta factual responde com fontes;
+  - o tom é conversador e caloroso;
+  - Flash no dia a dia e Pro quando precisa, visível no `/custos`;
+  - o teto diário recusa com clareza.
+- **Travas:**
+  - o resultado da busca vai no bloco de conteúdo não confiável;
+  - as fontes saem dos metadados da busca (`grounding_metadata`), não do texto do modelo;
+  - um e-mail injetado não força o modelo caro, porque há teto.
+- **A medir:** se a busca do Gemini combina com function calling na mesma chamada. Se não,
+  vira uma tool que faz uma chamada separada.
+
+## Sessão 13 — memória de fatos e receitas (planejada em 2026-09-28)
+
+- **Entrega:**
+  - um fato proposto na conversa A só volta na conversa B depois do "sim";
+  - um fato que contradiz substitui o antigo;
+  - o dono lista, corrige e apaga;
+  - uma receita reusada sem ganhar permissão nova;
+  - uma nota achada por significado;
+  - casos fixos de avaliação contra a deriva de contexto.
+- **Decidido (D48):**
+  - sem o histórico inteiro das conversas;
+  - a origem de cada fato fica gravada, e o que veio de e-mail ou página é marcado.
+
+## Sessão 14 — documentos (planejada em 2026-09-28)
+
+- **Entrega:** "aprende este PDF", um arquivo por vez. A resposta cita o arquivo e o trecho, e a
+  avaliação fixa atinge um limiar medido e combinado.
+- **O dono:** vai montar um NotebookLM com material de coach e mandar os arquivos um por um.
+  Primeiro passo: confirmar se o NotebookLM tem API para conta pessoal (provável que não).
+- **Ponto técnico:** o seletor do Drive é um componente de página web. Até o app, os arquivos são
+  locais ou abertos por uma página local, como a da Pluggy.
+
+## Sessão 15 — coach 1: registrar (planejada em 2026-09-28)
+
+- **Entrega:** "supino 4x8 80kg" fica guardado estruturado (exercício, séries, repetições,
+  carga, unidade); recordes e volume por semana.
+
+## Sessão 16 — coach 2: planejar e cobrar (planejada em 2026-09-28)
+
+- **Entrega:**
+  - o plano é ajustado pelos logs e pelo material do dono, que é citado;
+  - dor relatada muda o plano e sugere fisioterapeuta ou médico se persistir, sem nunca
+    diagnosticar;
+  - "faz 5 dias sem treinar" chega por e-mail.
+
+## Sessão 17 — app 1 (planejada em 2026-09-28)
+
+- **Entrega:** no iPhone (app web instalável), login com passkey/Face ID, chat e lembretes; a
+  aprovação numa tela que o modelo nunca vê (D52).
+
+## Sessão 18 — app 2 (planejada em 2026-09-28)
+
+- **Entrega:** notificação de lembrete no iPhone; apertar para falar e ouvir a resposta; gráfico
+  de volume semanal dos treinos.
+
+## Sessão 19 — Claude, cérebro e revisor (planejada em 2026-09-28)
+
+- **Entrega:** a segunda opinião do Claude num plano de treino, registrada com o custo; nenhuma
+  trava muda por causa dela; um teste garante que nada de e-mail, finanças ou páginas vai para
+  ele (D49).
+- **Nesta sessão, o dono pede a API oficial da Garmin:** a aprovação pode levar semanas e não é
+  garantida para uso pessoal.
+
+## Sessão 20 — auto-diagnóstico (planejada em 2026-09-28)
+
+- **Entrega:** um relatório semanal dos erros do registro, e um rascunho de issue só com campos
+  técnicos, criado no repo privado depois do código (D50). O conserto é feito numa sessão com o
+  Claude Code, e o código passa pelo dono.
+- **Travas:**
+  - a issue é montada a partir de uma lista fixa de campos técnicos (classe do erro, módulo,
+    trace), nunca do conteúdo;
+  - o token só escreve issues daquele repo;
+  - o texto da issue é conteúdo não confiável para quem for consertar.
+
+## Sessão 21 — Garmin (planejada em 2026-09-28)
+
+- **Entrega:** uma atividade real do relógio chega ao coach. Só pela API oficial; a biblioteca não
+  oficial, com a senha dele, ficou recusada.
+
 ## Só se o Bosgame voltar (trilha de hardware reativada)
 
 - §10.1: `jev_runner._matar()` não mata a árvore de processos no Windows (só
@@ -362,10 +553,10 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
   nenhum defeito real. Para virar portão: consertar os 67, ignorar os imports do ambiente do Jev
   (`_jev_subprocess.py` roda noutro Python) e pôr o `mypy` fixado no CI.
 
-Paginação e eventos recorrentes no calendário (§4.5); notas recuperáveis/buscáveis, não só
-criáveis (§12.4); migrations de schema formais (§12.6); decidir se o Viking é só-checkout ou
-pacote instalável de verdade (§9.3); RAG/busca semântica sobre notas e
-calendário; teste preventivo para o caso de uma função virar tool do Gemini e do MCP ao mesmo
+Com sessão desde 2026-09-28: paginação e séries (8b), notas buscáveis (13), migrations formais
+(9), RAG (13–14), aprovação fora do terminal (17). Sem sessão: decidir se o Viking é só-checkout
+ou pacote instalável de verdade (§9.3); anexos no e-mail; MCP para outros apps na nuvem (fica
+local por stdio até existir autenticação); multiusuário (o dono decidiu: só ele); teste preventivo para o caso de uma função virar tool do Gemini e do MCP ao mesmo
 tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3), só rede de
 segurança para um cenário hipotético. Residuais da Sessão 4: o objetivo, os rótulos/valores
 de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver

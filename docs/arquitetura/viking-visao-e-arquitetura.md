@@ -168,6 +168,9 @@ navegação. Isso é fase futura — ver roadmap (seção 9).
 
 ## 9. Roadmap
 
+> Roteiro vigente desde 2026-09-28: `sessoes.md` (Sessões 8–21, decisões D46–D52; resumo no
+> `AGENTS.md`, "Roadmap"). Abaixo, a visão de 2026-09-20: os itens 1, 2 e 4 já existem.
+
 1. **Assistente CLI (atual)** — calendário + navegador + lembretes, unificados em `viking chat`.
 2. **Servidor MCP do Viking** — expor calendário/lembretes para outras ferramentas.
 3. **Revival do hardware (futuro)** — retomar o dispositivo de pulso como interface física, se/quando
