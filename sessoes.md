@@ -20,8 +20,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
-  - As 4 perguntas que tocam decisões do dono estão no bloco de `PROGRESSO.md`. As respostas
-    entram nas seções antes de abrir a 8.
+  - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
+    seções: o "sim" da memória (13, D48), o repo privado no começo da 10 (D50), o deploy sem
+    credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
 - **Depois:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
   do plano. Os primeiros passos dela já estão escritos na seção da 8: o furo do bloqueio de
   domínio, o `oauthlib` 4.0.0 e o login "Testing".
@@ -497,6 +498,10 @@ tudo lá é "não medido" até a sessão que usa medir):
 
 ## Sessão 10 — nuvem 1: o motor (planejada em 2026-09-28)
 
+- **Primeiro passo (decisão do dono, 2026-09-28):** o repo vira **privado antes de qualquer
+  infraestrutura**. Antes da troca entra um scanner de segredos nosso no CI e no commit, porque o
+  secret scanning do GitHub some em repo privado (detalhe na Sessão 11, onde isto estava).
+  Nenhum ID de projeto, URL ou conta de serviço chega a um repo público.
 - **Entrega:**
   - projeto GCP (criado pelo dono, com o faturamento dele) com a infraestrutura em script;
   - o `describe` mostra a imagem do commit;
@@ -548,8 +553,13 @@ tudo lá é "não medido" até a sessão que usa medir):
       deleted";
     - logs: nada de conteúdo na URL nem no stdout, e um filtro de exclusão;
     - se o corpo da requisição fica fora do log: **não conferido**, medir.
-  - **Deploy:** ver a pergunta ao dono sobre a credencial do VPS (`PROGRESSO.md`); a documentação
-    do Google manda evitar chave de conta de serviço.
+  - **Deploy sem credencial fixa no VPS (decisão do dono, 2026-09-28).**
+    - A cada deploy, o dono roda um comando no Mac que gera um token de 1 h, por impersonação da
+      conta de serviço `deployer@`, e o envia ao VPS. Nunca pela conversa.
+    - A documentação do Google manda evitar chave de conta de serviço.
+    - **Não conferido:** o mecanismo exato (o `gcloud` com access token num arquivo, e a validade
+      de 1 h). Medir na abertura.
+    - O Mac precisa do `gcloud`.
 - **Libs/repos a reaproveitar:**
   - `google-cloud-firestore` 2.32.0, só na nuvem;
   - `google-auth`, que já está no lock, para a impersonação no Mac;
@@ -562,7 +572,7 @@ tudo lá é "não medido" até a sessão que usa medir):
   - lembrete por e-mail em ±2 min com o Mac desligado;
   - `viking maos` liga o navegador do Mac à nuvem;
   - backup no Drive (`drive.file`) que restaura num banco novo;
-  - o repo privado, depois de conferir as consequências (cota do CI, secret scanning).
+  - (o repo privado passou para o começo da Sessão 10, por decisão do dono em 2026-09-28).
 - **O navegador (mãos no Mac):** o Mac **puxa** as tarefas, numa saída autenticada e sem porta
   aberta. A tarefa expira, e todas as travas do navegador continuam rodando no Mac. Só funciona
   enquanto o dono deixa `viking maos` ligado: ele recusou processo em segundo plano.
@@ -594,7 +604,8 @@ tudo lá é "não medido" até a sessão que usa medir):
     - Antes de mudar, entra um scanner no CI e no commit: `detect-secrets` (Python, Apache-2.0)
       ou `gitleaks` (binário, MIT), a medir. O CI ganha uma cota de 2.000 min/mês.
     - Os alertas do Dependabot continuam grátis.
-    - A data da mudança de visibilidade é pergunta ao dono (`PROGRESSO.md`).
+    - **Quando:** no começo da Sessão 10, antes de qualquer infraestrutura (decisão do dono,
+      2026-09-28). Este item fica aqui como registro das consequências.
   - **Backup:** exportar do Firestore para um arquivo e subir no Drive com `drive.file`, que não é
     sensível (https://developers.google.com/workspace/drive/api/guides/api-specific-auth). O
     teste restaura num banco novo, vazio.
@@ -669,7 +680,8 @@ tudo lá é "não medido" até a sessão que usa medir):
       (https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/).
     - O laço mostra o **texto exato** que será gravado e a origem, e só essa resposta grava.
     - O que o dono vê é renderizado da proposta guardada, nunca da prosa do modelo.
-    - **Refinamento da D48: pergunta ao dono (`PROGRESSO.md`).**
+    - **Decidido pelo dono em 2026-09-28** (refinamento da D48). Um "sim" no meio da conversa
+      não grava nada.
   - **Receita só nasce de mensagem do dono;** fato de origem externa (e-mail, página, documento)
     fica marcado e, na leitura, dentro do bloco de não confiável. Texto com forma de ordem ("se o
     usuário disser…", "sempre faça…") vindo de fora não vira fato.
@@ -820,8 +832,7 @@ tudo lá é "não medido" até a sessão que usa medir):
 - **Entrega:** a segunda opinião do Claude num plano de treino, registrada com o custo; nenhuma
   trava muda por causa dela; um teste garante que nada de e-mail, finanças ou páginas vai para
   ele (D49).
-- **Nesta sessão, o dono pede a API oficial da Garmin:** a aprovação pode levar semanas e não é
-  garantida para uso pessoal.
+- **Sem pedido à Garmin** (decisão do dono, 2026-09-28): o relógio entra pelo Strava na Sessão 21.
 - **Escolhas de arquitetura previstas:**
   - **A entrada do Claude é montada de campos tipados,** nunca do histórico do chat, porque o
     histórico carrega o resultado das tools (e-mail, página, finanças).
@@ -858,19 +869,23 @@ tudo lá é "não medido" até a sessão que usa medir):
 - **Libs/repos a reaproveitar:** o `gh`, já usado, com um token fino que só escreve issues daquele
   repo.
 
-## Sessão 21 — Garmin (planejada em 2026-09-28)
+## Sessão 21 — relógio pelo Strava (planejada em 2026-09-28; era "Garmin")
 
-- **Entrega:** uma atividade real do relógio chega ao coach. Só pela API oficial; a biblioteca não
-  oficial, com a senha dele, ficou recusada.
-- **Pesquisado em 2026-09-28:** o programa de desenvolvedor da Garmin é "only for business use"
-  (https://developer.garmin.com/gc-developer-program/program-faq/).
-  - Uso pessoal muito provavelmente é recusado: é inferência da frase, e só blogs confirmam.
-  - Quando aprovado, usa OAuth 2.0 com PKCE e manda os dados por push para um endereço público.
-  - **Plano B oficial: o Strava.** O app novo nasce em "single-player mode", só com a própria
-    conta, com limites de 200 pedidos por 15 min e 2.000 por dia
-    (https://developers.strava.com/docs/getting-started/). O relógio sincroniza com o Strava, e o
-    Viking lê de lá.
-  - O que fazer se a Garmin recusar: pergunta ao dono (`PROGRESSO.md`).
+- **Entrega:** uma atividade real do relógio do dono chega ao coach, **pela API oficial do
+  Strava**. O relógio (Garmin) sincroniza com o Strava, e o Viking lê de lá.
+- **Por que Strava, não Garmin (D54, decisão do dono em 2026-09-28):**
+  - o programa de desenvolvedor da Garmin é "only for business use"
+    (https://developer.garmin.com/gc-developer-program/program-faq/), e uso pessoal muito
+    provavelmente seria recusado;
+  - o Strava oficial nasce em "single-player mode", só com a própria conta, com limites de 200
+    pedidos por 15 min e 2.000 por dia (https://developers.strava.com/docs/getting-started/).
+  - Continua recusada a biblioteca não oficial da Garmin, que usa a senha dele.
+- **Primeiro passo:**
+  - conferir com o dono que a sincronização Garmin → Strava está ligada na conta dele;
+  - ler o acordo de API do Strava inteiro (https://www.strava.com/legal/api), sobretudo o uso com
+    IA. A pesquisa só fez uma busca por palavras.
+  - Hipótese, não conferida: um treino de musculação pode chegar ao Strava sem as séries e as
+    cargas. Medir com uma atividade real dele antes de prometer o que o coach lê dali.
 - **Escolhas de arquitetura previstas:**
   - **O webhook é uma rota pública do serviço do app, não do motor,** e confere a assinatura ou o
     token da plataforma na primeira instrução.

@@ -27,7 +27,8 @@
 6. **O login do Google em "Testing" vence em 7 dias** (confirmado na documentação oficial):
    resolver na S8, antes de qualquer coisa ir para a nuvem.
 7. **A API da Garmin é "only for business use":** uso pessoal muito provavelmente é recusado. O
-   Strava oficial ("single-player mode") é o plano B.
+   dono decidiu no mesmo dia ir **direto pelo Strava oficial** ("single-player mode"), sem pedir
+   à Garmin (D54).
 8. **O Jev fica no Mac, com o Chrome local;** a nuvem só entrega a tarefa. Nunca expor a porta CDP
    do Mac nem subir cookies (o Browser Harness tem as duas coisas prontas, e as duas ficam
    recusadas).
@@ -272,7 +273,7 @@ fica quase todo para os modelos. Com Cloud SQL, cerca de US$ 9,5.
   - app novo começa em "single-player mode", só com a própria conta;
   - limites de 200 pedidos por 15 min e 2.000 por dia;
   - webhook obrigatório.
-  - Plano B natural: o relógio sincroniza com o Strava, e o Viking lê de lá.
+  - Escolhido pelo dono (D54): o relógio sincroniza com o Strava, e o Viking lê de lá.
 - **Outra saída:** exportar o FIT à mão. Não conferido.
 
 ## 8. Skills e plugins do Claude Code

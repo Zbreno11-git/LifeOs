@@ -29,8 +29,8 @@ algo voltou atrás.
   documentos que você mandar, um por um (inclusive o material de coach do seu NotebookLM). Não
   guarda as conversas inteiras.
 - **Coach:** registra os treinos que você conta no chat, mostra o progresso, ajusta o plano e te
-  cobra por e-mail. Com dor, ajusta o treino e sugere um profissional se persistir. O Garmin vem
-  pela API oficial, no fim.
+  cobra por e-mail. Com dor, ajusta o treino e sugere um profissional se persistir. O relógio vem
+  pela API oficial do Strava, no fim (a da Garmin é só para empresas).
 - **Agente geral:** conversa de verdade, num tom caloroso, e busca na web sempre mostrando a fonte.
 - **O Claude:** entra como segunda opinião e para o que for difícil, sem nunca ver e-mail nem
   finanças.
@@ -42,7 +42,7 @@ algo voltou atrás.
 **Por que a nuvem vem cedo:** seu Mac é um Intel de 2017 que não atualiza mais, e as peças de
 terceiros estão deixando de funcionar nele (a de criptografia já compila à força; a da memória
 "vetorial" que você citou, o Chroma, nem instala mais nele). Na nuvem esse problema some, e o
-lembrete na hora, a cobrança do coach e o Garmin deixam de esperar o fim.
+lembrete na hora, a cobrança do coach e o relógio deixam de esperar o fim.
 
 ## 2026-09-28 — Sessão 7 (manutenção): mesma versão em toda máquina e testes no GitHub
 

@@ -1080,7 +1080,11 @@ memória de agente, Gemini/Claude/Google, GCP barato e app/Garmin/skills. Cada s
 só Python 3.12 e não listava `gmail/` e `financas/`.
 
 **Perguntas ao dono** (as que tocam decisões dele): o "sim" da memória, quando o repo vira privado,
-a credencial do deploy e o plano B da Garmin. As respostas estão no `PROGRESSO.md`.
+a credencial do deploy e o plano B da Garmin. Respondidas no mesmo dia:
+- o "sim" só como resposta a uma pergunta do Viking (D48);
+- o repo privado no começo da 10 (D50);
+- nenhuma credencial fixa no VPS (D47);
+- o relógio direto pelo Strava, sem pedir à Garmin (D54).
 
 ### 2026-09-28 — Sessão 7 fechada: 2º teste no Mac
 

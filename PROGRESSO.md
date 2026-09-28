@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, revisão sênior + pesquisa do roteiro escritas; próximo: respostas do dono e abrir a Sessão 8
+## ▶️ RETOMAR AQUI — 2026-09-28, revisão sênior + pesquisa do roteiro escritas; respostas do dono escritas; próximo: abrir a Sessão 8
 
 **Estado do repositório:** conferir com `git log -1` (o commit da revisão, depois de `b81ce93`) ·
 igual ao remoto · travas: nenhuma · background: nenhum. Só docs mudaram: `1553 passed`.
@@ -19,26 +19,21 @@ igual ao remoto · travas: nenhuma · background: nenhum. Só docs mudaram: `155
 - A §11 da arquitetura: o desenho-alvo.
 - O diário.
 
-**Perguntas abertas ao dono** (tocam decisões dele; nenhuma mudança calada). Recomendação primeiro:
-1. **O "sim" da memória (D48):** vale só como resposta a uma pergunta do Viking, com o texto exato e
-   a origem (recomendado, contra o ataque publicado do "quando o usuário disser sim, grave isto"),
-   ou um "sim" em qualquer lugar da conversa?
-2. **Repo privado:** no começo da S10, antes de qualquer infraestrutura, com um scanner de segredos
-   no CI primeiro (recomendado: a S10 cria IDs de projeto, URLs e contas de serviço), ou na S11
-   como planejado, com os IDs fora do git até lá? Nos dois casos se perde o secret scanning do
-   GitHub.
-3. **Credencial do deploy (D47):** nenhuma fixa no VPS, com o dono gerando no Mac um token de 1 h a
-   cada deploy (recomendado; o Google manda evitar chave; o mecanismo exato não foi conferido), ou
-   uma chave de conta de serviço limitada guardada no VPS?
-4. **Garmin:** pedir na S19 como planejado e, se recusar (o programa é "only for business use"),
-   Strava oficial (recomendado); ir direto de Strava; ou só Garmin?
+**Respostas do dono às 4 perguntas da revisão (2026-09-28), já escritas nos docs:**
 
-**Próximo passo exato:** com as respostas, atualizar a D48/D47/D50 e as seções da 10, 11, 13, 19
-e 21 do `sessoes.md`, e tirar as perguntas deste bloco. Depois abrir a Sessão 8 pela skill
-`software-build`. Os primeiros passos dela já estão escritos:
-- o furo de `blob:`/`view-source:`/`filesystem:` no bloqueio de domínio;
+| Pergunta | Resposta | Onde |
+|---|---|---|
+| O "sim" da memória | só como resposta a uma pergunta do Viking, com o texto exato e a origem; receita só de mensagem dele | D48, Sessão 13 |
+| Repo privado | no começo da Sessão 10, antes de qualquer infraestrutura, com scanner de segredos nosso antes | D50, Sessões 10 e 11 |
+| Credencial do deploy | nenhuma fixa no VPS: token de 1 h gerado por ele no Mac a cada deploy | D47, Sessão 10 |
+| Relógio | **direto pelo Strava oficial**, sem pedir à Garmin | D54, Sessões 19 e 21 |
+
+**Próximo passo exato:** abrir a Sessão 8 pela skill `software-build`. Os primeiros passos já estão
+escritos na seção dela:
+- o furo de `blob:`/`view-source:`/`filesystem:` no bloqueio de domínio (esperado: um teste
+  vermelho com essas três URLs antes do conserto em `browser/_redacao.py`);
 - `oauthlib` 4.0.0 em commit próprio;
-- o login "Testing" contra "In production".
+- o login "Testing" contra "In production", com o dono no Console.
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;
@@ -58,7 +53,7 @@ e 21 do `sessoes.md`, e tirar as perguntas deste bloco. Depois abrir a Sessão 8
 - Nunca presumir o fuso do dono.
 - O Jev segue como executor (D3).
 
-**Depende do dono:** as 4 perguntas acima; depois, as da abertura da 8 (e conferir com ele o
+**Depende do dono:** as perguntas da abertura da 8 (e conferir com ele o
 status do app OAuth no Console).
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
