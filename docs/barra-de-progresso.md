@@ -7,14 +7,15 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-28 (Sessão 6, testada no seu Mac por inteiro).**
+**Última atualização: 2026-09-28 (Sessão 7, testada no seu Mac por inteiro).**
 
-`█████████████████░░░ 9 de 12 sessões fechadas + 2 parciais (= 10 de 12)`
+`██████████████████░░ 10 de 12 sessões fechadas + 2 parciais (= 11 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5 e 6; parciais 4 e 3b;
-na fila 7. Cada parcial vale meia sessão na barra.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6 e 7; parciais 4 e
+3b (falta só a validação ao vivo, escrita lá); na fila: nenhuma — a próxima sai do backlog, por
+escolha sua. Cada parcial vale meia sessão na barra.
 
-## 2026-09-28 — Sessão 7 (manutenção): mesma versão em toda máquina e testes no GitHub — falta o seu teste no Mac
+## 2026-09-28 — Sessão 7 (manutenção): mesma versão em toda máquina e testes no GitHub
 
 **O que mudou (quase nada que você veja no chat):**
 - **Mesma versão de tudo em toda máquina.** Um arquivo novo (`uv.lock`) diz a versão exata de cada
@@ -31,6 +32,10 @@ na fila 7. Cada parcial vale meia sessão na barra.
 ferramentas para isso), então você decidiu manter a nova em todo lugar: no Mac, a instalação
 compila essa peça uma vez. Eu tinha dito o contrário ("seu Mac já está na versão velha") sem
 medir; seu teste mostrou, e a decisão foi refeita com o dado certo.
+
+**No seu Mac (2º teste):** a instalação nova trocou 20 peças para as versões da lista, os 1553
+testes passaram, e o chat leu a sua agenda como antes. O GitHub mostra ✅ nos dois Pythons (o do
+seu Mac e o do VPS) e nenhum aviso de segurança aberto.
 
 
 **O que mudou:**

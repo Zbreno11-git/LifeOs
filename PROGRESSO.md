@@ -5,46 +5,45 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: consertos do 1º teste no Mac enviados; próximo: o 2º teste no Mac
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7 fechada (testada no Mac); próximo: o dono escolhe a próxima sessão
 
-**Estado do repositório:** conferir com `git log -1` (commit "cryptography 50 em todo lugar") ·
-travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (o fechamento da 7, depois de `069fe2a`) ·
+igual ao remoto · travas: nenhuma · background: nenhum.
 
-**Onde parou:** C0–C10 ✅. O 1º teste no Mac (`23a2a79`) achou três coisas:
-- o `no-build` fazia o uv 0.11.24 do Mac recusar o próprio Viking;
-- o Mac roda Python 3.13.5;
-- o Mac já tinha o cryptography 50.0.1, compilado lá pelo `pip` (maturin, Rust em `~/.cargo`).
+**Onde parou:** a Sessão 7 fechou em 2026-09-28, testada no Mac em `069fe2a`:
+- `uv sync` ok, 20 versões trocadas;
+- `cryptography 50.0.1`, `google-genai 2.25.0`, Python 3.13.5;
+- `1553 passed`; o chat leu a agenda.
+CI do `069fe2a` verde nos dois Pythons, e os 3 alertas do Dependabot `fixed`. Barra: 10 fechadas
++ 2 parciais (4 e 3b) = 11 de 12.
 
-Consertado:
-- `tests/test_lock.py` (wheel para Mac Intel e Linux, Pythons 3.12 e 3.13) no lugar do
-  `no-build`;
-- o CI nos dois Pythons (`e768555`: verde nos dois);
-- decisão refeita pelo dono: cryptography 50.0.1 em todo lugar, compilado no Mac, sem falha
-  ignorada (D45).
-Medido: `1553 passed`; `pip-audit` sem falhas; mutações do CI 4/4.
+**Portões no fechamento:**
+- `1553 passed`, `ruff` limpo, formatação zero, `uv lock --check` ok, `pip-audit` sem falhas;
+- mutações 162/162 (rodada completa, `src/` igual desde `be47ab4`) + CI 4/4.
 
-**Próximo passo exato:**
-1. Conferir o CI do HEAD pelo SHA (dois Pythons `success`) e os alertas do Dependabot
-   (`gh api repos/Zbreno11-git/LifeOs/dependabot/alerts --jq 'map(.state)'`, esperado os 3 como
-   `fixed`).
-2. O dono roda o 2º roteiro do Mac (plano abaixo, C11); esperado: `cryptography 50.0.1`,
-   `google-genai 2.25.0`, `1553 passed`.
-3. Depois, fechar: barra (7 fechada), `sessoes.md` ▶️, diário.
+**Próximo passo exato:** perguntar ao dono qual é a próxima sessão. Não há sessão numerada na
+fila: vem do backlog de `sessoes.md` ou da validação ao vivo das parciais 4 e 3b. Na abertura, a
+rotina da D45: `uv lock --upgrade --dry-run` (em 2026-09-28 já mostrava platformdirs 4.12.0 →
+4.12.1) e o CI do último commit pelo SHA.
+
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e backlog);
+`docs/decisoes.md` (D45); o índice de `docs/erros.md` (classe 2: cinco ocorrências nesta sessão);
+a memória do Claude.
 
 **Não pode ser esquecido:**
-- o cryptography fica na 48.0.1 (última com wheel para Mac Intel), com 3 falhas ignoradas no CI por
-  decisão do dono (D45);
-- no Mac, `uv sync` remove da venv o que não está no lock (inclusive o `pip`);
-- nada de `secrets.` no CI;
+- instalar é `uv sync --locked --extra dev`, e a venv do `uv` não tem `pip` (`uv pip …`);
+- o Mac tem uv 0.11.24 (o `no-build` não serve), Python 3.13.5 e Rust, e compila o cryptography
+  (exceção em `tests/test_lock.py`, D45);
+- o CI não ignora nenhuma falha;
 - repo público;
 - nunca presumir o fuso do dono.
 
-**Depende do dono:** o 2º teste no Mac.
+**Depende do dono:** a escolha da próxima sessão.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1158 passed`.
+`python -m pytest -q` → `1553 passed`.
 
-## Plano — Sessão 7: manutenção (versões travadas, CI, scanner, formatação e três consertos pequenos) (aprovado em 2026-09-28)
+## Plano — Sessão 7: manutenção (versões travadas, CI, scanner, formatação e três consertos pequenos) (fechada em 2026-09-28)
 
 ### Context
 Sessão 7 de `sessoes.md` (auditoria do Codex §15.1–15.4) mais o achado da 6: a aprovação do MCP
@@ -159,7 +158,7 @@ O `inicio` na aprovação do MCP:
 | C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ✅ ok do dono; `vulnerability-alerts` → 204 |
 | C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ✅ dono: backlog (2026-09-28); escrito no backlog de `sessoes.md` |
 | C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ✅ `0a1d122`: run 36381073572 `success` (`1156 passed, 2 skipped`, 37 s); grafo lê o lock; 3 alertas = os da D45 |
-| C11 | Mac: roteiro abaixo | C10 | ⏳ 1º teste achou 2 defeitos (`no-build` no uv 0.11; Python 3.13) — consertados; falta a decisão do cryptography e o 2º teste |
+| C11 | Mac: roteiro abaixo | C10 | ✅ 2º teste em `069fe2a`: `uv sync` ok, `1553 passed`, versões do lock (o 1º achou `no-build` e Python 3.13, consertados) |
 
 ### Fase 0 — C1: medir o que faltou (nada commitado)
 **Faz (tudo no scratchpad, nada no repo):**

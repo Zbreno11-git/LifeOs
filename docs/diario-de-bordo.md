@@ -1046,6 +1046,34 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 7 fechada: 2º teste no Mac
+
+**Medido no Mac (`069fe2a`).**
+- `uv sync --locked --extra dev` terminou ("Prepared 20 packages in 4m 00s"), com 20 trocas de
+  versão e nenhuma remoção. O cryptography 50.0.1, compilado antes pelo `pip`, ficou.
+- Versões: `cryptography 50.0.1`, `google-genai 2.25.0`, `ruff 0.16.9`, Python 3.13.5; o
+  `which python` foi igual antes e depois.
+- `1553 passed in 37.35s`. O `--doctor` e o `viking financas` ficaram como antes, e o chat leu a
+  agenda de amanhã (login do Google com as bibliotecas novas).
+- A contagem de pacotes ficou em 99: meu "esperado" dizia que cairia (erros, classe 2).
+- No GitHub, o CI do `069fe2a` passou nos dois Pythons, e os 3 alertas do Dependabot ficaram
+  `fixed` sozinhos.
+
+**Portões no fechamento.**
+- `1553 passed`, `ruff` limpo, formatação zero, `uv lock --check` ok, `pip-audit` sem falhas.
+- Mutações: `162 · mortas pelo teste esperado: 162` na rodada completa da entrega 1; as do CI,
+  isoladas, 4/4. Depois dela não houve mudança em `src/`: o `git diff be47ab4 -- src` está vazio.
+
+**Erros meus da sessão** (`docs/erros.md`, classe 2, cinco):
+- o plano afirmou que as alternativas tinham todas 1 item;
+- um número escrito antes do último caso;
+- `no-build` provado num `uv` só;
+- "seu Mac já está na 48", uma premissa errada numa pergunta ao dono;
+- "a contagem cai".
+
+O maior foi o quarto: uma decisão do dono foi tomada sobre uma premissa que eu não tinha medido, e
+teve de ser refeita.
+
 ### 2026-09-28 — Sessão 7, teste no Mac: o `uv sync` recusou, e o Mac já tinha o cryptography 50
 
 **Medido no Mac (`23a2a79`).**

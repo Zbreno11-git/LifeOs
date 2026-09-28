@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 15 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 16 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -121,6 +121,12 @@ perguntar. Ele não está. A agenda do Google dele está em São Paulo, o relóg
 os três fusos só apareceram quando o roteiro mediu cada um (`date +%z`, o fuso do Viking, o
 registro com `-03:00`). O que tem de novo: a suposição não estava em nenhuma frase que eu pudesse
 conferir — estava no desenho dos testes (todos fixavam Brasília como "o fuso do dono").
+
+**2026-09-28 — "a contagem cai" (Sessão 7, 2º roteiro do Mac).** Escrevi no esperado do roteiro
+que a contagem de pacotes cairia, porque o `uv sync` tiraria o `pip` e o que não está no lock. No
+Mac ficou 99 antes e 99 depois: a venv já tinha exatamente o conjunto do lock, e o `uv sync` só
+trocou 20 versões, sem remoção nenhuma. Generalizei do VPS (104 → 101), sem olhar o que a venv do
+Mac tinha. Não era defeito, mas um "esperado" errado num roteiro faz o dono achar que algo quebrou.
 
 **2026-09-28 — "seu Mac já está na 48" (Sessão 7, pergunta ao dono).** Para o dono decidir entre
 travar o cryptography na 48.0.1 e outras saídas, escrevi na opção recomendada que o Mac "já está

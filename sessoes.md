@@ -16,18 +16,18 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 7 — manutenção, **em curso**: plano aprovado pelo dono em 2026-09-28, no
-  `PROGRESSO.md` (versões travadas pelo `uv`, CI no GitHub, alertas de dependência, formatação sem
-  baseline, teste público do google-genai, `inicio` por instante).
-- **Primeiro passo:** o primeiro checkpoint não marcado do plano da 7 no `PROGRESSO.md`.
-  O adiado da 6 (datas das finanças no app do banco) foi conferido pelo dono em 2026-09-28: bateu.
+- **Sessão:** nenhuma numerada na fila — a 7 (manutenção) fechou no Mac em 2026-09-28. A próxima
+  sai do "Backlog sem sessão marcada" abaixo (ex.: checagem de tipos, com o número medido;
+  paginação e recorrência no calendário; notas buscáveis; RAG) ou da validação ao vivo que falta
+  nas parciais 4 e 3b. **Quem escolhe é o dono.**
+- **Primeiro passo:** perguntar ao dono qual assunto, e abrir pela skill `software-build`.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D39–D45), a
   seção da Sessão 7 abaixo, e a memória do Claude sobre o fuso do dono.
-- **Depende do dono:** o teste da 7 no Mac (`uv sync`).
+- **Depende do dono:** a escolha da próxima sessão.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -327,7 +327,7 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
 - §11.2: nada confere se o clone do Jev está no commit/branch esperado com o patch OpenRouter —
   `viking browser --doctor` podia mostrar branch/commit/dirty status.
 
-## Sessão 7 — manutenção
+## Sessão 7 — manutenção (feita e testada no Mac em 2026-09-28)
 
 - ~~Adiado da 6: conferir as datas de `viking financas --gastos` no app do banco~~ — feito pelo dono
   em 2026-09-28, bateu (D44).
