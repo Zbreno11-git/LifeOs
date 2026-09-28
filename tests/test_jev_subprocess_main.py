@@ -392,6 +392,20 @@ def test_dominio_bloqueado_na_pagina_inicial_nao_sai_nada(jev_falso, monkeypatch
     assert codigo == runner.EXIT_ERROR
 
 
+@pytest.mark.parametrize(
+    "url",
+    ["view-source:https://www.itau.com.br/conta", "blob:https://itau.com.br/1f0c"],
+)
+def test_pagina_embrulhando_o_banco_nao_sai_nada(jev_falso, monkeypatch, capsys, url):
+    """O lado de dentro do furo de 2026-09-28: a página que o Chrome informa é o embrulho, e o
+    host de dentro é o banco. Mesma função do runner (`_redacao.dominio_bloqueado`)."""
+    estado = {**_estado("running", 1), "page": _pagina_sensivel(url)}
+    jev_falso.proximos_estados = [estado]
+    _rodar(monkeypatch, "--timeout", "5", "--bloquear", "itau.com.br")
+    assert jev_falso.enviados["choose"] == []
+    assert _linhas(capsys)[-1]["code"] == "dominio_bloqueado"
+
+
 def test_field_context_bloqueia_dominio(jev_falso):
     import jev_ultrafast.agent as agente
 

@@ -19,6 +19,7 @@ _COM_DETALHE = {
     "spawn_failed",
     "unknown",
     "dominio_bloqueado",
+    "endereco_recusado",
     "busy",
     "trava_indisponivel",
 }
@@ -82,6 +83,11 @@ MENSAGENS: dict[str, str] = {
     "dominio_bloqueado": (
         "Esse site está bloqueado para o navegador do Viking (banco/e-mail): nada da página saiu "
         "para os modelos. Para liberar, adicione o domínio em VIKING_BROWSER_LIBERADOS no .env."
+    ),
+    "endereco_recusado": (
+        "Não abri esse endereço: o navegador do Viking só começa numa página da web (http ou "
+        "https). Arquivo do computador (file:), código-fonte de página (view-source:) e páginas "
+        "internas do Chrome ficam de fora, porque o conteúdo iria para os modelos."
     ),
     "protecao_indisponivel": (
         "Não naveguei: a proteção de privacidade não encaixou na versão atual do Jev. Isso é de "

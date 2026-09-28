@@ -138,6 +138,38 @@ def test_url_inicial_bloqueada_nao_abre_subprocesso(monkeypatch):
     assert "VIKING_BROWSER_LIBERADOS" in formatar(r)
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "file:///etc/hosts",
+        "chrome://settings",
+        "javascript:alert(1)",
+        "view-source:https://example.com/",
+    ],
+)
+def test_esquema_recusado_nao_abre_subprocesso(monkeypatch, url):
+    def proibido(*_a, **_k):
+        raise AssertionError("Popen não pode ser chamado para um endereço recusado")
+
+    monkeypatch.setattr(subprocess, "Popen", proibido)
+    r = run_jev(url, ["ler"])
+    assert r.status == "error"
+    assert r.error_code == "endereco_recusado"
+    assert "http ou https" in formatar(r)
+
+
+def test_embrulho_do_banco_nao_abre_subprocesso(monkeypatch):
+    """`blob:` passa na lista de esquemas? Não: e mesmo se passasse, o host de dentro é o banco."""
+
+    def proibido(*_a, **_k):
+        raise AssertionError("Popen não pode ser chamado")
+
+    monkeypatch.setattr(jev_runner, "BROWSER_BLOQUEADOS", ("itau.com.br",))
+    monkeypatch.setattr(subprocess, "Popen", proibido)
+    assert run_jev("https:itau.com.br", ["ver"]).error_code == "dominio_bloqueado"
+    assert run_jev("view-source:https://itau.com.br/", ["ver"]).error_code == "endereco_recusado"
+
+
 def test_build_command_repassa_os_bloqueios(monkeypatch):
     monkeypatch.setattr(jev_runner, "BROWSER_BLOQUEADOS", ("a.com", "b.com"))
     cmd = build_command("https://x.com", ["g"], timeout_s=1)

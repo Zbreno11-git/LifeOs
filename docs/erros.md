@@ -17,10 +17,10 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 17 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 18 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 7 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 8 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
@@ -161,6 +161,15 @@ relatório de um agente de pesquisa, e eu não tinha a lista de comandos da sess
 2ª passada da revisão; o texto passou a dizer "segundo a pesquisa, conferir na abertura da 8". O
 que tem de novo: numa pesquisa delegada, o relatório do agente é uma fonte como um README. Ele
 tem de ser citado como tal, e o que eu não abri fica "não conferido".
+
+**2026-09-28 — "D11 nunca conferiu" o status "Testing" (revisão do roteiro).** Escrevi na seção
+da Sessão 8 e no bloco de retomada que o status do app OAuth nunca tinha sido conferido, e
+planejei um passo do dono no Console para isso. Ele tinha conferido em 2026-09-26 ("em produção,
+externo, só ele de usuário"), e isso estava escrito em `docs/fontes/gmail-api.md` e na seção da
+Sessão Gmail do próprio `sessoes.md`. Eu tirei a frase do gatilho da D11 ("status Testing não
+conferido"), que estava velho. Pego na abertura da 8, ao ler a fonte do Gmail. O que tem de novo:
+a fonte errada era **uma decisão nossa** (o gatilho da D11), e a certa estava duas seções acima;
+antes de escrever "nunca", `grep` no repo inteiro pelo termo ("Testing", "produção").
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
@@ -303,6 +312,14 @@ num `python - <<'EOF'`, e o bloco trazia o roteiro do Mac com o seu próprio `<<
 `git status`: nada mudou (`viking` não estava no PATH daquele shell, o resto era texto que o bash
 rejeitou). O roteiro do MCP virou `scripts/pedido_mcp_de_teste.py`, e o bloco foi escrito num
 arquivo antes.
+
+**2026-09-28 — hífen invisível dentro do plano (abertura da Sessão 8).** O plano listava, entre
+os disfarces de domínio a testar, um host com hífen invisível (U+00AD), e eu o escrevi como o
+próprio caractere, não como escape: foi parar no arquivo do plano e no `PROGRESSO.md`, invisível.
+A frase ao lado dizia "gerado por script, classe 5". Pego pela varredura de caracteres de
+controle logo depois de copiar o plano. O que tem de novo: o caractere não veio de um escape
+convertido pela ferramenta, veio direto da minha escrita, num documento; a varredura roda também
+no plano, antes de copiá-lo.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 

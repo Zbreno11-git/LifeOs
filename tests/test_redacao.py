@@ -236,6 +236,101 @@ def test_dominio_nao_bloqueado(url):
     assert r.dominio_bloqueado(url, _BLOQ) is None
 
 
+# Disfarces medidos em 2026-09-28 (revisão do roteiro): um endereço embrulhado ou escrito de um
+# jeito que o Chrome canoniza para o banco passava pelo `urlsplit`. A regra de host é a da
+# especificação de URL que o Chrome segue (WHATWG); não medido no Chrome. Caracteres especiais por
+# `chr`, nunca como escape no código-fonte (docs/erros.md, classe 5).
+_BARRA_INVERTIDA = chr(92)
+_LARGURA_DUPLA = "".join(chr(0xFF00 + ord(c) - 0x20) for c in "itau")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "view-source:https://itau.com.br/",
+        "VIEW-SOURCE:https://www.itau.com.br/",
+        "view-source:view-source:https://itau.com.br/",
+        "blob:https://itau.com.br/1f0c-uuid",
+        "filesystem:https://itau.com.br/temporary/x",
+        "view-source:blob:https://itau.com.br/x",
+        "https:itau.com.br",
+        "https:/itau.com.br/conta",
+        f"https:{_BARRA_INVERTIDA * 2}itau.com.br{_BARRA_INVERTIDA}x",
+        f"https://www.itau.com.br{_BARRA_INVERTIDA}x",
+        "https://%69tau.com.br/",
+        "https://itau%2Ecom%2Ebr/",
+        f"https://{_LARGURA_DUPLA}.com.br",
+        f"https://it{chr(0xAD)}au.com.br",
+        f"https://it{chr(0x200B)}au.com.br",
+        f"https://itau{chr(0x3002)}com{chr(0x3002)}br",
+        f"https://itau{chr(0xFF0E)}com.br",
+        " https://itau.com.br",
+        "\thttps://itau.com.br",
+        "HTTPS://Mail.Google.COM/mail",
+    ],
+)
+def test_dominio_disfarcado_bloqueado(url):
+    assert r.dominio_bloqueado(url, _BLOQ) is not None
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/view-source:https://itau.com.br",
+        "https://example.com/?u=blob:https://itau.com.br/x",
+        "data:text/html,itau.com.br",
+        "about:blank",
+        "view-source:https://example.com/",
+        "blob:https://example.com/uuid",
+        "https://evil.com%40itau.com.br/",
+        "https://%6eotitau.com.br/",
+        f"https://example.com{_BARRA_INVERTIDA}itau.com.br",
+    ],
+)
+def test_vizinho_legitimo_de_disfarce_nao_bloqueado(url):
+    assert r.dominio_bloqueado(url, _BLOQ) is None
+
+
+def test_desembrulho_tem_fim():
+    """Mil camadas de `view-source:` não travam nem estouram a pilha: além do teto, bloqueia."""
+    url = "view-source:" * 1000 + "https://example.com/"
+    assert r.dominio_bloqueado(url, _BLOQ) is not None
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/",
+        "http://example.com/",
+        "HTTPS://example.com",
+        "data:text/html,<p>oi</p>",
+        "about:blank",
+        "example.com/x",
+    ],
+)
+def test_esquema_do_endereco_inicial_permitido(url):
+    assert r.esquema_permitido(url)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "file:///etc/hosts",
+        "FILE:///Users/x/.env",
+        "chrome://settings",
+        "javascript:alert(1)",
+        "view-source:https://example.com/",
+        "blob:https://example.com/x",
+        "filesystem:https://example.com/x",
+        "about:config",
+        "ftp://example.com/",
+        "",
+    ],
+)
+def test_esquema_do_endereco_inicial_recusado(url):
+    assert not r.esquema_permitido(url)
+
+
 # --- robustez -------------------------------------------------------------------------------
 
 

@@ -380,7 +380,12 @@ def run_jev(
     limite = float(timeout_s if timeout_s is not None else BROWSER_TIMEOUT_S)
 
     # Antes de tudo, inclusive do lock: um site bloqueado nem chega a abrir aba. Redirecionamentos
-    # e links no meio da tarefa são pegos dentro do subprocesso (`instalar_protecao`).
+    # e links no meio da tarefa são pegos dentro do subprocesso (`instalar_protecao`). O esquema
+    # vem primeiro: `file:` e `view-source:` nem são "site" (D8, furo fechado na Sessão 8).
+    if not _redacao.esquema_permitido(url):
+        return _erro(
+            "endereco_recusado", _redacao.redigir_url(_redacao.limpar_controles(url))[:120], goals
+        )
     bloqueado = _redacao.dominio_bloqueado(url, BROWSER_BLOQUEADOS)
     if bloqueado:
         return _erro("dominio_bloqueado", bloqueado, goals)

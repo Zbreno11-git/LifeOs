@@ -7,7 +7,8 @@ da stdlib — é a única cópia da regra, e os dois lados precisam dela.
 """
 
 import re
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+import unicodedata
+from urllib.parse import parse_qsl, unquote, urlencode, urlsplit, urlunsplit
 
 # C0 menos \t e \n, DEL, C1, e os controles bidi que reordenam o que o terminal mostra.
 _CONTROLES = dict.fromkeys(
@@ -165,21 +166,94 @@ def pagina(page):
     }
 
 
+# O host como o Chrome o entende (regra de URL da WHATWG, que o Chrome segue; não medido no
+# Chrome, 2026-09-28). Sem isto, um endereço embrulhado (`view-source:https://banco/`) ou escrito
+# de outro jeito (`https:banco`, `https:\\banco`, `%69tau`, letras de largura dupla, hífen
+# invisível) passava pelo bloqueio e abria o banco com os cookies do dono.
+_ESQUEMA = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*):")
+_EMBRULHOS = frozenset({"view-source", "blob", "filesystem"})  # o endereço de dentro é o que abre
+_ESPECIAIS = frozenset(
+    {"http", "https", "ws", "wss", "ftp", "file"}
+)  # "\\" vale "/"; barras opcionais
+_MAX_CAMADAS = 8
+_C0_OU_ESPACO = "".join(chr(c) for c in range(0x21))
+_PONTOS = {chr(0x3002): "."}  # o ponto ideográfico; os de largura total o NFKC já converte
+_EMBRULHADO_DEMAIS = "(endereço embrulhado demais)"
+
+
+def _limpo(url):
+    """Como o navegador lê o texto: sem C0/espaço nas pontas e sem tab/quebra de linha no meio."""
+    url = str(url or "").strip(_C0_OU_ESPACO)
+    return url.replace("\t", "").replace("\n", "").replace("\r", "")
+
+
+def _desembrulhar(url):
+    """O endereço de dentro de `view-source:`/`blob:`/`filesystem:` (em laço); `None` se há
+    camadas demais."""
+    for _ in range(_MAX_CAMADAS + 1):
+        achado = _ESQUEMA.match(url)
+        if not achado or achado.group(1).lower() not in _EMBRULHOS:
+            return url
+        url = url[achado.end() :].strip(_C0_OU_ESPACO)
+    return None
+
+
+def _canonico(host):
+    host = unicodedata.normalize("NFKC", unquote(host, errors="replace")).casefold()
+    host = "".join(
+        _PONTOS.get(c, c) for c in host if c != chr(0x34F) and unicodedata.category(c) != "Cf"
+    )
+    return host.rstrip(".")
+
+
 def _host(url):
+    """O host canônico; `None` se o endereço está embrulhado além do teto."""
+    url = _desembrulhar(_limpo(url))
+    if url is None:
+        return None
+    achado = _ESQUEMA.match(url)
+    if achado and achado.group(1).lower() in _ESPECIAIS:
+        resto = url[achado.end() :].replace("\\", "/").lstrip("/")
+        url = f"{achado.group(1).lower()}://{resto}"
     try:
         partes = urlsplit(url)
         if not partes.scheme and not url.startswith("//"):
             # "itau.com.br/x" sem esquema: sem isso o host sai vazio e o bloqueio é contornado.
-            partes = urlsplit("//" + url)
-        return (partes.hostname or "").rstrip(".")
+            partes = urlsplit("//" + url.replace("\\", "/"))
+        return _canonico(partes.hostname or "")
     except ValueError:
         return ""
 
 
+def esquema_permitido(url):
+    """O endereço INICIAL de uma tarefa só pode ser web (`http`/`https`, ou sem esquema), `data:`
+    (as páginas de teste e a D38 usam) ou `about:blank`. `file:` levaria um arquivo do Mac ao
+    OpenRouter e ao Gemini; `view-source:` e afins abrem o de dentro com os cookies do dono."""
+    url = _limpo(url)
+    if not url:
+        return False
+    achado = _ESQUEMA.match(url)
+    if not achado:
+        return True
+    esquema = achado.group(1).lower()
+    if esquema == "about":
+        return url[achado.end() :].strip().lower() == "blank"
+    if esquema not in {"http", "https", "data"}:
+        return False
+    try:
+        urlsplit(url)
+    except ValueError:
+        return False
+    return True
+
+
 def dominio_bloqueado(url, bloqueados):
     """Devolve o domínio bloqueado que `url` atinge, ou None. Casa o domínio exato ou qualquer
-    subdomínio dele — nunca um sufixo solto (`notitau.com.br` não é `itau.com.br`)."""
+    subdomínio dele — nunca um sufixo solto (`notitau.com.br` não é `itau.com.br`). Um endereço
+    embrulhado além do teto é bloqueado sem olhar o host."""
     host = _host(url or "")
+    if host is None:
+        return _EMBRULHADO_DEMAIS
     if not host:
         return None
     for dominio in bloqueados:

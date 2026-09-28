@@ -410,8 +410,11 @@ tudo lá é "não medido" até a sessão que usa medir):
     vira um que permite `send` em **uma** função, dentro de `registro.acao`. Lixeira e apagar
     continuam proibidos.
 - **Medido:** o `gmail.modify` já autoriza enviar (D29), então não precisa de login novo para isso.
-- **Primeiro passo:** conferir com o dono se o app OAuth está em "Testing" no Google Cloud
-  Console (D11 nunca conferiu). Nesse status, o login vence em 7 dias, o que na nuvem é fatal.
+- ~~**Primeiro passo:** conferir com o dono se o app OAuth está em "Testing"~~ — **já estava
+  conferido:** o dono viu em 2026-09-26, na Sessão Gmail, "em produção, externo, só ele de
+  usuário" (`docs/fontes/gmail-api.md`). O "D11 nunca conferiu" escrito aqui na revisão de
+  2026-09-28 era erro meu (`docs/erros.md`, classe 2). O que falta medir, a prova de que o token
+  não vence em 7 dias, foi para o primeiro passo da Sessão 10.
 - **Lembretes:** até a nuvem, o disparo por e-mail é manual (`viking lembretes --enviar`); o
   automático vem na 11.
 - **Primeiros passos, antes do e-mail (dívida achada na revisão de 2026-09-28):**
@@ -428,11 +431,10 @@ tudo lá é "não medido" até a sessão que usa medir):
        `grant_type`). O Viking é cliente, pelo `requests-oauthlib`.
      - Commit próprio, com a suíte antes e depois, e o dono confere o login no Mac
        (`viking gmail --login`).
-  3. **Login que vence em 7 dias:** a documentação confirma o prazo em "Testing"
-     (https://developers.google.com/identity/protocols/oauth2).
-     - A saída provável é publicar "In production" sem verificação, só para ele: "personal use
-       (fewer than 100 users)", com a tela de "app não verificado".
-     - **Não conferido para escopo restrito** (o `gmail.modify` é): medir com o dono no Console.
+  3. ~~**Login que vence em 7 dias**~~ — o app já está "em produção" desde antes de 2026-09-26
+     (conferido pelo dono). O prazo de 7 dias é do modo "Testing"
+     (https://developers.google.com/identity/protocols/oauth2); que ele não vale para o nosso
+     escopo restrito em produção sem verificação se mede na Sessão 10 (primeiro passo lá).
 - **Escolhas de arquitetura previstas:**
   - **Mensagem montada com `email.message.EmailMessage`**, que recusa CR/LF num cabeçalho
     (medido: `ValueError` no Python 3.12.3). A nossa trava continua, e o teste cobre os dois
@@ -503,6 +505,11 @@ tudo lá é "não medido" até a sessão que usa medir):
   infraestrutura**. Antes da troca entra um scanner de segredos nosso no CI e no commit, porque o
   secret scanning do GitHub some em repo privado (detalhe na Sessão 11, onde isto estava).
   Nenhum ID de projeto, URL ou conta de serviço chega a um repo público.
+- **Primeiro passo (adiado da 8, 2026-09-28):** provar que o login do Google não vence em 7 dias
+  (o app está "em produção" sem verificação, com o escopo restrito `gmail.modify`). O token do
+  Gmail foi feito em 2026-09-26: `viking gmail --login` no Mac **depois de 2026-10-03**, sem abrir
+  o navegador, é a prova. Se pedir login de novo, a nuvem precisa de outra saída antes de guardar
+  token (a verificação do Google, ou um escopo menor).
 - **Entrega:**
   - projeto GCP (criado pelo dono, com o faturamento dele) com a infraestrutura em script;
   - o `describe` mostra a imagem do commit;
@@ -920,6 +927,10 @@ tudo lá é "não medido" até a sessão que usa medir):
   nenhum defeito real. Para virar portão: consertar os 67, ignorar os imports do ambiente do Jev
   (`_jev_subprocess.py` roda noutro Python) e pôr o `mypy` fixado no CI.
 
+- **Logo do Viking no e-mail** (pedido do dono na abertura da Sessão 8, 2026-09-28: "uma logo
+  que podemos fazer pra ele bem depois"). Hoje o e-mail leva só a linha "Escrito pelo Viking
+  (Assistente AI)"; uma imagem exige HTML ou anexo, que a D46 deixou de fora.
+
 Com sessão desde 2026-09-28: paginação e séries (8b), notas buscáveis (13), migrations formais
 (9), RAG (13–14), aprovação fora do terminal (17). Sem sessão: decidir se o Viking é só-checkout
 ou pacote instalável de verdade (§9.3); anexos no e-mail; MCP para outros apps na nuvem (fica
@@ -927,7 +938,7 @@ local por stdio até existir autenticação); multiusuário (o dono decidiu: só
 tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3), só rede de
 segurança para um cenário hipotético. Residuais da Sessão 4: o objetivo, os rótulos/valores
 de campos e o histórico de ações ainda vão ao OpenRouter sem redação (ver
-`docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN não é normalizado;
+`docs/fontes/jev-typesafe.md`, "Egress e redação"); domínio em punycode/IDN: desde a Sessão 8 o host passa por NFKC (largura dupla, pontos e invisíveis viram o domínio de verdade); um domínio sósia em punycode é outro domínio e não é bloqueado;
 o clique destrutivo num site não bloqueado (§5.2) foi feito na Sessão 4b; ficou de fora, por
 decisão do dono, "publicar em seu nome" (postar, enviar mensagem).
 
