@@ -5,21 +5,20 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: entrega 2 commitada; próximo: CI do HEAD e o Mac (C10–C11)
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: entregas 1 e 2 no remoto e CI verde; próximo: o Mac (C11)
 
 **Estado do repositório:** conferir com `git log -1` (commit da entrega 2, depois de `be47ab4`) ·
 travas: nenhuma · background: nenhum.
 
-**Onde parou:** C0–C9 ✅. Entrega 2 (lock, CI, alertas) commitada e com push. Medido:
+**Onde parou:** C0–C10 ✅. Entrega 2 (lock, CI, alertas) no remoto, CI do HEAD verde pelo SHA. Medido:
 - `1158 passed` no `.venv` do VPS, já sincronizado com o lock;
 - `ruff` limpo, formatação zero, `uv lock --check` ok;
 - mutações: 162/162 na rodada completa + 3/3 do CI, isoladas.
 
-**Próximo passo exato:**
-1. **C10:** conferir o run do CI do HEAD pelo SHA (`gh run list --commit $(git rev-parse HEAD)`),
-   esperado `completed success`; depois `gh api repos/Zbreno11-git/LifeOs/dependency-graph/sbom`
-   lista o cryptography 48.0.1? (anotar na D45 se o grafo lê o `uv.lock`).
-2. **C11:** o roteiro do Mac, no plano abaixo.
+**Próximo passo exato:** C11 — o dono roda no Mac o roteiro do plano abaixo ("Verificação ponta a
+ponta — C11"); esperado `1158 passed` sem pulados e `cryptography 48.0.1` na venv. Divergência →
+consertar na 7 (sessão só fecha sem dívida). Depois: barra (7 fechada), diário, `sessoes.md` ▶️
+para a próxima sessão.
 
 **Não pode ser esquecido:**
 - o cryptography fica na 48.0.1 (última com wheel para Mac Intel), com 3 falhas ignoradas no CI por
@@ -148,7 +147,7 @@ O `inicio` na aprovação do MCP:
 | C7 | CI (workflow + teste que o lê + `.git-blame-ignore-revs`) | C6 | ✅ 9 testes, 3 mutações 3/3 |
 | C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ✅ ok do dono; `vulnerability-alerts` → 204 |
 | C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ✅ dono: backlog (2026-09-28); escrito no backlog de `sessoes.md` |
-| C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ⬜ |
+| C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ✅ `0a1d122`: run 36381073572 `success` (`1156 passed, 2 skipped`, 37 s); grafo lê o lock; 3 alertas = os da D45 |
 | C11 | Mac: roteiro abaixo | C10 | ⬜ |
 
 ### Fase 0 — C1: medir o que faltou (nada commitado)
