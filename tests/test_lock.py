@@ -1,10 +1,11 @@
-"""O `uv.lock` instala sem compilar nada nas máquinas que rodam o Viking (Sessão 7, D45).
+"""O `uv.lock` instala sem compilar nas máquinas que rodam o Viking, com uma exceção decidida
+(Sessão 7, D45).
 
-Medido em 2026-09-28: o cryptography deixou de publicar wheel para Mac Intel na 49.0.0, e o lock
-pegou a 50.0.1; no Mac do dono (Intel de 2017, macOS 13, Python 3.13) o `uv sync` teria de compilar
-do código-fonte. O `uv` não impede isso sozinho (código-fonte conta como "compatível"), e o
-`no-build = true` que impedia no uv 0.12 faz o uv 0.11 do Mac recusar o próprio Viking. Então a
-régua é esta: todo pacote do lock tem wheel para cada plataforma que o usa, nos dois Pythons.
+Medido em 2026-09-28: o cryptography deixou de publicar wheel para Mac Intel na 49.0.0. O `uv` não
+avisa (código-fonte conta como "compatível"), e o `no-build = true` que o impedia no uv 0.12 faz o
+uv 0.11 do Mac recusar o próprio Viking. Então a régua é esta: todo pacote do lock tem wheel para
+cada plataforma que o usa, nos dois Pythons — menos o que o dono decidiu compilar, e a exceção
+reprova sozinha quando deixa de ser necessária.
 """
 
 import functools
@@ -18,6 +19,10 @@ RAIZ = Path(__file__).resolve().parents[1]
 # As máquinas: o Mac do dono (Python 3.13.5, medido em 2026-09-28) e o VPS/CI (3.12).
 PYTHONS = (12, 13)
 MACOS_MAXIMO = 13  # Ventura, sem upgrade (D4)
+# O que se compila de propósito, e onde. cryptography no Mac: a 48.0.1, a última com wheel para Mac
+# Intel, tem 3 falhas conhecidas; o Mac tem Rust e o `pip` já tinha compilado a 50.0.1 lá (medido
+# em 2026-09-28). Decisão do dono, D45.
+COMPILA = {("cryptography", "darwin")}
 
 
 @functools.cache
@@ -104,11 +109,33 @@ def test_o_lock_tem_o_que_conferir():
     assert {plataforma for _, _, plataforma, _ in casos} == {"darwin", "linux"}
 
 
-@pytest.mark.parametrize(("nome", "versao", "plataforma", "menor"), _casos())
-def test_todo_pacote_tem_wheel_para_as_nossas_maquinas(nome, versao, plataforma, menor):
+def _pacote(nome: str) -> dict:
     (pacote,) = [p for p in _lock()["package"] if p["name"] == nome]
-    wheels = [w["url"].rsplit("/", 1)[1] for w in pacote.get("wheels", [])]
-    assert any(_serve(w, plataforma, menor) for w in wheels), (
+    return pacote
+
+
+def _tem_wheel(nome: str, plataforma: str, menor: int) -> bool:
+    wheels = [w["url"].rsplit("/", 1)[1] for w in _pacote(nome).get("wheels", [])]
+    return any(_serve(w, plataforma, menor) for w in wheels)
+
+
+@pytest.mark.parametrize(
+    ("nome", "versao", "plataforma", "menor"),
+    [caso for caso in _casos() if (caso[0], caso[2]) not in COMPILA],
+)
+def test_todo_pacote_tem_wheel_para_as_nossas_maquinas(nome, versao, plataforma, menor):
+    assert _tem_wheel(nome, plataforma, menor), (
         f"{nome} {versao} não tem wheel para {plataforma} com Python 3.{menor}: o `uv sync` "
         "compilaria do código-fonte"
     )
+
+
+@pytest.mark.parametrize(("nome", "plataforma"), sorted(COMPILA))
+def test_excecao_so_enquanto_precisa(nome, plataforma):
+    """A exceção tem prazo: se o pacote voltar a ter wheel para lá, ela sai; e sem código-fonte no
+    lock, compilar nem seria possível."""
+    for menor in PYTHONS:
+        assert not _tem_wheel(nome, plataforma, menor), (
+            f"{nome} voltou a ter wheel para {plataforma} (Python 3.{menor}): tire-o de COMPILA"
+        )
+    assert "sdist" in _pacote(nome)

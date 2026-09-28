@@ -1066,8 +1066,16 @@ segunda vez; terminou sem estrago).
 - O CI passa a rodar nos dois Pythons, com um teste que amarra essa lista à do lock. No VPS, com
   Python 3.13 pelo lock: `1553 passed, 2 skipped`.
 
-**A premissa errada.** Eu tinha dito ao dono que o Mac já estava na 48 "sem saber". Estava na 50,
-compilada lá ou vinda do conda. A decisão sobre o cryptography volta para o dono com esse dado.
+**A premissa errada, e a decisão refeita.**
+- Eu tinha dito ao dono que o Mac já estava na 48 "sem saber". Estava na 50.0.1: o `dist-info`
+  diz `Generator: maturin` e `Tag: cp313-abi3-macosx_10_12_x86_64`, uma compilação local feita
+  pelo `pip`, e o Mac tem Rust em `~/.cargo/bin`.
+- Com esse dado, o dono escolheu a 50 em todo lugar, e o Mac a compila. A trava `cryptography<49`
+  e os 3 `--ignore-vuln` saíram.
+- `tests/test_lock.py` ganhou a exceção `COMPILA = {("cryptography", "darwin")}`, que reprova
+  sozinha se voltar a existir wheel (conferido: com um pacote que tem wheel na lista, cai).
+- `pip-audit` do lock: nenhuma falha. `1553 passed` no VPS, já na 50.0.1 pelo lock. Mutações do
+  CI: 4/4, uma delas nova (o scanner ignorando uma falha).
 
 ### 2026-09-28 — Sessão 7, entrega 2: versões travadas, CI e alertas de dependência (falta o Mac)
 

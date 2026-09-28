@@ -1222,6 +1222,13 @@ MUTACOES = [
         "  contents: write",
         "tests/test_ci_workflow.py::test_permissao_so_de_leitura",
     ),
+    Mutacao(
+        "CI: o scanner ignora uma falha sem decisão",
+        ".github/workflows/testes.yml",
+        "--disable-pip --progress-spinner off\n",
+        "--disable-pip --progress-spinner off --ignore-vuln PYSEC-2026-3552\n",
+        "tests/test_ci_workflow.py::test_scanner_nao_ignora_nenhuma_falha",
+    ),
 ]
 
 

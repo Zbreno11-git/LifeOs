@@ -332,8 +332,8 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
 - ~~Adiado da 6: conferir as datas de `viking financas --gastos` no app do banco~~ — feito pelo dono
   em 2026-09-28, bateu (D44).
 - ~~§15.1: sem lockfile no projeto principal~~ — feito em 2026-09-28: `uv.lock`, instalado com
-  `uv sync --locked --extra dev`; o `pyproject` exige wheel para Mac Intel e Linux, e o
-  cryptography fica na 48.0.1, a última com wheel para Mac Intel (D45).
+  `uv sync --locked --extra dev`; `tests/test_lock.py` exige wheel para Mac Intel e Linux nos
+  Pythons 3.12 e 3.13, menos o cryptography no Mac, que se compila lá (decisão do dono, D45).
 - ~~§15.3: sem CI, sem scanner de dependências~~ — feito em 2026-09-28: `.github/workflows/testes.yml`
   (testes, `ruff`, `pip-audit` do lock) e alertas do Dependabot ligados (D45). A checagem de tipos
   foi para o backlog, por decisão do dono, com o número medido (67 erros).

@@ -5,28 +5,31 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: o Mac achou dois defeitos; consertados, falta a decisão do cryptography e o 2º teste
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: consertos do 1º teste no Mac enviados; próximo: o 2º teste no Mac
 
-**Estado do repositório:** conferir com `git log -1` (commit do conserto do Mac, depois de
-`23a2a79`) · travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (commit "cryptography 50 em todo lugar") ·
+travas: nenhuma · background: nenhum.
 
-**Onde parou:** C0–C10 ✅. C11 no Mac (`23a2a79`):
-- `uv sync` recusou o próprio Viking por causa do `no-build` (uv 0.11.24 no Mac, 0.12.10 aqui);
-  o resto rodou no ambiente antigo;
-- o Mac tem Python **3.13.5** e já tinha o **cryptography 50.0.1**, compilado lá ou vindo do conda
-  (a premissa da decisão do dono estava errada: erros, classe 2).
+**Onde parou:** C0–C10 ✅. O 1º teste no Mac (`23a2a79`) achou três coisas:
+- o `no-build` fazia o uv 0.11.24 do Mac recusar o próprio Viking;
+- o Mac roda Python 3.13.5;
+- o Mac já tinha o cryptography 50.0.1, compilado lá pelo `pip` (maturin, Rust em `~/.cargo`).
 
 Consertado:
-- o `no-build` saiu, e no lugar entrou `tests/test_lock.py` (wheel para Mac Intel ≤ 13 e Linux,
-  Pythons 3.12 e 3.13; 396 casos);
-- o CI roda nos dois Pythons.
-Medido: `1555 passed`; no Python 3.13, pelo lock, `1553 passed, 2 skipped`.
+- `tests/test_lock.py` (wheel para Mac Intel e Linux, Pythons 3.12 e 3.13) no lugar do
+  `no-build`;
+- o CI nos dois Pythons (`e768555`: verde nos dois);
+- decisão refeita pelo dono: cryptography 50.0.1 em todo lugar, compilado no Mac, sem falha
+  ignorada (D45).
+Medido: `1553 passed`; `pip-audit` sem falhas; mutações do CI 4/4.
 
 **Próximo passo exato:**
-1. Conferir o CI do HEAD pelo SHA; esperado `success` nos dois Pythons.
-2. O dono roda no Mac o diagnóstico da origem do cryptography 50 (`WHEEL`/`INSTALLER` do
-   `dist-info`, `which cargo rustc`) e decide de novo.
-3. Depois, o 2º roteiro do Mac.
+1. Conferir o CI do HEAD pelo SHA (dois Pythons `success`) e os alertas do Dependabot
+   (`gh api repos/Zbreno11-git/LifeOs/dependabot/alerts --jq 'map(.state)'`, esperado os 3 como
+   `fixed`).
+2. O dono roda o 2º roteiro do Mac (plano abaixo, C11); esperado: `cryptography 50.0.1`,
+   `google-genai 2.25.0`, `1553 passed`.
+3. Depois, fechar: barra (7 fechada), `sessoes.md` ▶️, diário.
 
 **Não pode ser esquecido:**
 - o cryptography fica na 48.0.1 (última com wheel para Mac Intel), com 3 falhas ignoradas no CI por
@@ -36,7 +39,7 @@ Medido: `1555 passed`; no Python 3.13, pelo lock, `1553 passed, 2 skipped`.
 - repo público;
 - nunca presumir o fuso do dono.
 
-**Depende do dono:** o diagnóstico do cryptography no Mac, a decisão de novo com o dado, e o 2º teste.
+**Depende do dono:** o 2º teste no Mac.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1158 passed`.
@@ -332,37 +335,34 @@ Varredura de caracteres de controle e de dados reais no diff. Commits 1a e 1b, p
 
 Commit 2, push. **Fecha só com o run do CI do HEAD verde, conferido pelo `headSha`** (`gh run list --commit <sha>`), não com "a lista está vazia".
 
-### Verificação ponta a ponta — C11, Mac
+### Verificação ponta a ponta — C11, Mac (2º roteiro, depois do 1º teste)
 ```
 cd ~/LifeOs
 git pull && git log --oneline -1
-uv --version
 source .venv/bin/activate
 which python
-python --version
 uv pip list | wc -l
 uv sync --locked --extra dev
 which python
+python --version
 uv pip list | wc -l
-uv pip list | grep -i -E '^(cryptography|google-genai) '
+uv pip list | grep -i -E '^(cryptography|google-genai|ruff) '
 python -m pytest -q
 viking browser --doctor
 viking financas
 viking chat
 ```
 Esperado:
-- o `uv --version` responde (se for anterior à 0.6, pare e me mande a saída: o lock usa
-  `required-environments`);
-- o `git log` mostra o commit 2;
-- o `which python` aponta para `~/LifeOs/.venv/bin/python` **antes e depois** do `uv sync`;
-- o `pytest` dá `1158 passed`, sem pulados (o clone está lá);
-- o `--doctor` mostra o Jev como antes;
-- `uv pip list` mostra `cryptography 48.0.1` e `google-genai 2.25.0`, e a contagem cai (o `pip`
-  e o que não está no lock saem);
-- `viking financas` confere as conexões como antes (sem saldo nem extrato: a saída vem para o chat);
-- no chat: `o que tenho amanhã?` (o login do Google com as bibliotecas novas), `/custos`, `sair`.
+- o `uv sync` termina sem erro. Ele pode compilar o cryptography, o que leva alguns minutos, ou
+  aproveitar o 50.0.1 já instalado;
+- o `which python` é `~/LifeOs/.venv/bin/python` antes e depois, e o Python é o 3.13.5;
+- a contagem cai (o `pip` e o que não está no lock saem);
+- versões: `cryptography 50.0.1`, `google-genai 2.25.0`, `ruff 0.16.9`;
+- `1553 passed`, sem pulados;
+- o `--doctor` e o `viking financas` ficam como antes;
+- no chat: `o que tenho amanhã?`, `/custos`, `sair`.
 
-No GitHub (site): o commit do topo com ✅; aba Security → Dependabot alerts ligada.
+No GitHub (site): o commit do topo com ✅ nos dois Pythons; Security → Dependabot sem alerta aberto.
 
 ### Riscos e o que é irreversível
 - **`uv sync` no Mac remove pacote que não está no lock** (exato por padrão). O que alguém instalou à mão na venv some. A contagem antes/depois mostra, e reinstalar é possível. O Jev tem venv própria e não é tocado.

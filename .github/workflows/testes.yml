@@ -41,8 +41,7 @@ jobs:
       - name: Formatação
         run: uv run --locked python -m ruff format --check .
       - name: Falhas conhecidas nas dependências do lock
-        # Os 3 ignorados são do cryptography 48.0.1, a última com wheel para Mac Intel; nenhum é
-        # alcançável pelo Viking (D45). O teste do workflow reprova se o lock sair da 48.
+        # Nenhuma ignorada: ignorar uma falha é decisão do dono, escrita na D45.
         run: |
           uv export --frozen --no-hashes --no-emit-project --all-extras --format requirements-txt > requisitos.txt
-          uvx pip-audit==2.10.1 -r requisitos.txt --no-deps --disable-pip --progress-spinner off --ignore-vuln PYSEC-2026-3552 --ignore-vuln PYSEC-2026-3553 --ignore-vuln PYSEC-2026-3554
+          uvx pip-audit==2.10.1 -r requisitos.txt --no-deps --disable-pip --progress-spinner off

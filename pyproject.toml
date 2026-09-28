@@ -25,21 +25,17 @@ hardware = ["pyserial"]
 viking = "lifeos.cli:main"
 
 [tool.uv]
-# O lock tem de instalar sem compilar nada nas máquinas que rodam o Viking: o Mac do dono é Intel
-# (2017, macOS 13), e o VPS e o CI são Linux x86_64. Medido em 2026-09-28: o cryptography deixou de
-# publicar wheel para Mac Intel na 49.0.0 — sem esta lista, o lock pegava a 50.0.1 e o `uv sync` no
-# Mac teria de compilar do código-fonte (Rust).
+# O lock tem de servir as máquinas que rodam o Viking: o Mac do dono é Intel (2017, macOS 13, Python
+# 3.13) e o VPS e o CI são Linux x86_64. Código-fonte conta como "compatível" com essas plataformas,
+# então quem exige wheel é `tests/test_lock.py`, que lê o lock. Única exceção, decidida pelo dono em
+# 2026-09-28 (D45): o cryptography deixou de publicar wheel para Mac Intel na 49.0.0, e o Mac o
+# compila (Rust instalado, e o `pip` já tinha compilado a 50.0.1 lá, medido); a 48.0.1, a última com
+# wheel, tem 3 falhas conhecidas. `no-build = true` não serve: o uv 0.11 do Mac o aplica ao próprio
+# Viking e recusa instalar.
 required-environments = [
     "sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "sys_platform == 'linux' and platform_machine == 'x86_64'",
 ]
-# O código-fonte conta como "compatível" com essas plataformas, então esta lista sozinha não impede
-# uma versão sem wheel: quem impede é `tests/test_lock.py`, que lê o lock (`no-build = true` fazia
-# isso no uv 0.12, mas o uv 0.11 do Mac o aplica ao próprio Viking e recusa instalar; 2026-09-28).
-# A mesma versão em toda máquina: sem esta linha o lock se divide (48.0.1 no Mac, 50.0.1 no Linux) e
-# o CI testaria outra coisa. Tirar quando o cryptography voltar a publicar wheel para Mac Intel ou
-# o Mac do dono deixar de ser Intel (D45).
-constraint-dependencies = ["cryptography<49"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

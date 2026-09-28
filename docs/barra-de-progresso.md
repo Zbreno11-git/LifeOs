@@ -22,14 +22,15 @@ na fila 7. Cada parcial vale meia sessão na barra.
   "mais nova do dia": hoje já eram 18 diferenças. Instalar passa a ser `uv sync --locked --extra dev`.
 - **Os testes rodam no GitHub a cada envio.** Cada commit aparece com ✅ ou ❌; nada é bloqueado.
 - **Aviso de falha de segurança** nas peças de terceiros: o GitHub avisa por e-mail e na aba
-  Security. Hoje ele mostra 3 avisos de uma peça de criptografia. São conhecidos e anotados: a
-  versão corrigida não existe para Mac Intel, e nenhum deles alcança o Viking.
+  Security. Hoje não há nenhum aviso aberto.
 - **Um defeito raro consertado:** aprovar um pedido de outro app (`viking aprovar`) podia dizer
   "o evento mudou" sem ele ter mudado.
 
-**Achado antes de chegar ao seu Mac:** a peça de criptografia parou de publicar versão pronta
-para Mac Intel. Sem o cuidado, a instalação no seu Mac teria tentado compilá-la e provavelmente
-falhado.
+**Achado no caminho:** uma peça de criptografia parou de publicar versão pronta para Mac Intel. A
+última versão pronta tem 3 falhas conhecidas. Seu Mac já compilava a versão nova (tem as
+ferramentas para isso), então você decidiu manter a nova em todo lugar: no Mac, a instalação
+compila essa peça uma vez. Eu tinha dito o contrário ("seu Mac já está na versão velha") sem
+medir; seu teste mostrou, e a decisão foi refeita com o dado certo.
 
 
 **O que mudou:**

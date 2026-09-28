@@ -7,7 +7,6 @@ scanner ignora está decidido, e ainda vale? Lê o arquivo como texto: sem depen
 """
 
 import re
-import tomllib
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -93,23 +92,8 @@ def test_scanner_roda_sobre_o_lock():
     assert "pip-audit==" in codigo
 
 
-def test_falha_ignorada_esta_decidida_na_d45():
-    """Ignorar uma falha conhecida é decisão: cada ID ignorado tem de estar escrito na D45."""
-    d45 = next(
-        linha
-        for linha in (RAIZ / "docs" / "decisoes.md").read_text().splitlines()
-        if linha.startswith("| D45 |")
-    )
-    ignorados = _ignorados()
-    assert ignorados == ["PYSEC-2026-3552", "PYSEC-2026-3553", "PYSEC-2026-3554"]
-    for vuln in ignorados:
-        assert vuln in d45, vuln
-
-
-def test_a_isencao_acaba_quando_o_cryptography_sair_da_48():
-    """Os 3 ignorados são do cryptography 48.0.1, a última com wheel para Mac Intel (medido em
-    2026-09-28). Se o lock subir o cryptography, a isenção não vale mais: tire os `--ignore-vuln`
-    e esta checagem."""
-    lock = tomllib.loads((RAIZ / "uv.lock").read_text())
-    (versao,) = [p["version"] for p in lock["package"] if p["name"] == "cryptography"]
-    assert versao == "48.0.1"
+def test_scanner_nao_ignora_nenhuma_falha():
+    """Desde 2026-09-28 (D45) nenhuma falha conhecida é ignorada: o cryptography está na 50.0.1.
+    Ignorar uma volta a ser decisão do dono, escrita na D45, e este teste muda junto."""
+    assert _ignorados() == []
+    assert "--ignore-vuln" not in _codigo()
