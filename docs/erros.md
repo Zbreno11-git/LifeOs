@@ -17,13 +17,13 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 11 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 12 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 8 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei — e em arquivo do baseline, só os meus trechos do `--diff`; conferir com `git status` depois |
+| 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
 
@@ -121,6 +121,14 @@ perguntar. Ele não está. A agenda do Google dele está em São Paulo, o relóg
 os três fusos só apareceram quando o roteiro mediu cada um (`date +%z`, o fuso do Viking, o
 registro com `-03:00`). O que tem de novo: a suposição não estava em nenhuma frase que eu pudesse
 conferir — estava no desenho dos testes (todos fixavam Brasília como "o fuso do dono").
+
+**2026-09-28 — "todas as alternativas têm 1 item" (Sessão 7, plano).** Para tirar o `or` de
+`test_regras_de_comportamento_sobrevivem_a_compressao`, escrevi no plano que as listas de
+alternativas tinham todas um item, lendo só a linha da asserção. A primeira lista,
+`navegar_e_executar`, tinha dois ("AÇÃO" ou "nunca uma pergunta"): era um "ou" de verdade, e perder
+a segunda frase passava. Pego ao abrir o dicionário para editar; as duas viraram obrigatórias, com
+mutação que apaga a segunda. O que tem de novo: a afirmação era sobre um arquivo que eu estava com
+o trecho na tela, só que o trecho errado.
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
@@ -408,4 +416,10 @@ só os meus trechos.
 
 **O antídoto, concreto:** `ruff format <arquivos que eu editei>`, nunca um diretório; `git status`
 depois de qualquer comando que escreve.
+
+> **Atualização (2026-09-28, Sessão 7, D45) — não é ocorrência.** O baseline acabou: os 6 `.py`
+> atrasados foram formatados num commit só de formatação (`dd7d4c8`), por decisão do dono, e os
+> `.md` saíram do `ruff format` (o Python deles é citação). A regra "em arquivo do baseline, só os
+> meus trechos do `--diff`" deixou de existir: `ruff format --check .` tem de dar zero. O antídoto
+> de cima continua: nomear os arquivos.
 

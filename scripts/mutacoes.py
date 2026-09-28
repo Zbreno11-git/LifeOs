@@ -1164,6 +1164,43 @@ MUTACOES = [
         "        if True:\n            registro.devolver_desfazer(acao_id)",
         "tests/test_registro_chat.py::test_desfazer_ambiguo_nao_recria_duas_vezes",
     ),
+    Mutacao(
+        "aprovar: o início volta a ser comparado como texto (outro fuso = 'mudou')",
+        "src/lifeos/calendar/service.py",
+        '        or not _mesmo_instante(_evento_de(atual).inicio, dados["inicio"])',
+        '        or _evento_de(atual).inicio != dados["inicio"]',
+        "tests/test_mcp_aprovacao.py::test_fuso_do_dono_diferente_na_aprovacao_nao_e_mudanca",
+    ),
+    Mutacao(
+        "aprovar: qualquer horário é o mesmo instante (evento que andou é mexido)",
+        "src/lifeos/calendar/service.py",
+        "        return (da.tzinfo is None) == (db.tzinfo is None) and da == db",
+        "        return True",
+        "tests/test_mcp_aprovacao.py::test_evento_que_andou_uma_hora_com_a_mesma_versao_nao_e_mexido",
+    ),
+    Mutacao(
+        "instante: dia inteiro vale o mesmo que a meia-noite",
+        "src/lifeos/calendar/service.py",
+        "    return not com_hora_a and not com_hora_b and da == db",
+        "    return da == db",
+        "tests/test_mcp_aprovacao.py::test_mesmo_instante",
+    ),
+    Mutacao(
+        "google-genai: tool com anotação que só o conversor de reserva aceita",
+        "src/lifeos/assistant/agent.py",
+        "def concluir_lembrete(reminder_id: int) -> str:",
+        "def concluir_lembrete(reminder_id: tuple[int, str]) -> str:",
+        "tests/test_assistant_tools.py::test_schema_aceito_pela_api_do_gemini",
+    ),
+    Mutacao(
+        "docstring: navegar perde 'nunca uma pergunta' (antes, 'AÇÃO' bastava)",
+        "src/lifeos/assistant/agent.py",
+        '    `objetivo` é sempre uma AÇÃO ("abrir X", "buscar Y e abrir o primeiro resultado"), nunca uma\n'
+        "    pergunta: o executor",
+        '    `objetivo` é sempre uma AÇÃO ("abrir X", "buscar Y e abrir o primeiro resultado"), sempre\n'
+        "    curto: o executor",
+        "tests/test_assistant_tools.py::test_regras_de_comportamento_sobrevivem_a_compressao",
+    ),
 ]
 
 

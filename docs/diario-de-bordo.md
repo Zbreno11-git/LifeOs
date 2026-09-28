@@ -1046,6 +1046,57 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 7, entrega 1: formatação sem baseline e três consertos pequenos
+
+Plano aprovado pelo dono (`5dd06a7`, no `PROGRESSO.md`): lock, CI, alertas de dependência,
+formatação e os pequenos, em 2 entregas. A checagem de tipos foi medida e foi para o backlog, por
+decisão do dono (67 erros em 15 arquivos com o `mypy` 2.3.1; nos ~12 que li, nenhum defeito real).
+
+**Medido antes de construir (C1, 2026-09-28).**
+- A suíte num `git archive HEAD`, sem `.env` e sem o clone do Jev: `1116 passed, 2 skipped`. Ela
+  não depende das chaves do VPS; os 2 são os contratos com o clone.
+- Uma instalação limpa de hoje pega 18 pacotes em versão diferente da venv do VPS (google-genai
+  2.25.0 contra 2.24.0, fastmcp, ruff…). É o §15.1 medido.
+- `pip-audit`: nenhuma falha conhecida.
+- Venv criada pelo `uv` não tem `pip`.
+
+**Formatação (`dd7d4c8`, commit só disso).**
+- Os 6 `.py` atrasados foram formatados, nomeados um a um, e os `.md` saíram do `ruff format`: o
+  único apontado cita o patch do Jev, e citação fica como veio (D45).
+- As descrições das tools que o Gemini lê mudaram só no fim: 3 perderam um `\n    ` final, com as
+  palavras idênticas às de `b894956` (comparado pela AST).
+- O "de propósito" de 2026-09-20, que deixava duas delas fora do formato, era para provar que
+  aquele refactor não mudava o texto. Não era regra que continua valendo.
+
+**google-genai (§15.2).**
+- O teste de schema usava a função privada com `VERTEX_AI`, mas o chat fala com a API de
+  desenvolvedor. Agora usa `FunctionDeclaration.from_callable_with_api_option(..., "GEMINI_API")`,
+  que é o caminho que o SDK percorre com as nossas tools.
+- A função pública tem um conversor de reserva, por JSON schema, que aceita quase tudo. O teste
+  exige o estrito (`parameters_json_schema is None`) e todos os parâmetros da assinatura. A mutação
+  com `tuple[int, str]`, que só a reserva aceita, prova isso.
+
+**Regras das descrições.**
+- A de `navegar_e_executar` era uma lista de alternativas: "AÇÃO" bastava sem "nunca uma
+  pergunta".
+- Agora as 33 regras são obrigatórias, uma por caso, sem `or` na asserção.
+
+**`inicio` na aprovação do MCP.**
+- O início guardado no pedido e o relido na aprovação eram comparados como texto. Os dois saem de
+  `no_fuso_do_dono`, mas em processos diferentes.
+- Com o fuso do dono diferente entre o servidor MCP e o `viking aprovar`, o mesmo instante vinha
+  escrito noutro fuso, e o pedido válido era recusado com "o evento mudou".
+- Agora é `_mesmo_instante`, e o `_mesmo_horario` do desfazer, que já comparava instantes sobre o
+  `start` cru, passou a usar a mesma regra (uma fonte só). Vazio e texto que não é horário nunca
+  contam como "o mesmo", nos dois usos.
+
+**Portões.** `1149 passed`; `ruff check` limpo; `ruff format --check .` → zero a formatar;
+`python scripts/mutacoes.py` → `162 · mortas pelo teste esperado: 162` (5 novas).
+
+**Erros desta entrega** (`docs/erros.md`, classe 2): escrevi no plano que todas as listas de
+alternativas tinham um item, lendo só a linha da asserção; a primeira tinha dois. Pego ao abrir o
+dicionário para editar.
+
 ### 2026-09-28 — Sessão 6 fechada
 
 O dono autorizou fechar ("pode fechar a sessão") sem a conferência das datas das finanças, porque

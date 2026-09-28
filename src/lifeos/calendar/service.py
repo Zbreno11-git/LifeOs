@@ -120,6 +120,26 @@ def no_fuso_do_dono(valor: str | None) -> str | None:
     return dt.astimezone(TIMEZONE).isoformat()
 
 
+def _mesmo_instante(a: str | None, b: str | None) -> bool:
+    """Dois horários da agenda marcam o mesmo momento? A regra única: a aprovação de um pedido do
+    MCP (o início, já no fuso do dono) e o desfazer (`_mesmo_horario`, o `start` cru do Google).
+
+    Com hora nos dois, compara o instante; dia inteiro nos dois, a data; dia inteiro contra horário,
+    com fuso contra sem fuso, vazio ou texto que não é ISO: não é o mesmo (o lado seguro nos dois
+    usos é não mexer). O pedido e a aprovação rodam em processos diferentes (o servidor MCP que
+    outro app sobe e o `viking aprovar`): sem `VIKING_TIMEZONE`, ou com ela trocada dentro da
+    validade, o mesmo instante vinha escrito noutro fuso, e comparar o texto recusava um pedido
+    válido dizendo que o evento tinha mudado (achado em 2026-09-28)."""
+    try:
+        da, db = datetime.fromisoformat(str(a)), datetime.fromisoformat(str(b))
+    except ValueError:
+        return False
+    com_hora_a, com_hora_b = "T" in str(a), "T" in str(b)
+    if com_hora_a and com_hora_b:
+        return (da.tzinfo is None) == (db.tzinfo is None) and da == db
+    return not com_hora_a and not com_hora_b and da == db
+
+
 def _evento_de(item: dict) -> Evento:
     inicio = item.get("start", {})
     fim = item.get("end", {})
@@ -477,12 +497,7 @@ def _devolver_evento(item: dict) -> Restaurado:
 
 def _mesmo_horario(a: dict | None, b: dict | None) -> bool:
     a, b = a or {}, b or {}
-    if a.get("dateTime") and b.get("dateTime"):
-        try:
-            return datetime.fromisoformat(a["dateTime"]) == datetime.fromisoformat(b["dateTime"])
-        except ValueError:
-            return False
-    return bool(a.get("date")) and a.get("date") == b.get("date")
+    return _mesmo_instante(a.get("dateTime") or a.get("date"), b.get("dateTime") or b.get("date"))
 
 
 def _para_patch(horario: dict) -> dict:
@@ -605,7 +620,7 @@ def executar_aprovado(acao: str, codigo: str) -> Evento:
         or (dados.get("etag") and atual.get("etag") != dados["etag"])
         or (dados.get("updated") and atual.get("updated") != dados["updated"])
         or not _titulo_igual(dados["titulo"], _evento_de(atual).titulo)
-        or _evento_de(atual).inicio != dados["inicio"]
+        or not _mesmo_instante(_evento_de(atual).inicio, dados["inicio"])
     )
     if mudou:
         confirmacao.registrar(aprovado.id, {"feito": False, "motivo": "mudou"})

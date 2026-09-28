@@ -5,17 +5,17 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7 em curso (plano aprovado); próximo: C1
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: entrega 1 no remoto; próximo: C6 (lock)
 
 **Estado do repositório:** conferir com `git log -1` (o anterior é `b894956`, checkpoint antes do
 compact) · travas: nenhuma · background: nenhum.
 
-**Onde parou:** o plano da Sessão 7 (abaixo) foi aprovado pelo dono em 2026-09-28. C0 ✅.
+**Onde parou:** entrega 1 fechada e no remoto (C0–C5 ✅; C1 medido e tipos → backlog, C9 ✅). Medido: `1149 passed`, `ruff` limpo, formatação zero, mutações `162 · mortas pelo teste esperado: 162`.
 
-**Próximo passo exato:** C1 — medir o que faltou, tudo no scratchpad: a suíte num `git archive HEAD`
-sem `.env` e sem o clone do Jev (esperado `1116 passed, 2 skipped`), `mypy` fixado em `src` (o
-número vai ao dono, que decide se vira portão), `pip-audit` da exportação, e se o `uv sync` mantém o
-`pip` na venv.
+**Próximo passo exato:** C6 — `uv lock` (extras `dev` e `hardware`); conferir com `uv lock --check`
+e com uma venv nova no scratchpad (`uv sync --locked --extra dev` → `1149 passed`); depois C7 (CI:
+checkout v7.0.1 = `3d3c42e5aac5ba805825da76410c181273ba90b1`, setup-uv v10.2.0 =
+`c18668ad3cf93ea998bef934396af7bb5c839dc7`, conferidos por `gh api` em 2026-09-28).
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/erros.md`
 (classes 2, 4, 5, 8); as skills `software-build`, `testes-que-provam`, `nuvem-e-deploy` (§10, CI) e
@@ -25,10 +25,10 @@ número vai ao dono, que decide se vira portão), `pip-audit` da exportação, e
 `secrets.` no CI (log público); formatador só nos arquivos nomeados; mutações em background, sem
 `timeout`; repo público (nada de cidade, conta, valor ou ID real); nunca presumir o fuso do dono.
 
-**Depende do dono:** a decisão sobre a checagem de tipos (no C1) e o ok para ligar os alertas (C8).
+**Depende do dono:** o ok para ligar os alertas do Dependabot (C8).
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1118 passed`.
+`python -m pytest -q` → `1149 passed`.
 
 ## Plano — Sessão 7: manutenção (versões travadas, CI, scanner, formatação e três consertos pequenos) (aprovado em 2026-09-28)
 
@@ -135,15 +135,15 @@ O `inicio` na aprovação do MCP:
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
 | C0 | plano no `PROGRESSO.md` (bloco ▶️ + plano), acima da 6 | — | ✅ |
-| C1 | medições que faltaram + número de tipos levado ao dono | C0 | ⬜ |
-| C2 | commit 1a: só formatação, zero a formatar, âncoras de mutação intactas | C1 | ⬜ |
-| C3 | §15.2 público + `_REGRAS` sem `or` | C2 | ⬜ |
-| C4 | `inicio` por instante | C2 | ⬜ |
-| C5 | mutações, docs, revisão em 2 passadas, commits 1a+1b, push | C3, C4 | ⬜ |
+| C1 | medições que faltaram + número de tipos levado ao dono | C0 | ✅ (resultado abaixo; tipos → backlog, dono) |
+| C2 | commit 1a: só formatação, zero a formatar, âncoras de mutação intactas | C1 | ✅ `dd7d4c8` |
+| C3 | §15.2 público + `_REGRAS` sem `or` | C2 | ✅ 21 casos + 33 regras |
+| C4 | `inicio` por instante | C2 | ✅ `_mesmo_instante`, regra única com o desfazer |
+| C5 | mutações, docs, revisão em 2 passadas, commits 1a+1b, push | C3, C4 | ✅ `1149 passed`, 162/162 |
 | C6 | `uv.lock` + `uv sync --locked` reproduz a suíte no VPS | C5 | ⬜ |
 | C7 | CI (workflow + teste que o lê + `.git-blame-ignore-revs`) | C6 | ⬜ |
 | C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ⬜ |
-| C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ⬜ |
+| C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ✅ dono: backlog (2026-09-28); escrito no backlog de `sessoes.md` |
 | C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ⬜ |
 | C11 | Mac: roteiro abaixo | C10 | ⬜ |
 
@@ -162,6 +162,16 @@ O `inicio` na aprovação do MCP:
 **🐞:**
 - **Classe 2:** afirmar "o GitHub lê o `uv.lock`" sem conferir → só a medida do C8 conta.
 - **Classe 4:** um teste passando aqui por causa do `.env` do VPS → é justamente o que o export mede.
+
+#### C1 — resultado (2026-09-28, `5dd06a7`, scratchpad)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Suíte num export limpo, sem `.env` e sem o clone | `git archive HEAD` + `uv venv` + `uv pip install -e ".[dev]"` + `env -i PATH HOME TZ=UTC python -m pytest -q -rs` | `1116 passed, 2 skipped in 18.86s`; os 2 são `test_jev_subprocess_main.py:699,757` (clone ausente) | a suíte não depende do `.env` do VPS; `skipped` = 2 no CI |
+| Venv criada pelo `uv` | `.venv/bin/python -m pip --version` | `No module named pip` | com `uv sync`, `python -m pip` deixa de funcionar na venv: a doc passa a `uv pip …`; `python -m pytest` fica |
+| Versões: instalação de hoje × venv do VPS | `pip freeze` × `uv pip freeze`, nomes normalizados | 18 pacotes diferentes, todos mais novos na instalação limpa (ex.: google-genai 2.24.0 → 2.25.0, fastmcp 4.0.5 → 4.0.10, ruff 0.16.8 → 0.16.9); a suíte passa nas duas | é o §15.1 medido: duas máquinas já instalam coisas diferentes |
+| Formatação com o ruff 0.16.9 | `ruff format --check .` | os mesmos `7 files would be reformatted` | — |
+| Tipos | `uvx mypy==2.3.1 --python-executable .venv/bin/python src` | `Found 67 errors in 15 files (checked 41 source files)`: 34 em `jev_runner.py` (um padrão só, `**dict` num dataclass), 9 imports do ambiente do Jev, 3 pacotes do Google sem tipos, o resto `None` que o mypy não vê filtrado; nos ~12 que li, nenhum defeito real | decisão do dono |
+| Scanner | `uv pip freeze` (97 pacotes) + `uvx pip-audit==2.10.1 -r … --no-deps --disable-pip` | `No known vulnerabilities found` | o CI parte verde |
 
 ### Entrega 1 — formatação e consertos pequenos
 

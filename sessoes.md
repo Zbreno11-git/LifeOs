@@ -329,12 +329,12 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
   em 2026-09-28, bateu (D44).
 - §15.1: sem lockfile no projeto principal (`uv.lock` ou equivalente).
 - §15.3: sem CI, sem scanner de dependências, sem type checking.
-- §15.4: `ruff format --check` ainda aponta arquivos pré-existentes (de antes da auditoria) —
-  eram 10 na auditoria, 7 em 2026-09-26 (`python -m ruff format --check .`); cada sessão formata
-  só os arquivos que já está editando, então o número cai aos poucos.
-- §15.2: `test_assistant_tools.py` usa `_automatic_function_calling_util`, API privada do
-  google-genai — acoplamento intencional, mas vale um teste público adicional que não dependa
-  disso.
+- ~~§15.4: `ruff format --check` ainda aponta arquivos pré-existentes~~ — feito em 2026-09-28
+  (`dd7d4c8`, commit só de formatação; `.md` fora do `ruff format`, D45): zero a formatar.
+- ~~§15.2: `test_assistant_tools.py` usa `_automatic_function_calling_util`, API privada do
+  google-genai~~ — feito em 2026-09-28: o teste usa a função pública
+  (`FunctionDeclaration.from_callable_with_api_option`, com `GEMINI_API`, a API que o chat usa; a
+  privada conferia contra o Vertex AI) e exige o conversor estrito.
 
 ## Só se o Bosgame voltar (trilha de hardware reativada)
 
@@ -346,6 +346,13 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
   docs que afirmam sucesso não comprovado no Bosgame.
 
 ## Backlog sem sessão marcada
+
+- **Checagem de tipos como portão do CI** (§15.3, adiada pelo dono em 2026-09-28, Sessão 7):
+  `uvx mypy==2.3.1 --python-executable .venv/bin/python src` → `Found 67 errors in 15 files
+  (checked 41 source files)`. 34 são um padrão só em `browser/jev_runner.py` (`**dict` num
+  dataclass), 9 são imports do ambiente do Jev e 3 são pacotes do Google sem tipos; nos ~12 que li,
+  nenhum defeito real. Para virar portão: consertar os 67, ignorar os imports do ambiente do Jev
+  (`_jev_subprocess.py` roda noutro Python) e pôr o `mypy` fixado no CI.
 
 Paginação e eventos recorrentes no calendário (§4.5); notas recuperáveis/buscáveis, não só
 criáveis (§12.4); migrations de schema formais (§12.6); decidir se o Viking é só-checkout ou

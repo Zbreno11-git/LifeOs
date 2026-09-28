@@ -185,6 +185,62 @@ def test_evento_que_mudou_desde_o_pedido_nao_e_mexido(pedidos, monkeypatch, caps
     assert "mudou (ou foi apagado) desde o pedido" in capsys.readouterr().err
 
 
+def _evento_com_hora(pedidos, inicio):
+    pedidos["evento"].update(
+        {
+            "start": {"dateTime": inicio},
+            "end": {"dateTime": "2026-10-01T14:00:00-03:00"},
+            "etag": "v1",
+            "updated": "2026-09-27T10:00:00Z",
+        }
+    )
+
+
+def test_fuso_do_dono_diferente_na_aprovacao_nao_e_mudanca(pedidos, monkeypatch, capsys):
+    """O servidor MCP e o `viking aprovar` são processos diferentes, e o fuso do dono de cada um
+    pode não ser o mesmo (sem `VIKING_TIMEZONE`, o do relógio de quem subiu o processo). O mesmo
+    instante, escrito noutro fuso, não é um evento que mudou (antes: recusava, 2026-09-28)."""
+    from zoneinfo import ZoneInfo
+
+    _evento_com_hora(pedidos, "2026-10-01T13:00:00-03:00")
+    _pedir_apagar()
+    monkeypatch.setattr(calendario_service, "TIMEZONE", ZoneInfo("Asia/Tokyo"))
+    assert _aprovar(monkeypatch, [SENTINELA]) == 0
+    assert pedidos["apagados"] == ["abc"]
+
+
+def test_evento_que_andou_uma_hora_com_a_mesma_versao_nao_e_mexido(pedidos, monkeypatch, capsys):
+    """A regra do início sozinha: `etag` e `updated` iguais aos do pedido, e o início uma hora
+    depois. Quem recusa aqui é a comparação do instante, não a da versão."""
+    _evento_com_hora(pedidos, "2026-10-01T13:00:00-03:00")
+    _pedir_apagar()
+    pedidos["evento"]["start"] = {"dateTime": "2026-10-01T14:00:00-03:00"}
+    assert _aprovar(monkeypatch, [SENTINELA]) == 2
+    assert pedidos["apagados"] == []
+    assert "mudou (ou foi apagado) desde o pedido" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("a", "b", "igual"),
+    [
+        ("2026-10-01T13:00:00-03:00", "2026-10-01T09:00:00-07:00", True),
+        ("2026-10-01T13:00:00-03:00", "2026-10-01T13:00:00-07:00", False),
+        ("2026-10-01", "2026-10-01", True),
+        ("2026-10-01", "2026-10-02", False),
+        # dia inteiro nunca é o mesmo que um horário, mesmo à meia-noite (com e sem fuso)
+        ("2026-10-01", "2026-10-01T00:00:00-03:00", False),
+        ("2026-10-01", "2026-10-01T00:00:00", False),
+        # com fuso contra sem fuso: não dá para saber se é o mesmo instante
+        ("2026-10-01T13:00:00", "2026-10-01T13:00:00-03:00", False),
+        # vazio ou texto que não é horário nunca é "o mesmo", nem igual ao outro
+        ("sem data", "sem data", False),
+        (None, None, False),
+    ],
+)
+def test_mesmo_instante(a, b, igual):
+    assert calendario_service._mesmo_instante(a, b) is igual
+
+
 def test_reagendar_aprovado_muda_o_horario(pedidos, monkeypatch):
     _chamar(
         "viking_reagendar_evento",
