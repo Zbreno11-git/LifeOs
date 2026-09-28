@@ -23,8 +23,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Depois:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
-  do plano. Os primeiros passos dela já estão escritos na seção da 8: o furo do bloqueio de
+- **Agora:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
+  do plano (roteiro da abertura no bloco de `PROGRESSO.md`). Os primeiros passos dela já estão escritos na seção da 8: o furo do bloqueio de
   domínio, o `oauthlib` 4.0.0 e o login "Testing".
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do

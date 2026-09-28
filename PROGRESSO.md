@@ -5,59 +5,100 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, revisão sênior + pesquisa do roteiro escritas; respostas do dono escritas; próximo: abrir a Sessão 8
+## ▶️ RETOMAR AQUI — 2026-09-28, revisão sênior + pesquisa do roteiro fechadas; próximo: abrir, planejar e executar a Sessão 8
 
-**Estado do repositório:** conferir com `git log -1` (o commit da revisão, depois de `b81ce93`) ·
-igual ao remoto · travas: nenhuma · background: nenhum. Só docs mudaram: `1553 passed`.
+**Estado do repositório:** conferir com `git log -1` (o checkpoint antes do compact, depois de
+`364c1d0`) · igual ao remoto · travas: nenhuma · background: nenhum.
+- CI conferido pelo `headSha` em 2026-09-28 (`gh run list --limit 4`): `success` em `186c8d8`,
+  `51d46d2` e `364c1d0`.
+- Só docs mudaram desde a Sessão 7: `1553 passed`, `ruff` limpo, formatação zero.
+- Nota: `gh run list --commit` só filtra com o SHA **inteiro**. Com o curto devolve vazio, e um
+  laço de espera meu ficou mudo por isso.
 
-**Onde parou:** a revisão pedida pelo dono está escrita.
-- `docs/fontes/pesquisa-roteiro.md`: as fontes, todas acessadas em 2026-09-28, e o que se adota ou
-  se recusa.
-- `sessoes.md`: em cada seção 8–21, "Escolhas de arquitetura previstas" e "Libs/repos a
-  reaproveitar". O bloco do roteiro ganhou as regras da revisão.
-- `docs/decisoes.md`: a D53 (regras e recusas da revisão).
-- A §11 da arquitetura: o desenho-alvo.
-- O diário.
+**Onde parou:** a revisão pedida pelo dono fechou em três commits.
+- **`186c8d8`:**
+  - `docs/fontes/pesquisa-roteiro.md`, com as fontes acessadas em 2026-09-28;
+  - "Escolhas de arquitetura previstas" e "Libs/repos a reaproveitar" em cada sessão 8–21 de
+    `sessoes.md`;
+  - a D53 (regras e recusas);
+  - a §11 da arquitetura (desenho-alvo).
+- **`51d46d2`:** as respostas do dono às 4 perguntas.
+- **`364c1d0`:** a D48 reaberta por ele.
 
-**Respostas do dono às 4 perguntas da revisão (2026-09-28), já escritas nos docs:**
+**Respostas e decisões do dono (2026-09-28), já escritas nos docs:**
 
-| Pergunta | Resposta | Onde |
+| Tema | Decisão | Onde |
 |---|---|---|
-| O "sim" da memória | primeiro: só como resposta ao Viking; **revisto em seguida**: aprende sozinho do que ele escreve, com a linha "📝 anotei" e "esquece isso"; de e-mail/página/documento nunca sozinho; receitas com pergunta; resumo semanal | D48, Sessão 13 |
+| Memória | aprende **sozinha só do que ele escreve** ("📝 anotei: …", "esquece isso"); a extração é uma chamada separada do Gemini com só o texto digitado; o chat não tem tool de gravar; de e-mail/página/documento nunca sozinha; receitas com pergunta; resumo semanal. Substituiu o "sim" só ao Viking, escolhido minutos antes | D48, Sessão 13 |
 | Repo privado | no começo da Sessão 10, antes de qualquer infraestrutura, com scanner de segredos nosso antes | D50, Sessões 10 e 11 |
-| Credencial do deploy | nenhuma fixa no VPS: token de 1 h gerado por ele no Mac a cada deploy | D47, Sessão 10 |
-| Relógio | **direto pelo Strava oficial**, sem pedir à Garmin | D54, Sessões 19 e 21 |
+| Deploy | nenhuma credencial fixa no VPS: token de 1 h gerado por ele no Mac a cada deploy | D47, Sessão 10 |
+| Relógio | direto pelo Strava oficial, sem pedir à Garmin | D54, Sessões 19 e 21 |
 
-**Próximo passo exato:** abrir a Sessão 8 pela skill `software-build`. Os primeiros passos já estão
-escritos na seção dela:
-- o furo de `blob:`/`view-source:`/`filesystem:` no bloqueio de domínio (esperado: um teste
-  vermelho com essas três URLs antes do conserto em `browser/_redacao.py`);
-- `oauthlib` 4.0.0 em commit próprio;
-- o login "Testing" contra "In production", com o dono no Console.
+**Próximo passo exato: abrir a Sessão 8** (e-mail que sai) pela skill `software-build`:
+1. Rotina de abertura: leitura, estado, `uv lock --upgrade --dry-run` e o CI do HEAD pelo SHA
+   inteiro.
+2. Medições da abertura (com data, antes do plano):
+   - como o Gmail lê e monta mensagens hoje (`gmail/service.py`, `gmail/tools.py`);
+   - onde o teste proíbe `send` (`tests/test_gmail_limpeza.py:328`; quem chama `confirmar`/`arquivar`
+     é conferido em `tests/test_gmail_aprovacao.py`);
+   - como `confirmacao`/`aprovacoes`/`registro` já servem ao envio;
+   - os pontos do bloqueio de domínio (`browser/_redacao.py:179`, `browser/jev_runner.py:384`,
+     `browser/_jev_subprocess.py:195`).
+3. Perguntas ao dono em rodadas pequenas, com a recomendação primeiro. As que decidem o tamanho
+   vêm antes:
+   - limite de envios por dia para ele;
+   - o formato do código para outros (o de 4 dígitos da D26?);
+   - se "responder" pode citar a mensagem original;
+   - o nome/endereço dele vindo da config;
+   - se a 8 leva os três primeiros passos no mesmo plano.
+4. O plano no formato de `referencia/plano-de-sessao.md`, escrito neste arquivo. Os três
+   primeiros passos já estão escritos na seção da 8 do `sessoes.md`:
+   - **(a) o furo do bloqueio de domínio.** Esperado: um teste vermelho com
+     `blob:https://<banco>/…`, `view-source:https://<banco>/` e `filesystem:https://<banco>/…`
+     antes do conserto; só `http`/`https` aceitos (mais `about:blank`/`data:`, a conferir contra
+     os testes e a D38); mutação;
+   - **(b) `oauthlib` 3.3.1 → 4.0.0 e `platformdirs` → 4.12.1**, em commit próprio, com a suíte
+     antes e depois;
+   - **(c) o login "Testing" contra "In production"**, com o dono no Console. É ação dele; eu
+     mando o passo a passo.
+5. Executar até o fim sem pedir confirmação a cada fase; parar só no que é do dono. Fechar com o
+   teste dele no Mac (e-mail para si sem código; resposta a outra pessoa só com o código; a linha
+   no `viking registro`).
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;
 - este bloco;
-- `sessoes.md` (▶️, as regras do roteiro e a Sessão 8);
-- `docs/fontes/pesquisa-roteiro.md`;
-- `docs/decisoes.md` (D8, D26, D29, D46–D53);
+- `sessoes.md` (▶️, "Regras que valem para todas" e as da revisão, a Sessão 8 inteira);
+- `docs/decisoes.md` (D8, D22, D26, D29, D30, D37, D46, D52, D53);
+- `docs/fontes/gmail-api.md`;
+- a seção 4 de `docs/fontes/pesquisa-roteiro.md` (Gmail e o login);
 - o índice de `docs/erros.md`;
 - a memória do Claude;
-- as skills `software-build`, `seguranca` e `integracoes`.
+- as skills `software-build` (e `referencia/plano-de-sessao.md`), `seguranca`, `integracoes` (§5
+  e-mail, §4 LLM), `testes-que-provam` e `falha-ruidosa`;
+- depois o código: `gmail/`, `confirmacao.py`, `aprovacoes.py`, `registro.py`, `assistant/agent.py`
+  (`aprovacao_local`), `browser/_redacao.py`.
 
 **Não pode ser esquecido:**
-- Pesquisa não é medição: o que está em `pesquisa-roteiro.md` é "não medido" até a sessão que usa
-  medir.
-- Decisão do dono só muda com o gatilho ou perguntando.
-- Repo público: nada de dado real, nem região ou cidade do dono.
-- Nunca presumir o fuso do dono.
-- O Jev segue como executor (D3).
+- **O código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail** (D26, D52). Ele
+  aparece só com TTY.
+- **O destinatário de uma resposta** sai do cabeçalho da mensagem original, nunca do texto do
+  Gemini, e o código liga destinatários + assunto + corpo + conversa (D46).
+- **E-mail que o Viking mandou** volta como conteúdo de terceiro, e cada envio leva uma marca
+  própria (D53).
+- **`send` em uma função só,** dentro de `registro.acao`. Lixeira e apagar continuam proibidos
+  (`test_codigo_do_gmail_nunca_chama_enviar_lixeira_ou_apagar` muda de forma, não some).
+- **Pesquisa não é medição:** "In production" sem verificação tirar o prazo de 7 dias não foi
+  conferido para escopo restrito.
+- **Repo público:** o endereço do dono vem da config, nunca do código nem dos docs.
+- **Mutações:** em background, sem `timeout`; não editar nada enquanto rodam.
+- **Nunca presumir o fuso do dono.** Script para o Mac segue a classe 1 de `docs/erros.md`.
 
-**Depende do dono:** as perguntas da abertura da 8 (e conferir com ele o
-status do app OAuth no Console).
+**Depende do dono:** as perguntas da abertura da 8; conferir o status do app OAuth no Console; o
+teste no Mac no fim.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1553 passed`.
+`python -m pytest -q` → `1553 passed`; `gh run list --commit $(git rev-parse HEAD)` → `success`.
 
 ## Plano — Sessão 7: manutenção (versões travadas, CI, scanner, formatação e três consertos pequenos) (fechada em 2026-09-28)
 
