@@ -26,8 +26,9 @@ Mac e peça a saída — não presuma o resultado. Vários bugs desta base só a
 ## Ao propor comandos para o dono rodar
 
 Ele usa zsh no macOS, com conda base ativo junto do venv. Consequências práticas estão em
-`AGENTS.md` ("Armadilhas já pagas"): sem comentário `#` na mesma linha do comando, sempre
-`python -m pip`/`python -m pytest`, e nunca mandar imprimir arquivo de segredo.
+`AGENTS.md` ("Armadilhas já pagas"): sem comentário `#` na mesma linha do comando, instalar com
+`uv sync --locked --extra dev`, testar com `python -m pytest` (e `uv pip`, não `python -m pip`, para
+mexer na venv), e nunca mandar imprimir arquivo de segredo.
 
 ## Skills do projeto (`.claude/skills/`)
 

@@ -1201,6 +1201,27 @@ MUTACOES = [
         "    curto: o executor",
         "tests/test_assistant_tools.py::test_regras_de_comportamento_sobrevivem_a_compressao",
     ),
+    Mutacao(
+        "CI: instala a versão do dia, não a do lock",
+        ".github/workflows/testes.yml",
+        "        run: uv sync --locked --extra dev",
+        "        run: uv sync --extra dev",
+        "tests/test_ci_workflow.py::test_instala_so_o_que_esta_no_lock",
+    ),
+    Mutacao(
+        "CI: action puxada por tag (o conteúdo pode mudar sem o commit mudar)",
+        ".github/workflows/testes.yml",
+        "      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "      - uses: actions/checkout@v7",
+        "tests/test_ci_workflow.py::test_toda_action_fixada_por_sha",
+    ),
+    Mutacao(
+        "CI: o token do job ganha escrita no repo",
+        ".github/workflows/testes.yml",
+        "  contents: read",
+        "  contents: write",
+        "tests/test_ci_workflow.py::test_permissao_so_de_leitura",
+    ),
 ]
 
 

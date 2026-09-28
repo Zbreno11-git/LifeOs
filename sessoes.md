@@ -21,9 +21,13 @@ com o freio de clique destrutivo — ver Sessão 4b).
   baseline, teste público do google-genai, `inicio` por instante).
 - **Primeiro passo:** o primeiro checkpoint não marcado do plano da 7 no `PROGRESSO.md`.
   O adiado da 6 (datas das finanças no app do banco) foi conferido pelo dono em 2026-09-28: bateu.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D39–D44), a
+- **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
+  Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
+  último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
+  aquele pacote primeiro.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D39–D45), a
   seção da Sessão 7 abaixo, e a memória do Claude sobre o fuso do dono.
-- **Depende do dono:** as perguntas da abertura da 7.
+- **Depende do dono:** o teste da 7 no Mac (`uv sync`).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -327,8 +331,12 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
 
 - ~~Adiado da 6: conferir as datas de `viking financas --gastos` no app do banco~~ — feito pelo dono
   em 2026-09-28, bateu (D44).
-- §15.1: sem lockfile no projeto principal (`uv.lock` ou equivalente).
-- §15.3: sem CI, sem scanner de dependências, sem type checking.
+- ~~§15.1: sem lockfile no projeto principal~~ — feito em 2026-09-28: `uv.lock`, instalado com
+  `uv sync --locked --extra dev`; o `pyproject` exige wheel para Mac Intel e Linux, e o
+  cryptography fica na 48.0.1, a última com wheel para Mac Intel (D45).
+- ~~§15.3: sem CI, sem scanner de dependências~~ — feito em 2026-09-28: `.github/workflows/testes.yml`
+  (testes, `ruff`, `pip-audit` do lock) e alertas do Dependabot ligados (D45). A checagem de tipos
+  foi para o backlog, por decisão do dono, com o número medido (67 erros).
 - ~~§15.4: `ruff format --check` ainda aponta arquivos pré-existentes~~ — feito em 2026-09-28
   (`dd7d4c8`, commit só de formatação; `.md` fora do `ruff format`, D45): zero a formatar.
 - ~~§15.2: `test_assistant_tools.py` usa `_automatic_function_calling_util`, API privada do

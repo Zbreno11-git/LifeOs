@@ -14,7 +14,23 @@
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5 e 6; parciais 4 e 3b;
 na fila 7. Cada parcial vale meia sessão na barra.
 
-## 2026-09-28 — um navegador por vez, suas chaves longe dele, e o seu fuso de verdade
+## 2026-09-28 — Sessão 7 (manutenção): mesma versão em toda máquina e testes no GitHub — falta o seu teste no Mac
+
+**O que mudou (quase nada que você veja no chat):**
+- **Mesma versão de tudo em toda máquina.** Um arquivo novo (`uv.lock`) diz a versão exata de cada
+  peça de terceiros, e o Mac, o VPS e o GitHub instalam exatamente aquilo. Antes, cada um pegava a
+  "mais nova do dia": hoje já eram 18 diferenças. Instalar passa a ser `uv sync --locked --extra dev`.
+- **Os testes rodam no GitHub a cada envio.** Cada commit aparece com ✅ ou ❌; nada é bloqueado.
+- **Aviso de falha de segurança** nas peças de terceiros: o GitHub avisa por e-mail e na aba
+  Security. Hoje ele mostra 3 avisos de uma peça de criptografia. São conhecidos e anotados: a
+  versão corrigida não existe para Mac Intel, e nenhum deles alcança o Viking.
+- **Um defeito raro consertado:** aprovar um pedido de outro app (`viking aprovar`) podia dizer
+  "o evento mudou" sem ele ter mudado.
+
+**Achado antes de chegar ao seu Mac:** a peça de criptografia parou de publicar versão pronta
+para Mac Intel. Sem o cuidado, a instalação no seu Mac teria tentado compilá-la e provavelmente
+falhado.
+
 
 **O que mudou:**
 - **Um navegador por vez.** Se você pedir uma tarefa enquanto outra usa o Chrome (de outro

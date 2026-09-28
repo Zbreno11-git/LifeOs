@@ -5,30 +5,34 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: entrega 1 no remoto; próximo: C6 (lock)
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 7: entrega 2 commitada; próximo: CI do HEAD e o Mac (C10–C11)
 
-**Estado do repositório:** conferir com `git log -1` (o anterior é `b894956`, checkpoint antes do
-compact) · travas: nenhuma · background: nenhum.
+**Estado do repositório:** conferir com `git log -1` (commit da entrega 2, depois de `be47ab4`) ·
+travas: nenhuma · background: nenhum.
 
-**Onde parou:** entrega 1 fechada e no remoto (C0–C5 ✅; C1 medido e tipos → backlog, C9 ✅). Medido: `1149 passed`, `ruff` limpo, formatação zero, mutações `162 · mortas pelo teste esperado: 162`.
+**Onde parou:** C0–C9 ✅. Entrega 2 (lock, CI, alertas) commitada e com push. Medido:
+- `1158 passed` no `.venv` do VPS, já sincronizado com o lock;
+- `ruff` limpo, formatação zero, `uv lock --check` ok;
+- mutações: 162/162 na rodada completa + 3/3 do CI, isoladas.
 
-**Próximo passo exato:** C6 — `uv lock` (extras `dev` e `hardware`); conferir com `uv lock --check`
-e com uma venv nova no scratchpad (`uv sync --locked --extra dev` → `1149 passed`); depois C7 (CI:
-checkout v7.0.1 = `3d3c42e5aac5ba805825da76410c181273ba90b1`, setup-uv v10.2.0 =
-`c18668ad3cf93ea998bef934396af7bb5c839dc7`, conferidos por `gh api` em 2026-09-28).
+**Próximo passo exato:**
+1. **C10:** conferir o run do CI do HEAD pelo SHA (`gh run list --commit $(git rev-parse HEAD)`),
+   esperado `completed success`; depois `gh api repos/Zbreno11-git/LifeOs/dependency-graph/sbom`
+   lista o cryptography 48.0.1? (anotar na D45 se o grafo lê o `uv.lock`).
+2. **C11:** o roteiro do Mac, no plano abaixo.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/erros.md`
-(classes 2, 4, 5, 8); as skills `software-build`, `testes-que-provam`, `nuvem-e-deploy` (§10, CI) e
-`integracoes` (§6, dependências).
+**Não pode ser esquecido:**
+- o cryptography fica na 48.0.1 (última com wheel para Mac Intel), com 3 falhas ignoradas no CI por
+  decisão do dono (D45);
+- no Mac, `uv sync` remove da venv o que não está no lock (inclusive o `pip`);
+- nada de `secrets.` no CI;
+- repo público;
+- nunca presumir o fuso do dono.
 
-**Não pode ser esquecido:** ligar os alertas do Dependabot só com o ok do dono na hora; nada de
-`secrets.` no CI (log público); formatador só nos arquivos nomeados; mutações em background, sem
-`timeout`; repo público (nada de cidade, conta, valor ou ID real); nunca presumir o fuso do dono.
-
-**Depende do dono:** o ok para ligar os alertas do Dependabot (C8).
+**Depende do dono:** o teste no Mac (C11).
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1149 passed`.
+`python -m pytest -q` → `1158 passed`.
 
 ## Plano — Sessão 7: manutenção (versões travadas, CI, scanner, formatação e três consertos pequenos) (aprovado em 2026-09-28)
 
@@ -140,9 +144,9 @@ O `inicio` na aprovação do MCP:
 | C3 | §15.2 público + `_REGRAS` sem `or` | C2 | ✅ 21 casos + 33 regras |
 | C4 | `inicio` por instante | C2 | ✅ `_mesmo_instante`, regra única com o desfazer |
 | C5 | mutações, docs, revisão em 2 passadas, commits 1a+1b, push | C3, C4 | ✅ `1149 passed`, 162/162 |
-| C6 | `uv.lock` + `uv sync --locked` reproduz a suíte no VPS | C5 | ⬜ |
-| C7 | CI (workflow + teste que o lê + `.git-blame-ignore-revs`) | C6 | ⬜ |
-| C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ⬜ |
+| C6 | `uv.lock` + `uv sync --locked` reproduz a suíte no VPS | C5 | ✅ 103 pacotes; `.venv` do VPS sincronizado, `1158 passed`; cryptography 48.0.1 (D45) |
+| C7 | CI (workflow + teste que o lê + `.git-blame-ignore-revs`) | C6 | ✅ 9 testes, 3 mutações 3/3 |
+| C8 | alertas do Dependabot ligados (ok do dono na hora) | C7 | ✅ ok do dono; `vulnerability-alerts` → 204 |
 | C9 | tipos conforme a decisão do C1 (portão ou backlog escrito) | C1, C7 | ✅ dono: backlog (2026-09-28); escrito no backlog de `sessoes.md` |
 | C10 | D45, rotina de abertura, docs, revisão em 2 passadas, commit 2, push, CI do HEAD verde pelo `headSha` | C6–C9 | ⬜ |
 | C11 | Mac: roteiro abaixo | C10 | ⬜ |
@@ -333,16 +337,23 @@ uv pip list | wc -l
 uv sync --locked --extra dev
 which python
 uv pip list | wc -l
+uv pip list | grep -i -E '^(cryptography|google-genai) '
 python -m pytest -q
 viking browser --doctor
+viking financas
 viking chat
 ```
 Esperado:
+- o `uv --version` responde (se for anterior à 0.6, pare e me mande a saída: o lock usa
+  `required-environments`);
 - o `git log` mostra o commit 2;
 - o `which python` aponta para `~/LifeOs/.venv/bin/python` **antes e depois** do `uv sync`;
-- o `pytest` dá `N passed` sem pulados (o clone está lá);
+- o `pytest` dá `1158 passed`, sem pulados (o clone está lá);
 - o `--doctor` mostra o Jev como antes;
-- no chat: `/custos`, depois `sair`.
+- `uv pip list` mostra `cryptography 48.0.1` e `google-genai 2.25.0`, e a contagem cai (o `pip`
+  e o que não está no lock saem);
+- `viking financas` confere as conexões como antes (sem saldo nem extrato: a saída vem para o chat);
+- no chat: `o que tenho amanhã?` (o login do Google com as bibliotecas novas), `/custos`, `sair`.
 
 No GitHub (site): o commit do topo com ✅; aba Security → Dependabot alerts ligada.
 

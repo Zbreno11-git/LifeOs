@@ -1046,6 +1046,45 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 7, entrega 2: versões travadas, CI e alertas de dependência (falta o Mac)
+
+**Lock (`uv.lock`, 103 pacotes).**
+- Instalar agora é `uv sync --locked --extra dev`, no Mac, no VPS e no CI. O `.venv` do VPS já
+  foi sincronizado: `1158 passed`.
+- A venv do `uv` não tem `pip`: a doc passou a `uv pip` (`AGENTS.md`, `CLAUDE.md`, `README.md`).
+
+**O achado do lock: cryptography sem wheel para Mac Intel.**
+- A primeira resolução pegou o cryptography 50.0.1, que não publica wheel para Mac Intel: medido
+  no PyPI, a partir da 49.0.0 só há wheel arm64. No Mac do dono, o `uv sync` teria de compilar do
+  código-fonte, com Rust.
+- `required-environments` sozinho não resolveu, porque o código-fonte conta como "compatível".
+  Com `no-build = true` o `uv` dividiu o lock em dois (48.0.1 no Mac, 50.0.1 no Linux).
+- A saída foi `constraint-dependencies = ["cryptography<49"]`: a mesma versão em toda máquina,
+  para o CI testar o que roda no Mac.
+
+**Scanner.**
+- O `pip-audit` do lock acusou 3 falhas no 48.0.1: PKCS#7 e o verificador de cadeia X.509.
+- Pelo `grep` no que está instalado, nada as chama além do próprio cryptography, e o HTTPS usa o
+  `ssl` do Python.
+- O dono escolheu 48.0.1 em todo lugar, com os 3 IDs ignorados no CI e escritos na D45.
+  `test_a_isencao_acaba_quando_o_cryptography_sair_da_48` reprova quando o lock sair da 48.
+- Alertas do Dependabot ligados com o ok do dono (`vulnerability-alerts` → 204), sem PRs
+  automáticos.
+
+**CI (`.github/workflows/testes.yml`).**
+- A cada push roda testes, `ruff check`, `ruff format --check` e o `pip-audit`.
+- Permissão só de leitura, sem nenhum segredo, checkout sem guardar a credencial.
+- Actions fixadas por SHA, conferidos por `gh api`: checkout v7.0.1, setup-uv v10.2.0.
+- `tests/test_ci_workflow.py` lê o workflow e prende tudo isso, inclusive que o CI rode os
+  mesmos `python -m …` do "Comandos" do `AGENTS.md`. 3 mutações novas, isoladas: 3/3.
+
+**Portões.** `1158 passed`; `ruff` limpo; formatação zero; `uv lock --check` ok; mutações: a
+rodada completa de 162/162 da entrega 1 (sem mudança em `src/` desde então) + as 3 do CI, isoladas.
+
+**Erros desta entrega** (`docs/erros.md`, classe 2): escrevi `1148 passed` no diário e no bloco
+depois de acrescentar um caso, sem recontar; a suíte dizia 1149. Pego ao rodar os portões antes do
+commit.
+
 ### 2026-09-28 — Sessão 7, entrega 1: formatação sem baseline e três consertos pequenos
 
 Plano aprovado pelo dono (`5dd06a7`, no `PROGRESSO.md`): lock, CI, alertas de dependência,

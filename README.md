@@ -7,8 +7,8 @@ visão de produto.
 ## Setup
 
 ```bash
+uv sync --locked --extra dev   # instala exatamente o uv.lock no .venv (cria se faltar)
 source .venv/bin/activate
-python -m pip install -e ".[dev]"   # python -m evita resolver pro conda no Mac (ver AGENTS.md)
 cp .env.example .env   # preencher GEMINI_API_KEY
 # credenciais do Google Calendar em secrets/ — ver docs/fontes/google-calendar-api.md
 ```

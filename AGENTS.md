@@ -76,6 +76,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
 - `tests/` — pytest para `src/lifeos`.
+- `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
+  D45). `pyproject.toml` diz as plataformas que o lock tem de servir sem compilar nada.
+- `.github/workflows/testes.yml` — CI a cada push: os portões de "Comandos" + `pip-audit` do lock;
+  só leitura, sem segredo, actions por SHA (`tests/test_ci_workflow.py` prende isso).
+- `.git-blame-ignore-revs` — commits só de formatação, que o blame pula.
 - `sessoes.md` — roadmap em sessões de ~1h30, com o bloco "▶️ Começar a próxima sessão por aqui".
 - `PROGRESSO.md` — estado da sessão em curso e "retomar aqui" (atualizado a cada etapa; é o que
   sobrevive a um `/compact`).
@@ -112,8 +117,12 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
 ## Comandos
 
 ```bash
+uv sync --locked --extra dev   # instala exatamente o uv.lock no .venv: o Viking editável +
+                               # pytest/ruff; remove da venv o que não está no lock (D45)
 source .venv/bin/activate
-python -m pip install -e ".[dev]"   # editable install + pytest/ruff + deps do Viking
+uv lock --check                # o uv.lock bate com o pyproject (o CI instala com --locked)
+uv lock --upgrade --dry-run    # ao abrir cada sessão: há versão nova? Se houver, `uv lock
+                               # --upgrade` num commit próprio, com a suíte antes e depois (D45)
 
 python -m pytest               # roda os testes (testpaths = tests/)
 python -m ruff check .         # lint (line-length 100, src+tests)
@@ -231,8 +240,10 @@ do dono para dentro de uma conversa. Para conferir que as variáveis existem sem
 `grep -o '^[A-Z_]*=' .env` ou `cut -c1-22 .env`.
 
 **No Mac do dono há conda ativo junto do venv.** `pip` e `pytest` podem resolver para o conda mesmo
-com o venv ativado, deixando o `lifeos` fora do ambiente. Use sempre `python -m pip` e
-`python -m pytest`, que garantem o mesmo interpretador.
+com o venv ativado, deixando o `lifeos` fora do ambiente. Use sempre `python -m pytest`, que garante
+o mesmo interpretador. Desde a Sessão 7 (D45) a instalação é `uv sync --locked --extra dev`, que
+não passa pelo `pip`; e uma venv criada pelo `uv` **não tem `pip`** (medido em 2026-09-28): para
+listar ou mexer à mão, `uv pip list`/`uv pip install`, nunca `python -m pip`.
 
 **Não estime tokens por caractere.** A régua "4 caracteres por token" errou por 6× aqui. Para medir de
 verdade: `count_tokens` **não** aceita `tools` na API de desenvolvedor (só Enterprise); use

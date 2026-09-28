@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 12 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 13 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -121,6 +121,12 @@ perguntar. Ele não está. A agenda do Google dele está em São Paulo, o relóg
 os três fusos só apareceram quando o roteiro mediu cada um (`date +%z`, o fuso do Viking, o
 registro com `-03:00`). O que tem de novo: a suposição não estava em nenhuma frase que eu pudesse
 conferir — estava no desenho dos testes (todos fixavam Brasília como "o fuso do dono").
+
+**2026-09-28 — um número escrito antes do último caso (Sessão 7).** Escrevi `1148 passed` no
+diário e no bloco de retomada; depois acrescentei um caso ao teste de `_mesmo_instante` (a mutação
+precisava dele) e não recontei. Os portões antes do commit disseram 1149. O antídoto é o de sempre,
+com um detalhe: o número vai para o documento **depois** do último teste escrito, copiado da linha
+da ferramenta.
 
 **2026-09-28 — "todas as alternativas têm 1 item" (Sessão 7, plano).** Para tirar o `or` de
 `test_regras_de_comportamento_sobrevivem_a_compressao`, escrevi no plano que as listas de

@@ -1,0 +1,5 @@
+# Commits só de formatação: o blame do GitHub (e `git blame` com
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs`) pula estes e mostra quem escreveu a linha.
+
+# 2026-09-28, Sessão 7: os 6 arquivos atrasados de uma vez (D45)
+dd7d4c8c3942c4f72317459f7d908b254f4ee17e
