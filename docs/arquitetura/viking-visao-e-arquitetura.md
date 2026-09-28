@@ -146,9 +146,13 @@ manual** — o dono do projeto já observou que adicionar gastos manualmente (te
 consistente o suficiente para ser confiável. A direção é integrar com a **Pluggy**
 (agregador de open finance brasileiro, pluggy.ai) — já existe uma conta conectada lá; medido em
 2026-09-26: uso pessoal é gratuito pelo Meu Pluggy (até 5 conexões), sessão em `sessoes.md`. Ver
-`docs/fontes/pluggy-open-finance.md`. Nenhum código de finanças existe ainda; o gancho de compatibilidade
-é o schema genérico de `reminders/models.py` (campos `type`/`source`/`external_id`), que permite uma
-linha `type="finance_transaction", source="pluggy"` no futuro sem migração de schema.
+`docs/fontes/pluggy-open-finance.md`.
+
+> **Atualizado em 2026-09-28 (revisão do roteiro).** Este parágrafo dizia que "nenhum código de
+> finanças existe ainda" e que as transações entrariam como linhas do schema de lembretes. As duas
+> coisas deixaram de valer na Sessão Pluggy (2026-09-27): existe `src/lifeos/financas/`, só
+> leitura, e as finanças são consultadas na Pluggy a cada pergunta, **sem nada gravado em disco**
+> (D31). Onde a chave mora quando o Viking for para a nuvem: D51.
 
 ## 7. RAG (direção de longo prazo)
 
@@ -169,7 +173,8 @@ navegação. Isso é fase futura — ver roadmap (seção 9).
 ## 9. Roadmap
 
 > Roteiro vigente desde 2026-09-28: `sessoes.md` (Sessões 8–21, decisões D46–D52; resumo no
-> `AGENTS.md`, "Roadmap"). Abaixo, a visão de 2026-09-20: os itens 1, 2 e 4 já existem.
+> `AGENTS.md`, "Roadmap"); a arquitetura-alvo dele, na seção 11. Abaixo, a visão de 2026-09-20:
+> os itens 1, 2 e 4 já existem.
 
 1. **Assistente CLI (atual)** — calendário + navegador + lembretes, unificados em `viking chat`.
 2. **Servidor MCP do Viking** — expor calendário/lembretes para outras ferramentas.
@@ -191,3 +196,43 @@ Novas, da definição do Viking:
 - Qual modelo de autenticação o servidor MCP do Viking deve ter para aceitar clientes externos?
 - Vale a pena portar `oauth.py`/`calendar_tools.py` como estão, ou já refatorar para suportar múltiplas
   contas Google no futuro?
+
+## 11. Arquitetura-alvo do roteiro 8–21 (proposta de 2026-09-28)
+
+Proposta de partida, da revisão sênior com pesquisa de 2026-09-28. As decisões são a D46–D52; as
+escolhas por sessão e o gatilho que reabre cada uma estão em `sessoes.md`; as fontes, datadas e
+não medidas, estão em `docs/fontes/pesquisa-roteiro.md`. Cada sessão confirma ou derruba o seu
+pedaço na abertura.
+
+```
+ iPhone (PWA, S17–18)          terminal do Mac (cliente, S10)        Scheduler (S11)
+        │ passkey                      │ conta de serviço cli@             │ OIDC
+        ▼                              ▼                                   ▼
+ ┌──────────────┐  conta de    ┌──────────────────────────────────────────────┐
+ │ serviço app  │  serviço  ─► │ serviço motor (Cloud Run, mínimo 0, só IAM)  │
+ │ (público)    │              │ laço do chat · aprovações · memória · coach  │
+ └──────────────┘              │ lembretes · Gmail · Gemini · Claude (D49)    │
+                               └───────┬───────────────────────┬──────────────┘
+                                       │                       │
+                                Firestore (S10)          Secret Manager
+                                       ▲
+                                       │ pergunta a cada 5–10 s (conta maos@),
+                                       │ só com `viking maos` ligado
+                               ┌───────┴────────────────────────────────┐
+                               │ Mac: Jev + Browser Harness + Chrome     │
+                               │ logada; freio, trava, redação e a       │
+                               │ liberação por código (D38) rodam aqui   │
+                               └─────────────────────────────────────────┘
+```
+
+As três ideias que sustentam o desenho:
+- **O motor nunca abre para a internet.** Só contas de serviço o chamam (IAM). O app é outro
+  serviço, público, com o passkey, e fala com o motor pela conta de serviço dele. Abrir o app não
+  abre as rotas do motor.
+- **O Mac não tem porta aberta.** Ele pergunta por tarefas e só aceita tarefa de navegador. A porta
+  CDP e os cookies da Chrome nunca saem dele.
+- **Aprovação fora do alcance do modelo em toda ponta:**
+  - o código ou o passkey liga os dados exatos da ação;
+  - a linha de aprovação é lida pelo laço antes do modelo;
+  - nunca vai por e-mail (D52);
+  - e-mail que o próprio Viking mandou volta como conteúdo de terceiro.

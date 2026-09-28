@@ -1,6 +1,7 @@
 # Viking (Life OS)
 
-Assistente pessoal unificado — calendário, navegação web e lembretes via chat. Workspace Python 3.12.
+Assistente pessoal unificado — calendário, navegação web, lembretes, Gmail e finanças (só leitura)
+via chat. Python 3.12 (VPS/CI) e 3.13 (Mac), versões travadas no `uv.lock`.
 Ver `AGENTS.md` para o guia técnico completo e `docs/arquitetura/viking-visao-e-arquitetura.md` para a
 visão de produto.
 
@@ -22,7 +23,8 @@ viking mcp-server    # servidor MCP do Viking
 
 ## Estrutura
 
-- `src/lifeos/` — pacote do Viking (`calendar/`, `browser/`, `reminders/`, `assistant/`, `mcp_server/`)
+- `src/lifeos/` — pacote do Viking (`calendar/`, `gmail/`, `financas/`, `browser/`, `reminders/`,
+  `assistant/`, `mcp_server/`)
 - `tests/` — testes (pytest)
 - `docs/` — `diario-de-bordo.md` (log de progresso), `arquitetura/` (visão/arquitetura), `fontes/`
   (referências técnicas externas)

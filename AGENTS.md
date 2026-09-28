@@ -98,10 +98,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `viking-visao-e-arquitetura-v1-pulso.docx` (histórico, v1, só a trilha de pulso),
     `browser-automation-stack.md` (relatório de validação da automação de navegador),
     `wristband-hardware-pausado.md` (arquitetura/roadmap da trilha pausada)
-  - `fontes/` — referências técnicas externas curtas (uma página cada): `windows-mcp.md`,
+  - `fontes/` — referências técnicas externas curtas (uma página cada, menos a pesquisa do roteiro): `windows-mcp.md`,
     `browser-harness.md`, `jev-typesafe.md`, `google-calendar-api.md`, `gmail-api.md`, `fastmcp.md`,
     `pluggy-open-finance.md`,
-    `mac-control-mcp-dead-end.md`
+    `mac-control-mcp-dead-end.md`, e `pesquisa-roteiro.md` (a pesquisa datada do roteiro 8–21:
+    libs, repos e assistentes avaliados, adotados ou recusados, e por quê)
 - `archive/` — trilhas pausadas mas preservadas (código real, não só docs). Hoje:
   `wristband-fail-test/` (Arduino Uno R3 → Serial → Windows-MCP, funcional, ver seu próprio README).
 - `secrets/` — gitignored (exceto `.gitkeep`): credenciais OAuth reais (`google_credentials.json`,

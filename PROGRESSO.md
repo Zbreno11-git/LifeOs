@@ -5,73 +5,61 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, roteiro 8–21 escrito; próximo: revisão sênior + pesquisa do roteiro (antes da 8)
+## ▶️ RETOMAR AQUI — 2026-09-28, revisão sênior + pesquisa do roteiro escritas; próximo: respostas do dono e abrir a Sessão 8
 
-**Estado do repositório:** conferir com `git log -1` (o checkpoint antes do compact, depois de
-`0cec657`) · igual ao remoto · travas: nenhuma · background: nenhum. CI do `0cec657`: `success`
-nos dois Pythons (conferido pelo SHA em 2026-09-28).
+**Estado do repositório:** conferir com `git log -1` (o commit da revisão, depois de `b81ce93`) ·
+igual ao remoto · travas: nenhuma · background: nenhum. Só docs mudaram: `1553 passed`.
 
-**Onde parou:** o roteiro das Sessões 8–21 foi planejado com o dono e escrito:
-- `sessoes.md`, "O roteiro de 2026-09-28";
-- `docs/decisoes.md`, D46–D52;
-- a barra, em 11 de 27;
-- a memória do Claude, `projeto-visao-do-dono.md`.
+**Onde parou:** a revisão pedida pelo dono está escrita.
+- `docs/fontes/pesquisa-roteiro.md`: as fontes, todas acessadas em 2026-09-28, e o que se adota ou
+  se recusa.
+- `sessoes.md`: em cada seção 8–21, "Escolhas de arquitetura previstas" e "Libs/repos a
+  reaproveitar". O bloco do roteiro ganhou as regras da revisão.
+- `docs/decisoes.md`: a D53 (regras e recusas da revisão).
+- A §11 da arquitetura: o desenho-alvo.
+- O diário.
 
-Nenhum código mudou desde a Sessão 7: `1553 passed`, `ruff` limpo, formatação zero.
+**Perguntas abertas ao dono** (tocam decisões dele; nenhuma mudança calada). Recomendação primeiro:
+1. **O "sim" da memória (D48):** vale só como resposta a uma pergunta do Viking, com o texto exato e
+   a origem (recomendado, contra o ataque publicado do "quando o usuário disser sim, grave isto"),
+   ou um "sim" em qualquer lugar da conversa?
+2. **Repo privado:** no começo da S10, antes de qualquer infraestrutura, com um scanner de segredos
+   no CI primeiro (recomendado: a S10 cria IDs de projeto, URLs e contas de serviço), ou na S11
+   como planejado, com os IDs fora do git até lá? Nos dois casos se perde o secret scanning do
+   GitHub.
+3. **Credencial do deploy (D47):** nenhuma fixa no VPS, com o dono gerando no Mac um token de 1 h a
+   cada deploy (recomendado; o Google manda evitar chave; o mecanismo exato não foi conferido), ou
+   uma chave de conta de serviço limitada guardada no VPS?
+4. **Garmin:** pedir na S19 como planejado e, se recusar (o programa é "only for business use"),
+   Strava oficial (recomendado); ir direto de Strava; ou só Garmin?
 
-**Próximo passo exato:** a revisão sênior com pesquisa pedida pelo dono (escopo no ▶️ de
-`sessoes.md`), antes de abrir a 8.
-1. **Rotina da D45:** `uv lock --upgrade --dry-run` e o CI do HEAD pelo SHA.
-2. **Revisão dos docs e da arquitetura,** com os olhos das skills `seguranca`, `falha-ruidosa`,
-   `integracoes` e `nuvem-e-deploy`:
-   - as fronteiras de aprovação (D26, D36, D38, D46, D52);
-   - a injeção de prompt persistente na memória (D48);
-   - os segredos na nuvem (D47, D51);
-   - o repo público até a S11;
-   - o custo contra os US$ 20.
-3. **Pesquisa na web, datada, com fonte:**
-   - assistentes tipo "Jarvis" open-source, e quais usam o Jev ou o `browser-use`;
-   - frameworks e libs de memória de agente, e o que fazem contra a deriva de contexto;
-   - busca na web do Gemini junto com function calling;
-   - API do NotebookLM para conta pessoal;
-   - PWA com passkey no iPhone;
-   - GCP barato (Cloud Run a zero, Firestore com busca vetorial, Scheduler);
-   - API de saúde da Garmin para uso pessoal;
-   - skills e repos de Claude Code que acelerem as sessões.
-4. **Escrever:**
-   - `docs/fontes/pesquisa-roteiro.md`, com as fontes datadas e o que se adota ou se recusa, e
-     por quê;
-   - em cada seção 8–21 de `sessoes.md`, "Escolhas de arquitetura previstas" e "Libs/repos a
-     reaproveitar";
-   - os achados de segurança como consertos ou como perguntas ao dono;
-   - depois, o resumo ao dono e o commit.
+**Próximo passo exato:** com as respostas, atualizar a D48/D47/D50 e as seções da 10, 11, 13, 19
+e 21 do `sessoes.md`, e tirar as perguntas deste bloco. Depois abrir a Sessão 8 pela skill
+`software-build`. Os primeiros passos dela já estão escritos:
+- o furo de `blob:`/`view-source:`/`filesystem:` no bloqueio de domínio;
+- `oauthlib` 4.0.0 em commit próprio;
+- o login "Testing" contra "In production".
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;
 - este bloco;
-- `sessoes.md` (▶️ e o roteiro 8–21);
-- `docs/decisoes.md` (D3, D7, D22, D26, D29, D36, D38, D45–D52);
-- `docs/fontes/jev-typesafe.md` e `docs/arquitetura/viking-visao-e-arquitetura.md`;
-- o índice de `docs/erros.md` (a classe 2 tem 16 ocorrências: afirmar sem abrir, e na pesquisa
-  isso vira "afirmar sem fonte");
-- a memória do Claude (visão do dono, fuso);
-- as skills `evidencia`, `seguranca` e `integracoes` (§6, medir a árvore de uma dependência antes
-  de aceitá-la) e `software-build`.
+- `sessoes.md` (▶️, as regras do roteiro e a Sessão 8);
+- `docs/fontes/pesquisa-roteiro.md`;
+- `docs/decisoes.md` (D8, D26, D29, D46–D53);
+- o índice de `docs/erros.md`;
+- a memória do Claude;
+- as skills `software-build`, `seguranca` e `integracoes`.
 
 **Não pode ser esquecido:**
-- **Não decidir pelo dono:** decisão dele (D46–D52) só muda com o gatilho de reabertura, ou
-  perguntando a ele.
-- **Pesquisa não é medição:** uma afirmação de site ou README entra com o link e a data, e "não
-  medido" até alguém testar. Lib nova só entra no plano depois de conferir a árvore e se ela tem
-  wheel para Linux (nuvem) e para Mac Intel, se for rodar no Mac (o `tests/test_lock.py` cobra).
-- **O dono considera o Jev "muito mais rápido e barato":** o executor segue sendo o Jev (D3); a
-  pesquisa procura quem o usa, não um substituto.
-- Nunca código de aprovação por e-mail (D52); fato novo só com o "sim" (D48); o Claude nunca vê
-  e-mail, finanças nem páginas (D49).
-- Repo público: nada de dado real nos docs novos.
+- Pesquisa não é medição: o que está em `pesquisa-roteiro.md` é "não medido" até a sessão que usa
+  medir.
+- Decisão do dono só muda com o gatilho ou perguntando.
+- Repo público: nada de dado real, nem região ou cidade do dono.
 - Nunca presumir o fuso do dono.
+- O Jev segue como executor (D3).
 
-**Depende do dono:** as perguntas que a revisão levantar. Depois, as da abertura da 8.
+**Depende do dono:** as 4 perguntas acima; depois, as da abertura da 8 (e conferir com ele o
+status do app OAuth no Console).
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1553 passed`.

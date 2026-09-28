@@ -1046,6 +1046,42 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Roteiro 8–21, e a revisão sênior com pesquisa antes da Sessão 8
+
+**Roteiro (`0cec657`).** Planejado com o dono em várias rodadas de perguntas: Sessões 8–21 em
+`sessoes.md` e as decisões D46–D52. Faltou esta entrada no diário naquele commit; entra aqui.
+
+**Revisão sênior + pesquisa (pedido do dono).** Cinco pesquisas na web, com todas as fontes
+acessadas em 2026-09-28, estão em `docs/fontes/pesquisa-roteiro.md`: assistentes "Jarvis" e o Jev,
+memória de agente, Gemini/Claude/Google, GCP barato e app/Garmin/skills. Cada sessão 8–21 ganhou
+"Escolhas de arquitetura previstas" e "Libs/repos a reaproveitar", e a arquitetura-alvo entrou na
+§11 do doc principal. As regras e as recusas são a D53.
+
+**Medido.**
+- O bloqueio de banco e e-mail deixa passar endereço embrulhado: `blob:`, `view-source:` e
+  `filesystem:` de um domínio bloqueado devolvem `None`. É dívida; o conserto é o primeiro passo da
+  Sessão 8.
+- `EmailMessage` do Python 3.12.3 recusa CR/LF num cabeçalho.
+- O secret scanning e o push protection estão ligados no repo (API do GitHub). A documentação diz
+  que eles somem num repo privado de conta pessoal.
+- `uv lock --upgrade --dry-run`: `oauthlib` 3.3.1 → 4.0.0 (publicada hoje) e `platformdirs` →
+  4.12.1. Fica para a abertura da 8, em commit próprio.
+
+**Pesquisado, não medido.**
+- Nenhum framework de memória respeita a D48.
+- Um "sim" solto é forjável por um documento (ataque publicado contra a memória do Gemini).
+- Busca e tools na mesma chamada, só nos modelos 3.x.
+- O acesso ao Gemini 2.5 está sendo limitado, e o 3.8 Flash dobra de preço em 2027.
+- A nuvem sai quase de graça com o Firestore.
+- A API da Garmin é "only for business use".
+- O passkey do iPhone aceita o código do aparelho no lugar do Face ID.
+
+**Docs corrigidos:** a §6 da arquitetura dizia "nenhum código de finanças existe"; o README dizia
+só Python 3.12 e não listava `gmail/` e `financas/`.
+
+**Perguntas ao dono** (as que tocam decisões dele): o "sim" da memória, quando o repo vira privado,
+a credencial do deploy e o plano B da Garmin. As respostas estão no `PROGRESSO.md`.
+
 ### 2026-09-28 — Sessão 7 fechada: 2º teste no Mac
 
 **Medido no Mac (`069fe2a`).**

@@ -17,20 +17,14 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** 8 — e-mail que sai, a primeira do roteiro de 2026-09-28 (Sessões 8–21, abaixo).
-- **Antes de abrir a 8 — revisão sênior e pesquisa do roteiro** (pedido do dono em 2026-09-28):
-  - **Revisar os docs** como engenheiro sênior, e se a arquitetura das 8–21 é segura mesmo.
-  - **Pesquisar na internet** libs, repos e skills que facilitem cada sessão: assistentes tipo
-    "Jarvis" open-source, inclusive os que usam o Jev ("muito mais rápido e barato"); memória de
-    agente; PWA com passkey; GCP barato.
-  - **Detalhar cada sessão como roadmap,** com as escolhas de arquitetura previstas.
-
-  Onde vai o resultado:
-  - as fontes, datadas, em `docs/fontes/pesquisa-roteiro.md`;
-  - as escolhas, na seção de cada sessão abaixo;
-  - achados de segurança: o que é dívida se conserta; o que muda uma decisão do dono (D46–D52)
-    vira pergunta a ele, nunca mudança calada.
+- **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
+  - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
+    regras e recusas na D53.
+  - As 4 perguntas que tocam decisões do dono estão no bloco de `PROGRESSO.md`. As respostas
+    entram nas seções antes de abrir a 8.
 - **Depois:** abrir e planejar a 8 pela skill `software-build`, com as perguntas ao dono antes
-  do plano; e conferir com ele o status do app OAuth ("Testing"?).
+  do plano. Os primeiros passos dela já estão escritos na seção da 8: o furo do bloqueio de
+  domínio, o `oauthlib` 4.0.0 e o login "Testing".
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -384,6 +378,21 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
 - A nuvem roda em UTC: `VIKING_TIMEZONE` explícito, sempre. Os logs dela não guardam prompt nem
   conteúdo.
 
+**Da revisão sênior + pesquisa de 2026-09-28** (fontes datadas em `docs/fontes/pesquisa-roteiro.md`;
+tudo lá é "não medido" até a sessão que usa medir):
+- **E-mail que o próprio Viking mandou é conteúdo de terceiro** quando ele o lê de volta, mesmo com
+  o remetente sendo o dono. Sem isso, um e-mail injetado faria o Gemini mandar ao dono (caminho
+  livre da D46) um texto com instruções, que voltaria depois "assinado" por ele. O mesmo vale
+  para o texto de um lembrete enviado por e-mail.
+- **Toda lib nova** passa pela árvore e pelas wheels antes de entrar (`tests/test_lock.py`), e as
+  da nuvem entram só onde rodam: o Mac é cliente e "mãos", não instala Firestore nem gRPC.
+- **Skills e plugins de terceiros** não se instalam: o texto útil se copia para `.claude/skills/`,
+  com o commit de origem anotado. `/security-review` e `/code-review`, que a pesquisa diz virem no Claude Code
+  (conferir na abertura da 8), entram no fechamento de toda sessão a partir da 8.
+- **Formato por sessão abaixo:** "Escolhas de arquitetura previstas" (o que eu já recomendo, com o
+  gatilho que reabre) e "Libs/repos a reaproveitar". São a proposta de partida; o plano de cada
+  sessão confirma ou derruba na abertura, com o dono.
+
 ## Sessão 8 — e-mail que sai (planejada em 2026-09-28)
 
 - **Entrega:** um e-mail para o próprio dono sai sem código; uma resposta a outra pessoa só sai
@@ -403,6 +412,42 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   Console (D11 nunca conferiu). Nesse status, o login vence em 7 dias, o que na nuvem é fatal.
 - **Lembretes:** até a nuvem, o disparo por e-mail é manual (`viking lembretes --enviar`); o
   automático vem na 11.
+- **Primeiros passos, antes do e-mail (dívida achada na revisão de 2026-09-28):**
+  1. **Furo no bloqueio de banco e e-mail (D8), medido em 2026-09-28:** um endereço embrulhado
+     passa. `_redacao.dominio_bloqueado("blob:https://<banco>/…")`, `view-source:https://<banco>/`
+     e `filesystem:https://<banco>/…` devolvem `None`, e `https://<banco>/x` é bloqueado.
+     - Conserto: o runner e o subprocesso aceitam só `http`/`https` (mais o `about:blank` e o
+       `data:` de que os testes e a D38 precisam, a conferir). O host dos esquemas que embrulham
+       outro endereço sai do endereço de dentro. O teste é a lista acima, com mutação.
+     - Não medido: se o Chrome abre `view-source:` por CDP com os cookies do dono.
+  2. **Rotina da D45:** o `uv lock --upgrade --dry-run` de 2026-09-28 mostrou `oauthlib` 3.3.1 →
+     **4.0.0**, publicada no mesmo dia, e `platformdirs` 4.12.0 → 4.12.1.
+     - O changelog da 4.0.0 só quebra o lado **provedor** (revogação com JSONP e validação do
+       `grant_type`). O Viking é cliente, pelo `requests-oauthlib`.
+     - Commit próprio, com a suíte antes e depois, e o dono confere o login no Mac
+       (`viking gmail --login`).
+  3. **Login que vence em 7 dias:** a documentação confirma o prazo em "Testing"
+     (https://developers.google.com/identity/protocols/oauth2).
+     - A saída provável é publicar "In production" sem verificação, só para ele: "personal use
+       (fewer than 100 users)", com a tela de "app não verificado".
+     - **Não conferido para escopo restrito** (o `gmail.modify` é): medir com o dono no Console.
+- **Escolhas de arquitetura previstas:**
+  - **Mensagem montada com `email.message.EmailMessage`**, que recusa CR/LF num cabeçalho
+    (medido: `ValueError` no Python 3.12.3). A nossa trava continua, e o teste cobre os dois
+    Pythons.
+  - **Resposta na conversa certa:** `threadId` mais `In-Reply-To`/`References` copiados da
+    mensagem original, e o `Subject` igual. O destinatário da resposta sai **do cabeçalho da
+    original**, nunca do texto do Gemini, e o código liga esse destinatário.
+  - **O caminho livre** (só para o dono) confere o destinatário contra a config, depois de
+    normalizar. Um "dono@…" com outro domínio, ou com `+tag`, não é o dono.
+  - **Todo e-mail enviado leva uma marca** (cabeçalho próprio). Ao ser lido de volta, vai no bloco
+    de não confiável como qualquer outro, e fica gravado no `registro` com o id da mensagem.
+  - **Um token só com `gmail.send`?** O `gmail.send` é sensível e o `modify` é restrito, mas o
+    `modify` que já temos também envia. Separar só reduz o raio se o `modify` sair de onde o envio
+    roda: decisão da S10 (o que vai para a nuvem).
+    - Gatilho: a medição do "In production" acima.
+- **Libs/repos a reaproveitar:** nenhuma nova. A stdlib `email` e o `googleapiclient` que já temos
+  bastam.
 
 ## Sessão 8b — pequenos (curta, planejada em 2026-09-28)
 
@@ -411,6 +456,10 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   do MCP contra o Google real, evento de dia inteiro conferido no Google Calendar) estão feitos.
 - **Medido:** `calendar/service.buscar()` não tem `timeMax` e usa `singleEvents=True`. Lê só a
   1ª página (até 250 resultados), e uma série pode enchê-la em silêncio (§4.5).
+- **Escolha de arquitetura prevista:** seguir o `nextPageToken` até um teto declarado. Quem bate no
+  teto diz que a lista está incompleta, e quantos vieram (skill `falha-ruidosa` §2: um teto
+  silencioso é uma interrupção). Janela com `timeMax` quando a pergunta tem prazo. Nenhuma lib
+  nova.
 
 ## Sessão 9 — fundação de dados (planejada em 2026-09-28)
 
@@ -427,6 +476,24 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   o Chrome logado. Na nuvem ficam o cérebro, os lembretes, a memória, os treinos e os documentos.
   A aprovação mora onde a ação roda.
 - **Pergunta na abertura:** a checagem de tipos (backlog, 67 erros) antes desta refatoração?
+- **Escolhas de arquitetura previstas:**
+  - **A interface de store tem de servir ao SQLite (Mac, testes) e ao Firestore (nuvem, S10).**
+    - Operações pequenas e explícitas: buscar por id, listar por índice, gravar numa transação e
+      "reservar para enviar".
+    - Nada de SQL solto fora dela.
+    - O `enviado_em` vira uma **reserva com prazo** (quem pegou e até quando), porque o Scheduler
+      entrega "at least once" e pode chamar duas vezes. Fonte:
+      https://docs.cloud.google.com/scheduler/docs/overview
+    - Gatilho: a S10 escolher Cloud SQL, e aí a interface pode encolher para SQL.
+  - **"O que mora onde" também diz o que cada credencial alcança:**
+    - na nuvem: tokens do Google (com o raio do `gmail.modify`, que envia), Gemini e Claude;
+    - no Mac: a Chrome logada, o Jev e as chaves dele (D7);
+    - a Pluggy segue a D51.
+  - **Tabelas de memória com cara de registro,** já agora, mesmo sem uso até a S13: só se
+    acrescenta linha; um fato substituído ganha `invalida_em` e aponta para o que o substituiu
+    (ideia do Graphiti); a origem e a mensagem de onde veio ficam gravadas.
+- **Libs/repos a reaproveitar:** nenhuma lib de migrations. A régua numerada é pequena e é nossa:
+  Alembic traria o SQLAlchemy só para isso.
 
 ## Sessão 10 — nuvem 1: o motor (planejada em 2026-09-28)
 
@@ -445,6 +512,48 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
 - **Banco:** escolhido na abertura pelo custo medido: Firestore com busca vetorial, Cloud SQL +
   pgvector (~US$ 9–10+/mês) ou Chroma numa VM gratuita. Na nuvem o Chroma instala; no Mac Intel
   não, porque o `onnxruntime` só publicou até a 1.23.2 (medido em 2026-09-28).
+- **Escolhas de arquitetura previstas** (fontes na seção 5 de `docs/fontes/pesquisa-roteiro.md`):
+  - **Banco: Firestore (modo nativo), recomendado.**
+    - A cota grátis cobre um usuário: 50 mil leituras e 20 mil gravações por dia, e vetor de até
+      2048 dimensões.
+    - O Cloud SQL `db-f1-micro` custaria ~US$ 9,4/mês, quase metade do orçamento, fora do SLA.
+    - **Recusados:** SQLite num volume do Cloud Storage, porque a própria documentação diz "no
+      file locking… last write wins"; e Chroma, porque exige servidor ou VM.
+    - Gatilho: uma consulta que o Firestore não faz sem índice caro, ou a cota estourar.
+  - **Duas portas, não uma: o "motor" fica fechado para sempre.**
+    - Serviço `motor` com IAM (`run.invoker`): só contas de serviço entram, e pedido recusado nem
+      chega ao nosso código nem cobra.
+    - O app da S17 será um **segundo** serviço, público, com o passkey, que chama o motor pela
+      conta de serviço dele.
+    - Assim, abrir o app não abre as rotas do motor, e o "401 sem login" da entrega vale para
+      sempre.
+    - Gatilho: o custo ou a latência de dois serviços medidos na S17.
+  - **Quem chama o motor, sem chave em disco:**
+    - o terminal do Mac e o `viking maos` se fazem passar por contas de serviço estreitas (`cli@`,
+      `maos@`), com o papel `serviceAccountTokenCreator` só nelas;
+    - o token sai com audience. O token de usuário do `gcloud` não tem audience e é "susceptible
+      to replay";
+    - o Mac passa a precisar do `gcloud` (ou do `google-auth` com as credenciais do dono).
+    - Fonte: https://docs.cloud.google.com/run/docs/authenticating/developers
+  - **O código de aprovação passa a atravessar a rede:**
+    - limite de tentativas erradas por proposta, porque hoje não há: o TTY era a barreira;
+    - o código viaja num campo próprio do protocolo, nunca no texto que o modelo escreve;
+    - a linha "confirma NNNN" é lida pelo laço **antes** do modelo, como hoje, e não entra no
+      histórico.
+  - **Dependências da nuvem num grupo só dela,** com marcador de Linux. O `tests/test_lock.py`
+    aprende que esse grupo não vai para o Mac, e continua exigindo wheel no Linux.
+  - **Custos no ar:**
+    - teto no `custos.py` antes de gastar, porque o alerta do GCP só avisa;
+    - desligar o faturamento por Pub/Sub foi **recusado**: "resources might be irretrievably
+      deleted";
+    - logs: nada de conteúdo na URL nem no stdout, e um filtro de exclusão;
+    - se o corpo da requisição fica fora do log: **não conferido**, medir.
+  - **Deploy:** ver a pergunta ao dono sobre a credencial do VPS (`PROGRESSO.md`); a documentação
+    do Google manda evitar chave de conta de serviço.
+- **Libs/repos a reaproveitar:**
+  - `google-cloud-firestore` 2.32.0, só na nuvem;
+  - `google-auth`, que já está no lock, para a impersonação no Mac;
+  - o modelo de "script de deploy que só lê sem flag", da skill `nuvem-e-deploy` §6.
 
 ## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
 
@@ -463,6 +572,35 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
 
   Se sim, a chave vai para um serviço isolado de leitura. Se não, fica no Mac até ele pedir à
   Pluggy que desligue os pagamentos.
+- **Escolhas de arquitetura previstas:**
+  - **As "mãos" são um nó que pergunta, não uma porta.**
+    - `viking maos` chama o motor a cada 5–10 s, em pedidos curtos, só enquanto está ligado.
+    - Long-poll e WebSocket ficam fora: no Cloud Run, conexão aberta é cobrada o tempo todo, e 8
+      h/dia dariam ~US$ 16/mês (estimativa). Fonte:
+      https://docs.cloud.google.com/run/docs/triggering/websockets
+    - O padrão é o do nó local do OpenClaw (https://docs.openclaw.ai/nodes/node-host): pareado uma
+      vez e com lista fixa de comandos. O `maos@` só pega uma tarefa de navegador e devolve o
+      resultado; não lê a memória, a agenda nem o e-mail.
+    - A tarefa tem prazo (vencida não roda) e é pega uma vez (reserva, como o lembrete).
+    - O freio, a trava, a redação e a liberação por código (D38, no TTY do Mac) continuam rodando
+      **no Mac**.
+    - Gatilho: a latência de 5–10 s atrapalhar o uso.
+  - **Nunca a porta CDP do Mac na nuvem,** nem o `profile-sync` do Browser Harness, que sobe
+    cookies. O Jev fica no Mac com a Chrome local.
+  - **Repo privado perde o secret scanning e o push protection,** ligados hoje (medido em
+    2026-09-28 pela API). A documentação do GitHub diz que eles não existem em repo privado de
+    conta pessoal no plano gratuito
+    (https://docs.github.com/en/code-security/secret-scanning/introduction/about-secret-scanning).
+    - Antes de mudar, entra um scanner no CI e no commit: `detect-secrets` (Python, Apache-2.0)
+      ou `gitleaks` (binário, MIT), a medir. O CI ganha uma cota de 2.000 min/mês.
+    - Os alertas do Dependabot continuam grátis.
+    - A data da mudança de visibilidade é pergunta ao dono (`PROGRESSO.md`).
+  - **Backup:** exportar do Firestore para um arquivo e subir no Drive com `drive.file`, que não é
+    sensível (https://developers.google.com/workspace/drive/api/guides/api-specific-auth). O
+    teste restaura num banco novo, vazio.
+- **Libs/repos a reaproveitar:**
+  - só o `googleapiclient`, para o Drive, que já está no lock;
+  - o scanner de segredos, escolhido na abertura.
 
 ## Sessão 12 — agente geral (planejada em 2026-09-28)
 
@@ -477,6 +615,36 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   - um e-mail injetado não força o modelo caro, porque há teto.
 - **A medir:** se a busca do Gemini combina com function calling na mesma chamada. Se não,
   vira uma tool que faz uma chamada separada.
+  - Pesquisado em 2026-09-28: a combinação é "Preview and supported for Gemini 3 models only"
+    (https://ai.google.dev/gemini-api/docs/tool-combination).
+  - Com o `gemini-2.5-flash` de hoje, então, é uma tool `buscar_na_web` com chamada separada.
+- **Pergunta na abertura, de dinheiro: o modelo mudou de preço e de oferta.** Pesquisado em
+  2026-09-28 (https://ai.google.dev/gemini-api/docs/deprecations e /pricing):
+  - o acesso ao 2.5 está sendo limitado a quem já usa, e os substitutos indicados são o 3.5
+    Flash-Lite (US$ 0,30/2,50, o preço do 2.5 Flash) e o 3.8 Flash (US$ 0,75/3,75, **o dobro a
+    partir de 2027-01-01**);
+  - o Pro 3.x só existe em preview.
+
+  O "barato no dia a dia, forte quando precisa" vira, provavelmente, 3.5 Flash-Lite no dia a dia
+  e 3.8 Flash no difícil. Trocar de modelo refaz a medição de tokens das tools e o teste das
+  regras das docstrings.
+- **Escolhas de arquitetura previstas:**
+  - **As fontes vêm do `groundingMetadata`** (`groundingChunks`/`groundingSupports`), e o texto do
+    resultado vai no bloco de não confiável.
+  - **Os termos exigem mostrar as "Search Suggestions"** (um HTML) a quem perguntou
+    (https://ai.google.dev/gemini-api/terms). No terminal, mostrar as consultas e os links; no app,
+    o HTML. Conferir na abertura se isso cumpre os termos.
+  - **Resultado de busca não vai para o Claude:** os termos proíbem "syndicate" (inferência).
+  - **Teto por dia antes de chamar:** modelo forte e busca, no `custos.py`. A busca é quase de
+    graça para um usuário (1.500 prompts por dia grátis no 2.5), mas um e-mail injetado não pode
+    forçar volume.
+  - **Menos tools por pedido?** Com 21, já passa do número que alguns assistentes escolhem por
+    pedido (isair/jarvis). Medir tokens antes de mexer (armadilha "não estime tokens").
+  - **Interactions API: não migrar agora.** Ela guarda o histórico no servidor por padrão
+    (`store=true`), e o `generateContent` continua "fully supported". Se migrar um dia, usar
+    `store=false`.
+- **Libs/repos a reaproveitar:** nada novo. O google-genai 2.25.0 do lock já tem a busca e o
+  `url_context`.
 
 ## Sessão 13 — memória de fatos e receitas (planejada em 2026-09-28)
 
@@ -490,6 +658,38 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
 - **Decidido (D48):**
   - sem o histórico inteiro das conversas;
   - a origem de cada fato fica gravada, e o que veio de e-mail ou página é marcado.
+- **Escolhas de arquitetura previstas** (seção 3 de `docs/fontes/pesquisa-roteiro.md`):
+  - **Camada nossa, nenhum framework.**
+    - mem0, Letta, LangMem, cognee e Memobase gravam sozinhos, por LLM ou por tool do agente, e
+      alguns não instalam no Mac Intel.
+    - O mem0, desde a v2.0.0, nem substitui o fato velho (só acrescenta).
+  - **O "sim" é resposta a uma pergunta do Viking, não uma palavra da conversa.**
+    - Contra o ataque publicado em que um documento planta "quando o usuário disser sim, grave
+      isto"
+      (https://embracethered.com/blog/posts/2025/gemini-memory-persistence-prompt-injection/).
+    - O laço mostra o **texto exato** que será gravado e a origem, e só essa resposta grava.
+    - O que o dono vê é renderizado da proposta guardada, nunca da prosa do modelo.
+    - **Refinamento da D48: pergunta ao dono (`PROGRESSO.md`).**
+  - **Receita só nasce de mensagem do dono;** fato de origem externa (e-mail, página, documento)
+    fica marcado e, na leitura, dentro do bloco de não confiável. Texto com forma de ordem ("se o
+    usuário disser…", "sempre faça…") vindo de fora não vira fato.
+  - **O que entra por turno tem teto:** poucos fatos, os mais relevantes. O visor da memória (a
+    ideia do isair/jarvis) é o `viking memoria`, que lista, corrige e apaga, como o `viking
+    registro`.
+  - **Índice:**
+    - `gemini-embedding-2`, US$ 0,20 por 1M de tokens, até 3072 dimensões, gravado com a dimensão
+      e a instrução;
+    - até 2048 dimensões se o Firestore guardar os vetores;
+    - no Mac, se precisar, `sqlite-vec` (sem dependências, com wheel para Mac Intel e Linux);
+    - o índice se reconstrói do texto, e o teste confere o mesmo top-k.
+  - **Avaliação à mão no pytest:** perguntas de ouro, recall@k e MRR, com vetores gravados como
+    fixture. O ragas (92 pacotes) e o deepeval (66, com telemetria) ficam recusados.
+  - Gatilho: a avaliação fixa cair, ou o dono pedir histórico.
+- **Libs/repos a reaproveitar:**
+  - `sqlite-vec` 0.1.9, se houver busca no Mac. Conferir antes se o Python 3.13 de lá tem
+    `sqlite3.enable_load_extension`;
+  - as ideias do Graphiti (`invalida_em`) e do Leon (camadas: preferências, contexto do dia,
+    conversa recente).
 
 ## Sessão 14 — documentos (planejada em 2026-09-28)
 
@@ -499,11 +699,37 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   Primeiro passo: confirmar se o NotebookLM tem API para conta pessoal (provável que não).
 - **Ponto técnico:** o seletor do Drive é um componente de página web. Até o app, os arquivos são
   locais ou abertos por uma página local, como a da Pluggy.
+- **NotebookLM, pesquisado em 2026-09-28:**
+  - a API só existe no NotebookLM **Enterprise**, e sem conta pessoal: pede Cloud Identity ou outro
+    provedor de identidade
+    (https://docs.cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview);
+  - na conta pessoal, hoje chamada "Gemini Notebook", dá para exportar as **notas** para um Google
+    Doc (https://support.google.com/notebooklm/answer/16262519).
+
+  Então o caminho é: o dono exporta as notas para o Docs, e o Viking lê o Doc escolhido
+  (`drive.file`) ou o arquivo baixado. A pergunta do primeiro passo está respondida; falta ele
+  confirmar que é esse o material.
+- **Escolhas de arquitetura previstas:**
+  - **O documento é conteúdo de terceiro:** trecho citado vai no bloco de não confiável, e uma
+    instrução dentro de um PDF não vira fato nem receita (a mesma regra da 13).
+  - **Cortes com o arquivo e a posição gravados,** para a resposta citar arquivo e trecho.
+  - **O limiar da avaliação é do dono,** medido antes de combinado.
+- **Libs/repos a reaproveitar:** medir na abertura um leitor de PDF só com wheel (a árvore e o Mac
+  Intel, se ler lá). Nenhum candidato aprovado ainda.
 
 ## Sessão 15 — coach 1: registrar (planejada em 2026-09-28)
 
 - **Entrega:** "supino 4x8 80kg" fica guardado estruturado (exercício, séries, repetições,
   carga, unidade); recordes e volume por semana.
+- **Escolhas de arquitetura previstas:**
+  - **O modelo aponta, a regra decide:** o Gemini só extrai os campos do texto do dono. Volume,
+    recorde e progresso são contas do código, com teste (skill `integracoes` §4).
+  - **Registrar treino é uma escrita do dono, não uma memória:** não precisa do "sim" da D48, mas
+    tem o `desfaz` e a linha no `registro`, como o calendário.
+  - **Unidade explícita** (kg/lb), sem converter em silêncio.
+  - **Nomes de exercício normalizados** num catálogo pequeno, que o dono corrige. "Supino" e
+    "bench press" são um só.
+- **Libs/repos a reaproveitar:** nenhuma. São tabelas e contas.
 
 ## Sessão 16 — coach 2: planejar e cobrar (planejada em 2026-09-28)
 
@@ -512,16 +738,82 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   - dor relatada muda o plano e sugere fisioterapeuta ou médico se persistir, sem nunca
     diagnosticar;
   - "faz 5 dias sem treinar" chega por e-mail.
+- **Escolhas de arquitetura previstas:**
+  - **A cobrança é uma "pergunta agendada":** o Scheduler dispara, o motor lê os treinos e manda o
+    e-mail (padrão das automações do Khoj e do resumo matinal do OpenJarvis).
+    - Idempotente pela mesma reserva do lembrete (S9).
+    - O texto enviado leva a marca do Viking e volta como conteúdo de terceiro (regra de
+      2026-09-28).
+  - **O material do dono é citado** (arquivo e trecho, da 14); sem citação, a resposta diz que é
+    conhecimento geral.
+  - **Dor e lesão:** uma regra fixa, testada, no texto de sistema e na resposta. Nunca
+    diagnostica, ajusta o treino e sugere profissional se persistir. Não fica a critério do
+    modelo.
+- **Libs/repos a reaproveitar:** nenhuma.
 
 ## Sessão 17 — app 1 (planejada em 2026-09-28)
 
 - **Entrega:** no iPhone (app web instalável), login com passkey/Face ID, chat e lembretes; a
   aprovação numa tela que o modelo nunca vê (D52).
+- **Escolhas de arquitetura previstas** (seção 6 de `docs/fontes/pesquisa-roteiro.md`):
+  - **O app é um segundo serviço, público,** que fala com o motor fechado da S10 pela conta de
+    serviço dele. Toda rota do app começa pela checagem de sessão (skill `seguranca` §1).
+  - **Aprovar = assinar um desafio ligado à ação.**
+    - O servidor sorteia um desafio de uso único e grava junto o hash dos dados exatos da ação,
+      com prazo.
+    - O `get()` do WebAuthn exige verificação do usuário.
+    - Quem liga a assinatura à ação é o **servidor**: o Face ID só mostra o nome do site, e a
+      tela mostra os dados.
+    - A extensão `txAuthSimple` foi retirada, e a SPC é só para pagamento.
+  - **"Face ID" não é garantido:** com verificação obrigatória, o iPhone aceita o código do
+    aparelho no lugar da biometria (https://passkeys.dev/docs/reference/ios/).
+    - Aprovar prova que o dono estava com o iPhone desbloqueável, não que usou o rosto.
+    - O texto da D52 diz "passkey" por isso.
+  - **Não medido:** passkey numa PWA aberta da tela de início, porque não há fonte oficial.
+    **Primeiro passo:** medir no iPhone dele. Se falhar, o login abre no Safari.
+  - **Front sem build:**
+    - htmx 2.0.11 (0BSD, ~17 KB) e JS puro na gravação e no passkey;
+    - os arquivos são servidos pelo próprio backend, sem CDN, com `script-src 'self'` na tela de
+      aprovação;
+    - um framework com build seria manutenção sem ganho para um usuário só.
+    - Gatilho: uma tela que o htmx não faça sem JS demais.
+  - **A voz só alcança uma lista explícita de tools,** como o "expor à voz" do Home Assistant:
+    arquivar, finanças e navegador em conta ficam fora da voz.
+- **Libs/repos a reaproveitar:**
+  - `webauthn` (py_webauthn, BSD-3, 3.0.1): `py3-none`, com desafio próprio e exigência de UV. Ele
+    puxa pyOpenSSL, cuja 26.4 exige cryptography < 51 — anotar junto da D45;
+  - `fido2`, da Yubico, como alternativa;
+  - as skills `webapp-testing` e `frontend-design` do anthropics/skills, **lidas e copiadas, não
+    instaladas**.
 
 ## Sessão 18 — app 2 (planejada em 2026-09-28)
 
 - **Entrega:** notificação de lembrete no iPhone; apertar para falar e ouvir a resposta; gráfico
   de volume semanal dos treinos.
+- **Escolhas de arquitetura previstas:**
+  - **O push no iPhone não é o único aviso.**
+    - Só funciona na tela de início, e o pedido tem de sair de um toque
+      (https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
+    - Há relatos de inscrição que some e de entrega que para.
+    - Por isso o e-mail do lembrete continua, a inscrição se refaz a cada abertura do app, e uma
+      falha de entrega aparece (skill `falha-ruidosa`).
+  - **Voz: gravar → `generateContent` com o áudio → TTS,** reaproveitando o laço atual (execução
+    automática das tools).
+    - A Live API custa a mesma ordem (US$ 0,005 por minuto de entrada e US$ 0,018 de saída) e
+      obrigaria a devolver as respostas das tools à mão.
+    - Gatilho: a latência medida incomodar.
+  - **Formato do áudio:**
+    - o Safari 18.4+ grava WebM/Opus, e o Gemini aceita `audio/webm` e `audio/aac`, mas não
+      `audio/mp4`;
+    - mandar o tipo real (`MediaRecorder.isTypeSupported`);
+    - a permissão do microfone não persiste na PWA: esperar um pedido por abertura;
+    - reconhecimento de fala do navegador fica fora, porque falha na PWA.
+  - **Gráfico com uPlot** (MIT, ~22 KB), servido pelo backend.
+- **Libs/repos a reaproveitar:**
+  - `pywebpush` 2.5.0 (MPL-2.0) puxa o **`http-ece`, que só tem sdist**, e o `tests/test_lock.py`
+    recusa. Adaptar: `py-vapid` mais a cifra da RFC 8291 sobre o cryptography, ou uma exceção
+    decidida pelo dono;
+  - o `kevinbadi/jev-voice` como referência de voz, sem adotar.
 
 ## Sessão 19 — Claude, cérebro e revisor (planejada em 2026-09-28)
 
@@ -530,6 +822,22 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
   ele (D49).
 - **Nesta sessão, o dono pede a API oficial da Garmin:** a aprovação pode levar semanas e não é
   garantida para uso pessoal.
+- **Escolhas de arquitetura previstas:**
+  - **A entrada do Claude é montada de campos tipados,** nunca do histórico do chat, porque o
+    histórico carrega o resultado das tools (e-mail, página, finanças).
+    - O teste planta uma frase-sentinela num resultado de e-mail, de finanças e de página, e
+      confere que ela nunca chega ao pedido do Claude.
+    - Fatos de memória de origem externa ficam fora.
+    - Resultado de busca na web também fica fora (termos do Google, S12).
+  - **O revisor só anota:** a resposta dele vira texto para o dono, nunca uma chamada de tool nem
+    uma mudança de trava.
+  - **Custo:** o Sonnet 5 custa ~7× o 3.8 Flash na entrada (US$ 2/10). Sob demanda, com teto no
+    `custos.py`, e o Batch (50% mais barato) para o que não tem pressa.
+  - **Retenção:** a API guarda até 30 dias e não treina sem permissão
+    (https://platform.claude.com/docs/en/manage-claude/api-and-data-retention). Retenção zero só
+    por vendas, o que reforça a D49.
+- **Libs/repos a reaproveitar:** `anthropic` 1.8.0. Só o `jiter` 0.17.0 seria novo no lock, e ele
+  tem wheel cp312/cp313 para Mac Intel e Linux.
 
 ## Sessão 20 — auto-diagnóstico (planejada em 2026-09-28)
 
@@ -541,11 +849,32 @@ abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 sã
     trace), nunca do conteúdo;
   - o token só escreve issues daquele repo;
   - o texto da issue é conteúdo não confiável para quem for consertar.
+- **Escolhas de arquitetura previstas:**
+  - **O "trace" é o tipo da exceção e os quadros (arquivo relativo, linha, função) de
+    `src/lifeos`, sem a mensagem da exceção.** A mensagem carrega conteúdo: o título de um evento,
+    um assunto de e-mail, o erro do Google com o número do projeto. Do registro, só `operacao`,
+    `estado`, `origem` e datas, nunca `parametros`, `resultado` nem `erro`.
+  - **O Claude Code que for consertar lê a issue como dado;** a skill `evidencia` vale para ela.
+- **Libs/repos a reaproveitar:** o `gh`, já usado, com um token fino que só escreve issues daquele
+  repo.
 
 ## Sessão 21 — Garmin (planejada em 2026-09-28)
 
 - **Entrega:** uma atividade real do relógio chega ao coach. Só pela API oficial; a biblioteca não
   oficial, com a senha dele, ficou recusada.
+- **Pesquisado em 2026-09-28:** o programa de desenvolvedor da Garmin é "only for business use"
+  (https://developer.garmin.com/gc-developer-program/program-faq/).
+  - Uso pessoal muito provavelmente é recusado: é inferência da frase, e só blogs confirmam.
+  - Quando aprovado, usa OAuth 2.0 com PKCE e manda os dados por push para um endereço público.
+  - **Plano B oficial: o Strava.** O app novo nasce em "single-player mode", só com a própria
+    conta, com limites de 200 pedidos por 15 min e 2.000 por dia
+    (https://developers.strava.com/docs/getting-started/). O relógio sincroniza com o Strava, e o
+    Viking lê de lá.
+  - O que fazer se a Garmin recusar: pergunta ao dono (`PROGRESSO.md`).
+- **Escolhas de arquitetura previstas:**
+  - **O webhook é uma rota pública do serviço do app, não do motor,** e confere a assinatura ou o
+    token da plataforma na primeira instrução.
+  - **A atividade entra pelo mesmo registro de treino da 15,** com a origem gravada.
 
 ## Só se o Bosgame voltar (trilha de hardware reativada)
 

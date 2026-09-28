@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 16 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 17 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -153,6 +153,14 @@ alternativas tinham todas um item, lendo só a linha da asserção. A primeira l
 a segunda frase passava. Pego ao abrir o dicionário para editar; as duas viraram obrigatórias, com
 mutação que apaga a segunda. O que tem de novo: a afirmação era sobre um arquivo que eu estava com
 o trecho na tela, só que o trecho errado.
+
+**2026-09-28 — o relatório de um subagente virou afirmação minha (revisão do roteiro).** Escrevi
+em três documentos (D53, `sessoes.md`, `pesquisa-roteiro.md`) que `/security-review` e
+`/code-review` "já vêm" no Claude Code e que entram no fechamento das sessões. A frase era do
+relatório de um agente de pesquisa, e eu não tinha a lista de comandos da sessão aberta. Pego na
+2ª passada da revisão; o texto passou a dizer "segundo a pesquisa, conferir na abertura da 8". O
+que tem de novo: numa pesquisa delegada, o relatório do agente é uma fonte como um README. Ele
+tem de ser citado como tal, e o que eu não abri fica "não conferido".
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
