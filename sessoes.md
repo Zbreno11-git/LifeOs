@@ -16,13 +16,12 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 7 — manutenção (a 6 fechou em 2026-09-28, testada no Mac menos a data das finanças).
-- **Primeiro passo (adiado da 6 pelo dono, 2026-09-28 — "não consigo ver o banco agora"):** no Mac,
-  `viking financas --gastos` e comparar a data de 2–3 compras com o app do banco (ele diz se bateu,
-  sem colar valores). Se não bater, é o `FUSO_DOS_BANCOS` (D44) — antes de qualquer outra coisa.
-- **Ler antes:** `AGENTS.md` (armadilha "Três fusos"), `PROGRESSO.md`, `docs/erros.md`,
-  `docs/decisoes.md` (D39–D44), e a memória do Claude sobre o fuso do dono.
-- **Depende do dono:** a conferência acima e as perguntas da abertura da 7.
+- **Sessão:** 7 — manutenção (a 6 fechou no Mac em 2026-09-28).
+- **Primeiro passo:** abrir e planejar pela skill `software-build` (perguntas ao dono antes do plano).
+  O adiado da 6 (datas das finanças no app do banco) foi conferido pelo dono em 2026-09-28: bateu.
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D39–D44), a
+  seção da Sessão 7 abaixo, e a memória do Claude sobre o fuso do dono.
+- **Depende do dono:** as perguntas da abertura da 7.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -295,7 +294,7 @@ abertura:
   confirmado, o que rodou, o resultado) — cobre o caso de uma tool funcionar e a chamada seguinte
   ao Gemini falhar, hoje sem rastro de que a mutação já aconteceu.
 
-## Sessão 6 — runner em concorrência (feita em 2026-09-27/28, testada no Mac menos a data das finanças)
+## Sessão 6 — runner em concorrência (feita em 2026-09-27/28, testada no Mac)
 
 **Commit 1 (2026-09-27):** um navegador por vez entre processos, recusando na hora e dizendo quem
 usa; o `--doctor` também; protocolo com nonce por execução (D40).
@@ -306,7 +305,7 @@ ele nem ao daemon); o `--doctor` mostra a versão do Jev e cada tarefa avisa se 
 teto (detector por ação e regra de volta, D43) e **três fusos** — o dono não está em Brasília, a
 agenda está em São Paulo, o relógio do Mac em -08:00 (D39 revista, D42, D44; conferido criar,
 listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no terminal, a ordem do
-`--doctor` num pipe, e um teste com corrida. Não conferido: a data das finanças (primeiro passo da 7).
+`--doctor` num pipe, e um teste com corrida. A data das finanças o dono conferiu em 2026-09-28: bateu.
 
 
 - **Primeiro passo (adiado da 5, 2026-09-27):** no Mac, medir o que o teste da 5 não alcançou —
@@ -324,8 +323,8 @@ listar e o aviso). Rodando a CLI no VPS: o "ocupado" falava com o Gemini no term
 
 ## Sessão 7 — manutenção
 
-- **Primeiro passo (adiado da 6, 2026-09-28):** conferir no Mac as datas de `viking financas --gastos`
-  contra o app do banco (D44) — ver o bloco ▶️.
+- ~~Adiado da 6: conferir as datas de `viking financas --gastos` no app do banco~~ — feito pelo dono
+  em 2026-09-28, bateu (D44).
 - §15.1: sem lockfile no projeto principal (`uv.lock` ou equivalente).
 - §15.3: sem CI, sem scanner de dependências, sem type checking.
 - §15.4: `ruff format --check` ainda aponta arquivos pré-existentes (de antes da auditoria) —

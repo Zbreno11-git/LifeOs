@@ -5,26 +5,44 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 6 fechada; a próxima é a 7 (manutenção)
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 6 fechada inteira; próximo: planejar a Sessão 7
 
-**Estado do repositório:** o commit de fechamento da Sessão 6 (conferir com `git log -1`; o anterior
-é `957c08e`) · igual ao remoto · travas: nenhuma · background: nenhum.
+**Estado do repositório:** o checkpoint antes do compact (conferir com `git log -1`; o anterior é
+`c93279c`, fechamento da 6) · igual ao remoto · travas: nenhuma · background: nenhum.
 
-**Onde parou:** a Sessão 6 fechou em 2026-09-28 com o "pode fechar" do dono; testada no Mac menos a
-data das finanças (D44), que ele adiou ("não consigo ver o banco agora") — é o primeiro passo da 7,
-escrito em `sessoes.md`. Medido no fechamento: `1118 passed`; `ruff` limpo; baseline 7; mutações
-157/157.
+**Onde parou:** a Sessão 6 fechou em 2026-09-28 e está toda testada no Mac — o último item, as
+datas de `viking financas --gastos`, o dono conferiu no app do banco: "tudo certo". Barra: 9
+fechadas + 2 parciais (4 e 3b) = 10 de 12. Medido no fechamento: `1118 passed`; `ruff check` limpo;
+`ruff format --check` → 7 (o baseline); `python scripts/mutacoes.py` → `157 · mortas pelo teste
+esperado: 157`.
 
-**Próximo passo exato:** abrir a Sessão 7 pela skill `software-build`: primeiro o dono confere as
-datas de `viking financas --gastos` no app do banco; depois perguntas de abertura e plano da
-manutenção (§15.1–15.4), escrito aqui abaixo, acima do plano da 6.
+**Próximo passo exato:** abrir e **planejar** a Sessão 7 (manutenção, `sessoes.md`) com a skill
+`software-build` e o formato de `referencia/plano-de-sessao.md`: medir a abertura, fazer as rodadas
+de perguntas ao dono, somar as respostas e escrever o plano aqui, acima do plano da 6, **antes de
+qualquer código**. Nada de implementar antes do "pode seguir" do dono.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; `sessoes.md` (▶️ e Sessão 7); `docs/decisoes.md`
-(D39–D44); o índice de `docs/erros.md`; a memória do Claude (fuso do dono).
+**Candidatos a assunto da 7, para as perguntas** (o escopo é decisão do dono):
+- §15.1 lockfile do projeto (hoje `pip install -e .`; o Mac tem conda junto do venv);
+- §15.3 CI (repo público no GitHub), scanner de dependências, checagem de tipos;
+- §15.4 os 7 arquivos fora da formatação (um commit só de formatação acabaria com a regra "só os
+  meus trechos do `--diff`");
+- §15.2 teste que usa API privada do google-genai;
+- achado da 6, não é dívida mas vale olhar: `calendar/service` compara `inicio` como **texto**
+  ao aprovar um pedido do MCP (`_evento_de(atual).inicio != dados["inicio"]`); se o fuso do dono
+  mudar entre o pedido e a aprovação, recusa um pedido válido (erra para o lado seguro).
+
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e Sessão 7);
+`docs/decisoes.md` (índice; D39–D44); o índice de `docs/erros.md`; a memória do Claude (fuso do
+dono, fluxo de entrega, perguntar antes de assumir); as skills `software-build` (abrir/planejar,
+`referencia/plano-de-sessao.md`, `referencia/revisao.md`) e `testes-que-provam`.
 
 **Não pode ser esquecido:** nunca presumir o fuso do dono (o `.env` dele tem `VIKING_TIMEZONE`
 desde 2026-09-28); repo público (nada de cidade, conta ou valor real); roteiro do Mac começa com
-`cd ~/LifeOs` e `git pull && git log --oneline -1`; mutações em background, sem `timeout`.
+`cd ~/LifeOs` e `git pull && git log --oneline -1`, sem `#` na linha, `python -m`, URL com `?` entre
+aspas; mutações em background, sem `timeout`, e antes de uma "recusa → espera", perguntar qual teste
+esperaria para sempre; `or` em asserção é proibido; texto com heredoc dentro não vai num heredoc.
+
+**Depende do dono:** as respostas da abertura da 7.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
 `python -m pytest -q` → `1118 passed`; `python -m ruff format --check . | tail -1` → `7 files would

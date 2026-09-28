@@ -1050,7 +1050,9 @@ segunda vez; terminou sem estrago).
 
 O dono autorizou fechar ("pode fechar a sessão") sem a conferência das datas das finanças, porque
 não tinha o app do banco à mão; ela é o primeiro passo da Sessão 7 (`sessoes.md`) e a 6 conta como
-parcial na barra até lá. Entregue: D40–D44 e a D39 revista. Portões no fechamento: `1118 passed`,
+parcial na barra até lá. Entregue: D40–D44 e a D39 revista. **Atualização (2026-09-28, mais
+tarde):** o dono conferiu `viking financas --gastos` contra o app do banco — "tudo certo". A 6 conta
+como fechada. Portões no fechamento: `1118 passed`,
 `ruff` limpo, baseline 7, mutações 157/157. Erros meus da sessão, em `docs/erros.md`: classes 1, 2
 (três, e a maior: presumir Brasília), 4 (duas), 6 (duas) e 7.
 

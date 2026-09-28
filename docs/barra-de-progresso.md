@@ -7,13 +7,12 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-28 (Sessão 6, testada no seu Mac, menos uma conferência).**
+**Última atualização: 2026-09-28 (Sessão 6, testada no seu Mac por inteiro).**
 
-`████████████████░░░░ 8 de 12 sessões fechadas + 3 parciais (= 9,5 de 12)`
+`█████████████████░░░ 9 de 12 sessões fechadas + 2 parciais (= 10 de 12)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy e 5; parciais 4, 3b e 6;
-na fila 7. Cada parcial vale meia sessão na barra. A 6 conta como parcial até você comparar as
-datas das finanças com o app do banco (é o primeiro passo da 7).
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5 e 6; parciais 4 e 3b;
+na fila 7. Cada parcial vale meia sessão na barra.
 
 ## 2026-09-28 — um navegador por vez, suas chaves longe dele, e o seu fuso de verdade
 
@@ -34,7 +33,7 @@ Seu teste mostrou três fusos diferentes: o seu, o do relógio do Mac (Alasca) e
 Google (Brasília). Por isso "amanhã às 10h" caía às 15h. Agora: com `VIKING_TIMEZONE` no seu `.env`,
 o evento cai no seu horário e a lista mostra o seu horário (a reunião das 13h da agenda aparece às
 9h); se o fuso faltar, o chat avisa ao abrir. As datas das compras passam a ser as do banco (antes,
-toda compra sem hora aparecia um dia antes) — **falta você conferir isso no app do banco.**
+toda compra sem hora aparecia um dia antes) — você conferiu no app do banco e bateu.
 
 ## 2026-09-27 — o Viking pede antes, lembra o que fez e desfaz
 
