@@ -125,7 +125,9 @@ class Sessao:
     def total_formatado(self) -> str:
         linhas = [f"Gemini:    {self.gemini.resumo()}"]
         if self.navegador.chamadas:
-            linhas.append(f"Navegador: {self.navegador.resumo()} em {self.navegador.chamadas} chamadas")
+            linhas.append(
+                f"Navegador: {self.navegador.resumo()} em {self.navegador.chamadas} chamadas"
+            )
         linhas.append(f"Total da sessão: ~{dinheiro(self.total)}")
         return "\n".join(linhas)
 

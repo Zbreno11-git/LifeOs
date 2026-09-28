@@ -93,13 +93,13 @@ def test_regras_de_comportamento_sobrevivem_a_compressao(nome):
     fn = next(f for f in FERRAMENTAS if f.__name__ == nome)
     doc = inspect.getdoc(fn) or ""
     for alternativas in _REGRAS[nome]:
-        assert any(a.replace("\n    ", " ") in " ".join(doc.split()) or a in doc for a in alternativas), (
-            f"{nome}: a docstring perdeu a regra {alternativas!r}"
-        )
+        assert any(
+            a.replace("\n    ", " ") in " ".join(doc.split()) or a in doc for a in alternativas
+        ), f"{nome}: a docstring perdeu a regra {alternativas!r}"
 
 
 def test_regra_de_ordinais_esta_na_ferramenta_de_navegador():
-    """"Abre o segundo resultado" fez o executor tentar 5 vídeos diferentes sem parar (2026-09-20):
+    """ "Abre o segundo resultado" fez o executor tentar 5 vídeos diferentes sem parar (2026-09-20):
     ele escolhe entre elementos, não conta posições."""
     fn = next(f for f in FERRAMENTAS if f.__name__ == "navegar_e_executar")
     doc = " ".join((inspect.getdoc(fn) or "").split())

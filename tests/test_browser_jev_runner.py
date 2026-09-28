@@ -308,7 +308,9 @@ def test_detector_pega_loop_estrutural_com_alvos_sempre_diferentes():
     for video in ("brand-new-day", "spiderman-ambience", "heavy-rain", "music-2002", "great-power"):
         # clica um resultado (ação feita NA página de resultados)
         exatas.append(("https://www.youtube.com/results?search_query=spider+man", video))
-        amplas.append((runner._normalizar("https://www.youtube.com/results?search_query=spider+man"), "click"))
+        amplas.append(
+            (runner._normalizar("https://www.youtube.com/results?search_query=spider+man"), "click")
+        )
         # volta pra busca (ação feita NA página do vídeo)
         exatas.append((f"https://www.youtube.com/watch?v={video}", "Search"))
         amplas.append((runner._normalizar(f"https://www.youtube.com/watch?v={video}"), "click"))

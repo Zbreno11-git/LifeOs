@@ -41,7 +41,9 @@ async def main() -> None:
     default_dir = Path(__file__).resolve().parents[2] / "windows-mcp"
     windows_mcp_dir = Path(os.environ.get("WINDOWS_MCP_DIR", default_dir)).expanduser()
     if not windows_mcp_dir.is_dir():
-        parser.error(f"clone do fork Windows-MCP nao encontrado: {windows_mcp_dir} (defina WINDOWS_MCP_DIR)")
+        parser.error(
+            f"clone do fork Windows-MCP nao encontrado: {windows_mcp_dir} (defina WINDOWS_MCP_DIR)"
+        )
 
     params = StdioServerParameters(
         command="uv",
@@ -72,7 +74,11 @@ async def main() -> None:
             board.reset_input_buffer()
             print(f"Aguardando botao em {args.port}. Encerre com Ctrl+C.")
             while True:
-                line = (await asyncio.to_thread(board.readline)).decode("utf-8", errors="replace").strip()
+                line = (
+                    (await asyncio.to_thread(board.readline))
+                    .decode("utf-8", errors="replace")
+                    .strip()
+                )
                 if line == "BUTTON":
                     await press()
 

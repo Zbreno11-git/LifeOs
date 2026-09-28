@@ -111,8 +111,7 @@ def listar_lembretes() -> str:
 
 
 def concluir_lembrete(reminder_id: int) -> str:
-    """Marca um lembrete como concluído. `reminder_id` vem da listagem.
-    """
+    """Marca um lembrete como concluído. `reminder_id` vem da listagem."""
     reminder = reminders_service.concluir(reminder_id)
     if not reminder:
         return f"Não encontrei o lembrete #{reminder_id}."

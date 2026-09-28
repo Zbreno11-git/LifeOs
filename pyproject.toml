@@ -35,3 +35,7 @@ line-length = 100
 src = ["src", "tests"]
 # As skills são texto de outro projeto, copiado como veio; o ruff reformataria o Python dos `.md`.
 extend-exclude = [".claude"]
+
+[tool.ruff.format]
+# Nos `.md` o Python é citação (o patch do Jev em `docs/arquitetura/`, exemplos): fica como veio.
+exclude = ["*.md"]

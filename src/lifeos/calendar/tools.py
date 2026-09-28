@@ -234,8 +234,7 @@ def responder_pedir_reagendar(
 
 
 def listar_proximos_eventos(max_results: int = 10) -> str:
-    """Lista os próximos eventos do calendário a partir de agora.
-    """
+    """Lista os próximos eventos do calendário a partir de agora."""
     return responder_proximos(max_results).texto
 
 
@@ -306,8 +305,7 @@ def criar_evento(summary: str, start_time: str, end_time: str, description: str 
 
 
 def criar_evento_dia_inteiro(summary: str, data: str, description: str = "") -> str:
-    """Cria um evento de dia inteiro, sem horário. `data` em YYYY-MM-DD.
-    """
+    """Cria um evento de dia inteiro, sem horário. `data` em YYYY-MM-DD."""
     return responder_criar_dia_inteiro(summary, data, description).texto
 
 
