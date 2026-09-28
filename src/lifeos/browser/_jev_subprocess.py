@@ -294,6 +294,31 @@ def _oscilando(assinaturas, periodos=(2, 3, 4)):
     return False
 
 
+def _revisitando(decididas, vezes=3):
+    """A mesma ação, decidida na mesma página (sem a query), em `vezes` trechos separados.
+
+    Pega o loop que não tem período fixo, que `_oscilando` não vê: no Mac, em 2026-09-27, "abrir o
+    primeiro resultado" já na busca do YouTube clicou o vídeo, não se deu por concluído e ficou em
+    vídeo → pesquisar → "lofi" → vídeo, com 3 a 5 ações por volta, até o teto de 30. O clique no
+    mesmo vídeo, na mesma página de busca, voltou 6 vezes.
+
+    Repetição seguida conta um trecho só: clicar "Mostrar mais" ou "Próxima" várias vezes seguidas é
+    legítimo. A página é a de onde a ação foi decidida, sem a query (o YouTube acrescenta `&list=`
+    à URL do vídeo sozinho). Três trechos = voltou duas vezes ao mesmo ponto, a mesma exigência de
+    `_oscilando` (3 ciclos completos). Alarme falso aceito: "Próxima" três vezes com outras ações
+    no meio (abrir um item de cada página) conta como volta — a tarefa para com `loop_detected`.
+    """
+    trechos = {}
+    anterior = object()
+    for assinatura in decididas:
+        if assinatura != anterior:
+            trechos[assinatura] = trechos.get(assinatura, 0) + 1
+            if trechos[assinatura] >= vezes:
+                return True
+        anterior = assinatura
+    return False
+
+
 def _uso(state, recusada=None):
     """Soma o `usage` de toda chamada paga: as decisões (inclusive a última, que não executa ação)
     e as de geração de texto, mais a decisão que o freio recusou (`recusada`), que o Jev não
@@ -370,6 +395,9 @@ def main():
     state = None
     assinaturas = []
     amplas = []
+    decididas = []
+    passos_vistos = 0
+    url_da_decisao = args.url
 
     try:
         instalar_protecao(args.bloquear, _liberacao(args.liberar_uma, args.url))
@@ -395,10 +423,19 @@ def main():
                 break
             url_passo = (state.get("page") or {}).get("url")
             ultimo = historico[-1] if historico else {}
-            assinaturas.append((url_passo, ultimo.get("action")))
-            # A lista ampla pega o loop "estrutural": mesmo vaivém entre tipos de página, ainda que
-            # o alvo clicado mude toda vez.
-            amplas.append((_normalizar(url_passo), ultimo.get("kind")))
+            # Os detectores contam AÇÕES, não estados: quando a página muda entre a decisão e o
+            # clique, o Jev devolve um estado novo sem ação nova (`StalePage`), e contar esse estado
+            # desmanchava a periodicidade — medido no rastro do YouTube de 2026-09-27.
+            nova_acao = _passos(state) > passos_vistos
+            if nova_acao:
+                passos_vistos = _passos(state)
+                assinaturas.append((url_passo, ultimo.get("action")))
+                # A lista ampla pega o loop "estrutural": mesmo vaivém entre tipos de página, ainda
+                # que o alvo clicado mude toda vez.
+                amplas.append((_normalizar(url_passo), ultimo.get("kind")))
+                decididas.append((_normalizar(url_da_decisao), ultimo.get("action")))
+            # A próxima ação é decidida na página deste estado.
+            url_da_decisao = url_passo
             if _passos(state) >= args.max_acoes:
                 emit(
                     type="error",
@@ -414,7 +451,9 @@ def main():
                 )
                 return EXIT_ERROR
 
-            if _oscilando(assinaturas) or _oscilando(amplas):
+            if nova_acao and (
+                _oscilando(assinaturas) or _oscilando(amplas) or _revisitando(decididas)
+            ):
                 emit(
                     type="error",
                     code="loop_detected",

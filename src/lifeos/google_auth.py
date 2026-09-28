@@ -88,5 +88,14 @@ def credenciais(scopes: list[str], token_path: Path) -> Credentials:
     return creds
 
 
+def credenciais_sem_login(scopes: list[str], token_path: Path) -> Credentials | None:
+    """O token salvo, só se já vale agora: sem renovar e sem abrir o login. Para conferências que
+    não podem interromper o dono (o aviso de fuso na abertura do chat)."""
+    if not (token_path.exists() and set(scopes) <= _escopos_do_arquivo(token_path)):
+        return None
+    creds = Credentials.from_authorized_user_file(str(token_path), scopes)
+    return creds if creds.valid else None
+
+
 def servico(api: str, versao: str, scopes: list[str], token_path: Path):
     return build(api, versao, credentials=credenciais(scopes, token_path))

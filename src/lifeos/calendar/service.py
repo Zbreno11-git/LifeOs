@@ -18,7 +18,7 @@ from datetime import UTC, date, datetime, timedelta
 # convites vêm de terceiros (§6.3). Mover para um módulo neutro quando surgir um terceiro uso.
 from lifeos import aprovacoes, confirmacao, registro
 from lifeos.browser._redacao import limpar_controles
-from lifeos.calendar.oauth import get_calendar_service
+from lifeos.calendar.oauth import get_calendar_service, get_calendar_service_sem_login
 from lifeos.config import TIMEZONE
 
 
@@ -264,6 +264,15 @@ def buscar(termo_busca: str) -> list[Evento]:
         )
     )
     return [_evento_de(item) for item in resposta.get("items", [])]
+
+
+def fuso_da_agenda() -> str | None:
+    """O fuso configurado na agenda do Google do dono (nome IANA), ou `None` se não deu para ler
+    sem pedir login. Só leitura."""
+    servico = get_calendar_service_sem_login()
+    if servico is None:
+        return None
+    return _executar(lambda: servico.settings().get(setting="timezone")).get("value")
 
 
 def criar(summary: str, start_time: str, end_time: str, description: str = "") -> Evento:

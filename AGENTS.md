@@ -240,12 +240,15 @@ senão a medição *executa* uma ferramenta de verdade — e compare `usage_meta
 com e sem as tools. Compare as duas versões **no mesmo processo**: medir em duas conversas ao vivo
 diferentes dá número contaminado por histórico (deu -80 quando o real era -477).
 
-**Loops de navegador não se repetem literalmente.** Três formatos já vistos, nenhum pego pelo guard do
+**Loops de navegador não se repetem literalmente.** Quatro formatos já vistos, nenhum pego pelo guard do
 próprio Jev (que só detecta página que *não* muda): objetivo-pergunta (nenhuma ação satisfaz a meta),
-ciclo de período 3, e loop estrutural em que o alvo clicado muda toda volta. O detector em
-`_jev_subprocess.py` roda em duas assinaturas — exata `(url, ação)` e ampla `(url sem query, tipo da
-ação)` — porque só a exata não vê o terceiro caso. Antes de "melhorar" esse detector, leia os testes:
-eles replicam rastros reais.
+ciclo de período 3, loop estrutural em que o alvo clicado muda toda volta, e (Mac, 2026-09-27) loop
+**sem período fixo** — o YouTube voltava ao mesmo vídeo a cada 3 a 5 ações. O detector em
+`_jev_subprocess.py` tem três regras: ciclo na assinatura exata `(url, ação)`, ciclo na ampla `(url
+sem query, tipo da ação)`, e `_revisitando` (a mesma ação decidida na mesma página em 3 trechos
+separados). Os três contam **ações**, não estados: quando a página muda entre a decisão e o clique, o
+Jev devolve um estado sem ação nova (`StalePage`), e contá-lo desmanchava o período. Antes de
+"melhorar" esse detector, leia os testes: eles replicam rastros reais.
 
 **Ordinais além do primeiro não funcionam no executor.** "Abre o primeiro resultado" funciona; "o
 segundo" faz o Jev tentar alvos indefinidamente, porque ele escolhe entre elementos da página e não
@@ -361,10 +364,13 @@ chaves dele vêm só do `.env` dele. O daemon do Browser Harness nasce com o amb
 o subiu e sobrevive a ela: depois de mudar a lista, o daemon velho continua com o ambiente velho
 até reiniciar (`pkill -f browser_harness.daemon`; a próxima tarefa o sobe de novo).
 
-**O Gemini inventa fuso horário.** Para "amanhã às 10h" ele mandou `10:00:00-08:00` e o evento
-caiu às 15h de Brasília (Mac, 2026-09-27). As tools do Gemini recebem horário **sem fuso** e
-recusam fuso diferente do do dono (`calendar/tools.recusa_de_fuso`, D39); o fuso do dono é o da
-**data** do horário (horário de verão), não o de agora. Os testes do calendário fixam
+**O fuso do Viking pode não ser o do dono.** Sem `VIKING_TIMEZONE`, o Viking usa o fuso do relógio
+da máquina. No Mac, "amanhã às 10h" caiu às 15h de Brasília duas vezes (2026-09-27): na 1ª eu culpei o
+Gemini por mandar `-08:00` e fiz a D39; na 2ª ele mandou sem fuso, como a D39 pede, e deu igual — com
+o relógio em -08:00 o próprio Viking produz isso (reproduzido no VPS com `TZ=America/Anchorage`; a
+medir no Mac). A D39 continua (as tools recebem horário **sem fuso** e recusam fuso diferente do do
+dono, o da **data** do horário), mas não protege quando o fuso "do dono" está errado: por isso a
+abertura do chat compara com o fuso da agenda do Google (`calendar/tools.aviso_de_fuso`) e avisa. Os testes do calendário fixam
 `service.TIMEZONE` em Brasília no dublê (`conftest.calendario`), porque o VPS está em UTC.
 
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a

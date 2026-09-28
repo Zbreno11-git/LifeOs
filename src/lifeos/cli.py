@@ -25,7 +25,9 @@ def _doctor() -> int:
                 descricao = limpar_controles(trava.descrever(ocupado))
                 print(f"❌ Não rodei o diagnóstico: {descricao}. Espere terminar.", file=sys.stderr)
                 return 2
-            print(versao_jev.texto(versao_jev.conferir()))
+            # Antes do harness, que escreve direto no terminal: num pipe, o print ficaria no buffer
+            # e sairia depois da saída dele.
+            print(versao_jev.texto(versao_jev.conferir()), flush=True)
             cmd = jev_runner.comando_doctor()
             print(f"$ {' '.join(cmd)}", file=sys.stderr)
             try:

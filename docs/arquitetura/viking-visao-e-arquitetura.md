@@ -105,11 +105,13 @@ reexecutar uma mutação de navegador automaticamente após erro/timeout. Por pa
 e em foco ao terminar: o navegador é o do usuário, e uma aba que some é o avesso do esperado.
 
 **Guardas contra loop.** O executor entra em ciclo quando o objetivo não é alcançável por nenhuma
-ação — e o guard do próprio Jev não pega, porque ele só detecta página que *não* muda. Três camadas,
+ação — e o guard do próprio Jev não pega, porque ele só detecta página que *não* muda. Quatro camadas,
 todas em `_jev_subprocess.py`: detector de ciclo em assinatura exata `(url, ação)`; detector em
 assinatura ampla `(url sem query, tipo da ação)`, que pega o caso em que o alvo clicado muda toda
-volta; e um teto próprio de 30 ações, metade do teto de 60 do Jev, limitando o custo do pior caso.
-Os três nasceram de loops observados em uso real — ver `docs/diario-de-bordo.md`, 2026-09-20.
+volta; detector de volta (a mesma ação decidida na mesma página em 3 trechos separados), para o loop
+sem período fixo; e um teto próprio de 30 ações, metade do teto de 60 do Jev, limitando o custo do
+pior caso. Todos nasceram de loops observados em uso real — ver `docs/diario-de-bordo.md`,
+2026-09-20 e 2026-09-28.
 
 **Custo.** Cada passo é uma chamada paga ao modelo de decisão, que recebe até 6000 caracteres de
 texto da página. Em site simples isso é desprezível (~US$0,0001 por tarefa); numa SPA densa como o

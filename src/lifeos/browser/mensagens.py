@@ -67,8 +67,8 @@ MENSAGENS: dict[str, str] = {
     "timeout": "A tarefa passou do tempo limite e foi interrompida.",
     "timeout_terminated": "A tarefa foi interrompida antes de concluir.",
     "busy": (
-        "Outra tarefa de navegador está usando o Chrome agora, e nada foi feito nesta. Não repita "
-        "sozinho: diga ao usuário quem está usando e espere ele pedir de novo."
+        "Outra tarefa de navegador está usando o Chrome agora, e nada foi feito nesta. Espere ela "
+        "terminar e peça de novo: nada se repete sozinho."
     ),
     "trava_indisponivel": (
         "Não naveguei: não consegui travar o navegador para esta tarefa (o arquivo da trava em "

@@ -24,6 +24,7 @@ def _proibido(*_args, **_kwargs):
 def _sem_google_de_verdade(monkeypatch):
     monkeypatch.setattr("lifeos.calendar.oauth.get_calendar_service", _proibido)
     monkeypatch.setattr("lifeos.calendar.service.get_calendar_service", _proibido)
+    monkeypatch.setattr("lifeos.calendar.service.get_calendar_service_sem_login", _proibido)
     monkeypatch.setattr("lifeos.gmail.oauth.get_gmail_service", _proibido)
     monkeypatch.setattr("lifeos.gmail.service.get_gmail_service", _proibido)
     monkeypatch.setattr("lifeos.google_auth.build", _proibido)

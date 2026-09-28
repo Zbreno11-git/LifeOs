@@ -177,6 +177,124 @@ def test_loop_detected_carrega_usage(jev_falso, monkeypatch, capsys):
     assert codigo == runner.EXIT_ERROR
 
 
+_BUSCA = "https://www.youtube.com/results?search_query=lofi"
+_VIDEO = "https://www.youtube.com/watch?v=sF80I-TQiW0"
+_ROTULOS = {
+    "V": ("90's Chill Lofi Study Music", "click", _VIDEO),
+    "S": ("Search", "click", _BUSCA),
+    "L": ("lofi", "click", None),
+    "R": ("Reproduzir", "click", None),
+    "O": ("Open Pesquisar", "click", None),
+}
+# O rastro do Mac (2026-09-27, `ba860fa`): um item por evento `step`, na ordem em que saíram; o
+# número repetido é o estado extra do Jev quando a página muda entre a decisão e o clique
+# (`StalePage`). A ordem e os rótulos são os medidos; URLs e tipos são reconstruídos (o progresso
+# não os mostra): o vídeo leva ao vídeo, "Search" à busca, o resto fica na página, e "lofi" é um
+# clique (sugestão da busca) — das oito reconstruções testadas, só as com "lofi" clique fazem o
+# detector antigo passar os 30 passos sem ver nada, como no Mac.
+_RASTRO_YOUTUBE = (
+    "0 1V 1V 2S 3R 4O 4O 5V 5V 6S 7L 7L 8V 8V 9S 10L 11S 11S 12V 12V 13S 14L 15S 16L 16L 17V 17V "
+    "18S 19L 20S 21V 21V 22S 23L 24S 25L 26O 27L 28S 29L 30S"
+)
+
+
+def _estados_do_rastro(rastro: str, inicio: str, rotulos: dict = _ROTULOS) -> list[dict]:
+    estados, historico, url = [], [], inicio
+    for item in rastro.split():
+        n = int(item[:-1] if item[-1].isalpha() else item)
+        if n > len(historico):
+            rotulo, tipo, destino = rotulos[item[-1]]
+            url = destino or url
+            historico = [*historico, {"action": rotulo, "kind": tipo, "url": url}]
+        estados.append(
+            {
+                "status": "ready",
+                "elapsed_ms": 100 * len(estados),
+                "history": list(historico),
+                "page": {"url": url, "title": "YouTube", "text": ""},
+            }
+        )
+    return estados
+
+
+def test_o_detector_antigo_nao_via_o_rastro_do_youtube():
+    """A reconstrução reproduz o que o Mac mostrou: sem regra nova, nada acusa em 30 ações."""
+    assinaturas, amplas = [], []
+    for estado in _estados_do_rastro(_RASTRO_YOUTUBE, _BUSCA):
+        ultimo = estado["history"][-1] if estado["history"] else {}
+        url = estado["page"]["url"]
+        assinaturas.append((url, ultimo.get("action")))
+        amplas.append((runner._normalizar(url), ultimo.get("kind")))
+        assert not runner._oscilando(assinaturas)
+        assert not runner._oscilando(amplas)
+
+
+def test_rastro_do_youtube_para_na_segunda_volta_ao_mesmo_video(jev_falso, monkeypatch, capsys):
+    """No Mac o detector não viu este loop e a tarefa foi até o teto de 30 ações: o ciclo não
+    tem período fixo (3 a 5 ações). O clique no mesmo vídeo, decidido na mesma busca, voltou pela
+    terceira vez na ação 8 — é ali que para."""
+    monkeypatch.setattr(sys, "argv", ["jev-runner", f"--url={_BUSCA}", "--goal=abrir o primeiro"])
+    jev_falso.proximos_estados = _estados_do_rastro(_RASTRO_YOUTUBE, _BUSCA)
+    codigo = runner.main()
+    terminal = _linhas(capsys)[-1]
+    assert terminal["code"] == "loop_detected"
+    assert terminal["steps"] == 8
+    assert codigo == runner.EXIT_ERROR
+
+
+def test_estado_sem_acao_nova_nao_desmancha_o_ciclo(jev_falso, monkeypatch, capsys):
+    """Busca → vídeo com um vídeo diferente por volta (o "segundo resultado" de 2026-09-20), que só
+    a assinatura ampla vê. Com estados repetidos no meio (página que mudou antes do clique), contar
+    estado em vez de ação desmanchava o período e o loop passava; contando ação, para na 6ª."""
+    rotulos = {
+        "A": ("Vídeo A", "click", _VIDEO),
+        "B": ("Vídeo B", "click", _VIDEO),
+        "C": ("Vídeo C", "click", _VIDEO),
+        "X": ("Voltar 1", "click", _BUSCA),
+        "Y": ("Voltar 2", "click", _BUSCA),
+        "Z": ("Voltar 3", "click", _BUSCA),
+    }
+    jev_falso.proximos_estados = _estados_do_rastro("1A 1A 2X 3B 4Y 4Y 5C 6Z", _BUSCA, rotulos)
+    _rodar(monkeypatch, "--max-acoes", "50")
+    terminal = _linhas(capsys)[-1]
+    assert terminal["code"] == "loop_detected"
+    assert terminal["steps"] == 6
+
+
+def test_mostrar_mais_seguido_nao_e_loop(jev_falso, monkeypatch, capsys):
+    """Vizinho legítimo: o mesmo botão na mesma página, várias vezes seguidas."""
+    rotulos = {
+        "M": ("Mostrar mais", "click", None),
+        "X": ("Abrir o item 12", "click", "https://x.com/item/12"),
+    }
+    estados = _estados_do_rastro("1M 2M 3M 4M 5M 6X", "https://x.com/lista", rotulos)
+    estados[-1]["status"] = "done"
+    jev_falso.proximos_estados = estados
+    _rodar(monkeypatch, "--max-acoes", "50")
+    terminal = _linhas(capsys)[-1]
+    assert terminal["type"] == "result"
+    assert terminal["status"] == "done"
+
+
+@pytest.mark.parametrize(
+    ("decididas", "esperado"),
+    [
+        ([("busca", "V"), ("video", "S"), ("busca", "V"), ("video", "S"), ("busca", "L"),
+          ("busca", "V")], True),
+        ([("busca", "V"), ("video", "S"), ("busca", "V")], False),
+        ([("lista", "Mostrar mais")] * 6, False),
+        ([("lista", "Próxima")] * 6, False),
+        ([("lista", "Mostrar mais"), ("lista", "Mostrar mais"), ("lista", "rolar"),
+          ("lista", "Mostrar mais"), ("lista", "rolar"), ("lista", "Mostrar mais")], True),
+        # Alarme falso aceito (docstring de `_revisitando`): abrir um item de cada página.
+        ([("lista", "Próxima"), ("lista", "Abrir 1"), ("lista", "Próxima"), ("lista", "Abrir 2"),
+          ("lista", "Próxima")], True),
+    ],
+)  # fmt: skip
+def test_revisitando(decididas, esperado):
+    assert runner._revisitando(decididas) is esperado
+
+
 def test_timeout_carrega_usage_e_kept_open(jev_falso, monkeypatch, capsys):
     """C2+C3: usage e kept_open sumiam do evento de timeout."""
     jev_falso.proximos_estados = [_estado("running", 1, usage={"input_tokens": 3})]

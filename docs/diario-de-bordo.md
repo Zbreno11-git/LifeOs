@@ -1046,6 +1046,39 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 6, teste no Mac: chaves e trava ok; o YouTube em loop e o fuso da máquina
+
+**Medido no Mac (`ba860fa`, `1078 passed`).** `HOME` 1/1 e `GEMINI_API_KEY` 1 → 0 no ambiente do
+daemon depois do `pkill`; o `--doctor` mostrou ramo, commit, nada não salvo e o patch presente; o
+segundo `--doctor`, com o YouTube rodando, recusou dizendo "pelo terminal (viking browser) desde
+15:49 (tarefa: «abrir o primeiro resultado»)". O `desfaz` de um reagendamento voltou o horário
+(15:00 → 11:00 → 15:00, confirmado pela busca seguinte).
+
+**Achado 1 — YouTube até o teto de 30 ações.** "Abrir o primeiro resultado" já na busca: clicou o
+vídeo na 1ª ação e ficou em vídeo → pesquisar → "lofi" → vídeo, com 3 a 5 ações por volta. O
+detector não viu por dois motivos, lidos no rastro e no código do Jev: contava estados, e o Jev
+devolve um estado sem ação nova quando a página muda antes do clique (`StalePage`); e o ciclo não
+tinha período fixo. Consertado (D43): conta por ação e `_revisitando` corta na 3ª volta à mesma
+ação na mesma página — no rastro, na ação 8. O rastro do teste tem a ordem e os rótulos medidos e
+as URLs reconstruídas; das oito reconstruções, só as com "lofi" como clique fazem o detector antigo
+passar os 30 passos sem ver nada, como no Mac.
+
+**Achado 2 — o evento às 15h de novo.** Criado "às 10:00" (a frase do Gemini), achado às 15:00 pela
+busca. Não havia outro "Teste Viking" (o dono conferiu). Hipótese forte: sem `VIKING_TIMEZONE`, o
+Viking usa o fuso do relógio do Mac, e ele estaria em -08:00 — um lembrete do Mac de 2026-09-20 saiu
+com `…-08:00`, e no VPS, com `TZ=America/Anchorage`, "10:00" vira `10:00-08:00` (15:00 em Brasília)
+e a D39 não recusa `-08:00`. Então a D39 partiu de um diagnóstico errado (erro meu, classe 2). **A
+medir no Mac.** Feito já (D42): a abertura do chat compara o fuso do Viking com o da agenda do
+Google e avisa, sem renovar token nem abrir login.
+
+**Achados rodando a CLI aqui.** O texto de "ocupado" falava com o Gemini ("diga ao usuário…") e
+aparecia assim no terminal — ficou neutro; num pipe, o bloco "Jev em …" do `--doctor` saía depois
+da saída do harness — `flush` antes; e um teste de finanças com corrida (verde 37 em 40) — `join`.
+
+**Portões.** `1102 passed` antes das últimas docs; `ruff` limpo; baseline 7; mutações 153/153 (7
+novas; uma sobreviveu na 1ª rodada e mostrou um teste que passava pelos dois caminhos — refeito,
+morta).
+
 ### 2026-09-27 — Sessão 6, commit 2: o Jev não recebe as chaves do Viking, e o Viking diz qual Jev roda
 
 **Feito.** `jev_runner.ambiente_do_jev(nonce)`: o Jev, o `--doctor` e o `git` da versão recebem só

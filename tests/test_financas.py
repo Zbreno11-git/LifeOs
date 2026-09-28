@@ -230,14 +230,18 @@ def test_token_malicioso_nao_fecha_o_script():
 
 
 def _rodar(acoes, **opcoes):
-    """Sobe `servir` e executa `acoes(url)` no navegador de mentira."""
+    """Sobe `servir` e executa `acoes(url)` no navegador de mentira. Espera `acoes` terminar antes
+    de devolver: o `servir` volta assim que recebe o POST, e o teste lia o código de resposta antes
+    da thread guardá-lo (`KeyError`, 3 em 40 rodadas, 2026-09-28)."""
     visto = {}
 
     def abrir(url):
         visto["url"] = url
-        threading.Thread(target=acoes, args=(url,), daemon=True).start()
+        visto["acoes"] = threading.Thread(target=acoes, args=(url,), daemon=True)
+        visto["acoes"].start()
 
     resultado = conectar.servir("tok", abrir=abrir, **opcoes)
+    visto["acoes"].join(5)
     return resultado, visto["url"]
 
 

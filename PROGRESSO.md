@@ -5,69 +5,43 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-27, Sessão 6: commits 1 e 2 feitos, falta o teste no Mac (C7)
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 6: teste no Mac feito; YouTube e fuso consertados aqui, falta medir no Mac
 
-**Estado do repositório:** o commit 2 da Sessão 6 (conferir com `git log -1`; o anterior é
-`c188b8e`, commit 1) · igual ao remoto · travas: nenhuma · execuções em background: nenhuma.
+**Estado do repositório:** o commit "Sessão 6: o loop do YouTube e o fuso da máquina" (conferir com
+`git log -1`; o anterior é `a539e72`) · igual ao remoto · travas: nenhuma · background: nenhum.
 
-**Onde parou:** C0–C6 ✅. Commit 2: `jev_runner.ambiente_do_jev` (lista do que passa; exceção
-`UV_ENV_FILE`/`UV_NO_ENV_FILE`), `_uv_run`/`comando_doctor` (o `--doctor` com o `--env-file` do Jev e o
-mesmo ambiente), `browser/versao_jev.py` (doctor mostra; tarefa avisa no stderr); D41. Medido em
-2026-09-27: `1078 passed`; `ruff check` limpo; baseline 7; `python scripts/mutacoes.py` →
-`mutações: 146 · mortas pelo teste esperado: 146`.
+**Onde parou:** C0–C6 ✅; C7 rodado no Mac em 2026-09-27 (resultado abaixo e no diário de
+2026-09-28). Consertado depois dele: detector de loop por ação + `_revisitando` (D43); aviso de
+fuso Viking × agenda na abertura do chat (D42; D39 revista); texto neutro do "ocupado"; `flush` do
+`--doctor`; corrida no teste do widget da Pluggy. `1102 passed`; `ruff` limpo; baseline 7; mutações
+153/153.
 
-**Próximo passo exato (C7):** entregar ao dono o roteiro "Verificação ponta a ponta (C7, Mac)" do
-plano abaixo (já revisto: `git pull` primeiro, `ps -wwE` com `HOME=` de controle) e **esperar a saída
-colada**. Com ela: conferir `HOME` 1/1, `GEMINI_API_KEY` 1→0, o bloco "Jev em …" do doctor, o "Não
-rodei o diagnóstico: … pelo terminal (viking browser) …", 10:00 no evento e o `desfaz` do
-reagendamento. Depois fechar a sessão: diário (validação no Mac), barra de progresso (conta 9 de 12 +
-a 6), `sessoes.md` (Sessão 6 feita, ▶️ para a 7), este bloco para a Sessão 7.
+**Próximo passo exato (C7-bis, depende do dono):** o roteiro da resposta de 2026-09-28 no Mac. Com a
+saída: (1) o fuso — `TIMEZONE` do Viking e `date +%z` do Mac, o aviso "⚠️  Fuso" na abertura do
+chat, e se o dono está em Brasília; se o Mac está em -08:00 e o dono em Brasília, o conserto é o
+dono pôr `VIKING_TIMEZONE=America/Sao_Paulo` no `.env` (nunca editar o `.env` dele) e repetir
+"amanhã às 10h" conferindo na **agenda do Google**, não na frase do Gemini; (2) o YouTube — o
+`--json` traz `step/kind/url/action`: se parou com `loop_detected`, trocar o rastro reconstruído de
+`tests/test_jev_subprocess_main.py` pelo real; se não parou, o rastro real mostra o que a regra não
+viu. Depois fechar: diário, barra (Sessão 6 fechada), `sessoes.md` (▶️ para a 7), este bloco.
 
-**Resultado do C7 (Mac, `ba860fa`, 2026-09-27, colado pelo dono):** `1078 passed`; `HOME` 1/1 e
-`GEMINI_API_KEY` 1 antes → 0 depois do `pkill` ✅; doctor mostrou `ramo: viking-openrouter · commit:
-afbee69`, "nenhuma" não salva, "patch OpenRouter: presente" ✅ (o harness disse "daemon alive FAIL"
-logo depois do `pkill`: esperado, o doctor não sobe o daemon; a tarefa seguinte subiu); nenhuma linha
-"⚠️  Jev:" ✅; segundo doctor: "Não rodei o diagnóstico: … pelo terminal (viking browser) desde 15:49
-(tarefa: «abrir o primeiro resultado»)" ✅; "amanhã às 10h" criou às 10:00 ✅.
-**Dois achados abertos:**
-1. **YouTube em loop até o teto de 30 ações** ("abrir o primeiro resultado" já na página de busca):
-   clicou o primeiro vídeo na ação 1, não declarou concluído e ficou em vídeo → Search → "lofi" → …
-   O detector de ciclo não pegou: (a) hipótese medida no rastro — o mesmo `n` aparece em 1 ou 2
-   eventos `step` e `assinaturas` cresce por evento, não por ação, o que quebra a periodicidade; (b)
-   o ciclo varia de tamanho (3 a 5 ações). O teto (3ª camada) conteve. `_jev_subprocess.py` só
-   mudou o `emit` nesta sessão (conferido com `git diff cafe704 HEAD`): defeito anterior à 6.
-   **Decisão do dono pendente:** consertar agora ou numa sessão própria.
-2. **Dois "Teste Viking" no dia 28:** o reagendar e o apagar acharam o evento **das 15:00** — hipótese:
-   é o da Sessão 5 (criado às 15h pelo fuso inventado, apagado e devolvido pelo `desfaz`). Então o
-   `desfaz` do reagendamento funcionou (15:00 → 11:00 → 15:00, confirmado pelo "apaga" achando 15:00),
-   e o das 10:00 criado hoje ficou na agenda. **A medir:** o dono olhar a agenda do dia 28. A busca
-   (`service.buscar`) devolve todos os que casam; o Gemini mostrou só um — se confirmado, a tool
-   deveria dizer "há N eventos com esse nome".
-
-**Se o Mac mostrar:**
-- uma linha "⚠️  Jev: N mudança(s) não salva(s)" → pedir `git -C jev-ultrafast status --porcelain |
-  cut -c1-3 | sort | uniq -c` (só o tipo, sem nomes) e decidir se conta só rastreados
-  (`--untracked-files=no`);
-- tarefa quebrando depois da lista (uv, Chrome, rede) → a variável que falta entra em
-  `AMBIENTE_NOMES`/`AMBIENTE_PREFIXOS` com o incidente no D41 e no diário;
-- `HOME` dando 0 → o `ps` não mostra ambiente; medir de outro jeito antes de afirmar o `GEMINI` 0.
-
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `docs/decisoes.md`
-(D7, D40, D41); o índice de `docs/erros.md` (classes 1, 4, 7); `src/lifeos/browser/jev_runner.py`
-(`ambiente_do_jev`, `_uv_run`), `versao_jev.py`, `trava.py`, `cli.py` (`_doctor`, `_browser`).
-Skills: `pre-compact` ("Depois do compact") e `software-build` (fechar sessão).
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (armadilhas de loop e de fuso, reescritas);
+este bloco; `docs/decisoes.md` (D39 revista, D40–D43); `docs/erros.md` (classes 2 e 4, entradas de
+2026-09-28); `src/lifeos/browser/_jev_subprocess.py` (`_revisitando`, laço de `main`),
+`calendar/tools.aviso_de_fuso`, `google_auth.credenciais_sem_login`.
 
 **Não pode ser esquecido:**
-- O daemon do Mac hoje ainda tem o ambiente velho (com `GEMINI_API_KEY`) até o `pkill` do roteiro.
+- Um "criei às 10:00" do Gemini não é medida: conferir na agenda (ou na busca seguinte).
 - Repo público; roteiro do Mac começa com `cd ~/LifeOs` e `git pull && git log --oneline -1`; URL
-  com `?` entre aspas; nunca imprimir valor de variável, só contar o nome.
-- Mutações em background, sem `timeout`; baseline de formatação = 7 (só os meus trechos do `--diff`).
+  com `?` entre aspas; nunca imprimir o `.env` (contar o nome com `grep -c`).
+- Mutações em background, sem `timeout`; baseline 7 (`agent.py` e `calendar/tools.py` estão nele:
+  só os meus trechos).
 
-**Depende do dono:** rodar o roteiro do C7 no Mac e colar a saída.
+**Depende do dono:** rodar o roteiro e dizer se está em Brasília.
 
 **Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1078 passed`; `python -m ruff format --check . | tail -1` → `7 files
-would be reformatted`.
+`python -m pytest -q` → `1102 passed`; `python -m ruff format --check . | tail -1` → `7 files would
+be reformatted`.
 
 ## Plano — Sessão 6: o navegador com duas tarefas ao mesmo tempo (trava, protocolo, chaves, versão do Jev)
 

@@ -17,9 +17,9 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 8 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 10 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 12 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
+| 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 6 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 8 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -103,6 +103,17 @@ na primeira execução; agora `[0-9]`, com mutação que volta ao `\d`.
 plano como o Google descreve o `gmail.modify` na tela de login, sem conferir. Pego na releitura;
 o `gmail.v1.json` instalado tinha a resposta — e ela era pior do que eu lembrava (o escopo
 também autoriza **enviar**). Virou D29 e um teste.
+
+**2026-09-27 — "o Gemini inventou o fuso" (Sessão 5, D39).** O evento de "amanhã às 10h" caiu às
+15h; o argumento veio com `-08:00` e concluí que o Gemini inventou. Não abri o fuso que o **Viking**
+usava no Mac — e a conversa tinha, desde 2026-09-20, um lembrete do Mac com `due_at …-08:00`, que o
+Gemini não escreve. No dia seguinte, com o Gemini mandando sem fuso, deu igual: reproduzido no VPS, o
+Viking com o relógio em -08:00 produz exatamente isso. A D39 ficou de pé por outro motivo.
+
+**2026-09-28 — "(e) criou às 10:00 ✅" pela frase do Gemini (Sessão 6, C7).** Marquei a entrega do
+fuso como cumprida porque o Viking **disse** "às 10:00"; duas linhas depois a busca mostrava 15:00. E
+a primeira explicação que dei (dois eventos com o mesmo nome) o dono derrubou olhando a agenda. O que
+tem de novo: a frase do modelo sobre o que ele fez é o relato de quem fez, não a medida.
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
@@ -196,6 +207,17 @@ falhou e mostrou um defeito real (o texto dizia "NÃO apaguei" com o evento apag
 com um texto que só tivesse "pode". Virou asserção exata. Na mesma etapa, o evento falso não tinha
 `id` nem `end`: o desfazer recriava em vez de restaurar, e o de horário quebrava com um
 `AttributeError` cru. O código passou a guardar o ID do pedido e a recusar sem horário completo.
+
+**2026-09-28 — teste de widget com thread sem `join` (Sessão Pluggy, achado na 6).** O
+`servir` da conexão da Pluggy volta assim que recebe o POST; o teste lia o código de resposta que a
+thread ainda não tinha guardado. Verde 37 em 40 rodadas; a suíte inteira pegou numa delas. Virou
+`join` antes de conferir, e 60 de 60.
+
+**2026-09-28 — o teste da contagem por ação passava pelos dois caminhos (Sessão 6).** Escrevi um
+ciclo A↔B com estados repetidos para provar que contar por ação importa; a mutação que volta a
+contar por estado **sobreviveu**: a regra nova de volta pegava o mesmo ciclo. O caso que só a
+contagem decide é o de rótulo que muda a cada volta (só a assinatura ampla vê) — medido nos dois
+modos antes de virar o teste.
 
 > **Se o teste ficar verde, quantas explicações isso admite?** Uma só, ou ele não é a régua.
 

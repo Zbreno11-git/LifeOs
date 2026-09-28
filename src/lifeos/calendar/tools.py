@@ -10,6 +10,8 @@ Uma frase, um lugar.
 # das tools com isinstance(valor, anotação), e o future import transforma as anotações em strings,
 # quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 from lifeos.calendar import service
 from lifeos.calendar.service import (
@@ -257,6 +259,33 @@ def recusa_de_fuso(nao_fiz: str, *horarios: str) -> str:
                 "fuso, converta para o dele antes."
             )
     return ""
+
+
+def aviso_de_fuso(agora: datetime | None = None) -> str:
+    """Para o terminal, na abertura do chat: o fuso do Viking contra o da agenda do Google do dono.
+
+    Os dois têm de concordar, e nada conferia: no Mac (2026-09-27), sem `VIKING_TIMEZONE`, o
+    Viking usou o fuso do relógio da máquina (-08:00), "amanhã às 10h" virou 10:00-08:00 e a agenda
+    mostrou 15:00. A D39 não pegou, porque para ela aquele era o fuso do dono. Não escolhe um dos
+    dois: diz qual é qual. Vazio quando concordam ou quando não deu para ler sem login.
+    """
+    try:
+        nome = service.fuso_da_agenda()
+        zona = ZoneInfo(nome) if nome else None
+    except Exception:  # noqa: BLE001 - aviso nunca derruba o chat
+        return ""
+    if zona is None:
+        return ""
+    agora = agora or datetime.now(UTC)
+    do_viking = service._offset(agora.astimezone(TIMEZONE))
+    da_agenda = service._offset(agora.astimezone(zona))
+    if do_viking == da_agenda:
+        return ""
+    return (
+        f"⚠️  Fuso: o Viking está em {do_viking} e a sua agenda do Google em {nome} "
+        f"({da_agenda}). Um horário sem fuso vai para {do_viking}. Se o certo é o da agenda, "
+        f"ponha VIKING_TIMEZONE={nome} no .env."
+    )
 
 
 def criar_evento(summary: str, start_time: str, end_time: str, description: str = "") -> str:

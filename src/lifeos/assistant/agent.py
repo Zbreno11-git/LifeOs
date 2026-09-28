@@ -28,7 +28,7 @@ from lifeos.calendar import (
     reagendar_evento_por_id,
 )
 from lifeos.calendar import service as calendario_service
-from lifeos.calendar.tools import recusa_de_fuso
+from lifeos.calendar.tools import aviso_de_fuso, recusa_de_fuso
 from lifeos.config import GEMINI_API_KEY, TIMEZONE
 from lifeos.financas.tools import (
     buscar_transacoes,
@@ -394,6 +394,9 @@ navegação web (via Browser Harness) e lembretes/notas gerais.
     chat = client.chats.create(model="gemini-2.5-flash", config=config)
 
     print("🤖 Viking iniciado! (calendário, navegador, lembretes, e-mail e finanças)")
+    fuso = aviso_de_fuso()
+    if fuso:
+        print(fuso)
     print("Digite 'sair' para encerrar.\n")
 
     nota_pendente = ""

@@ -188,6 +188,27 @@ def test_viking_browser_json_avisa_so_no_stderr(tarefa_falsa, monkeypatch, capsy
     assert "⚠️  Jev: patch OpenRouter AUSENTE" in saida.err
 
 
+def test_a_versao_sai_antes_do_harness_mesmo_num_pipe(clone, tmp_path):
+    """Num pipe o stdout do Viking tem buffer, e o harness (outro processo) escreve direto: sem o
+    flush, "Jev em …" saía depois da saída do harness (medido rodando o `--doctor` no VPS)."""
+    roteiro = tmp_path / "doctor.py"
+    roteiro.write_text(
+        "import sys\n"
+        "from lifeos import cli\n"
+        "from lifeos.browser import jev_runner, versao_jev, trava\n"
+        f"versao_jev.JEV_DIR = {str(clone)!r}\n"
+        f"trava.TRAVA_PATH = __import__('pathlib').Path({str(tmp_path / 'lock')!r})\n"
+        "jev_runner.comando_doctor = lambda: [sys.executable, '-c', 'print(\"HARNESS\")']\n"
+        "sys.argv = ['viking', 'browser', '--doctor']\n"
+        "cli.main()\n"
+    )
+    saida = subprocess.run(
+        [sys.executable, str(roteiro)], check=True, capture_output=True, text=True, timeout=30
+    ).stdout.splitlines()
+    assert saida[0].startswith("Jev em ")
+    assert saida[-1] == "HARNESS"
+
+
 def test_o_doctor_mostra_a_versao(clone, monkeypatch, capfd):
     monkeypatch.setattr(versao_jev, "JEV_DIR", clone)
     monkeypatch.setattr(jev_runner, "comando_doctor", lambda: [sys.executable, "-c", "0"])

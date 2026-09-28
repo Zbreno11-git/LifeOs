@@ -18,6 +18,12 @@ def get_calendar_service():
     return google_auth.servico("calendar", "v3", SCOPES, GOOGLE_TOKEN_PATH)
 
 
+def get_calendar_service_sem_login():
+    """O serviço só se o token salvo já vale agora; `None` em vez de renovar ou abrir o login."""
+    creds = google_auth.credenciais_sem_login(SCOPES, GOOGLE_TOKEN_PATH)
+    return google_auth.build("calendar", "v3", credentials=creds) if creds else None
+
+
 if __name__ == "__main__":
     print("Testando autenticação no Google Calendar...")
     get_calendar_service()
