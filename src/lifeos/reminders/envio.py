@@ -32,8 +32,9 @@ from datetime import UTC, datetime, timedelta
 from lifeos import config
 from lifeos.gmail import envio as gmail_envio
 from lifeos.gmail import service as gmail_service
-from lifeos.reminders import interface, store
+from lifeos.reminders import interface
 from lifeos.reminders.models import Reminder
+from lifeos.reminders.service import store
 
 JANELA = timedelta(hours=24)  # decisão do dono; janela móvel, sem fuso de ninguém
 PRAZO_DA_RESERVA = timedelta(minutes=5)  # um envio leva segundos; morto no meio, outro pega

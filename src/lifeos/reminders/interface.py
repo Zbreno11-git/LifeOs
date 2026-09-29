@@ -8,7 +8,9 @@ roda o mesmo contrato em toda implementação; o `mypy` confere que o módulo `s
 
 Regras que valem para todas:
 - **id UUID gerado no cliente:** repetir o `add` com o mesmo id devolve o que existe (retentativa
-  sem duplicar); o Firestore não tem contador;
+  sem duplicar); o Firestore não tem contador. Um id que não é UUID é recusado no `add`
+  (`ValueError`) e não é achado no `get`/`complete` (no Firestore o id é caminho: `a/b` seria
+  outro documento; Sessão 10);
 - **só instantes:** `datetime` sem fuso é recusado (`ValueError`); quem recebe o texto do dono
   converte no fuso dele, na borda (`service.py`). Tudo volta em UTC;
 - **concluir é idempotente:** concluir de novo não muda a hora;
@@ -21,12 +23,21 @@ Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime
 from typing import Any, Protocol
 
 from lifeos.reminders.models import Reminder
 
 ENVIADO, INCERTO = "enviado", "incerto"
+
+
+def id_valido(texto: object) -> bool:
+    """Um UUID na forma canônica (minúsculas, com hífens): o único id que os stores aceitam."""
+    try:
+        return isinstance(texto, str) and str(uuid.UUID(texto)) == texto
+    except ValueError:
+        return False
 
 
 class Lembretes(Protocol):

@@ -20,6 +20,16 @@ from zoneinfo import ZoneInfo
 # isto, até um módulo que escapasse do `banco.CAMINHO` trocado abaixo cairia num banco temporário,
 # nunca no `data/viking.db` (defesa em profundidade; `tests/test_banco.py`).
 os.environ["VIKING_DB_PATH"] = str(Path(tempfile.mkdtemp(prefix="viking-testes-")) / "viking.db")
+# A nuvem (Sessão 10): o VPS tem o login do dono no gcloud e o ADC dele vivos. Nenhuma biblioteca
+# do Google os acha durante os testes (uma pasta de configuração vazia), e o projeto e a URL do
+# `.env` ficam vazios (o `load_dotenv` não sobrescreve o que já existe). O Firestore só abre no
+# emulador (`store_firestore._cliente`).
+os.environ["CLOUDSDK_CONFIG"] = tempfile.mkdtemp(prefix="viking-gcloud-vazio-")
+for _nome in ("GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_PROJECT", "FIRESTORE_EMULATOR_HOST"):
+    os.environ.pop(_nome, None)
+for _nome in ("VIKING_NUVEM_PROJETO", "VIKING_NUVEM_URL"):
+    os.environ[_nome] = ""
+os.environ["VIKING_STORE"] = "sqlite"
 
 import httplib2
 import pytest
@@ -53,6 +63,99 @@ def _banco_de_teste(monkeypatch, tmp_path):
     Sessão 9 ele trocava dois caminhos e esquecia o dos lembretes, e cada `pytest` gravava um
     lembrete no banco do dono (erros, classe 6)."""
     monkeypatch.setattr("lifeos.banco.CAMINHO", tmp_path / "viking.db")
+
+
+# --- o emulador do Firestore (Sessão 10) --------------------------------------------------------
+
+_RAIZ = Path(__file__).resolve().parents[1]
+
+
+def _jar_no_cache() -> bool:
+    script = (_RAIZ / "scripts" / "emulador_firestore.sh").read_text()
+    versao = script.split('VERSAO="', 1)[1].split('"', 1)[0]
+    cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
+    return (cache / "viking" / f"cloud-firestore-emulator-v{versao}.jar").is_file()
+
+
+def _porta_livre() -> int:
+    import socket
+
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+@pytest.fixture(scope="session")
+def emulador_firestore():
+    """Sobe o emulador uma vez por sessão, só para quem pede. Sem o jar (o Mac, que não instala o
+    Firestore) o teste é pulado; com `VIKING_EXIGIR_EMULADOR=1` (o CI) pular vira falha, porque um
+    contrato pulado é verde por outro motivo (erros, classe 4)."""
+    import shutil
+    import subprocess
+    import time
+    import urllib.request
+
+    exigido = os.environ.get("VIKING_EXIGIR_EMULADOR") == "1"
+    faltam = []
+    if not _jar_no_cache() and not exigido:
+        faltam.append("o jar do emulador (bash scripts/emulador_firestore.sh baixa)")
+    if not shutil.which(os.environ.get("VIKING_JAVA", "java")):
+        faltam.append("Java 21")
+    try:
+        import google.cloud.firestore  # noqa: F401
+    except ImportError:
+        faltam.append("o extra nuvem (uv sync --locked --extra dev --extra nuvem)")
+    if faltam:
+        motivo = "Firestore sem " + " e ".join(faltam)
+        if exigido:
+            pytest.fail(motivo)
+        pytest.skip(motivo)
+
+    host = f"127.0.0.1:{_porta_livre()}"
+    processo = subprocess.Popen(
+        ["bash", str(_RAIZ / "scripts" / "emulador_firestore.sh"), *host.split(":")],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    prazo = time.monotonic() + 120  # o primeiro uso baixa o jar (137 MB)
+    while True:
+        try:
+            with urllib.request.urlopen(f"http://{host}/", timeout=1) as resposta:
+                if resposta.status == 200:
+                    break
+        except OSError:
+            pass
+        if processo.poll() is not None or time.monotonic() > prazo:
+            processo.kill()
+            pytest.fail(f"o emulador do Firestore não subiu (saída {processo.poll()})")
+        time.sleep(0.2)
+    os.environ["FIRESTORE_EMULATOR_HOST"] = host
+    try:
+        yield host
+    finally:
+        os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
+        import signal
+
+        os.killpg(processo.pid, signal.SIGTERM)
+        processo.wait(timeout=30)
+
+
+@pytest.fixture
+def firestore_limpo(emulador_firestore):
+    """Um banco vazio por teste: o endpoint do emulador que apaga todos os documentos."""
+    import urllib.request
+
+    from lifeos.reminders import store_firestore
+
+    projeto = store_firestore._cliente().project
+    pedido = urllib.request.Request(
+        f"http://{emulador_firestore}/emulator/v1/projects/{projeto}/databases/(default)/documents",
+        method="DELETE",
+    )
+    with urllib.request.urlopen(pedido, timeout=10):
+        pass
+    return store_firestore
 
 
 @pytest.fixture(autouse=True)

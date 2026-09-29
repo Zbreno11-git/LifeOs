@@ -30,27 +30,51 @@ def _lock() -> dict:
     return tomllib.loads((RAIZ / "uv.lock").read_text())
 
 
+_PLATAFORMAS = {"darwin": ("win32", "linux"), "linux": ("win32", "darwin")}
+
+
+def _cabe(marcador: str, plataformas: set[str]) -> set[str]:
+    """As plataformas em que uma aresta com este marcador entra (a que cita outra fica de fora)."""
+    return {
+        p
+        for p in plataformas
+        if not any(f"sys_platform == '{o}'" in marcador for o in _PLATAFORMAS[p])
+    }
+
+
 def _plataformas_que_usam(lock: dict) -> dict[str, set[str]]:
-    """Para cada pacote, em quais das nossas plataformas ele entra, derivado dos marcadores das
-    arestas do próprio lock: pacote pedido só com `sys_platform == 'win32'` não entra em nenhuma."""
-    arestas: dict[str, list[str]] = {}
-    for pacote in lock["package"]:
-        grupos = [pacote.get("dependencies", [])]
-        grupos += list(pacote.get("optional-dependencies", {}).values())
-        for grupo in grupos:
-            for dep in grupo:
-                arestas.setdefault(dep["name"], []).append(dep.get("marker", ""))
-    usos = {}
-    for pacote in lock["package"]:
-        marcadores = arestas.get(pacote["name"], [""])
-        usos[pacote["name"]] = {
-            plataforma
-            for plataforma, outras in (
-                ("darwin", ("win32", "linux")),
-                ("linux", ("win32", "darwin")),
+    """Para cada pacote, em quais das nossas plataformas ele entra, **descendo pela árvore** a
+    partir do Viking: a plataforma de um pacote é a do pai cortada pelo marcador da aresta, e um
+    extra (`google-api-core[grpc]`) só ativa as dependências dele por quem o pede. Sessão 10: o
+    grpcio vem só pelo Firestore, que só entra no Linux (D53), e a aresta Firestore → grpcio não tem
+    marcador; olhar só a aresta direta o daria como do Mac."""
+    pacotes = {p["name"]: p for p in lock["package"]}
+    (raiz,) = [p["name"] for p in lock["package"] if p.get("source", {}).get("editable")]
+    usos: dict[str, set[str]] = {nome: set() for nome in pacotes}
+    # (pacote, extra ou None) → plataformas em que está ativo; os extras do Viking valem todos
+    ativos: dict[tuple[str, str | None], set[str]] = {(raiz, None): set(_PLATAFORMAS)}
+    for extra in pacotes[raiz].get("optional-dependencies", {}):
+        ativos[(raiz, extra)] = set(_PLATAFORMAS)
+    mudou = True
+    while mudou:
+        mudou = False
+        for (nome, extra), onde in list(ativos.items()):
+            usos[nome] |= onde
+            pacote = pacotes[nome]
+            arestas = (
+                pacote.get("dependencies", [])
+                if extra is None
+                else pacote.get("optional-dependencies", {}).get(extra, [])
             )
-            if any(not any(f"sys_platform == '{o}'" in m for o in outras) for m in marcadores)
-        }
+            for dep in arestas:
+                cabe = _cabe(dep.get("marker", ""), onde)
+                for chave in [
+                    (dep["name"], None),
+                    *((dep["name"], e) for e in dep.get("extra", [])),
+                ]:
+                    if not cabe <= ativos.get(chave, set()):
+                        ativos[chave] = ativos.get(chave, set()) | cabe
+                        mudou = True
     return usos
 
 
@@ -139,3 +163,14 @@ def test_excecao_so_enquanto_precisa(nome, plataforma):
             f"{nome} voltou a ter wheel para {plataforma} (Python 3.{menor}): tire-o de COMPILA"
         )
     assert "sdist" in _pacote(nome)
+
+
+def test_a_nuvem_nao_vai_para_o_mac():
+    """D53 (2): as dependências da nuvem entram só onde rodam. Derivado da árvore: o Firestore e
+    o gRPC que ele puxa são só do Linux; o `google-auth`, que o Mac usa para pedir o token do
+    `cli@`, continua nos dois."""
+    usos = _plataformas_que_usam(_lock())
+    for nome in ("google-cloud-firestore", "grpcio", "grpcio-status", "google-cloud-core"):
+        assert usos[nome] == {"linux"}, nome
+    assert usos["google-auth"] == {"darwin", "linux"}
+    assert usos["google-api-core"] == {"darwin", "linux"}  # sem o extra grpc no Mac

@@ -19,7 +19,7 @@
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 20 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 6 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 15 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
+| 4 | Teste que não separava o certo do errado | 16 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 11 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 9 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -318,6 +318,15 @@ próprio teste tinha um caminho de exemplo escrito inteiro na régua (um nome in
 ainda não estava versionado (o `ls-files` não o via); no CI, já commitado, reprovou a si mesmo.
 O que tem de novo: um teste que lê **o conjunto de arquivos do git** muda de universo no commit;
 rodar a suíte com o arquivo já em `git add` antes de commitar.
+
+**2026-09-29 — a corrida de 8 threads passou com 7 threads explodindo (Sessão 10, C4).** O teste
+de contrato "só uma execução ganha a reserva" rodava as threads e contava quem ganhou. No
+Firestore, as 7 que perdiam levantavam `ValueError("Failed to commit transaction in 5
+attempts")` em vez de receber "não"; exceção dentro de thread não reprova o teste (vira só um
+aviso do pytest), e ele ficou verde com 1 vencedor. Pego pelos "7 warnings" numa rodada que
+levou 14 s em vez de 6. O que tem de novo: um teste com threads tem de **recolher as exceções e
+afirmar que não houve nenhuma**; e uma corrida se mede em muitas rodadas (5 de 10 caíam antes do
+conserto; 0 de 40 depois), não numa.
 
 ### 5. A ferramenta fez outra coisa do que eu li
 

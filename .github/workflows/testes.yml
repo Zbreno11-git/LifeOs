@@ -35,12 +35,15 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Segredos (gitleaks no histórico inteiro; versão e sha256 fixados no script)
         run: bash scripts/gitleaks.sh git --redact --no-banner .
-      - name: Instalar exatamente o uv.lock
-        run: uv sync --locked --extra dev
+      - name: Instalar exatamente o uv.lock (com o extra da nuvem, que só roda no Linux)
+        run: uv sync --locked --extra dev --extra nuvem
+      - name: Emulador do Firestore (baixar e conferir o sha256)
+        run: VIKING_EMULADOR_SO_BAIXAR=1 bash scripts/emulador_firestore.sh
       - name: Testes (2 pulados esperados, os contratos com o clone do Jev)
         env:
           VIKING_EXIGIR_GITLEAKS: "1" # o canário do scanner roda aqui, não é pulado
-        run: uv run --locked python -m pytest -q -rs
+          VIKING_EXIGIR_EMULADOR: "1" # o contrato do Firestore roda aqui, não é pulado
+        run: VIKING_JAVA="$JAVA_HOME_21_X64/bin/java" uv run --locked python -m pytest -q -rs
       - name: Lint
         run: uv run --locked python -m ruff check .
       - name: Formatação

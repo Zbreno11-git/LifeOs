@@ -14,16 +14,19 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from lifeos.reminders import interface, store
+from lifeos.reminders import interface, store, store_firestore
 
-IMPLEMENTACOES = {"sqlite": store}
+IMPLEMENTACOES = {"sqlite": store, "firestore": store_firestore}
 
 T0 = datetime(2026, 10, 1, 13, 0, tzinfo=UTC)
+JUNTAS = 16  # antes do conserto, com o arquivo inteiro: 5 de 10 rodadas caíam (2026-09-29)
 MINUTO = timedelta(minutes=1)
 
 
 @pytest.fixture(params=sorted(IMPLEMENTACOES))
 def lembretes(request) -> interface.Lembretes:
+    if request.param == "firestore":  # o emulador, limpo a cada teste (`conftest`)
+        return request.getfixturevalue("firestore_limpo")
     return IMPLEMENTACOES[request.param]
 
 
@@ -153,3 +156,48 @@ def test_concluido_nao_se_reserva(lembretes):
     alvo = _com_prazo(lembretes, "Dentista", T0)
     lembretes.complete(alvo.id)
     assert not lembretes.reservar_envio(alvo.id, por="a", ate=T0 + MINUTO, agora=T0)
+
+
+# --- ids de fora e corrida --------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "estranho", ["a/b", "../lembretes/x", "", "NAO-E-UUID", str(uuid.uuid4()).upper()]
+)
+def test_id_que_nao_e_uuid_e_recusado_e_nao_alcanca_nada(lembretes, estranho):
+    """O id chega do chat e do MCP. No Firestore ele é caminho: `a/b` seria outro documento
+    (Sessão 10). Os dois stores recusam no `add` e não acham no `get`/`complete`."""
+    lembretes.add(title="existente")
+    with pytest.raises(ValueError, match="UUID"):
+        lembretes.add(title="intruso", id=estranho)
+    assert lembretes.get(estranho) is None
+    assert lembretes.complete(estranho) is None
+    assert [r.title for r in lembretes.list_open()] == ["existente"]
+
+
+def test_muitas_execucoes_ao_mesmo_tempo_uma_so_ganha_a_reserva(lembretes):
+    """A corrida de verdade, não em sequência: 16 threads pedem a mesma reserva juntas (o Scheduler
+    entrega "at least once"). No Firestore é a transação que decide; no SQLite, o `UPDATE`."""
+    import threading
+
+    alvo = _com_prazo(lembretes, "Dentista", T0)
+    largada = threading.Barrier(JUNTAS)
+    ganhou: list[str] = []
+    erros: list[BaseException] = []
+
+    def tentar(nome):
+        largada.wait()
+        try:
+            if lembretes.reservar_envio(alvo.id, por=nome, ate=T0 + 5 * MINUTO, agora=T0):
+                ganhou.append(nome)
+        except BaseException as exc:  # noqa: BLE001 — exceção numa thread não reprova sozinha
+            erros.append(exc)
+
+    threads = [threading.Thread(target=tentar, args=(f"exec{n}",)) for n in range(JUNTAS)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert erros == []  # quem perde recebe "não", não uma exceção (o Firestore desistia em 5)
+    assert len(ganhou) == 1, ganhou
+    assert lembretes.marcar_envio(alvo.id, por=ganhou[0], estado="enviado", agora=T0)

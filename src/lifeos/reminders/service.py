@@ -9,12 +9,18 @@ from __future__ import annotations
 from datetime import datetime
 
 from lifeos import config, registro
-from lifeos.reminders import interface, store
+from lifeos.reminders import interface
+from lifeos.reminders import store as _sqlite
 from lifeos.reminders.models import Reminder
 
-# O store de hoje satisfaz a interface: o `mypy` confere esta linha (a Sessão 10 põe o Firestore
-# ao lado). Chat, MCP e CLI passam por este módulo, nunca pelo store direto.
-_IMPLEMENTACAO: interface.Lembretes = store
+# Onde moram os lembretes (`VIKING_STORE`): o `viking.db` no Mac, o Firestore no motor da nuvem
+# (Sessão 10). As duas atribuições passam pelo tipo da interface, e o `mypy` confere cada módulo
+# contra ela. Chat, MCP, CLI e o envio passam por este `store`, nunca pelo módulo direto.
+store: interface.Lembretes = _sqlite
+if config.STORE == "firestore":
+    from lifeos.reminders import store_firestore
+
+    store = store_firestore
 
 
 class QuandoInvalido(ValueError):

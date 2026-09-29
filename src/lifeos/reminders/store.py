@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from lifeos import banco
+from lifeos.reminders import interface
 from lifeos.reminders.models import Reminder
 
 _COLUNAS = (
@@ -87,7 +88,9 @@ def add(
     id: str | None = None,
 ) -> Reminder:
     prazo = _gravavel(due_at) if due_at is not None else None  # recusa antes de abrir o banco
-    reminder_id = id or str(uuid.uuid4())
+    reminder_id = str(uuid.uuid4()) if id is None else id
+    if not interface.id_valido(reminder_id):
+        raise ValueError(f"id de lembrete tem de ser um UUID: {reminder_id!r}")
     agora = _agora()
     with _session() as conn:
         conn.execute(

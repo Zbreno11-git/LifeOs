@@ -142,3 +142,14 @@ def test_scanner_de_segredos_le_o_historico_inteiro_antes_dos_testes():
     assert len(scanner) == 1 and testes and scanner[0] < testes[0]
     assert "--staged" not in linhas[scanner[0]] and "--log-opts" not in linhas[scanner[0]]
     assert re.search(r'VIKING_EXIGIR_GITLEAKS: "1"', codigo)
+
+
+def test_contrato_do_firestore_roda_no_ci_e_nao_e_pulado():
+    """Sessão 10 (D58): o store da nuvem passa o mesmo contrato do SQLite no emulador. No CI o
+    emulador é obrigatório (`VIKING_EXIGIR_EMULADOR`): pulado, o contrato seria verde por outro
+    motivo. O extra `nuvem` entra só aqui e no VPS, nunca no Mac."""
+    codigo = _codigo()
+    assert "uv sync --locked --extra dev --extra nuvem" in codigo
+    assert "bash scripts/emulador_firestore.sh" in codigo
+    assert 'VIKING_EXIGIR_EMULADOR: "1"' in codigo
+    assert "JAVA_HOME_21_X64" in codigo

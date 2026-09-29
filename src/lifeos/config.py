@@ -177,3 +177,20 @@ BROWSER_BLOQUEADOS = _dominios_bloqueados(
 # tarde demais e eram silenciosamente ignorados.
 PRECO_GEMINI_ENTRADA = _float_env("VIKING_PRECO_GEMINI_ENTRADA", "0.30", inclusive=True)
 PRECO_GEMINI_SAIDA = _float_env("VIKING_PRECO_GEMINI_SAIDA", "2.50", inclusive=True)
+
+# Nuvem (Sessão 10, D58). O ID do projeto, a URL do motor e a conta de faturamento moram só no
+# `.env`, nunca no repo. A região é decisão do dono (a casa dele, 2026-09-29).
+NUVEM_PROJETO = os.getenv("VIKING_NUVEM_PROJETO") or ""
+NUVEM_REGIAO = os.getenv("VIKING_NUVEM_REGIAO") or "southamerica-east1"
+NUVEM_URL = (os.getenv("VIKING_NUVEM_URL") or "").rstrip("/")
+
+
+def _store() -> str:
+    """Onde moram os lembretes: `sqlite` (o `viking.db`, padrão) ou `firestore` (a nuvem)."""
+    valor = os.getenv("VIKING_STORE") or "sqlite"
+    if valor not in ("sqlite", "firestore"):
+        raise ValueError(f"VIKING_STORE={valor!r}: use 'sqlite' ou 'firestore'.")
+    return valor
+
+
+STORE = _store()

@@ -19,6 +19,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy"]
+# A nuvem (Sessão 10, D58): só onde roda (o motor, o VPS e o CI, todos Linux). O Mac é cliente e
+# "mãos" e não instala Firestore nem gRPC (D53). Starlette e uvicorn já vinham pelo `mcp`; aqui
+# ficam explícitos porque o motor os usa direto.
+nuvem = [
+    "google-cloud-firestore; sys_platform == 'linux'",
+    "starlette; sys_platform == 'linux'",
+    "uvicorn; sys_platform == 'linux'",
+]
 hardware = ["pyserial"]
 
 [project.scripts]
