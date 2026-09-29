@@ -5,62 +5,31 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 8b pronta no VPS; falta o teste do dono no Mac (C6)
+## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 8b fechada no Mac; próximo: abrir, planejar e executar a 9
 
-**Estado:** conferir com `git log --oneline -6` e `git status --short` (limpo) · igual ao remoto
+**Estado:** conferir com `git log --oneline -3` e `git status --short` (limpo) · igual ao remoto
 · travas: nenhuma · background: nenhum. Portões em 2026-09-29: `1804 passed`, `ruff` limpo,
-formatação zero; mutações: 198/198 mortas pelo teste esperado (bateria inteira, 2026-09-29). CI
-conferido pelo SHA inteiro (o `gh` só filtra assim).
+formatação zero, mutações 198/198. CI conferido pelo SHA inteiro (o `gh` só filtra assim).
 
-**Próximo passo exato:** o roteiro do Mac (C6), colado pelo dono; ler a saída dele contra o
-esperado de cada passo. Defeito achado ali se conserta nesta sessão (sem dívida). Com tudo
-certo: 8b, 4 e 3b fechadas (`sessoes.md`; a barra passaria a 14 de 28 — recontar na hora),
-e abrir a 9.
+**Onde parou:** a 8b fechou no Mac (C0–C6 ✅), e as parciais 4 e 3b fecharam com ela (diário,
+`sessoes.md`, barra 14 de 28). Pedido novo do dono durante a 8b: a Sessão 11b (formulários, D55).
 
-**Resultado no Mac (colado pelo dono em 2026-09-29):**
-- passo 1: "Enviei para a sua conta o e-mail 'Apresentação do Viking'", sem código ✅. **Falta** o
-  dono dizer como o e-mail aparece no Gmail (negrito, lista, linha cinza);
-- passo 2: "🔒 Escondi dos modelos, antes de enviar a página: 2 CPF.", trecho com `[CPF]` nos
-  dois lugares, 0 ações em 0,5 s ✅ (fecha a parcial 4);
-- passo 3: criar ok (dia inteiro), listar 1 em 2026-10-20, buscar 1 (completa), pedido
-  `aguardando_aprovacao`; `viking aprovar` apagou com o código; `--conferir` → 0 ✅ (fecha a
-  parcial 3b);
-- **falta:** a linha final do `python -m pytest -q` no Mac (o dono disse "tá demorando muito"
-  antes de colar; não se sabe se foi o pytest).
+**Próximo passo exato:** abrir a Sessão 9 (fundação de dados) pela skill `software-build`:
+`uv lock --upgrade --dry-run`, o CI do HEAD pelo SHA inteiro, e a pergunta da abertura que está
+na seção dela (a checagem de tipos antes da refatoração?).
 
-**Roteiro do Mac (C6):**
-```
-cd ~/LifeOs
-git pull && git log --oneline -1
-uv sync --locked --extra dev
-source .venv/bin/activate
-which python
-python -m pytest -q
-```
-1. `viking chat` e, dentro dele: `manda pra mim um e-mail apresentando quem você é, com uma
-   lista do que você sabe fazer` → sai sem código; no Gmail: negrito e lista de verdade, sem
-   `**`, e a linha "Escrito pelo Viking (Assistente AI)" em cinza, menor.
-2. Fora do chat:
-   `viking browser --url "https://pt.wikipedia.org/wiki/Cadastro_de_pessoas_f%C3%ADsicas#Formato" --goal "Leia a seção Formato e diga qual número de CPF aparece como exemplo"`
-   → termina com "🔒 Escondi dos modelos, antes de enviar a página: 2 CPF." (1 se só um estiver
-   na tela; medido no `curl`: a seção mostra `12345678909` e `123.456.789-09`), e o número não
-   aparece. 0 = o Jev não viu a seção (o texto dele é só o visível na tela): não é falha da
-   redação, é da página — olhar antes de concluir.
-3. `python scripts/calendario_mcp_ao_vivo.py 2026-10-20` → as 4 linhas com "dia inteiro: True",
-   "1 achado(s)" e "aguardando_aprovacao"; conferir "Teste Viking 3b" no Google Calendar em 20/10
-   como dia inteiro; `viking aprovar` (aprovar o pedido); `python
-   scripts/calendario_mcp_ao_vivo.py 2026-10-20 --conferir` → "ainda no calendário em
-   2026-10-20: 0".
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e a Sessão 9
+inteira, e a 10 para saber o que a interface de store tem de servir); `docs/decisoes.md` (D45–D55);
+o índice de `docs/erros.md`; a memória; as skills `software-build`, `dados-e-banco`,
+`testes-que-provam`.
 
 **Não pode ser esquecido:** o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem
-por e-mail; o que o dono aprova é o texto fonte, e as duas partes saem dele por função pura;
-nenhum endereço de terceiros nem `/Users/<nome>` no repo; mutações em background, sem `timeout`,
-saída inteira num arquivo; nunca presumir o fuso do dono.
+por e-mail; nenhum endereço de terceiros nem `/Users/<nome>` no repo (público até a S10);
+mutações em background, sem `timeout`, saída inteira num arquivo; nunca presumir o fuso do dono.
 
-**Reler, se houver compact:** `CLAUDE.md`/`AGENTS.md`; este bloco; o plano abaixo; `sessoes.md`
-(▶️ e 8b); `docs/erros.md` (índice); a memória.
+**Depende do dono:** as perguntas da abertura da 9.
 
-## Plano — Sessão 8b: e-mail formatado, paginação da agenda e as validações ao vivo 4 e 3b
+## Plano — Sessão 8b: e-mail formatado, paginação da agenda e as validações ao vivo 4 e 3b (fechada em 2026-09-29)
 
 ### O que esta sessão entrega (verificável)
 (a) "manda pra mim um e-mail apresentando quem você é" chega no Gmail do dono com **negrito e
@@ -121,7 +90,7 @@ no Google Calendar no dia escolhido e só é apagado pelo `viking aprovar`.
 | C3 | contador de redação no subprocesso e na saída de `viking browser` | C2 | ✅ (11 vermelhos → `1799 passed`; 4 mutações novas mortas, e a antiga do envelope reapontada) |
 | C4 | `scripts/calendario_mcp_ao_vivo.py` com teste offline pelo dublê | C3 | ✅ (4 testes; a saída sem ID) |
 | C5 | portões, duas passadas de revisão, D46, docs, commits, push, CI pelo SHA | C4 | ✅ (2ª passada: 3 textos velhos; 1ª: o laço de páginas vazias → `MAX_PAGINAS`) |
-| C6 | roteiro do Mac: e-mail formatado, CPF, 3b | C5 | ⬜ |
+| C6 | roteiro do Mac: e-mail formatado, CPF, 3b | C5 | ✅ (dono, 2026-09-29: e-mail formatado; 2 CPF escondidos; 3b criada e apagada pelo MCP) |
 
 ### Fase 1 — e-mail formatado (C1)
 **Faz:** teste antes em `tests/test_gmail_formato.py` (novo) e em `tests/test_gmail_envio.py`:

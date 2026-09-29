@@ -16,23 +16,23 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 8b — pequenos: **pronta no VPS em 2026-09-29, falta o teste do dono no Mac**
-  (roteiro no bloco ▶️ do `PROGRESSO.md`). Depois dela, a 9.
+- **Sessão:** 9 — fundação de dados. A 8b fechou no Mac em 2026-09-29, e com ela as parciais 4 e
+  3b.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** o teste da 8b no Mac (e-mail formatado, CPF na Wikipédia, 3b pelo MCP); com ele
-  verde, a 8b fecha e as parciais 4 e 3b também. Depois, abrir a 9.
+- **Agora:** abrir, planejar e executar a 9 pela skill `software-build`. A pergunta da abertura
+  está na seção dela (a checagem de tipos antes da refatoração?).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** o teste da 8b no Mac; depois, as perguntas da abertura da 9.
+- **Depende do dono:** as perguntas da abertura da 9.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -120,7 +120,7 @@ mexer no tempo de uma sessão. Vira Sessão 3b. Entregue:
 - Testes novos: `tests/test_reminders_service.py`, `tests/test_mcp_server.py`. 195 testes passando,
   `ruff check` limpo.
 
-## Sessão 3b — MCP: calendário estruturado (feita em 2026-09-26)
+## Sessão 3b — MCP: calendário estruturado (feita em 2026-09-26; validada ao vivo em 2026-09-29, na 8b)
 
 - `calendar/service.py` (novo): lógica e travas do calendário com erros de domínio tipados
   (`codigo` + `dados`); `calendar/tools.py` virou adaptador de texto (`responder_*` →
@@ -134,7 +134,7 @@ mexer no tempo de uma sessão. Vira Sessão 3b. Entregue:
 - Ficou para decidir: um `output_schema` formal (hoje `ToolResult` genérico não anuncia schema —
   ver `docs/fontes/fastmcp.md`).
 
-## Sessão 4 — privacidade e egress do navegador (feita em 2026-09-26)
+## Sessão 4 — privacidade e egress do navegador (feita em 2026-09-26; validada ao vivo em 2026-09-29, na 8b)
 
 Decisões do dono: banco + e-mail bloqueados por padrão; e-mails na página não são redigidos;
 proteger também o caminho do OpenRouter (feito sem editar o fork). Entregue:
@@ -479,7 +479,15 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nenhuma nova. A stdlib `email` e o `googleapiclient` que já temos
   bastam.
 
-## Sessão 8b — pequenos (curta, planejada em 2026-09-28; feita no VPS em 2026-09-29, falta o Mac)
+## Sessão 8b — pequenos (feita e testada no Mac em 2026-09-29)
+
+- **Testado no Mac pelo dono (2026-09-29):** o "manda pra mim um e-mail apresentando quem você é"
+  chegou formatado ("o email chegou bem sim - tudo certo"); a página da Wikipédia do CPF terminou
+  com "🔒 Escondi dos modelos, antes de enviar a página: 2 CPF." e `[CPF]` no trecho (fecha a
+  parcial 4); o roteiro da 3b criou pelo MCP o evento de dia inteiro, listou, buscou (completa),
+  pediu para apagar, `viking aprovar` apagou com o código e `--conferir` deu 0 (fecha a 3b). A
+  linha final do `pytest` no Mac não foi colada; o código novo estava lá (o contador só existe
+  nele).
 
 - **Feito no VPS (2026-09-29; plano e checkpoints no `PROGRESSO.md`):** e-mail em
   `multipart/alternative` a partir do texto aprovado (`gmail/formato.py`, D46 reaberta no "só

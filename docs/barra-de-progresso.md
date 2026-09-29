@@ -7,16 +7,15 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-29 (Sessão 8b pronta no VPS; falta o seu teste no Mac).**
+**Última atualização: 2026-09-29 (Sessão 8b fechada no seu Mac, e com ela as parciais 4 e 3b).**
 
-`█████████░░░░░░░░░░░ 11 de 28 sessões fechadas + 2 parciais (= 12 de 28)`
+`██████████░░░░░░░░░░ 14 de 28 sessões fechadas`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7 e 8; parciais 4 e
-3b (falta só a validação ao vivo, que está no roteiro da 8b); na fila: 8b (pronta no VPS, falta
-o Mac), 9 a 11, **11b (formulários, pedida por você em 2026-09-29)** e 12 a 21. Cada parcial vale
-meia sessão na barra. O total foi de 27 para 28 por causa da 11b, não porque algo voltou atrás.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8 e 8b;
+parciais: nenhuma; na fila: 9 a 11, **11b (formulários, pedida por você em 2026-09-29)** e 12 a 21.
+O total foi de 27 para 28 por causa da 11b, não porque algo voltou atrás.
 
-## 2026-09-29 — Sessão 8b: e-mail formatado, agenda sem corte e a prova da redação (falta o Mac)
+## 2026-09-29 — Sessão 8b: e-mail formatado, agenda sem corte e a prova da redação (fechada no seu Mac)
 
 **O que ficou pronto (no VPS, testado aqui sem o Google):**
 - **E-mail com formatação de verdade:** o negrito e as listas que o Gemini escreve chegam
@@ -34,9 +33,11 @@ meia sessão na barra. O total foi de 27 para 28 por causa da 11b, não porque a
 - **Formulários entraram no roteiro** (Sessão 11b), do jeito que você escolheu: seus dados ficam
   só no Mac, sem cartão nem senha, e ele para antes de enviar — quem clica é você.
 
-**Como sabemos:** 1804 testes passando no VPS em 2026-09-29 e as mutações (defeitos plantados de
-propósito) derrubadas pelo teste certo. **Ainda não visto:** o e-mail no seu Gmail, o contador
-numa página real e a agenda pelo MCP — é o seu teste no Mac.
+**Como sabemos:** 1804 testes passando no VPS em 2026-09-29, 198 de 198 defeitos plantados de
+propósito derrubados pelo teste certo, e o seu teste no Mac: o e-mail chegou formatado, a página
+da Wikipédia terminou com "Escondi dos modelos: 2 CPF", e o evento de teste foi criado e apagado
+na sua agenda pelo caminho do MCP (só com o seu código). Com isso, as Sessões 4 e 3b, que
+esperavam esse teste ao vivo, também fecharam.
 
 **Erros meus desta sessão:** desenhei a busca na agenda sem ler antes a regra do Google (uma
 página pode vir vazia mesmo havendo mais); a revisão pegou antes de chegar a você. E um comando

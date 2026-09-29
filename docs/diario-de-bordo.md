@@ -1046,6 +1046,20 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-29 — Sessão 8b fechada no Mac; as parciais 4 e 3b também
+
+Saída colada pelo dono:
+- **e-mail:** "manda pra mim um e-mail apresentando quem você é…" saiu sem código, e "o email
+  chegou bem sim - tudo certo" (formatado);
+- **CPF (parcial 4):** a Wikipédia em `#Formato` terminou com "🔒 Escondi dos modelos, antes de
+  enviar a página: 2 CPF.", o número esperado pela medição com `curl`, e o trecho mostrou `[CPF]`
+  nos dois lugares. O Jev concluiu em 0 ações (0,5 s): a contagem veio do primeiro `choose`;
+- **3b:** criar pelo MCP ok (dia inteiro), listar e buscar acharam 1 (lista completa), o apagar
+  ficou `aguardando_aprovacao`, o `viking aprovar` apagou com o código e o `--conferir` deu 0.
+
+A linha final do `pytest` no Mac não foi colada (a demora que ele citou era a do CI); o código
+novo estava no Mac, porque o contador só existe nele. Barra: 14 de 28, sem parciais.
+
 ### 2026-09-29 — Sessão 8b: e-mail formatado, agenda paginada, contador de redação (falta o Mac)
 
 **Abertura, conferida contra o disco (00:48 UTC).** HEAD `70f25ab` = origin, limpo, sem trava,
