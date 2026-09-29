@@ -21,6 +21,30 @@ from tests import banco_antigo
 from lifeos import banco
 
 TABELAS = ("reminders", "acoes", "confirmacoes")
+IGUAIS = ("acoes", "confirmacoes")  # a migração 5 reconstrói `reminders` (id novo): ver abaixo
+_CONTEUDO = (
+    "type, title, body, tags, due_at, completed_at, source, external_id, metadata, created_at, "
+    "updated_at"
+)
+_INSTANTES = {4, 5, 9, 10}  # due_at, completed_at, created_at, updated_at, na ordem de _CONTEUDO
+
+
+def _lembretes(caminho) -> list[tuple]:
+    """Os lembretes pelo conteúdo, sem o id: a migração 5 troca o inteiro por UUID e reescreve os
+    instantes em largura fixa. Cada instante volta como `datetime`: o mesmo instante em dois
+    formatos é igual, e um instante trocado não é."""
+    conn = sqlite3.connect(caminho)
+    try:
+        linhas = conn.execute(f"SELECT {_CONTEUDO} FROM reminders ORDER BY created_at").fetchall()
+    finally:
+        conn.close()
+    return [
+        tuple(
+            datetime.fromisoformat(v) if i in _INSTANTES and v is not None else v
+            for i, v in enumerate(linha)
+        )
+        for linha in linhas
+    ]
 
 
 @pytest.fixture
@@ -48,13 +72,36 @@ def _ledger(caminho) -> list[tuple]:
 
 
 def test_banco_de_hoje_migra_sem_perder_nem_mudar_nenhuma_linha(antigo):
-    antes = {t: banco_antigo.linhas(antigo, t) for t in TABELAS}
-    assert [len(v) for v in antes.values()] == [4, 4, 3]  # o fixture tem o que diz ter
+    antes = {t: banco_antigo.linhas(antigo, t) for t in IGUAIS}
+    lembretes = _lembretes(antigo)
+    assert [len(v) for v in (lembretes, *antes.values())] == [4, 4, 3]  # o fixture tem o que diz
 
     _abrir()
 
-    assert {t: banco_antigo.linhas(antigo, t) for t in TABELAS} == antes
+    assert {t: banco_antigo.linhas(antigo, t) for t in IGUAIS} == antes
+    assert _lembretes(antigo) == lembretes
     assert [n for n, _nome, _c in _ledger(antigo)] == [m.numero for m in banco.MIGRACOES]
+
+
+def test_migracao_5_da_um_uuid4_por_lembrete_e_instantes_de_largura_fixa(antigo):
+    import uuid
+
+    _abrir()
+
+    conn = sqlite3.connect(antigo)
+    linhas = conn.execute(
+        "SELECT id, due_at, completed_at, created_at, updated_at, enviado_em, envio_estado, "
+        "envio_reservado_por, envio_reservado_ate FROM reminders"
+    ).fetchall()
+    conn.close()
+    ids = [linha[0] for linha in linhas]
+    assert len(set(ids)) == len(ids) == 4
+    assert all(uuid.UUID(i).version == 4 for i in ids)
+    instantes = [v for linha in linhas for v in linha[1:5] if v is not None]
+    assert len(instantes) == 11  # 4 criados + 4 atualizados + 2 prazos + 1 concluído
+    assert {len(v) for v in instantes} == {len("2026-09-25T15:00:00.000000+00:00")}
+    assert all(v.endswith("+00:00") for v in instantes)
+    assert {linha[5:] for linha in linhas} == {(None, None, None, None)}
 
 
 def test_migrar_duas_vezes_nao_muda_nada(antigo):
@@ -114,8 +161,8 @@ def test_banco_de_antes_da_sessao_2_ganha_prazo_em_utc(monkeypatch):
     prazos = dict(
         sqlite3.connect(caminho).execute("SELECT title, due_at FROM reminders").fetchall()
     )
-    assert prazos["Dentista"] == "2026-09-25T17:00:00+00:00"  # 14h em -03:00
-    assert prazos["Pagar luz"] == "2026-09-25T15:00:00+00:00"  # já em UTC: não muda
+    assert prazos["Dentista"] == "2026-09-25T17:00:00.000000+00:00"  # 14h em -03:00
+    assert prazos["Pagar luz"] == "2026-09-25T15:00:00.000000+00:00"  # já em UTC: o mesmo
 
 
 # --- falha no meio, banco mais novo, migração editada ---------------------------------------
@@ -197,6 +244,7 @@ PUBLICADAS = {
     2: "b312c7afc06be46621a376696be5b2438bd2befff8a0b7327d0fff6f32b247ef",
     3: "38ad6a5da0e26b2acf1314aba0485842302656df3004259a2cea9ba7806d2924",
     4: "1684c0620d7745e7e85c8956b7a61d3da67af915068580aabc9b8408b0e8cbe5",
+    5: "674966561ed3b66c5e6307acc97edb3bdaf1a2bc8182804a8db75e5fba0fdc76",
 }
 
 
@@ -250,7 +298,8 @@ def test_processos_abrindo_juntos_um_banco_de_hoje(antigo):
     """Chat, MCP e `viking aprovar` podem abrir ao mesmo tempo depois do `git pull`: todos abrem,
     e cada migração entra uma vez. Processos de verdade: uma thread passaria pela trava do próprio
     processo."""
-    antes = {t: banco_antigo.linhas(antigo, t) for t in TABELAS}
+    antes = {t: banco_antigo.linhas(antigo, t) for t in IGUAIS}
+    lembretes = _lembretes(antigo)
     ambiente = {**os.environ, "VIKING_DB_PATH": str(antigo)}
     processos = [
         subprocess.Popen(
@@ -267,7 +316,8 @@ def test_processos_abrindo_juntos_um_banco_de_hoje(antigo):
     assert [p.returncode for p in processos] == [0] * 4, [e for _o, e in saidas]
     assert [o.strip() for o, _e in saidas] == [str(len(banco.MIGRACOES))] * 4
     assert [n for n, _nome, _c in _ledger(antigo)] == [m.numero for m in banco.MIGRACOES]
-    assert {t: banco_antigo.linhas(antigo, t) for t in TABELAS} == antes
+    assert {t: banco_antigo.linhas(antigo, t) for t in IGUAIS} == antes
+    assert _lembretes(antigo) == lembretes
     assert banco.caminho_do_backup(1).exists()
 
 

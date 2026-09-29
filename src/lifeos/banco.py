@@ -37,6 +37,7 @@ import hashlib
 import inspect
 import os
 import sqlite3
+import uuid
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -172,11 +173,86 @@ CREATE TABLE IF NOT EXISTS confirmacoes (
 """,
 )
 
+
+def _m5_lembretes_com_uuid_e_envio(conn: sqlite3.Connection) -> None:
+    """Lembretes com id UUID (o Firestore da Sessão 10 não tem contador, e um id gerado no cliente
+    deixa repetir o `add` sem duplicar) e as colunas da reserva de envio. Trocar a chave primária
+    no SQLite é reconstruir a tabela: cria a nova, copia, apaga a velha, renomeia (tudo dentro da
+    transação de `migrar`). Os instantes voltam em UTC de largura fixa (`timespec=microseconds`):
+    comparar texto só é certo com um formato só. Texto que não é data fica como está."""
+
+    def instante(texto: str | None) -> str | None:
+        if texto is None:
+            return None
+        try:
+            valor = datetime.fromisoformat(texto)
+        except ValueError:
+            return texto
+        if valor.tzinfo is None:
+            return texto  # não se adivinha o fuso de um valor antigo
+        return valor.astimezone(UTC).isoformat(timespec="microseconds")
+
+    conn.execute(
+        """
+CREATE TABLE lembretes_v5 (
+    id TEXT PRIMARY KEY NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',
+    due_at TEXT,
+    completed_at TEXT,
+    source TEXT NOT NULL DEFAULT 'manual',
+    external_id TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    enviado_em TEXT,
+    envio_estado TEXT,
+    envio_reservado_por TEXT,
+    envio_reservado_ate TEXT
+)
+"""
+    )
+    antigas = conn.execute(
+        "SELECT type, title, body, tags, due_at, completed_at, source, external_id, metadata, "
+        "created_at, updated_at FROM reminders ORDER BY id"
+    ).fetchall()
+    for tipo, titulo, corpo, tags, prazo, feito, fonte, externo, meta, criado, mudado in antigas:
+        conn.execute(
+            "INSERT INTO lembretes_v5 (id, type, title, body, tags, due_at, completed_at, "
+            "source, external_id, metadata, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                str(uuid.uuid4()),
+                tipo,
+                titulo,
+                corpo,
+                tags,
+                instante(prazo),
+                instante(feito),
+                fonte,
+                externo,
+                meta,
+                instante(criado),
+                instante(mudado),
+            ),
+        )
+    conn.execute("DROP TABLE reminders")
+    conn.execute("ALTER TABLE lembretes_v5 RENAME TO reminders")
+    conn.execute("CREATE INDEX idx_reminders_due_at ON reminders (due_at)")
+    conn.execute(
+        "CREATE INDEX idx_reminders_a_enviar ON reminders (due_at) "
+        "WHERE completed_at IS NULL AND enviado_em IS NULL"
+    )
+
+
 MIGRACOES: tuple[Migracao, ...] = (
     Migracao(1, "lembretes: tabela e índice de prazo", _M1_LEMBRETES),
     Migracao(2, "lembretes: prazos em UTC", _m2_prazos_em_utc),
     Migracao(3, "registro: tabela de ações", _M3_ACOES),
     Migracao(4, "confirmações: tabela", _M4_CONFIRMACOES),
+    Migracao(5, "lembretes: id UUID e reserva de envio", _m5_lembretes_com_uuid_e_envio),
 )
 
 

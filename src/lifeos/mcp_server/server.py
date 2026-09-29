@@ -12,11 +12,10 @@ from typing import Any
 from fastmcp import FastMCP
 from fastmcp.tools import ToolResult
 
-from lifeos import registro
+from lifeos import config, registro
 from lifeos.calendar import tools as calendario
 from lifeos.calendar.service import Evento, Pedido
 from lifeos.reminders import service as reminders_service
-from lifeos.reminders import store
 from lifeos.reminders.models import Reminder
 
 mcp = FastMCP(
@@ -136,7 +135,10 @@ def _lembrete_para_dict(reminder: Reminder) -> dict[str, Any]:
         "title": reminder.title,
         "body": reminder.body,
         "tags": reminder.tags,
-        "due_at": reminder.due_at.isoformat() if reminder.due_at else None,
+        # O prazo no fuso do dono (o store devolve UTC), com o offset: sem ambiguidade para o app.
+        "due_at": reminder.due_at.astimezone(config.TIMEZONE).isoformat()
+        if reminder.due_at
+        else None,
         "completed_at": reminder.completed_at.isoformat() if reminder.completed_at else None,
         "source": reminder.source,
         "external_id": reminder.external_id,
@@ -165,7 +167,7 @@ def viking_criar_lembrete(
             is_error=True,
         )
     return ToolResult(
-        content=f"Lembrete #{reminder.id} criado.",
+        content=f"Lembrete criado: '{reminder.title}' (id {reminder.id}).",
         structured_content=_lembrete_para_dict(reminder),
     )
 
@@ -173,9 +175,9 @@ def viking_criar_lembrete(
 @mcp.tool()
 def viking_listar_lembretes() -> ToolResult:
     """Lista lembretes/notas pendentes do Viking."""
-    reminders = store.list_open()
+    reminders = reminders_service.pendentes()
     if reminders:
-        texto = "\n".join(f"#{r.id} {r.title}" for r in reminders)
+        texto = "\n".join(f"{r.title} (id {r.id})" for r in reminders)
     else:
         texto = "Nenhum lembrete pendente."
     return ToolResult(
@@ -185,18 +187,18 @@ def viking_listar_lembretes() -> ToolResult:
 
 
 @mcp.tool()
-def viking_concluir_lembrete(reminder_id: int) -> ToolResult:
-    """Marca um lembrete do Viking como concluído."""
+def viking_concluir_lembrete(reminder_id: str) -> ToolResult:
+    """Marca um lembrete do Viking como concluído. `reminder_id` é o `id` da listagem (UUID)."""
     _pelo_mcp()
     reminder = reminders_service.concluir(reminder_id)
     if not reminder:
         return ToolResult(
-            content=f"Lembrete #{reminder_id} não encontrado.",
+            content=f"Lembrete {reminder_id} não encontrado.",
             structured_content={"erro": "nao_encontrado", "reminder_id": reminder_id},
             is_error=True,
         )
     return ToolResult(
-        content=f"Lembrete #{reminder_id} concluído.",
+        content=f"Lembrete concluído: '{reminder.title}'.",
         structured_content=_lembrete_para_dict(reminder),
     )
 

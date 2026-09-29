@@ -101,10 +101,10 @@ def test_concluir_lembrete_existente_pelo_mcp(temp_db):
 
 
 def test_concluir_lembrete_inexistente_e_erro_estruturado(temp_db):
-    resultado = _chamar("viking_concluir_lembrete", {"reminder_id": 99999})
+    resultado = _chamar("viking_concluir_lembrete", {"reminder_id": "nao-existe"})
 
     assert resultado.is_error is True
-    assert resultado.structured_content == {"erro": "nao_encontrado", "reminder_id": 99999}
+    assert resultado.structured_content == {"erro": "nao_encontrado", "reminder_id": "nao-existe"}
 
 
 def test_paridade_com_cli_o_mesmo_quando_e_aceito(temp_db):

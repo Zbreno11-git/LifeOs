@@ -123,12 +123,12 @@ def test_criar_com_resposta_ambigua_diz_que_nao_sabe(calendario, monkeypatch):
 def test_lembrete_criar_e_concluir_registram():
     lembrete = lembretes.criar_lembrete("Pagar conta")
     lembretes.concluir(lembrete.id)
-    lembretes.concluir(99999)
+    lembretes.concluir("nao-existe")
     ops = [(a.operacao, a.resultado) for a in _acoes()]
     assert ops == [
         ("lembrete.criar", {"id": lembrete.id, "titulo": "Pagar conta"}),
         ("lembrete.concluir", {"id": lembrete.id, "achado": True}),
-        ("lembrete.concluir", {"id": 99999, "achado": False}),
+        ("lembrete.concluir", {"id": "nao-existe", "achado": False}),
     ]
 
 

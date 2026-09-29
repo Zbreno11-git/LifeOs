@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from google import genai
 from google.genai import types
 
-from lifeos import aprovacoes, confirmacao, custos, registro, registro_texto
+from lifeos import aprovacoes, config, confirmacao, custos, registro, registro_texto
 from lifeos.browser import executar_no_navegador, imprimir_progresso, liberacao
 from lifeos.browser._redacao import limpar_controles
 from lifeos.calendar import (
@@ -49,7 +49,6 @@ from lifeos.gmail.tools import (
 )
 from lifeos.registro_texto import acoes_recentes
 from lifeos.reminders import service as reminders_service
-from lifeos.reminders import store
 
 
 def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> str:
@@ -96,28 +95,32 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
         )
     except reminders_service.QuandoInvalido:
         return f"Não entendi a data '{quando}'. Use ISO 8601, ex.: 2026-09-25 ou 2026-09-25T14:00."
-    prazo = f" (para {quando.strip()})" if reminder.due_at else ""
-    return f"✅ Lembrete #{reminder.id} criado: '{titulo}'{prazo}."
+    return f"✅ Lembrete criado: '{titulo}'{_prazo_do_dono(reminder)} [id: {reminder.id}]."
+
+
+def _prazo_do_dono(reminder) -> str:
+    """O prazo no fuso do dono (o store devolve UTC): a conversão é da borda."""
+    if reminder.due_at is None:
+        return ""
+    return f" (para {reminder.due_at.astimezone(config.TIMEZONE):%Y-%m-%d %H:%M})"
 
 
 def listar_lembretes() -> str:
-    """Lista os lembretes não concluídos, prazo mais próximo primeiro."""
-    reminders = store.list_open()
+    """Lista os lembretes não concluídos, prazo mais próximo primeiro. O `[id: …]` de cada linha é
+    só para você chamar `concluir_lembrete`: ao dono, mostre título e prazo, nunca o id."""
+    reminders = reminders_service.pendentes()
     if not reminders:
         return "Nenhum lembrete pendente."
-    linhas = []
-    for r in reminders:
-        prazo = f" [para {r.due_at:%Y-%m-%d %H:%M}]" if r.due_at else ""
-        linhas.append(f"- #{r.id} {r.title}{prazo}")
-    return "\n".join(linhas)
+    return "\n".join(f"- {r.title}{_prazo_do_dono(r)} [id: {r.id}]" for r in reminders)
 
 
-def concluir_lembrete(reminder_id: int) -> str:
-    """Marca um lembrete como concluído. `reminder_id` vem da listagem."""
-    reminder = reminders_service.concluir(reminder_id)
+def concluir_lembrete(reminder_id: str) -> str:
+    """Marca um lembrete como concluído. `reminder_id` é o `[id: …]` da listagem, copiado inteiro;
+    se o dono disser qual pelo título, liste antes para achar o id."""
+    reminder = reminders_service.concluir(reminder_id.strip())
     if not reminder:
-        return f"Não encontrei o lembrete #{reminder_id}."
-    return f"✅ Lembrete #{reminder_id} concluído."
+        return "Não encontrei esse lembrete: liste de novo e use o id que aparece lá."
+    return f"✅ Lembrete concluído: '{reminder.title}'."
 
 
 _DIAS = (

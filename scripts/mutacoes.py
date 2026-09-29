@@ -1316,7 +1316,7 @@ MUTACOES = [
     Mutacao(
         "google-genai: tool com anotação que só o conversor de reserva aceita",
         "src/lifeos/assistant/agent.py",
-        "def concluir_lembrete(reminder_id: int) -> str:",
+        "def concluir_lembrete(reminder_id: str) -> str:",
         "def concluir_lembrete(reminder_id: tuple[int, str]) -> str:",
         "tests/test_assistant_tools.py::test_schema_aceito_pela_api_do_gemini",
     ),

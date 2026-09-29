@@ -8,9 +8,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from lifeos import registro
-from lifeos.reminders import store
+from lifeos import config, registro
+from lifeos.reminders import interface, store
 from lifeos.reminders.models import Reminder
+
+# O store de hoje satisfaz a interface: o `mypy` confere esta linha (a Sessão 10 põe o Firestore
+# ao lado). Chat, MCP e CLI passam por este módulo, nunca pelo store direto.
+_IMPLEMENTACAO: interface.Lembretes = store
 
 
 class QuandoInvalido(ValueError):
@@ -18,13 +22,16 @@ class QuandoInvalido(ValueError):
 
 
 def _interpretar_quando(quando: str) -> datetime | None:
+    """A borda: um horário sem fuso é o do dono (`VIKING_TIMEZONE`), decidido aqui e não no store,
+    que só grava instantes."""
     quando = quando.strip()
     if not quando:
         return None
     try:
-        return datetime.fromisoformat(quando)
+        prazo = datetime.fromisoformat(quando)
     except ValueError as exc:
         raise QuandoInvalido(quando) from exc
+    return prazo if prazo.tzinfo is not None else prazo.replace(tzinfo=config.TIMEZONE)
 
 
 def criar_lembrete(
@@ -50,7 +57,12 @@ def criar_lembrete(
     return lembrete
 
 
-def concluir(reminder_id: int) -> Reminder | None:
+def pendentes(type: str | None = None) -> list[Reminder]:
+    """Os abertos, pelo prazo (os sem prazo no fim)."""
+    return store.list_open(type)
+
+
+def concluir(reminder_id: str) -> Reminder | None:
     """Marca como concluído; `None` se o ID não existe. Um caminho só para chat e MCP, para o
     registro de ações ver os dois."""
     with registro.acao("lembrete.concluir", {"id": reminder_id}) as marca:

@@ -57,24 +57,6 @@ def test_schema_aceita_registro_externo_tipo_pluggy(temp_db):
     assert lido.metadata["valor"] == -84.2
 
 
-def test_due_at_naive_e_gravado_e_lido_de_volta_no_fuso_configurado(temp_db, monkeypatch):
-    from datetime import UTC, datetime
-    from zoneinfo import ZoneInfo
-
-    from lifeos.reminders import store
-
-    fuso = ZoneInfo("America/Sao_Paulo")
-    monkeypatch.setattr(store, "TIMEZONE", fuso)
-
-    naive = datetime(2026, 9, 25, 14, 0)  # noqa: DTZ001 - naive de propósito: é o caso testado
-    r = store.add(title="Consulta", due_at=naive)
-
-    lido = store.get(r.id)
-    assert lido.due_at.tzinfo is not None
-    assert lido.due_at.hour == 14  # volta no MESMO horário local que foi digitado
-    assert lido.due_at.astimezone(UTC) == naive.replace(tzinfo=fuso).astimezone(UTC)
-
-
 def test_due_at_aware_com_offset_diferente_e_normalizado_para_utc(temp_db):
     import sqlite3
     from datetime import datetime, timedelta, timezone
@@ -87,7 +69,7 @@ def test_due_at_aware_com_offset_diferente_e_normalizado_para_utc(temp_db):
     conn = sqlite3.connect(temp_db)
     bruto = conn.execute("SELECT due_at FROM reminders WHERE id = ?", (r.id,)).fetchone()[0]
     conn.close()
-    assert bruto == "2026-09-25T07:00:00+00:00"
+    assert bruto == "2026-09-25T07:00:00.000000+00:00"  # UTC, largura fixa (Sessão 9)
 
 
 def test_lembretes_com_fusos_diferentes_ordenam_pelo_instante_real(temp_db):

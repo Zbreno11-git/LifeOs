@@ -16,7 +16,7 @@ from typing import Any
 
 @dataclass
 class Reminder:
-    id: int | None
+    id: str | None  # UUID gerado no cliente (Sessão 9)
     type: str
     title: str
     body: str = ""
@@ -28,3 +28,5 @@ class Reminder:
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    enviado_em: datetime | None = None  # quando o e-mail do lembrete saiu (ou pode ter saído)
+    envio_estado: str | None = None  # `interface.ENVIADO` | `interface.INCERTO`
