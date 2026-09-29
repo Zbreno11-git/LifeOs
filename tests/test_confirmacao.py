@@ -101,9 +101,10 @@ def test_desfazer_nao_aceita_proposta_que_nao_foi_aprovada():
 
 def test_banco_de_teste_isolado_do_real():
     """A trava do `conftest` está de pé: o banco não é o `viking.db` do dono."""
+    from lifeos import banco
     from lifeos.config import REMINDERS_DB_PATH
 
-    assert confirmacao.DB_PATH != REMINDERS_DB_PATH
+    assert banco.CAMINHO != REMINDERS_DB_PATH
 
 
 def test_vivo_so_enquanto_serve_para_algo():

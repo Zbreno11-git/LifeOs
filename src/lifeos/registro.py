@@ -33,10 +33,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from lifeos import banco
 from lifeos.browser import _redacao
-from lifeos.config import REMINDERS_DB_PATH
 
-DB_PATH = REMINDERS_DB_PATH  # o mesmo `viking.db`; os testes trocam este nome
 RETENCAO = timedelta(days=30)
 MAX_TEXTO = 300  # por campo de texto guardado (redigido)
 
@@ -119,17 +118,13 @@ def limpo(valor: Any) -> Any:
 
 @contextmanager
 def _sessao(agora: datetime | None = None) -> Iterator[sqlite3.Connection]:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    for comando in _SCHEMA:
-        conn.execute(comando)
-    conn.execute("DELETE FROM acoes WHERE criada_em < ?", ((_agora(agora) - RETENCAO).isoformat(),))
-    try:
+    with banco.conectar() as conn:
+        for comando in _SCHEMA:
+            conn.execute(comando)
+        conn.execute(
+            "DELETE FROM acoes WHERE criada_em < ?", ((_agora(agora) - RETENCAO).isoformat(),)
+        )
         yield conn
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def _eh_incerta(exc: BaseException) -> bool:

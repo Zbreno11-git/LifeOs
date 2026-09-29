@@ -19,7 +19,7 @@ from email.message import EmailMessage
 
 import pytest
 
-from lifeos import confirmacao, registro
+from lifeos import banco, confirmacao, registro
 from lifeos.gmail import envio, service
 
 DONO = "dono@example.com"  # o `getProfile` do dublê
@@ -63,7 +63,7 @@ def _texto(mensagem) -> str:
 
 
 def _linhas_do_registro():
-    with sqlite3.connect(registro.DB_PATH) as conn:
+    with sqlite3.connect(banco.CAMINHO) as conn:
         return conn.execute(
             "SELECT operacao, estado, parametros, resultado, erro, desfazer FROM acoes"
         ).fetchall()

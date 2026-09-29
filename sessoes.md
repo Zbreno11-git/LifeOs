@@ -584,9 +584,8 @@ O que estava escrito na abertura:
     - na nuvem: tokens do Google (com o raio do `gmail.modify`, que envia), Gemini e Claude;
     - no Mac: a Chrome logada, o Jev e as chaves dele (D7);
     - a Pluggy segue a D51.
-  - **Tabelas de memória com cara de registro,** já agora, mesmo sem uso até a S13: só se
-    acrescenta linha; um fato substituído ganha `invalida_em` e aponta para o que o substituiu
-    (ideia do Graphiti); a origem e a mensagem de onde veio ficam gravadas.
+  - **Tabelas de memória com cara de registro:** foram para o primeiro passo da S13 (dono,
+    2026-09-29: sem consumidor até lá; com as migrations prontas, é uma migração nova).
 - **Libs/repos a reaproveitar:** nenhuma lib de migrations. A régua numerada é pequena e é nossa:
   Alembic traria o SQLAlchemy só para isso.
 
@@ -801,6 +800,11 @@ O que estava escrito na abertura:
 - **Decidido (D48):**
   - sem o histórico inteiro das conversas;
   - a origem de cada fato fica gravada, e o que veio de e-mail ou página é marcado.
+- **Primeiro passo (vinda da 9, decisão do dono em 2026-09-29):** as tabelas de memória com cara
+  de registro, numa migração nova de `lifeos/banco.py` (a lista única da 9). Só se acrescenta
+  linha; um fato substituído ganha `invalida_em` e aponta para o que o substituiu (ideia do
+  Graphiti); a origem e a mensagem de onde veio ficam gravadas. Ficaram fora da 9 porque não
+  tinham consumidor: aqui nascem já com o uso real.
 - **Escolhas de arquitetura previstas** (seção 3 de `docs/fontes/pesquisa-roteiro.md`):
   - **Camada nossa, nenhum framework.**
     - mem0, Letta, LangMem, cognee e Memobase gravam sozinhos, por LLM ou por tool do agente, e
@@ -1044,7 +1048,9 @@ O que estava escrito na abertura:
 
 - **Checagem de tipos como portão do CI** (§15.3, adiada pelo dono em 2026-09-28, Sessão 7):
   `uvx mypy==2.3.1 --python-executable .venv/bin/python src` → `Found 67 errors in 15 files
-  (checked 41 source files)`. 34 são um padrão só em `browser/jev_runner.py` (`**dict` num
+  (checked 41 source files)`. Em 2026-09-29, na abertura da 9: `Found 68 errors in 15 files
+  (checked 43 source files)` (o novo é da 8b: `list[Evento]` sem `completa` no MCP). Desde a 9 o
+  `mypy` é portão do CI **só nos módulos de dados** (dono, 2026-09-29); o resto segue aqui. 34 são um padrão só em `browser/jev_runner.py` (`**dict` num
   dataclass), 9 são imports do ambiente do Jev e 3 são pacotes do Google sem tipos; nos ~12 que li,
   nenhum defeito real. Para virar portão: consertar os 67, ignorar os imports do ambiente do Jev
   (`_jev_subprocess.py` roda noutro Python) e pôr o `mypy` fixado no CI.

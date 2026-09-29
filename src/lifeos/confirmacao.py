@@ -30,9 +30,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from lifeos.config import REMINDERS_DB_PATH
+from lifeos import banco
 
-DB_PATH = REMINDERS_DB_PATH  # o mesmo `viking.db`; os testes trocam este nome
 VALIDADE = timedelta(minutes=10)
 JANELA_UNICA = timedelta(days=8)  # > os 7 dias do desfazer da limpeza (D27)
 DIGITOS = 4
@@ -95,15 +94,9 @@ def _agora(agora: datetime | None) -> datetime:
 
 @contextmanager
 def _sessao():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute(_SCHEMA)
-    try:
+    with banco.conectar() as conn:
+        conn.execute(_SCHEMA)
         yield conn
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def normalizar(codigo: str) -> str:

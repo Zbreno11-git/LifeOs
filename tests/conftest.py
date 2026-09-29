@@ -11,7 +11,15 @@ import base64
 import email
 import email.policy
 import json
+import os
+import tempfile
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
+# Antes de qualquer `import lifeos`: a config lê `VIKING_DB_PATH` uma vez, ao ser importada. Com
+# isto, até um módulo que escapasse do `banco.CAMINHO` trocado abaixo cairia num banco temporário,
+# nunca no `data/viking.db` (defesa em profundidade; `tests/test_banco.py`).
+os.environ["VIKING_DB_PATH"] = str(Path(tempfile.mkdtemp(prefix="viking-testes-")) / "viking.db")
 
 import httplib2
 import pytest
@@ -39,12 +47,12 @@ def _sem_google_de_verdade(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _confirmacoes_em_banco_de_teste(monkeypatch, tmp_path):
-    """Códigos de aprovação e registro de ações nunca no `viking.db` real: um teste que esquecesse
-    disto deixaria uma proposta aberta (ou "já usada") ou uma ação falsa no banco do dono. Os dois
-    no MESMO arquivo, como em produção."""
-    monkeypatch.setattr("lifeos.confirmacao.DB_PATH", tmp_path / "viking.db")
-    monkeypatch.setattr("lifeos.registro.DB_PATH", tmp_path / "viking.db")
+def _banco_de_teste(monkeypatch, tmp_path):
+    """Nenhum teste no `viking.db` real, e um banco novo por teste. Os três módulos (lembretes,
+    registro de ações, confirmações) abrem por `banco.conectar()`, então este nome basta: antes da
+    Sessão 9 ele trocava dois caminhos e esquecia o dos lembretes, e cada `pytest` gravava um
+    lembrete no banco do dono (erros, classe 6)."""
+    monkeypatch.setattr("lifeos.banco.CAMINHO", tmp_path / "viking.db")
 
 
 @pytest.fixture(autouse=True)

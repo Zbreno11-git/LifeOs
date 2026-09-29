@@ -4,7 +4,7 @@ import pytest
 @pytest.fixture()
 def temp_db(monkeypatch, tmp_path):
     db_path = tmp_path / "test-viking.db"
-    monkeypatch.setattr("lifeos.reminders.store.REMINDERS_DB_PATH", db_path)
+    monkeypatch.setattr("lifeos.banco.CAMINHO", db_path)
     return db_path
 
 

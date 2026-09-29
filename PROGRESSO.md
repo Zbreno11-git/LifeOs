@@ -5,50 +5,289 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 8b fechada no Mac; próximo: abrir, planejar e executar a 9
+## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 9 aberta e planejada; em execução
 
-**Estado:** conferir com `git log --oneline -3` e `git status --short` (limpo) · igual ao remoto
-· travas: nenhuma · background: nenhum. Portões em 2026-09-29: `1804 passed`, `ruff` limpo,
-formatação zero, mutações 198/198. CI conferido pelo SHA inteiro (o `gh` só filtra assim).
+**Estado:** conferir com `git log --oneline -3` e `git status --short` · travas: nenhuma ·
+background: nenhum. Base da 9 (2026-09-29): HEAD `5d0ace4` (CI success), `1804 passed`.
 
-**Onde parou:** a 8b fechou no Mac (C0–C6 ✅), e as parciais 4 e 3b fecharam com ela (diário,
-`sessoes.md`, barra 14 de 28). Pedido novo do dono durante a 8b: a Sessão 11b (formulários, D55).
+**Onde parou:** plano aprovado pelo dono (as respostas estão na tabela abaixo). Executando a partir
+do primeiro checkpoint ⬜ do mapa.
 
-**Próximo passo exato:** abrir a Sessão 9 (fundação de dados) pela skill `software-build`:
-`uv lock --upgrade --dry-run`, o CI do HEAD pelo SHA inteiro, e a pergunta da abertura que está
-na seção dela (a checagem de tipos antes da refatoração?).
+**Próximo passo exato:** o primeiro ⬜ do mapa de checkpoints, com o comando do checkpoint dele.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e a Sessão 9
-inteira, e a 10 para saber o que a interface de store tem de servir); `docs/decisoes.md` (D45–D55);
-o índice de `docs/erros.md`; a memória; as skills `software-build`, `dados-e-banco`,
-`testes-que-provam`.
-
-**O que o dono pediu para a 9 (2026-09-29):** "começar a planejar e atacar ela com precisão,
-otimização e fazer software resiliente". Na prática, no plano: cada etapa com checkpoint de
-comando e número; a migração testada contra um banco **no formato antigo** (cópia do de hoje,
-com dados) e rodada duas vezes (idempotente); falha no meio de uma migração não deixa o banco
-pela metade (transação); nada de dependência nova sem gatilho.
-
-**Medido antes do compact (2026-09-29, VPS), ponto de partida da 9:**
-- três módulos abrem o `viking.db`: `reminders/store.py` (tabela `reminders`), `registro.py`
-  (`acoes`) e `confirmacao.py` (`confirmacoes`) — `grep -rln sqlite3 src/lifeos`;
-- só os lembretes têm migração, por `PRAGMA user_version`; `acoes` e `confirmacoes` nascem com
-  `CREATE TABLE IF NOT EXISTS`, sem versão (o comentário em `registro.py:19` diz por quê);
-- o `user_version` é **um por arquivo**, não por tabela: migrações numeradas em três módulos não
-  podem dividir esse número. É a primeira decisão técnica da 9 (ex.: uma tabela de versões por
-  módulo), a medir e declarar no plano.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `sessoes.md`
+(Sessões 9 e 10); `docs/decisoes.md` (D45–D55); o índice de `docs/erros.md`; as skills
+`software-build`, `dados-e-banco`, `testes-que-provam` e `falha-ruidosa`; o código de
+`src/lifeos/banco.py` (novo), `reminders/store.py`, `registro.py` e `confirmacao.py`.
 
 **Não pode ser esquecido:** o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem
-por e-mail; nenhum endereço de terceiros nem `/Users/<nome>` no repo (público até a S10);
-mutações em background, sem `timeout`, saída inteira num arquivo; nunca presumir o fuso do dono;
-o `viking.db` do Mac tem dados reais do dono (lembretes, registro de 30 dias): a migração dele é
-irreversível sem backup — o roteiro do Mac copia o arquivo antes.
+por e-mail; nenhum endereço de terceiros nem `/Users/<nome>` no repo; mutações em background, sem
+`timeout`, saída inteira num arquivo; nunca presumir o fuso do dono (UTC no store, conversão só
+na borda); o `viking.db` do Mac tem dados reais: o roteiro copia o arquivo antes de migrar, e a
+migração também faz o próprio backup; **uma migração aplicada não se edita** (nem o comentário):
+cria-se a seguinte.
 
-**Depende do dono:** as perguntas da abertura da 9 (a checagem de tipos antes da refatoração?).
+**Depende do dono:** o teste no Mac no fim (C7), com o backup do banco.
 
-**Antes de confiar neste bloco:** `git status --short` vazio; HEAD = `d05f465` ou o checkpoint
-logo depois dele; `ls .mutacao.lock` → não existe; `python -m pytest -q` → `1804 passed`;
-`gh run list --commit $(git rev-parse HEAD)` → `success`.
+## Plano — Sessão 9: fundação de dados (aberta em 2026-09-29)
+
+### O que esta sessão entrega (verificável)
+(a) Um `viking.db` no formato de hoje (`5d0ace4`), com dados, migra para o formato novo sem
+perder nenhuma linha. Rodar de novo não muda nada. Uma falha no meio deixa o banco como estava. O
+Viking recusa, em voz alta, um banco migrado por uma versão mais nova que a dele.
+(b) Os três módulos que usam o `viking.db` abrem o banco por **um lugar só** (`lifeos/banco.py`),
+com migrations numeradas e um ledger. Nenhum teste toca o banco real. Hoje a suíte grava um
+"Pagar conta" no `data/viking.db` a cada rodada (medido abaixo).
+(c) Os lembretes passam a ter uma interface de store com UUID e UTC, e um teste de contrato que a
+S10 reusa para o Firestore.
+(d) `viking lembretes --enviar` manda por e-mail, para a própria conta, um e-mail por lembrete
+vencido nas últimas 24 h. Rodado duas vezes, ou em dois processos ao mesmo tempo, manda **uma**.
+(e) A checagem de tipos (`mypy`) vira portão do CI nos módulos de dados.
+(f) "O que mora onde" fica escrito numa decisão.
+
+### O que ela NÃO faz (e para onde foi)
+- **Tabelas de memória com cara de registro** → Sessão 13, por decisão do dono em 2026-09-29.
+  Com as migrations prontas, é uma migração nova lá. Escrito na S13 no C0.
+- **Os outros 65 erros do `mypy`** → backlog, como estava; o número foi atualizado no C0.
+- **Interface de store para o registro e as confirmações** → S10. Os dois ficam onde a ação roda
+  (D57, abaixo), e a S10 decide o banco deles na nuvem. Aqui ganham o banco único e as migrations.
+- **Disparo automático** (sem o dono rodar o comando) → S11, como já estava.
+- **Índice único `(source, external_id)`** (auditoria §12.6) → sem produtor hoje; entra com o
+  primeiro produtor (gatilho escrito na D56).
+
+### Respostas do dono (2026-09-29)
+| Pergunta | Resposta | Consequência no plano |
+|---|---|---|
+| Checagem de tipos antes da refatoração? | só no que a 9 toca | C2: conserta os 3 erros, `mypy` fixado no CI só para os módulos de dados |
+| Tabelas de memória já na 9? | deixar para a 13 | fora; escrito na S13 (C0) |
+| Formato do envio | um e-mail por lembrete, assunto = título | C5 |
+| Vencidos há muito tempo | só os das últimas 24 h; os mais velhos listados, não enviados | C5: a janela é 24 h, sem fuso |
+| O lixo de teste no banco do Mac | apagar no roteiro do Mac, com backup e com o critério exato | C6: script com `--aplicar`; sem a flag só conta |
+| O que o chat mostra do lembrete | nenhum número, só título e prazo | C4: o UUID fica entre o Viking e o Gemini |
+
+### Decisões técnicas minhas (declaradas; o dono pode derrubar)
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **Uma lista de migrations para o arquivo inteiro**, em `lifeos/banco.py`, com um ledger `migracoes(numero, nome, checksum, aplicada_em)`. Os três módulos só consomem. O `user_version` não é mais lido nem escrito (o 1 dos bancos de hoje fica lá, inerte) | o `user_version` é um por arquivo: três réguas não cabem nele. Uma lista só dá uma ordem total, sem conflito de número entre módulos. O ledger guarda o checksum, que o `user_version` não guarda | um segundo arquivo de banco (aí, um ledger por arquivo) |
+| **Adoção dos bancos de hoje, sem caso especial:** as migrations 1–4 recriam o formato de `5d0ace4` com `CREATE … IF NOT EXISTS` e a normalização do `due_at` (idempotente por construção). Num banco antigo, elas não mudam nada e entram no ledger | um caminho só para banco novo e antigo, testado contra os dois | — |
+| **Toda migração pendente roda numa transação só** (`BEGIN IMMEDIATE`, conexão em autocommit para o Python não abrir nem fechar transação sozinho); o ledger é relido **dentro** dela. Um erro dá `ROLLBACK` e sobe | DDL no SQLite é transacional; o Python 3.12 não abre transação antes de DDL por conta própria (é o que faria a falha deixar metade). Dois processos abrindo ao mesmo tempo: o segundo espera e acha o ledger pronto | — |
+| **Checksum** (sha256 do SQL ou do código-fonte da função) gravado no ledger e conferido a cada abertura; divergência = erro que diz o número. Um teste prende os checksums das migrations já publicadas, escritos à mão | a regra "migração aplicada não se edita" com dentes: o teste falha no CI antes de chegar ao Mac | o checksum de função disparar por formatação sem mudança de código (aí, só SQL) |
+| **Banco mais novo que o código** (ledger com número desconhecido) → recusa abrir, com a mensagem "atualize com `git pull`" | um código velho escrevendo num formato novo é dado ruim em silêncio | — |
+| **Backup automático** antes de aplicar migração pendente num banco que já tem tabelas: `Connection.backup` para `viking.db.antes-da-migracao-N` (N = a primeira pendente), sem sobrescrever | o dado do Mac é irreversível; a API de backup copia consistente, mesmo com outro processo aberto | — |
+| **Lembretes com `id` UUID (texto)**, por reconstrução da tabela (o jeito do SQLite para trocar a chave). O inteiro antigo não fica | o Firestore não tem contador; UUID gerado no cliente deixa o "criar" ser repetido sem duplicar. O `#12` não aparece mais (dono) | — |
+| **Store em UTC e sem conversão:** recebe e devolve `datetime` com fuso; o `naive` é recusado no store e interpretado no fuso do dono só no serviço, na borda. Grava `isoformat(timespec="microseconds")` em UTC, largura fixa | comparar texto só funciona com um formato; a conversão no store escondia o fuso de quem lê | — |
+| **Interface = um `Protocol`** (`reminders/interface.py`) que o módulo `store` satisfaz, com um teste de contrato parametrizado (hoje só SQLite; a S10 põe o Firestore). Nada de SQL fora de `banco.py` e dos módulos de store; `sqlite3.connect` só em `banco.py` (teste que lê o código) | a skill `dados-e-banco` §8: duas implementações só se mantêm iguais com contrato | a S10 escolher Cloud SQL (a interface pode encolher para SQL) |
+| **Envio como reserva com prazo:** `envio_reservado_por` (id da execução), `envio_reservado_ate` (5 min), `enviado_em`, `envio_estado` (`enviado`/`incerto`). Reserva é um `UPDATE … WHERE` que só uma execução ganha (`rowcount == 1`) | o Scheduler da S10 entrega "at least once"; dois `--enviar` ao mesmo tempo mandariam dois | — |
+| **Incerto não reenvia:** uma falha `incerta` do Google marca `envio_estado = 'incerto'` e diz "não sei se enviei; confira na caixa". Falha definitiva, limite de 20 ou texto recusado soltam a reserva | e-mail duplicado a cada rodada seria pior que um aviso; o registro já tem a linha `incerta` | o dono preferir receber duplicado a perder |
+| **Saída do `--enviar`:** 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial (limite, incerto, recusado); 1 = não rodou. Nunca imprime endereço | `falha-ruidosa` §3: o Scheduler da S11 precisa distinguir | — |
+| **Sem WAL, com `timeout` explícito de 5 s** | 0,25 ms por abertura medido; nenhum "database is locked" visto; WAL poria `-wal`/`-shm` ao lado do arquivo e o `cp` do backup perderia dado | um "database is locked" visto |
+| **`mypy` no grupo `dev` do lock** (wheel `py3-none-any` para Mac Intel, `cp312`/`cp313` no Linux), rodado pelo CI só em `banco.py`, `reminders/`, `registro.py` e `confirmacao.py` | a D45 (versão travada e auditada pelo `pip-audit`); `uvx` ficaria fora do lock | o `tests/test_lock.py` recusar a árvore |
+
+### Medido na abertura (2026-09-29, VPS)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repositório | `git status`, `git rev-parse HEAD origin/master`, `ls .mutacao.lock` | limpo; `5d0ace4` = origin; sem trava | ok |
+| Suíte | `.venv/bin/python -m pytest -q` | `1804 passed in 19.86s` | base |
+| CI do HEAD | `gh run list --commit <sha inteiro>` | `completed success` | ok |
+| Versões | `uv lock --upgrade --dry-run` | "No lockfile changes detected" | nada a atualizar |
+| Quem abre o banco | `grep -rln sqlite3 src/` | `reminders/store.py` (`reminders`, migração por `user_version`), `registro.py` (`acoes`), `confirmacao.py` (`confirmacoes`); os dois últimos com `CREATE … IF NOT EXISTS`, sem versão | decisão da lista única |
+| **A suíte escreve no banco real** | `data/viking.db` somente leitura | 132 lembretes, **todos** "Pagar conta", concluídos ≤ 0,014 s depois de criados, o 1º em 2026-09-27 06:36 UTC. É `tests/test_registro_ganchos.py::test_lembrete_criar_e_concluir_registram` (desde `1b05733`, Sessão 5); o `conftest` isola `confirmacao` e `registro`, e não o store | C1; erro classe 6; no Mac, um por `pytest` rodado |
+| Banco do VPS | o mesmo | `user_version` 1; tabelas `reminders` e `acoes` (2 linhas minhas, `navegador.executar` de 2026-09-28); sem `confirmacoes` | a migração cobre "tabela que ainda não existe" |
+| Custo de abrir | `list_open` e `registro.recentes` 200× numa cópia | 0,25 ms e 0,23 ms por chamada | abrir por chamada fica; nada de cache |
+| SQLite | `sqlite3.sqlite_version` | 3.45.1 no VPS; o do Mac não medido | nada de `STRICT`/`RETURNING` sem medir |
+| Tipos | `uvx mypy==2.3.1 --python-executable .venv/bin/python src` | `Found 68 errors in 15 files` (eram 67; o novo é da 8b: `list[Evento]` sem `completa`); nos 3 módulos de dados: 3 | C2 |
+| `mypy` no lock | PyPI, 2.3.1 | wheels `cp312`/`cp313` manylinux e `py3-none-any` | serve ao Mac Intel |
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | plano aqui; memória na S13; backlog do `mypy` com o número de hoje | — | ✅ |
+| C1 | teste vermelho "a suíte não toca o banco real" → `banco.py` com o caminho único + `conftest` → verde; erro classe 6; commit | C0 | ✅ (3 vermelhos → `1807 passed`; `sha256sum data/viking.db` igual antes e depois da suíte; cada camada tirada sozinha derruba o teste dela) |
+| C2 | `mypy` no lock e no CI para os módulos de dados; os 3 erros consertados; `test_lock` e `test_ci_workflow` verdes; commit | C1 | ⬜ |
+| C3 | migrations 1–4 + ledger + transação + checksum + recusa do mais novo + backup; os três módulos por `banco`; testes contra o banco antigo com dados; commit | C2 | ⬜ |
+| C4 | migração 5 (UUID e colunas de envio) + interface + contrato; chat e MCP sem `#id`; commit | C3 | ⬜ |
+| C5 | `viking lembretes [--enviar]` com reserva, janela de 24 h e limite; testes de sequência e de dois processos; commit | C4 | ⬜ |
+| C6 | script de limpeza; mutações; portões; duas passadas de revisão; D56/D57, docs; push; CI pelo SHA | C5 | ⬜ |
+| C7 | roteiro do Mac: backup, migração, limpeza, envio duas vezes | C6 | ⬜ |
+
+### Fase 0 — adiados (C0)
+**Faz:** a S13 ganha "tabelas de memória com cara de registro (vinda da 9, dono 2026-09-29)" no
+topo das escolhas dela; na S9, a linha diz que foi para a 13. O backlog do `mypy` ganha o número
+de hoje (68; 3 nos módulos de dados, portão desde a 9).
+**✅ Checkpoint:** `grep -n "vinda da 9" sessoes.md` → uma linha na seção da 13.
+
+### Fase 1 — a suíte fora do banco real (C1)
+**Faz:**
+- teste antes em `tests/test_banco.py`: `config.REMINDERS_DB_PATH` e `banco.CAMINHO` não estão
+  dentro de `REPO_ROOT/data` durante a suíte; `criar_lembrete` sem fixture nenhuma não muda o
+  arquivo real (hash antes e depois). Esperado: **vermelho**;
+- `src/lifeos/banco.py`: `CAMINHO` e `conectar()` (o `sqlite3.connect` único, `row_factory`,
+  `timeout=5`); `reminders/store.py`, `registro.py` e `confirmacao.py` passam a abrir por ele (os
+  `DB_PATH` de módulo somem);
+- `tests/conftest.py`: no topo do módulo, antes de qualquer `import lifeos`,
+  `VIKING_DB_PATH` aponta para um diretório temporário da sessão (defesa em profundidade); e um
+  `autouse` troca `banco.CAMINHO` por `tmp_path` a cada teste (isolamento entre testes). As
+  fixtures `temp_db` dos testes passam a trocar esse nome;
+- a régua: `sqlite3.connect` só em `banco.py` (teste que lê o código, com piso: acha a chamada lá).
+
+**✅ Checkpoint:** o teste novo vermelho antes e verde depois; `sha256sum data/viking.db` igual
+antes e depois de `python -m pytest -q`; a suíte inteira passa.
+
+**🐞 Previsto → Depurar:** classe 6 (um módulo ainda com o caminho próprio; foi exatamente o
+defeito) → `grep -rn "DB_PATH\|sqlite3.connect" src/ tests/`. Classe 4 (o teste do hash passar
+porque o `pytest` roda do VPS, onde o arquivo é meu) → o teste afirma sobre o caminho, não só
+sobre o hash.
+
+### Fase 2 — tipos nos módulos de dados (C2)
+**Faz:** `mypy==2.3.1` no `dev` do `pyproject`; `uv lock`; os 3 erros (`Row | None`,
+`Reminder | None`, `int | None`) consertados de verdade (um `None` possível vira erro explícito,
+não `cast`); o passo do CI
+`uv run --locked python -m mypy src/lifeos/banco.py src/lifeos/reminders src/lifeos/registro.py src/lifeos/confirmacao.py`;
+`tests/test_ci_workflow.py` exige o passo; `AGENTS.md` ganha o comando.
+**✅ Checkpoint:** o comando do `mypy` → `Success: no issues found`; `python -m pytest
+tests/test_lock.py tests/test_ci_workflow.py -q` verde; `uv lock --check` ok.
+
+**🐞 Previsto → Depurar:** o `test_lock` recusar uma dependência do `mypy` sem wheel para Mac
+Intel → `uv tree --package mypy` e a lista de arquivos no PyPI; se recusar, pergunto.
+
+### Fase 3 — migrations (C3)
+**Faz:**
+- `banco.py`: `Migracao(numero, nome, passo)` (passo = SQL ou função), `MIGRACOES`, `migrar(conn)`
+  (ledger criado na mesma transação; `BEGIN IMMEDIATE`; relê; confere checksums; recusa número
+  desconhecido; backup se há pendente e o banco tem tabelas; aplica em ordem; `COMMIT`; `ROLLBACK`
+  em qualquer erro); `conectar()` chama `migrar` antes de devolver a conexão;
+- migrations 1–4: `reminders` + índice (o DDL de `5d0ace4`); `due_at` em UTC (a função de hoje);
+  `acoes` + índice; `confirmacoes`. Os `_SCHEMA` e `_migrar` saem dos módulos;
+- `tests/test_banco_migracoes.py`, com a fixture `banco_de_5d0ace4`: o DDL literal dos três
+  módulos em `5d0ace4`, `user_version` 1, lembretes com `due_at` naive/offset/nulo, ações,
+  confirmações:
+  - migra, e toda linha de antes está lá, igual (comparação por conteúdo, não por contagem só);
+  - migrar duas vezes → o `iterdump()` idêntico;
+  - uma migração falsa que falha no meio (depois de um `CREATE`) → o `iterdump()` idêntico ao de
+    antes e o ledger sem ela;
+  - banco novo (arquivo que não existe) → o mesmo schema que o banco antigo migrado;
+  - número desconhecido no ledger → erro com o número; checksum diferente → erro;
+  - backup: criado uma vez, com o conteúdo de antes; banco novo não gera backup;
+  - dois **processos** abrindo o mesmo banco antigo ao mesmo tempo → os dois abrem, ledger com
+    cada número uma vez;
+  - os checksums publicados, escritos à mão.
+- Conferência extra, fora da suíte: o `data/viking.db` do VPS (formato real de hoje, 132 linhas)
+  copiado e migrado.
+
+**✅ Checkpoint:** `python -m pytest tests/test_banco_migracoes.py tests/test_reminders_store.py
+tests/test_registro.py tests/test_confirmacao.py -q` verde; a cópia do banco do VPS migra com as
+132 linhas e as 2 ações; a suíte inteira passa.
+
+**🐞 Previsto → Depurar:** a transação não cobrir o DDL (o Python fechando a transação sozinho;
+classe 5) → o teste da falha no meio **tem de ter ficado vermelho** com a conexão no modo padrão;
+confiro isso desfazendo o `isolation_level=None`. Classe 4 (idempotência verde porque nada rodou)
+→ o teste afirma o ledger com 4 linhas depois da primeira vez.
+
+### Fase 4 — UUID, interface e contrato (C4)
+**Faz:**
+- migração 5: `reminders` reconstruída (`id TEXT PRIMARY KEY NOT NULL`, as colunas de hoje e as
+  quatro do envio), cópia com `uuid4` por linha, índice de `due_at` e um de pendentes por prazo;
+- `reminders/interface.py` (`Protocol`): `add(..., id=None)` (id do cliente = repetir não
+  duplica), `get`, `list_open`, `complete`, `vencidos(desde, ate)`, `reservar_envio`,
+  `marcar_envio`, `soltar_envio`;
+- `store.py` implementa; `naive` recusado; UTC de largura fixa; `service.py` converte o `quando`
+  no fuso do dono (a borda);
+- chat e MCP: `concluir_lembrete(reminder_id: str)`; o texto ao dono sem `#id` (título e prazo no
+  fuso dele); o id vai ao Gemini numa linha que a docstring manda não mostrar;
+- `tests/test_reminders_contrato.py` parametrizado pela implementação (hoje, uma), com o teste de
+  "o módulo satisfaz o `Protocol`" pelo `mypy`.
+
+**✅ Checkpoint:** a migração 5 no banco de `5d0ace4` → mesmas linhas por conteúdo, cada uma com
+UUID único; o contrato verde; `test_assistant_tools` e `test_mcp_server` verdes; o comando do
+`mypy` do C2 limpo.
+
+**🐞 Previsto → Depurar:** classe 6 (um vizinho que ainda trata o id como `int`: registro, MCP,
+texto) → `grep -rn "reminder_id\|#{r.id}\|#{reminder.id}" src/`. Classe 7 (o `naive` recusado
+quebrando quem já passa um `naive` legítimo) → `grep -rn "store.add\|due_at=" src/ tests/`.
+
+### Fase 5 — `viking lembretes --enviar` (C5)
+**Faz:** `reminders/envio.py` (novo): `enviar_vencidos(agora)` →
+- `store.vencidos(agora - 24 h, agora)` (pendentes, não enviados);
+- para cada um: `reservar_envio` (perdeu = pula), `envio.novo("eu", título, corpo com o prazo
+  no fuso do dono)`, `marcar_envio` (`enviado`/`incerto`) ou `soltar_envio`; `LimiteDiario` para
+  o laço e solta;
+- conta os vencidos há mais de 24 h (não enviados, listados pelo título).
+
+Na CLI, `viking lembretes` (lista os pendentes) e `--enviar`, com os códigos 0/2/1.
+
+Testes, com o dublê do Gmail:
+- 2 vencidos → 2 e-mails, com o assunto = título;
+- de novo → 0;
+- um vencido há 25 h → 0 enviados, 1 listado;
+- o limite no meio → 2, e o resto solto para a próxima;
+- 5xx → `incerto`, não reenvia;
+- reserva de outra execução no prazo → pula; reserva vencida → pega;
+- dois **processos** ao mesmo tempo com o mesmo banco → 1 e-mail;
+- título com controle → recusado e solto;
+- a saída não tem endereço;
+- o registro tem `gmail.enviar` livre.
+
+**✅ Checkpoint:** `python -m pytest tests/test_lembretes_envio.py -q` verde; a suíte inteira passa.
+
+**🐞 Previsto → Depurar:** classe 4 (o "duas vezes manda uma" verde porque a primeira não mandou)
+→ afirmar 1 no dublê depois da primeira. Classe 3 (a janela comparar texto de formatos
+diferentes) → um lembrete com `due_at` sem microssegundos no teste.
+
+### Fase 6 — limpeza, mutações e fechamento (C6)
+**Faz:**
+- `scripts/limpar_lembretes_de_teste.py [--aplicar]`. O critério:
+  - título "Pagar conta", corpo vazio, tags `[]`, sem prazo, `source` manual;
+  - concluído menos de 1 s depois de criado.
+
+  Sem a flag, só conta. Com ela, apaga numa transação e mostra antes e depois. Teste com o lixo e
+  com dois "Pagar conta" legítimos (um aberto e um concluído horas depois).
+- Mutações novas em `scripts/mutacoes.py`:
+  - sem `BEGIN IMMEDIATE`;
+  - sem reler o ledger;
+  - sem a recusa do mais novo;
+  - sem o checksum;
+  - sem o backup;
+  - reserva sem o `WHERE` do prazo;
+  - janela sem o limite de 24 h;
+  - `incerto` soltando a reserva;
+  - `autouse` sem o `banco.CAMINHO`.
+
+  Rodada completa em background.
+- Portões lidos: `pytest`, `ruff check`, `ruff format --check`, o `mypy`.
+- Duas passadas de `referencia/revisao.md`.
+- Docs:
+  - D56 (fundação de dados) e D57 (o que mora onde);
+  - `AGENTS.md` (o `banco.py`, a armadilha "migração aplicada não se edita", o isolamento dos
+    testes, `viking lembretes`);
+  - `sessoes.md`, diário, barra e erros.
+- Commits, push e CI pelo SHA inteiro.
+
+**✅ Checkpoint:** `python scripts/mutacoes.py` → todas mortas (hoje 198, mais as novas); CI
+`success` no SHA do push.
+
+### Verificação ponta a ponta (C7, roteiro para o Mac)
+`cd ~/LifeOs` → `git pull && git log --oneline -1`.
+
+Depois:
+- `cp data/viking.db data/viking.db.antes-da-sessao-9` e `ls -la data/` (o backup existe, com o
+  tamanho igual);
+- `uv sync --locked --extra dev`, `source .venv/bin/activate`, `which python`;
+- `shasum data/viking.db` → `python -m pytest -q` → `shasum data/viking.db` (o mesmo: a suíte não
+  toca o banco);
+- `viking lembretes` (migra, faz o backup próprio, lista);
+- `python scripts/limpar_lembretes_de_teste.py` (conta) → `--aplicar`;
+- no `viking chat`, "me lembra de testar o Viking daqui a 2 minutos";
+- depois de 2 min, `viking lembretes --enviar` → 1 e-mail na caixa; de novo → 0;
+- `viking registro`.
+
+### Riscos e o que é irreversível
+- **Migrar o banco do Mac** é irreversível sem cópia: o roteiro copia antes, e a migração copia
+  também.
+- A migração 5 reconstrói a tabela: um erro no meio é `ROLLBACK` (testado), nunca meia tabela.
+- **Apagar o lixo de teste** só com `--aplicar`, depois da contagem. O critério não alcança um
+  lembrete que uma pessoa concluiu.
+- O envio de lembrete só vai à própria conta: um duplicado, no pior caso, chega só a ele.
+- Nada custa dinheiro nesta sessão.
 
 ## Plano — Sessão 8b: e-mail formatado, paginação da agenda e as validações ao vivo 4 e 3b (fechada em 2026-09-29)
 

@@ -21,7 +21,7 @@
 | 3 | Estimei em vez de medir | 6 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 15 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 11 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 9 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
@@ -418,6 +418,18 @@ do clique de `liberacao.executar_aprovado`, o mesmo nome da do calendário. A r�
 passou a "chamar" `executar_aprovado`. O teste estava certo; ajustar o conjunto esperado teria
 deixado a régua sem distinguir as duas funções. Renomeada para `clicar_aprovado`, com régua
 própria.
+
+**2026-09-27 → 2026-09-29 — o isolamento dos testes cobriu dois dos três módulos do mesmo banco
+(Sessão 5, achado na abertura da 9).** Na Sessão 5 pus no `conftest` a troca do `DB_PATH` de
+`confirmacao` e de `registro`, "os dois no MESMO arquivo, como em produção", e esqueci o terceiro
+que abre esse arquivo: o store dos lembretes, que lia o caminho da config. O
+`test_lembrete_criar_e_concluir_registram`, escrito no mesmo commit (`1b05733`), passou a gravar um
+"Pagar conta" no `data/viking.db` de verdade a cada `pytest`: 132 no VPS em dois dias, e no Mac,
+um por rodada, no banco do dono. Ninguém via, porque o teste conclui o lembrete e a lista só
+mostra os abertos. Achado ao abrir o arquivo para medir a 9 (dados que ninguém escreveu à mão).
+O que tem de novo: o vizinho não era outro ponto do mesmo código, era outro **dono do mesmo
+recurso**. O conserto é de estrutura: um lugar só abre o banco (`banco.conectar`), um nome só se
+troca, e um teste proíbe `sqlite3.connect` fora dele.
 
 > **O que este conserto tornou falso, e onde mais a mesma falha nasce?** É a segunda passada de
 > revisão.

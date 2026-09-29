@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from lifeos import registro
+from lifeos import banco, registro
 
 T0 = datetime(2026, 9, 27, 12, 0, tzinfo=UTC)
 RLO = chr(0x202E)
@@ -166,6 +166,6 @@ def test_as_duas_tabelas_no_mesmo_arquivo():
     confirmacao.propor("gmail.arquivar", {"ids": []})
     with registro.acao("calendario.criar", {}) as marca:
         marca.feito()
-    with sqlite3.connect(registro.DB_PATH) as conn:
+    with sqlite3.connect(banco.CAMINHO) as conn:
         tabelas = {n for (n,) in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     assert {"acoes", "confirmacoes"} <= tabelas

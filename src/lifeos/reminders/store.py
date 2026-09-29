@@ -8,7 +8,8 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
-from lifeos.config import REMINDERS_DB_PATH, TIMEZONE
+from lifeos import banco
+from lifeos.config import TIMEZONE
 from lifeos.reminders.models import Reminder
 
 _SCHEMA = """
@@ -66,17 +67,11 @@ def _migrar(conn: sqlite3.Connection) -> None:
 
 @contextmanager
 def _session():
-    REMINDERS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(REMINDERS_DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute(_SCHEMA)
-    conn.execute(_INDEX_DUE_AT)
-    _migrar(conn)
-    try:
+    with banco.conectar() as conn:
+        conn.execute(_SCHEMA)
+        conn.execute(_INDEX_DUE_AT)
+        _migrar(conn)
         yield conn
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def _row_to_reminder(row: sqlite3.Row) -> Reminder:
