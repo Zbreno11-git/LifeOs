@@ -23,11 +23,32 @@ inteira, e a 10 para saber o que a interface de store tem de servir); `docs/deci
 o índice de `docs/erros.md`; a memória; as skills `software-build`, `dados-e-banco`,
 `testes-que-provam`.
 
+**O que o dono pediu para a 9 (2026-09-29):** "começar a planejar e atacar ela com precisão,
+otimização e fazer software resiliente". Na prática, no plano: cada etapa com checkpoint de
+comando e número; a migração testada contra um banco **no formato antigo** (cópia do de hoje,
+com dados) e rodada duas vezes (idempotente); falha no meio de uma migração não deixa o banco
+pela metade (transação); nada de dependência nova sem gatilho.
+
+**Medido antes do compact (2026-09-29, VPS), ponto de partida da 9:**
+- três módulos abrem o `viking.db`: `reminders/store.py` (tabela `reminders`), `registro.py`
+  (`acoes`) e `confirmacao.py` (`confirmacoes`) — `grep -rln sqlite3 src/lifeos`;
+- só os lembretes têm migração, por `PRAGMA user_version`; `acoes` e `confirmacoes` nascem com
+  `CREATE TABLE IF NOT EXISTS`, sem versão (o comentário em `registro.py:19` diz por quê);
+- o `user_version` é **um por arquivo**, não por tabela: migrações numeradas em três módulos não
+  podem dividir esse número. É a primeira decisão técnica da 9 (ex.: uma tabela de versões por
+  módulo), a medir e declarar no plano.
+
 **Não pode ser esquecido:** o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem
 por e-mail; nenhum endereço de terceiros nem `/Users/<nome>` no repo (público até a S10);
-mutações em background, sem `timeout`, saída inteira num arquivo; nunca presumir o fuso do dono.
+mutações em background, sem `timeout`, saída inteira num arquivo; nunca presumir o fuso do dono;
+o `viking.db` do Mac tem dados reais do dono (lembretes, registro de 30 dias): a migração dele é
+irreversível sem backup — o roteiro do Mac copia o arquivo antes.
 
-**Depende do dono:** as perguntas da abertura da 9.
+**Depende do dono:** as perguntas da abertura da 9 (a checagem de tipos antes da refatoração?).
+
+**Antes de confiar neste bloco:** `git status --short` vazio; HEAD = `d05f465` ou o checkpoint
+logo depois dele; `ls .mutacao.lock` → não existe; `python -m pytest -q` → `1804 passed`;
+`gh run list --commit $(git rev-parse HEAD)` → `success`.
 
 ## Plano — Sessão 8b: e-mail formatado, paginação da agenda e as validações ao vivo 4 e 3b (fechada em 2026-09-29)
 
