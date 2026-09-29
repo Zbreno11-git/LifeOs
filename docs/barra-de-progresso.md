@@ -7,17 +7,16 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-28 (Sessão 8 pronta, esperando o seu teste no Mac).**
+**Última atualização: 2026-09-28 (Sessão 8 fechada: testada no seu Mac).**
 
-`████████░░░░░░░░░░░░ 10 de 27 sessões fechadas + 2 parciais (= 11 de 27)`
+`█████████░░░░░░░░░░░ 11 de 27 sessões fechadas + 2 parciais (= 12 de 27)`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6 e 7; parciais 4 e
-3b (falta só a validação ao vivo, que é a Sessão 8b); **a 8 está pronta e enviada, e só conta
-depois do seu teste no Mac**; na fila: 8b e 9 a 21. Cada parcial vale
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7 e 8; parciais 4 e
+3b (falta só a validação ao vivo, que é a Sessão 8b); na fila: 8b e 9 a 21. Cada parcial vale
 meia sessão na barra. A barra "encolheu" de 11/12 para 11/27 porque o roteiro cresceu, não porque
 algo voltou atrás.
 
-## 2026-09-28 — Sessão 8: o Viking manda e-mail (falta o seu teste)
+## 2026-09-28 — Sessão 8: o Viking manda e-mail (fechada no seu Mac)
 
 **O que ficou pronto:**
 - **E-mail para você:** "manda pra mim um e-mail…" sai na hora, sem código, até 20 por dia. O
@@ -35,7 +34,13 @@ algo voltou atrás.
 
 **Números de hoje:** 1679 testes passando.
 
-**O que depende de você:** o teste no Mac (o roteiro está no `PROGRESSO.md`).
+**No seu Mac:** funcionou. O e-mail para você chegou; a carta chegou à sua noiva só depois do
+código; o código errado não enviou nada; o navegador recusou os dois endereços.
+
+**Consertado depois do teste:** no "manda pra mim", o Viking perguntou o seu endereço duas vezes.
+Agora "eu" já é você. Você confere isso no começo da 8b.
+
+**Números de hoje, depois do conserto:** 1686 testes passando.
 
 ## 2026-09-28 — o roteiro até a versão de sucesso: agente geral, coach, nuvem e app
 

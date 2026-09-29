@@ -16,22 +16,22 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 8 — e-mail que sai, a primeira do roteiro de 2026-09-28 (Sessões 8–21, abaixo).
+- **Sessão:** 8b — pequenos (a 8, e-mail que sai, fechou no Mac em 2026-09-28).
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** o teste da **Sessão 8 no Mac** (roteiro no C6 do plano, em `PROGRESSO.md`). O
-  código foi feito e enviado em 2026-09-28; ela só fecha depois do teste. Depois: a 8b.
+- **Agora:** abrir e planejar a 8b pela skill `software-build` (primeiros passos já escritos na
+  seção dela).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** o teste da 8 no Mac.
+- **Depende do dono:** as perguntas da abertura da 8b.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -394,7 +394,7 @@ tudo lá é "não medido" até a sessão que usa medir):
   gatilho que reabre) e "Libs/repos a reaproveitar". São a proposta de partida; o plano de cada
   sessão confirma ou derruba na abertura, com o dono.
 
-## Sessão 8 — e-mail que sai (feita em 2026-09-28; falta o teste no Mac)
+## Sessão 8 — e-mail que sai (feita e testada no Mac em 2026-09-28)
 
 **Feito em 2026-09-28** (plano e checkpoints em `PROGRESSO.md`):
 - o furo do bloqueio de banco/e-mail fechado, e o endereço inicial só `http`/`https`/`data:`/
@@ -407,6 +407,18 @@ Os comandos de revisão do Claude Code (D53): **não conferidos** nesta sessão.
 que esta sessão podia chamar não trazia `/security-review` nem `/code-review`, e um comando
 embutido do terminal eu não consigo chamar. Fica para o dono rodar, se quiser, ou para uma sessão
 em que apareçam.
+
+**Mac (2026-09-28, no fuso do dono):**
+- os dois endereços recusados sem abrir aba (`view-source:` do banco e `file:///etc/hosts`);
+- um e-mail para ele, sem código;
+- a carta para a noiva só depois do código: uma versão nova substituiu a anterior, e o código
+  errado não enviou nada;
+- as duas linhas no registro, sem código;
+- o dono disse "tudo certo" para a suíte e o login, sem colar a saída desses dois.
+
+O teste achou um defeito: o Gemini não sabia o endereço do dono e perguntou duas vezes antes de
+um "manda pra mim". Consertado no mesmo dia: `para="eu"` é a própria conta, com teste e mutação.
+A conferência ao vivo disso é o primeiro passo da 8b.
 
 O que estava escrito na abertura:
 
@@ -467,6 +479,12 @@ O que estava escrito na abertura:
   bastam.
 
 ## Sessão 8b — pequenos (curta, planejada em 2026-09-28)
+
+- **Primeiros passos (adiados da 8, 2026-09-28):**
+  1. No Mac, `manda pra mim um e-mail…` sai direto, sem o Gemini perguntar o endereço (o
+     conserto do "eu", feito depois do teste da 8).
+  2. Perguntar ao dono: o nome de usuário do Mac aparece em 3 linhas antigas do repo público
+     (`.env.example:20` e duas no diário). Tirar, ou deixar até o repo virar privado na 10?
 
 - **Entrega:** uma série semanal de 300 ocorrências aparece inteira na busca; os testes ao vivo
   que faltam nas parciais 4 (redação de CPF/cartão numa página real) e 3b (tools de calendário

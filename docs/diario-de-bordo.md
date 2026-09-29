@@ -1046,6 +1046,34 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-28 — Sessão 8 fechada no Mac; o "manda pra mim" que perguntava o endereço
+
+**Mac (saída colada pelo dono, horários no fuso dele):**
+- `view-source:` do banco e `file:///etc/hosts` recusados sem abrir aba, com o texto novo;
+- um e-mail para ele saiu sem código;
+- a carta para a noiva:
+  - apareceu no quadro "E-mail para aprovar";
+  - um pedido de mudança gerou uma versão nova, com outro código (o velho morreu);
+  - o código errado (`8306`) não enviou nada; o certo enviou;
+- ela recebeu, ele também;
+- o registro, pedido dentro do chat, listou as duas linhas, sem código.
+
+O dono disse "tudo certo" para a suíte e o `viking gmail --login` (oauthlib 4), sem colar essas
+duas saídas.
+
+**Defeito achado pelo teste:** em "manda pra mim…" o Gemini respondeu "Para qual endereço?" e,
+depois de "o meu", disse que precisava do endereço completo. A tool dizia "para o próprio
+usuário sai na hora", mas o modelo não tinha como nomear o usuário: é o "uma ausência no contexto"
+da skill `integracoes` §4.
+- Conserto: `para="eu"` (ou "mim") é a conta do `getProfile`, e a docstring manda usar `eu` sem
+  perguntar.
+- O endereço do dono continua sem ir ao modelo.
+- 7 testes e uma mutação novos; as 9 do envio mortas.
+- A conferência ao vivo é o 1º passo da 8b.
+- Também saiu a frase que o Gemini repetia torta ("me diga o e-mail novamente").
+
+**Portões depois do conserto:** `1686 passed`; mutações do envio 9/9, status 0.
+
 ### 2026-09-28 — Sessão 8: o Viking manda e-mail; o furo do bloqueio fechado (falta o Mac)
 
 **Abertura, conferida contra o disco.** HEAD `7f1145f` = origin, árvore limpa, `1553 passed`, CI

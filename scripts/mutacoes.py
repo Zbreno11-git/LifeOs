@@ -421,6 +421,13 @@ MUTACOES = [
         "tests/test_gmail_envio.py::test_o_21o_para_a_conta_em_24h_e_recusado",
     ),
     Mutacao(
+        "envio: 'eu' não vira a própria conta (o Gemini volta a perguntar o endereço)",
+        "src/lifeos/gmail/envio.py",
+        "dono if str(bruto).strip().lower() in _EU else service.endereco_valido(bruto)",
+        "service.endereco_valido(bruto)",
+        "tests/test_gmail_envio.py::test_eu_e_a_propria_conta_e_sai_sem_codigo",
+    ),
+    Mutacao(
         "envio: proposta sem terminal",
         "src/lifeos/gmail/envio.py",
         "    if not _terminal():",

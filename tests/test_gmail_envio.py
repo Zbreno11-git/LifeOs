@@ -149,6 +149,27 @@ def test_para_a_propria_conta_sai_sem_codigo(caixa, para):
     assert json.loads(parametros)["livre"] is True
 
 
+@pytest.mark.parametrize("para", ["eu", "EU", " mim "])
+def test_eu_e_a_propria_conta_e_sai_sem_codigo(caixa, para):
+    """No Mac o Gemini perguntou o endereço duas vezes antes de um "manda pra mim"."""
+    pedido = envio.novo(para, "Nota", "comprar água")
+    assert pedido.rascunho.para == (DONO,)
+    assert pedido.enviado is not None
+
+
+def test_eu_junto_com_outra_pessoa_pede_codigo(caixa):
+    pedido = envio.novo(f"eu, {ANA}", "Oi", "texto")
+    assert pedido.rascunho.para == (DONO, ANA)
+    assert pedido.codigo == CODIGO
+    assert caixa["enviados"] == []
+
+
+@pytest.mark.parametrize("para", ["eu mesmo", "euzinho@", "você"])
+def test_parecido_com_eu_nao_vira_a_conta(caixa, para):
+    with pytest.raises(service.EntradaInvalida):
+        envio.novo(para, "Oi", "texto")
+
+
 @pytest.mark.parametrize(
     "para",
     [

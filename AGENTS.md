@@ -62,10 +62,10 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
     desfazer por 7 dias). Desde a Sessão 8, **enviar** (`envio.py`, D46): para a própria conta
-    sai na hora (até 20 em 24 h); para qualquer outro endereço, o e-mail inteiro e o código vão
-    só ao terminal, e sai depois de `confirma NNNN`; responder não tem parâmetro de destinatário
-    (sai do cabeçalho da original). Só o `viking chat` registra essas tools, o MCP não (decisão do
-    dono)
+    sai na hora (até 20 em 24 h; `para="eu"` é a conta); para qualquer outro endereço, o e-mail
+    inteiro e o código vão só ao terminal, e sai depois de `confirma NNNN`; responder não tem
+    parâmetro de destinatário (sai do cabeçalho da original). Só o `viking chat` registra essas
+    tools, o MCP não (decisão do dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL, o ambiente que ele recebe); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;

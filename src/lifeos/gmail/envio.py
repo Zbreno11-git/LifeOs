@@ -122,7 +122,13 @@ def _sem_invisiveis(texto: str) -> str:
     return " ".join("".join(c for c in texto if not _invisivel(c)).split())
 
 
-def destinatarios(para) -> tuple[str, ...]:
+# "eu" (ou "mim") no `para` é a própria conta: o Gemini não sabe o endereço do dono e, no Mac
+# (2026-09-28), perguntou duas vezes antes de um "manda pra mim". A conta vem do `getProfile`, e o
+# endereço do dono não precisa ir ao modelo.
+_EU = frozenset({"eu", "mim"})
+
+
+def destinatarios(para, *, dono: str) -> tuple[str, ...]:
     brutos = (
         para if isinstance(para, list | tuple) else str(para or "").replace(";", ",").split(",")
     )
@@ -130,7 +136,7 @@ def destinatarios(para) -> tuple[str, ...]:
     for bruto in brutos:
         if not str(bruto).strip():
             continue
-        endereco = service.endereco_valido(bruto)
+        endereco = dono if str(bruto).strip().lower() in _EU else service.endereco_valido(bruto)
         if endereco is None:
             raise service.EntradaInvalida(
                 "endereço de e-mail inválido", endereco=_sem_invisiveis(str(bruto))[:80]
@@ -212,12 +218,13 @@ def _decidir(rascunho: Rascunho, dono: str) -> Pedido:
 
 
 def novo(para, assunto, corpo) -> Pedido:
+    dono = conta()
     rascunho = Rascunho(
-        para=destinatarios(para),
+        para=destinatarios(para, dono=dono),
         assunto=_texto(assunto, "o assunto", MAX_ASSUNTO, multilinha=False),
         corpo=_texto(corpo, "o texto", MAX_CORPO, multilinha=True),
     )
-    return _decidir(rascunho, conta())
+    return _decidir(rascunho, dono)
 
 
 def resposta(email_id, corpo) -> Pedido:
