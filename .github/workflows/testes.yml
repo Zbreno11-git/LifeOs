@@ -28,13 +28,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # o histórico inteiro: o scanner de segredos lê todos os commits
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           version: "0.12.10"
           python-version: ${{ matrix.python }}
+      - name: Segredos (gitleaks no histórico inteiro; versão e sha256 fixados no script)
+        run: bash scripts/gitleaks.sh git --redact --no-banner .
       - name: Instalar exatamente o uv.lock
         run: uv sync --locked --extra dev
       - name: Testes (2 pulados esperados, os contratos com o clone do Jev)
+        env:
+          VIKING_EXIGIR_GITLEAKS: "1" # o canário do scanner roda aqui, não é pulado
         run: uv run --locked python -m pytest -q -rs
       - name: Lint
         run: uv run --locked python -m ruff check .

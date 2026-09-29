@@ -1,0 +1,8 @@
+# Achados do gitleaks dispensados um por um, pela impressão digital (commit:arquivo:regra:linha).
+# Só entra aqui o que foi examinado e é falso de propósito; um arquivo inteiro nunca. Sessão 10, D58.
+#
+# tests/test_redacao.py (Sessão 4): os dados falsos do teste que prova que a redação do navegador
+# some com tokens. O JWT é o exemplo público ({"sub":"1234567890"}, HS256) com a assinatura
+# cortada; a "chave RSA" tem corpo "MIIEow\nabc". Examinados em 2026-09-29.
+e99ee3bf3f9caede56c47478492fdb0466ccf21c:tests/test_redacao.py:jwt:108
+e99ee3bf3f9caede56c47478492fdb0466ccf21c:tests/test_redacao.py:private-key:116

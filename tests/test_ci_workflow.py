@@ -128,3 +128,17 @@ def test_mypy_cobre_todo_modulo_que_abre_o_banco():
                 usam.append(arquivo)
     assert len(usam) >= 3  # lembretes, registro, confirmações
     assert [a for a in [*usam, RAIZ / "src/lifeos/banco.py"] if not coberto(a)] == []
+
+
+def test_scanner_de_segredos_le_o_historico_inteiro_antes_dos_testes():
+    """Sessão 10 (D58): o repo virou privado e o secret scanning do GitHub sumiu; o gitleaks é a
+    rede. Sem `fetch-depth: 0` o checkout traz um commit só e o scanner leria só ele; e o canário
+    de `tests/test_gitleaks.py` é exigido, não pulado."""
+    linhas = _linhas_de_codigo()
+    codigo = _codigo()
+    assert "fetch-depth: 0" in codigo
+    scanner = [i for i, linha in enumerate(linhas) if "bash scripts/gitleaks.sh git " in linha]
+    testes = [i for i, linha in enumerate(linhas) if "python -m pytest" in linha]
+    assert len(scanner) == 1 and testes and scanner[0] < testes[0]
+    assert "--staged" not in linhas[scanner[0]] and "--log-opts" not in linhas[scanner[0]]
+    assert re.search(r'VIKING_EXIGIR_GITLEAKS: "1"', codigo)
