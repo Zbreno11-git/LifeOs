@@ -466,7 +466,17 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    from lifeos import registro
+    from lifeos import banco, registro
+
+    # Abre (e migra, com o backup) o `viking.db` antes de qualquer coisa: depois de um `git pull`
+    # a migração acontece aqui, e um banco que esta versão não sabe usar vira uma linha, não um
+    # traceback no meio do chat (Sessão 9).
+    try:
+        with banco.conectar():
+            pass
+    except banco.ErroDeBanco as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        sys.exit(1)
 
     # Quem pede, para o registro de ações: o chat e o MCP marcam a própria origem por cima.
     registro.ORIGEM.set("cli")

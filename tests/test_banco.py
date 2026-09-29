@@ -62,5 +62,4 @@ def test_so_o_banco_abre_o_sqlite():
         arquivo.relative_to(RAIZ).as_posix(): _chamadas_de_connect(arquivo)
         for arquivo in (RAIZ / "src").rglob("*.py")
     }
-    com_connect = {nome: n for nome, n in por_arquivo.items() if n}
-    assert com_connect == {"src/lifeos/banco.py": 1}
+    assert {nome for nome, n in por_arquivo.items() if n} == {"src/lifeos/banco.py"}

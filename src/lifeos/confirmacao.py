@@ -38,20 +38,6 @@ DIGITOS = 4
 # `[0-9]`, não `\d`: no Python `\d` casa também dígitos de outros alfabetos ("１２３４").
 _CODIGO = re.compile(rf"[0-9]{{{DIGITOS}}}")
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS confirmacoes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    acao TEXT NOT NULL,
-    codigo TEXT NOT NULL,
-    dados TEXT NOT NULL,
-    criada_em TEXT NOT NULL,
-    expira_em TEXT NOT NULL,
-    estado TEXT NOT NULL,
-    consumida_em TEXT,
-    resultado TEXT
-)
-"""
-
 
 class ErroConfirmacao(Exception):
     codigo = "confirmacao_invalida"
@@ -95,7 +81,6 @@ def _agora(agora: datetime | None) -> datetime:
 @contextmanager
 def _sessao():
     with banco.conectar() as conn:
-        conn.execute(_SCHEMA)
         yield conn
 
 

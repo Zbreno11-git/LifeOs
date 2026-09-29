@@ -16,8 +16,7 @@ bruta (o evento inteiro, para recriá-lo) e nunca é mostrado nem vai ao Gemini.
 aprovação nunca entra aqui. Fica em `viking.db` (tabela `acoes`) por `RETENCAO` (decisão do dono:
 30 dias); a purga roda a cada abertura.
 
-A tabela não usa `PRAGMA user_version` (é dos lembretes, `reminders/store.py`): nasce com `CREATE
-TABLE IF NOT EXISTS`. Migrations formais estão no backlog (§12.6).
+A tabela nasce e muda só pelas migrations de `lifeos/banco.py` (Sessão 9).
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
@@ -47,26 +46,6 @@ ORIGEM: contextvars.ContextVar[str] = contextvars.ContextVar("origem", default="
 TURNO: contextvars.ContextVar[str] = contextvars.ContextVar("turno", default="")
 
 FEITA, FALHOU, INCERTA, INICIADA = "feita", "falhou", "incerta", "iniciada"
-
-_SCHEMA = (
-    """
-    CREATE TABLE IF NOT EXISTS acoes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        turno TEXT NOT NULL,
-        origem TEXT NOT NULL,
-        operacao TEXT NOT NULL,
-        parametros TEXT NOT NULL,
-        estado TEXT NOT NULL,
-        resultado TEXT,
-        erro TEXT,
-        desfazer TEXT,
-        desfeita_em TEXT,
-        criada_em TEXT NOT NULL,
-        terminada_em TEXT
-    )
-    """,
-    "CREATE INDEX IF NOT EXISTS idx_acoes_criada_em ON acoes(criada_em)",
-)
 
 
 @dataclass(frozen=True)
@@ -119,8 +98,6 @@ def limpo(valor: Any) -> Any:
 @contextmanager
 def _sessao(agora: datetime | None = None) -> Iterator[sqlite3.Connection]:
     with banco.conectar() as conn:
-        for comando in _SCHEMA:
-            conn.execute(comando)
         conn.execute(
             "DELETE FROM acoes WHERE criada_em < ?", ((_agora(agora) - RETENCAO).isoformat(),)
         )

@@ -97,6 +97,8 @@ vencido nas últimas 24 h. Rodado duas vezes, ou em dois processos ao mesmo temp
 | SQLite | `sqlite3.sqlite_version` | 3.45.1 no VPS; o do Mac não medido | nada de `STRICT`/`RETURNING` sem medir |
 | Tipos | `uvx mypy==2.3.1 --python-executable .venv/bin/python src` | `Found 68 errors in 15 files` (eram 67; o novo é da 8b: `list[Evento]` sem `completa`); nos 3 módulos de dados: 3 | C2 |
 | `mypy` no lock | PyPI, 2.3.1 | wheels `cp312`/`cp313` manylinux e `py3-none-any` | serve ao Mac Intel |
+| `executescript` numa transação (C3) | script no VPS, Python 3.12 | **comita sozinho** a transação aberta: o `INSERT` anterior e a tabela nova ficaram, mesmo com o erro | migrations só com um `execute` por comando |
+| Backup com a transação aberta (C3) | `conn.backup` pela mesma conexão, com `BEGIN IMMEDIATE` | **trava para sempre** (`timeout 15` → 124); por **outra** conexão, funciona e copia só o comitado | backup por outra conexão, com a trava segurada |
 
 ### Mapa de checkpoints
 | C | Fecha quando | Depende de | Estado |
@@ -104,7 +106,7 @@ vencido nas últimas 24 h. Rodado duas vezes, ou em dois processos ao mesmo temp
 | C0 | plano aqui; memória na S13; backlog do `mypy` com o número de hoje | — | ✅ |
 | C1 | teste vermelho "a suíte não toca o banco real" → `banco.py` com o caminho único + `conftest` → verde; erro classe 6; commit | C0 | ✅ (3 vermelhos → `1807 passed`; `sha256sum data/viking.db` igual antes e depois da suíte; cada camada tirada sozinha derruba o teste dela) |
 | C2 | `mypy` no lock e no CI para os módulos de dados; os 3 erros consertados; `test_lock` e `test_ci_workflow` verdes; commit | C1 | ✅ (lista única em `[tool.mypy] files`; `Success: no issues found in 7 source files`; a régua deriva do código quem importa `banco`; `1829 passed`) |
-| C3 | migrations 1–4 + ledger + transação + checksum + recusa do mais novo + backup; os três módulos por `banco`; testes contra o banco antigo com dados; commit | C2 | ⬜ |
+| C3 | migrations 1–4 + ledger + transação + checksum + recusa do mais novo + backup; os três módulos por `banco`; testes contra o banco antigo com dados; commit | C2 | ✅ (18 testes; o fixture bate com o banco que o código de `5d0ace4` cria; a cópia do banco do VPS migrou com 133 lembretes e 2 ações iguais; os mutantes sem `BEGIN IMMEDIATE` e com `executescript` derrubam os testes de falha no meio; `viking` abre o banco antes de tudo; `1845 passed`) |
 | C4 | migração 5 (UUID e colunas de envio) + interface + contrato; chat e MCP sem `#id`; commit | C3 | ⬜ |
 | C5 | `viking lembretes [--enviar]` com reserva, janela de 24 h e limite; testes de sequência e de dois processos; commit | C4 | ⬜ |
 | C6 | script de limpeza; mutações; portões; duas passadas de revisão; D56/D57, docs; push; CI pelo SHA | C5 | ⬜ |

@@ -62,4 +62,5 @@ files = [
     "src/lifeos/reminders",
     "src/lifeos/registro.py",
     "src/lifeos/confirmacao.py",
+    "src/lifeos/cli.py",
 ]

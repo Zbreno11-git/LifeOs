@@ -1,4 +1,5 @@
-"""Armazenamento SQLite dos lembretes/notas do Viking. Ver `models.py` para o schema."""
+"""Armazenamento SQLite dos lembretes/notas do Viking. Ver `models.py` para o schema; a tabela
+nasce e muda só pelas migrations de `lifeos/banco.py`."""
 
 from __future__ import annotations
 
@@ -12,24 +13,6 @@ from lifeos import banco
 from lifeos.config import TIMEZONE
 from lifeos.reminders.models import Reminder
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS reminders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL,
-    title TEXT NOT NULL,
-    body TEXT NOT NULL DEFAULT '',
-    tags TEXT NOT NULL DEFAULT '[]',
-    due_at TEXT,
-    completed_at TEXT,
-    source TEXT NOT NULL DEFAULT 'manual',
-    external_id TEXT,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-);
-"""
-_INDEX_DUE_AT = "CREATE INDEX IF NOT EXISTS idx_reminders_due_at ON reminders (due_at)"
-
 
 def _para_utc_isoformato(dt: datetime) -> str:
     """Normaliza um datetime pra UTC antes de gravar. Sem isso, `due_at` ordenava como TEXTO puro:
@@ -42,35 +25,9 @@ def _para_utc_isoformato(dt: datetime) -> str:
     return dt.astimezone(UTC).isoformat()
 
 
-def _migrar_due_at_para_utc(conn: sqlite3.Connection) -> None:
-    linhas = conn.execute("SELECT id, due_at FROM reminders WHERE due_at IS NOT NULL").fetchall()
-    for row in linhas:
-        try:
-            dt = datetime.fromisoformat(row["due_at"])
-        except ValueError:
-            continue  # registro corrompido — não é esta migração que deve consertar isso
-        normalizado = _para_utc_isoformato(dt)
-        if normalizado != row["due_at"]:
-            conn.execute("UPDATE reminders SET due_at = ? WHERE id = ?", (normalizado, row["id"]))
-
-
-def _migrar(conn: sqlite3.Connection) -> None:
-    """Migrations por versão, guiadas por PRAGMA user_version (nativo do SQLite) — cada uma roda
-    no máximo uma vez por arquivo de banco, sem precisar de tabela de controle própria nem de
-    estado em memória do processo Python (que se perderia entre reinícios, ou pior, vazaria entre
-    testes que usam bancos diferentes)."""
-    versao = conn.execute("PRAGMA user_version").fetchone()[0]
-    if versao < 1:
-        _migrar_due_at_para_utc(conn)
-        conn.execute("PRAGMA user_version = 1")
-
-
 @contextmanager
 def _session():
     with banco.conectar() as conn:
-        conn.execute(_SCHEMA)
-        conn.execute(_INDEX_DUE_AT)
-        _migrar(conn)
         yield conn
 
 

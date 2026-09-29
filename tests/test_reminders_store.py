@@ -105,56 +105,6 @@ def test_lembretes_com_fusos_diferentes_ordenam_pelo_instante_real(temp_db):
     assert titulos == ["mais cedo (fuso +02:00)", "mais tarde (UTC)"]
 
 
-def test_migracao_normaliza_registro_gravado_antes_da_normalizacao(temp_db, monkeypatch):
-    """Simula um `due_at` gravado por uma versão anterior do Viking (naive, sem offset) — nunca
-    passou por `store.add()`, então só a migração automática pode consertar."""
-    import sqlite3
-    from datetime import UTC, datetime
-    from zoneinfo import ZoneInfo
-
-    from lifeos.reminders import store
-
-    monkeypatch.setattr(store, "TIMEZONE", ZoneInfo("America/Sao_Paulo"))
-
-    conn = sqlite3.connect(temp_db)
-    conn.execute(store._SCHEMA)
-    agora = datetime.now(UTC).isoformat()
-    conn.execute(
-        """INSERT INTO reminders
-               (type, title, body, tags, due_at, source, external_id, metadata,
-                created_at, updated_at)
-           VALUES ('reminder', 'Legado', '', '[]', ?, 'manual', NULL, '{}', ?, ?)""",
-        ("2026-09-25T14:00:00", agora, agora),
-    )
-    conn.commit()
-    conn.close()
-
-    store.list_open()  # abre uma sessão -> dispara a migração automática
-
-    conn = sqlite3.connect(temp_db)
-    bruto = conn.execute("SELECT due_at FROM reminders WHERE title = 'Legado'").fetchone()[0]
-    conn.close()
-    assert bruto == "2026-09-25T17:00:00+00:00"  # 14h em -03:00 é 17h UTC
-
-
-def test_migracao_e_idempotente(temp_db):
-    import sqlite3
-
-    from lifeos.reminders import store
-
-    store.add(title="Normal")  # garante que tabela/versão existam
-
-    conn = sqlite3.connect(temp_db)
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
-    conn.close()
-
-    store.list_open()  # uma segunda sessão não deve refazer nem alterar nada
-
-    conn = sqlite3.connect(temp_db)
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
-    conn.close()
-
-
 def test_indice_de_due_at_existe(temp_db):
     import sqlite3
 
