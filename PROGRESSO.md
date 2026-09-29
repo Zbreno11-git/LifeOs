@@ -121,7 +121,7 @@ pedidos.
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
 | C0 | memória do fuso (Brasil em ~1 mês); plano no `PROGRESSO.md`; `sessoes.md` com a 10 dividida e a seção 10b; D47 revista e D58 aberta; classe 2 (20); commit | — | ✅ |
-| C1 | lock atualizado, suíte antes e depois iguais, `test_lock` verde; commit próprio | C0 | ⬜ |
+| C1 | lock atualizado, suíte antes e depois iguais, `test_lock` verde; commit próprio | C0 | ✅ |
 | C2 | gitleaks no CI e no hook, limpo no histórico, canário reprovado; **ok do dono** → repo privado, conferido pela API | C1 | ⬜ |
 | C3 | `scripts/nuvem.py` só-leitura mostra tudo "a criar"; **ok** → projeto, faturamento, APIs, orçamento, Firestore em SP, registry, contas de serviço e índices; o só-leitura mostra "nada a criar" | C2 | ⬜ |
 | C4 | store Firestore passa o contrato no emulador (VPS e CI), sem pulado; mutações novas mortas | C1 | ⬜ |
