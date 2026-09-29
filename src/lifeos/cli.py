@@ -362,6 +362,30 @@ def _registro(args: argparse.Namespace) -> int:
     return 0
 
 
+def _lembretes(args: argparse.Namespace) -> int:
+    """Sem opção: os pendentes. `--enviar`: 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial
+    (limite, "não sei se saiu", recusado); 1 = não rodou (sem login no Gmail, cota)."""
+    from lifeos import config
+    from lifeos.gmail import service as gmail_service
+    from lifeos.reminders import envio, service
+
+    if not args.enviar:
+        pendentes = service.pendentes()
+        for r in pendentes:
+            prazo = f" ({r.due_at.astimezone(config.TIMEZONE):%d/%m/%Y %H:%M})" if r.due_at else ""
+            print(f"- {r.title}{prazo}")
+        if not pendentes:
+            print("Nenhum lembrete pendente.")
+        return 0
+    try:
+        resultado = envio.enviar_vencidos()
+    except gmail_service.ErroGmail as exc:
+        print(f"❌ Não consegui mandar pelo Gmail: {exc}. Nada ficou reservado.", file=sys.stderr)
+        return 1
+    print(envio.texto(resultado))
+    return 2 if resultado.parcial else 0
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="viking")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -455,6 +479,14 @@ def main() -> None:
     subparsers.add_parser(
         "aprovar", help="Aprova (com código) pedidos que outros apps fizeram pelo MCP"
     )
+    lembretes_cli = subparsers.add_parser(
+        "lembretes", help="Os lembretes pendentes; --enviar manda os vencidos por e-mail"
+    )
+    lembretes_cli.add_argument(
+        "--enviar",
+        action="store_true",
+        help="Manda para o seu e-mail os vencidos nas últimas 24 h (um e-mail cada, uma vez só)",
+    )
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
     )
@@ -499,6 +531,8 @@ def main() -> None:
         sys.exit(_registro(args))
     elif args.command == "aprovar":
         sys.exit(_aprovar())
+    elif args.command == "lembretes":
+        sys.exit(_lembretes(args))
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 18 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 19 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 6 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 15 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -170,6 +170,16 @@ Sessão Gmail do próprio `sessoes.md`. Eu tirei a frase do gatilho da D11 ("sta
 conferido"), que estava velho. Pego na abertura da 8, ao ler a fonte do Gmail. O que tem de novo:
 a fonte errada era **uma decisão nossa** (o gatilho da D11), e a certa estava duas seções acima;
 antes de escrever "nunca", `grep` no repo inteiro pelo termo ("Testing", "produção").
+
+**2026-09-29 — rodei um comando com efeito externo no VPS achando que não havia credencial
+(Sessão 9, C5).** Para "rodar a CLI eu mesmo", rodei `viking lembretes --enviar` num banco
+temporário, esperando a saída 1 de "sem login no Gmail". O `CLAUDE.md` diz que o VPS não tem as
+chaves; mas `secrets/` tinha o cliente OAuth e o token da agenda desde 2026-09-20. O Viking abriu
+o login do Google, o VS Code do dono abriu a aba, ele aprovou, e **um e-mail de verdade saiu**
+para a caixa dele ("Teste do VPS"). Sem dano (só para a própria conta), mas um token
+`gmail.modify` nasceu no VPS. Um `ls secrets/` antes teria mostrado. O que tem de novo: a regra
+do documento ("sem chaves") era verdade para o Gemini e o Jev, e não para o Google; e um comando
+que **envia** não se roda para "ver o erro" sem conferir antes que o erro vai acontecer.
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.

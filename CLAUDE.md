@@ -16,6 +16,13 @@ significa que há uma classe inteira de coisas que **não dá para validar aqui*
   remote debugging" na primeira vez, e aqui não há display);
 - o fluxo OAuth do Google (Calendar e Gmail).
 
+**Mas o VPS tem o cliente OAuth do Google** (`secrets/google_credentials.json`, e o token da agenda
+desde 2026-09-20). Um comando que toca o Google aqui abre o login, e o VS Code do dono abre a aba
+no navegador dele: aprovado, age na conta real. Em 2026-09-29 isso mandou um e-mail de verdade e
+deixou um token `gmail.modify` no VPS; o dono mandou apagá-lo (o VPS não guarda token do Gmail).
+Antes de rodar um `viking …` que fala com o Google, `ls secrets/`, e nada que envie, apague ou
+arquive por aqui (`docs/erros.md`, classe 2).
+
 O ciclo real é: escrever e testar aqui o que é testável (lógica pura, parsing, timeout, mensagens) →
 commitar e dar push → o dono faz `git pull` no Mac e roda. **Por isso "terminei" só é verdade depois
 do push**: até lá o trabalho não chegou na máquina onde ele roda.
