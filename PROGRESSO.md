@@ -5,61 +5,35 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 9 feita no VPS; falta o teste no Mac (C7)
+## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 9 fechada no Mac; próximo: abrir a 10
 
 **Estado:** `git log --oneline -3` e `git status --short` (limpo) · igual ao remoto · travas:
-nenhuma · background: nenhum. Portões em 2026-09-29: `1884 passed`, `ruff` limpo, formatação zero,
-`mypy` sem erro nos 10 arquivos de dados, mutações 215/215. CI conferido pelo SHA inteiro.
+nenhuma · background: nenhum. Portões em 2026-09-29: `1884 passed` (VPS e Mac), `ruff` limpo,
+formatação zero, `mypy` limpo nos módulos de dados, mutações 215/215. CI pelo SHA inteiro.
 
-**Onde parou:** C0–C6 ✅. Falta o C7, o roteiro abaixo, no Mac do dono.
+**Onde parou:** a 9 fechou no Mac (C0–C7 ✅; o banco do dono migrado, com as cópias
+`viking.db.antes-da-sessao-9` e `viking.db.antes-da-migracao-1` em `data/`). Barra 15 de 28.
 
-**Próximo passo exato:** o dono roda o roteiro e cola a saída; eu confiro contra os números
-esperados de cada linha. Com o C7 verde: a 9 fecha (diário, `sessoes.md`, barra 15 de 28) e o
-▶️ aponta para a 10.
+**Próximo passo exato:** abrir a Sessão 10 (nuvem 1) pela skill `software-build`:
+`uv lock --upgrade --dry-run`, o CI do HEAD pelo SHA inteiro, e os dois primeiros passos da seção
+dela (o repo privado com o scanner de segredos antes; o token do Gmail do Mac renovar sozinho
+**depois de 2026-10-03**).
 
-**Roteiro do Mac (C7)** — antes, feche o `viking chat` e qualquer app que use o MCP do Viking (um
-processo antigo aberto escreveria no formato velho depois da migração e falharia):
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️ e a Sessão 10
+inteira, e a 11); `docs/decisoes.md` (D45–D57); o índice de `docs/erros.md`; a memória; as
+skills `software-build`, `nuvem-e-deploy`, `seguranca`, `dados-e-banco`.
 
-```
-cd ~/LifeOs
-git pull && git log --oneline -1
-cp data/viking.db data/viking.db.antes-da-sessao-9
-ls -la data/
-uv sync --locked --extra dev
-source .venv/bin/activate
-which python
-shasum data/viking.db
-python -m pytest -q
-shasum data/viking.db
-viking lembretes
-ls -la data/
-python scripts/limpar_lembretes_de_teste.py
-python scripts/limpar_lembretes_de_teste.py --aplicar
-viking lembretes
-```
-
-Esperado:
-- as duas linhas do `shasum` iguais (a suíte não toca mais o banco);
-- o 1º `viking lembretes` migra: aparece `viking.db.antes-da-migracao-1` no `data/`;
-- a lista sai sem `#`, com as datas no seu fuso;
-- a limpeza acha N (um por `pytest` rodado no Mac desde 2026-09-27) e apaga N;
-- o total do "depois" = o "antes" menos N.
-
-Depois, no `viking chat`: "me lembra de testar o Viking daqui a 2 minutos". Espere 2 min, `viking
-lembretes --enviar` → "1 lembrete enviado" (e o e-mail na caixa) e saída 0; de novo → "Nenhum
-lembrete vencido nas últimas 24 h."; `viking registro` → uma linha `gmail.enviar`.
-
-**Não pode ser esquecido:** uma migração publicada não se edita (nem pelo formatador): cria-se a
-seguinte, com o checksum em `PUBLICADAS`; o código de aprovação nunca vai ao Gemini, ao MCP, ao
+**Não pode ser esquecido:** migração publicada não se edita (nem pelo formatador): cria-se a
+seguinte, com o checksum em `PUBLICADAS`; o contrato de `tests/test_reminders_contrato.py` é o
+que o store do Firestore tem de passar; o código de aprovação nunca vai ao Gemini, ao MCP, ao
 registro nem por e-mail; nada de endereço de terceiros nem `/Users/<nome>` no repo; mutações em
-background, sem `timeout`; nunca presumir o fuso do dono; **o VPS tem o cliente OAuth do Google e
-o token da agenda**: nada que envie, apague ou arquive rodado daqui (o token do Gmail foi apagado
-do VPS a pedido do dono, 2026-09-29).
+background, sem `timeout`; nunca presumir o fuso do dono; o VPS tem o cliente OAuth do Google e o
+token da agenda: nada que envie, apague ou arquive rodado daqui.
 
-**Depende do dono:** o roteiro acima; apagar as cópias `viking.db.antes-*` quando quiser (o
-Viking nunca as apaga).
+**Depende do dono:** as perguntas da abertura da 10 (projeto GCP com o faturamento dele, o repo
+privado); apagar as cópias `viking.db.antes-*` do Mac quando quiser.
 
-## Plano — Sessão 9: fundação de dados (aberta em 2026-09-29)
+## Plano — Sessão 9: fundação de dados (fechada no Mac em 2026-09-29)
 
 ### O que esta sessão entrega (verificável)
 (a) Um `viking.db` no formato de hoje (`5d0ace4`), com dados, migra para o formato novo sem
@@ -140,7 +114,7 @@ vencido nas últimas 24 h. Rodado duas vezes, ou em dois processos ao mesmo temp
 | C4 | migração 5 (UUID e colunas de envio) + interface + contrato; chat e MCP sem `#id`; commit | C3 | ✅ (contrato: 11 vermelhos → 13 verdes, um deles defeito de hoje: concluir de novo mudava a hora; a cópia real do VPS migra com 133 lembretes iguais pelo conteúdo e UUIDs únicos; o `mypy` pega o store fora do `Protocol`; testes de fuso com o dono em Seattle; `1862 passed`) |
 | C5 | `viking lembretes [--enviar]` com reserva, janela de 24 h e limite; testes de sequência e de dois processos; commit | C4 | ✅ (15 testes, com 4 processos de verdade; o mutante da reserva sem prazo derruba 4; `1877 passed`. **Incidente:** rodei o `--enviar` no VPS achando que não havia credencial; o dono aprovou o login que abriu, e um e-mail de teste saiu para a caixa dele; o token do Gmail foi apagado do VPS por decisão dele; erros classe 2 e `CLAUDE.md`) |
 | C6 | script de limpeza; mutações; portões; duas passadas de revisão; D56/D57, docs; push; CI pelo SHA | C5 | ✅ (215 de 215 mutações mortas; na 1ª rodada, as 2 de concorrência sobreviveram: o teste de processos dependia de sorte, e dois testes determinísticos com um gancho no `BEGIN` as mataram; a revisão achou o login caindo no meio escondendo o que já saiu; `1884 passed`) |
-| C7 | roteiro do Mac: backup, migração, limpeza, envio duas vezes | C6 | ⬜ |
+| C7 | roteiro do Mac: backup, migração, limpeza, envio duas vezes | C6 | ✅ (dono, 2026-09-29: `1884 passed` no Mac com o `shasum` do banco igual antes e depois; migrou com o backup `antes-da-migracao-1`; a limpeza achou e apagou 8 de 12; o lembrete saiu uma vez, a 2ª rodada deu 0 e saída 0; o e-mail chegou; o registro manteve as ações de antes da migração) |
 
 ### Fase 0 — adiados (C0)
 **Faz:** a S13 ganha "tabelas de memória com cara de registro (vinda da 9, dono 2026-09-29)" no

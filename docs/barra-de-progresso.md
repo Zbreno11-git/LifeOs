@@ -7,14 +7,14 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-29 (Sessão 9 pronta no VPS; falta o seu teste no Mac).**
+**Última atualização: 2026-09-29 (Sessão 9 fechada no seu Mac).**
 
-`██████████░░░░░░░░░░ 14 de 28 sessões fechadas, 1 parcial`
+`███████████░░░░░░░░░ 15 de 28 sessões fechadas`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8 e 8b;
-parcial: 9 (falta o Mac); na fila: 10, 11, 11b (formulários) e 12 a 21.
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b e
+9; parciais: nenhuma; na fila: 10, 11, 11b (formulários) e 12 a 21.
 
-## 2026-09-29 — Sessão 9: a base dos dados (pronta no VPS; falta o seu Mac)
+## 2026-09-29 — Sessão 9: a base dos dados (fechada no seu Mac)
 
 **O que ficou pronto:**
 - **Um defeito meu, achado e fechado:** desde a Sessão 5, cada vez que os testes rodavam, um
@@ -39,7 +39,9 @@ parcial: 9 (falta o Mac); na fila: 10, 11, 11b (formulários) e 12 a 21.
 **Como sabemos:** 1884 testes passando no VPS; 215 de 215 defeitos plantados de propósito
 derrubados pelo teste certo (duas regras de "dois ao mesmo tempo" só passaram a ser provadas
 depois que a rodada mostrou que o teste antigo dependia de sorte); e uma cópia do banco do VPS,
-no formato de antes, migrou sem perder nenhuma linha.
+no formato de antes, migrou sem perder nenhuma linha. No seu Mac: os 1884 testes passaram sem
+tocar no seu banco, ele migrou com a cópia de antes guardada, a limpeza apagou os 8 lembretes de
+teste (sobraram os seus 4), e o lembrete "Testar o Viking" chegou por e-mail uma vez só.
 
 **Erros meus desta sessão:** o dos testes gravando no seu banco (da Sessão 5), e um de hoje:
 rodei o envio de lembrete no VPS achando que aqui não havia acesso ao Google; o login abriu, você

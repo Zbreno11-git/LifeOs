@@ -1046,7 +1046,22 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
-### 2026-09-29 — Sessão 9: fundação de dados (migrations, UUID, envio de lembrete; falta o Mac)
+### 2026-09-29 — Sessão 9 fechada no Mac
+
+Saída colada pelo dono:
+- `1884 passed`, e o `shasum` do `data/viking.db` igual antes e depois da suíte;
+- o primeiro `viking lembretes` migrou e criou `viking.db.antes-da-migracao-1` (69.632 bytes, o
+  tamanho do banco de antes; o migrado ficou com 81.920);
+- a lista saiu sem `#`;
+- a limpeza achou 8 de 12 e apagou os 8: um por `pytest` rodado no Mac desde 2026-09-27;
+- "me lembra de testar o viking daqui a 2 minutos" virou um lembrete;
+- o `--enviar` mandou 1 e listou 3 atrasados; o dono confirmou que o e-mail chegou;
+- a 2ª rodada deu 0 enviados e saída `0`;
+- o `viking registro --dias 1` tem uma linha do envio e as ações de antes da migração, intactas.
+
+Barra: 15 de 28, sem parciais.
+
+### 2026-09-29 — Sessão 9: fundação de dados (migrations, UUID, envio de lembrete)
 
 **Abertura, conferida contra o disco (04:30 UTC).** HEAD `5d0ace4` = origin, limpo, sem trava,
 `1804 passed`, CI `success` pelo SHA inteiro, `uv lock --upgrade --dry-run` sem nada novo. Uma

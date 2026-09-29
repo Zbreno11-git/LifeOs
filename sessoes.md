@@ -16,23 +16,24 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 9 — fundação de dados, **feita no VPS em 2026-09-29; falta o teste no Mac** (o
-  roteiro está no topo de `PROGRESSO.md`, com o backup do banco antes). Depois dele, a 10.
+- **Sessão:** 10 — nuvem 1: o motor. A 9 fechou no Mac em 2026-09-29.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** o teste da 9 no Mac; depois, abrir a 10 pela skill `software-build` (o primeiro passo
-  dela é o repo privado; o token do Gmail só vence depois de 2026-10-03).
+- **Agora:** abrir, planejar e executar a 10 pela skill `software-build`. Os dois primeiros passos
+  estão na seção dela: o repo privado (com o scanner de segredos antes) e a prova de que o token
+  do Gmail renova sozinho, que só vale **depois de 2026-10-03**.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** rodar o roteiro da 9 no Mac e colar a saída.
+- **Depende do dono:** as perguntas da abertura da 10 (o projeto GCP é criado por ele, com o
+  faturamento dele).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -556,7 +557,7 @@ O que estava escrito na abertura:
   silencioso é uma interrupção). Janela com `timeMax` quando a pergunta tem prazo. Nenhuma lib
   nova.
 
-## Sessão 9 — fundação de dados (feita em 2026-09-29; falta o teste no Mac)
+## Sessão 9 — fundação de dados (feita e testada no Mac em 2026-09-29)
 
 - **Feito (2026-09-29, detalhe no diário e em `PROGRESSO.md`; decisões D56 e D57):**
   - `lifeos/banco.py` é o único que abre o `viking.db`, com uma lista de migrations para o arquivo
@@ -568,7 +569,8 @@ O que estava escrito na abertura:
   - `viking lembretes --enviar`: um e-mail por lembrete vencido em 24 h, uma vez só (reserva);
   - `mypy` como portão do CI nos módulos de dados;
   - "o que mora onde" na D57; as tabelas de memória foram para a S13 (dono).
-- **Falta:** o roteiro do Mac (backup, migração, limpeza, envio duas vezes), em `PROGRESSO.md`.
+- **Testada no Mac (2026-09-29):** o banco do dono migrou com o backup; a limpeza apagou 8
+  lembretes de teste; o lembrete saiu por e-mail uma vez só, e a 2ª rodada não mandou nada.
 
 - **Entrega:**
   - migrations numeradas em todos os módulos que usam o `viking.db`, e um banco no formato antigo
