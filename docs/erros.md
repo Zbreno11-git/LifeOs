@@ -17,7 +17,7 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 19 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 20 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 6 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 15 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -180,6 +180,17 @@ para a caixa dele ("Teste do VPS"). Sem dano (só para a própria conta), mas um
 `gmail.modify` nasceu no VPS. Um `ls secrets/` antes teria mostrado. O que tem de novo: a regra
 do documento ("sem chaves") era verdade para o Gemini e o Jev, e não para o Google; e um comando
 que **envia** não se roda para "ver o erro" sem conferir antes que o erro vai acontecer.
+
+**2026-09-29 — "nenhuma credencial fixa no VPS" sem abrir `~/.config/gcloud` (plano da 10,
+escrito em 2026-09-28).** A D47 e a seção da 10 desenharam o deploy em volta de um token de 1 h
+gerado no Mac, "porque o VPS não tem credencial". Na abertura da 10, `gcloud auth list` mostrou a
+conta do dono logada e viva desde 2026-09-07, com o ADC (`authorized_user`) junto, para outro
+projeto dele. O ritual do token de 1 h não protegeria nada enquanto esse login existe. O dono
+decidiu manter e usar o login (D47 revista); a parede passou a ser o `--project` explícito, preso
+por teste. O que tem de novo: é a mesma forma do incidente anterior (o VPS "sem chaves"), um dia
+depois, agora com credencial de nuvem; a pergunta da abertura de uma sessão de nuvem inclui
+`gcloud auth list` e `ls ~/.config/gcloud`, e uma premissa de segurança sobre uma máquina se
+mede na máquina antes de virar decisão.
 
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.

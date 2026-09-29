@@ -16,16 +16,16 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10 — nuvem 1: o motor. A 9 fechou no Mac em 2026-09-29.
+- **Sessão:** 10 — nuvem 1: o motor, **em curso desde 2026-09-29** (dividida: o chat na nuvem
+  foi para a 10b). A 9 fechou no Mac em 2026-09-29.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** abrir, planejar e executar a 10 pela skill `software-build`. Os dois primeiros passos
-  estão na seção dela: o repo privado (com o scanner de segredos antes) e a prova de que o token
-  do Gmail renova sozinho, que só vale **depois de 2026-10-03**.
+- **Agora:** executar o plano da 10 (em `PROGRESSO.md`). A prova de que o token do Gmail renova
+  sozinho foi para o primeiro passo da 10b (só vale **depois de 2026-10-03**).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -367,7 +367,7 @@ Planejado com o dono em 2026-09-28, depois da Sessão 7. A "versão de sucesso f
 
 As decisões estão na D46–D52 (`docs/decisoes.md`). Cada sessão abre e planeja do jeito de
 sempre (skill `software-build`): a entrega abaixo é o alvo, e o tamanho sai da medição da
-abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 são as candidatas.
+abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 são as candidatas (a 10 foi dividida em 10 e 10b pelo dono em 2026-09-29).
 
 **Regras que valem para todas, decididas agora:**
 - **Nunca código de aprovação por e-mail**, nem por nenhum canal que uma tool leia: o Viking lê o
@@ -603,7 +603,20 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nenhuma lib de migrations. A régua numerada é pequena e é nossa:
   Alembic traria o SQLAlchemy só para isso.
 
-## Sessão 10 — nuvem 1: o motor (planejada em 2026-09-28)
+## Sessão 10 — nuvem 1: o motor (planejada em 2026-09-28; aberta e dividida em 2026-09-29)
+
+> **Dividida pelo dono na abertura (2026-09-29):** esta sessão entrega o chão da nuvem e um
+> caminho de ponta a ponta pelos lembretes; o chat na nuvem foi para a **10b**. O plano com as
+> medições da abertura está em `PROGRESSO.md`; as decisões, na D47 (revista) e na D58.
+> - **Entrega da 10:** repo privado com o gitleaks no CI e no commit; projeto GCP só do Viking
+>   (faturamento, orçamento de US$ 20 com alertas 50/90/100%) em `southamerica-east1` (o dono
+>   volta ao Brasil em ~1 mês); Firestore passando o contrato de `tests/test_reminders_contrato.py`
+>   no emulador; o motor no Cloud Run (0 instâncias mínimas, fechado por IAM, e o código recusa
+>   quem não é o `cli@`), com o `describe` mostrando o SHA; `viking lembretes --nuvem` no Mac.
+> - **Deploy:** com o login do `gcloud` que o VPS já tem, por decisão do dono (D47 revista); todo
+>   comando leva `--project` do Viking explícito, preso por teste. O ritual do token de 1 h saiu.
+> - O texto abaixo é a proposta de partida de 2026-09-28, mantida como registro.
+
 
 - **Primeiro passo (decisão do dono, 2026-09-28):** o repo vira **privado antes de qualquer
   infraestrutura**. Antes da troca entra um scanner de segredos nosso no CI e no commit, porque o
@@ -676,6 +689,27 @@ O que estava escrito na abertura:
   - `google-cloud-firestore` 2.32.0, só na nuvem;
   - `google-auth`, que já está no lock, para a impersonação no Mac;
   - o modelo de "script de deploy que só lê sem flag", da skill `nuvem-e-deploy` §6.
+
+## Sessão 10b — nuvem 1b: o chat na nuvem (separada da 10 pelo dono em 2026-09-29)
+
+- **Primeiro passo (adiado da 8, depois da 10; tem data):** provar que o login do Google não
+  vence em 7 dias. `viking gmail --login` no Mac **depois de 2026-10-03**, sem abrir o navegador.
+  Se pedir login de novo, a nuvem precisa de outra saída antes de guardar token (a verificação do
+  Google, ou um escopo menor) — e isso decide se os tokens do Google podem subir nesta sessão.
+- **Entrega:**
+  - o laço do chat (Gemini) roda no motor; `viking chat` no Mac vira cliente dele;
+  - a chave do Gemini e os tokens do Google no **Secret Manager**, lidos pela identidade do
+    `motor@` (nunca em variável de ambiente nem na imagem);
+  - o código de aprovação atravessa a rede num **campo próprio do protocolo**, nunca no texto que
+    o modelo escreve; a linha `confirma NNNN` é lida antes do modelo e não entra no histórico;
+    **limite de tentativas erradas por proposta** (hoje o TTY era a barreira);
+  - o registro de ações e a aprovação de uma ação da nuvem moram na nuvem (D57);
+  - o teto de custo (`custos.py`) conferido antes de gastar.
+- **Perguntas para a abertura:** o que o chat na nuvem faz enquanto o navegador (S11) e as
+  finanças (D51) ainda estão só no Mac — recusar com aviso, ou o chat local continuar existindo
+  para essas tools; o que acontece com o `viking chat` local depois dela.
+- **Herdado da 10:** o motor, o `cli@`, `scripts/nuvem.py` (só lê sem flag), o store Firestore
+  e o cliente `lifeos/nuvem/cliente.py`.
 
 ## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
 
