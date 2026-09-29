@@ -45,7 +45,7 @@ REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
 ORCAMENTO_NOME = "viking"
 ALERTAS = (0.5, 0.9, 1.0)
-MOTOR, CLI = "motor", "cli"  # contas de serviço
+MOTOR, CLI = "viking-motor", "viking-cli"  # contas de serviço (o ID pede de 6 a 30 letras)
 
 
 class ErroDoGcloud(RuntimeError):
@@ -59,7 +59,9 @@ class Contexto:
     faturamento: str
     orcamento: str
     dono: str  # a conta do gcloud (e-mail): só em memória, para o papel no `cli@`
-    projeto_existe: bool = True  # sem projeto, os passos compostos não leem nada para listar
+    # Os passos já prontos: um passo composto só lê o que existe quando as APIs estão ligadas
+    # (sem elas, a leitura responde SERVICE_DISABLED).
+    prontos: frozenset[str] = frozenset()
 
     def conta(self, nome: str) -> str:
         return f"{nome}@{self.projeto}.iam.gserviceaccount.com"
@@ -104,6 +106,7 @@ class Passo:
     descricao: str
     medir: Callable[[Contexto], Estado]
     comandos: Callable[[Contexto], list[list[str]]]
+    depende: tuple[str, ...] = ()
     irreversivel: str = ""
 
 
@@ -247,7 +250,7 @@ def _m_registro(ctx: Contexto) -> Estado:
 
 def _c_registro(ctx: Contexto) -> list[list[str]]:
     """Só o que falta: o passo pode ser repetido depois de uma falha no meio."""
-    existe = ctx.projeto_existe and _ler(
+    existe = "apis" in ctx.prontos and _ler(
         _gcloud(
             ctx, "artifacts", "repositories", "describe", REPOSITORIO, f"--location={ctx.regiao}"
         )
@@ -307,7 +310,7 @@ def _c_contas(ctx: Contexto) -> list[list[str]]:
     criar = [
         _gcloud(ctx, "iam", "service-accounts", "create", nome, f"--display-name={titulo}")
         for nome, titulo in nomes.items()
-        if not ctx.projeto_existe
+        if "apis" not in ctx.prontos
         or _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(nome))) is None
     ]
     return [
@@ -366,6 +369,7 @@ def _c_indices(ctx: Contexto) -> list[list[str]]:
             "create",
             "--database=(default)",
             f"--collection-group={colecao}",
+            "--async",  # construir leva minutos (medido: passou de 300 s); a medida diz quando fica pronto
             *(
                 f"--field-config=field-path={campo},order={ordem.lower()}"
                 for campo, ordem in campos
@@ -377,19 +381,26 @@ def _c_indices(ctx: Contexto) -> list[list[str]]:
 
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
-    Passo("faturamento", "o faturamento do dono ligado", _m_faturamento, _c_faturamento),
-    Passo("apis", "as APIs que o Viking usa", _m_apis, _c_apis),
-    Passo("orcamento", "orçamento com alertas (só avisa)", _m_orcamento, _c_orcamento),
+    Passo(
+        "faturamento",
+        "o faturamento do dono ligado",
+        _m_faturamento,
+        _c_faturamento,
+        depende=("projeto",),
+    ),
+    Passo("apis", "as APIs que o Viking usa", _m_apis, _c_apis, depende=("faturamento",)),
+    Passo("orcamento", "orçamento com alertas (só avisa)", _m_orcamento, _c_orcamento, ("apis",)),
     Passo(
         "firestore",
         "o banco (default), nativo",
         _m_firestore,
         _c_firestore,
+        depende=("apis",),
         irreversivel="o local do Firestore não muda depois de criado",
     ),
-    Passo("registro", "Artifact Registry das imagens", _m_registro, _c_registro),
-    Passo("contas", "contas de serviço e papéis", _m_contas, _c_contas),
-    Passo("indices", "índices compostos do Firestore", _m_indices, _c_indices),
+    Passo("registro", "Artifact Registry das imagens", _m_registro, _c_registro, ("apis",)),
+    Passo("contas", "contas de serviço e papéis", _m_contas, _c_contas, ("apis",)),
+    Passo("indices", "índices compostos do Firestore", _m_indices, _c_indices, ("firestore",)),
 )
 
 
@@ -432,12 +443,16 @@ def _legivel(comando: list[str]) -> str:
 
 
 def medir(ctx: Contexto) -> list[tuple[Passo, Estado]]:
+    """Cada passo, na ordem; um passo cuja dependência não está pronta não é medido (a leitura
+    esbarraria no que falta: projeto inexistente, API desligada)."""
     medidos: list[tuple[Passo, Estado]] = []
+    prontos: set[str] = set()
     for passo in PASSOS:
-        if medidos and not medidos[0][1].pronto:  # sem o projeto, nada mais existe
-            medidos.append((passo, Estado(False, "depende do projeto")))
-            continue
-        medidos.append((passo, passo.medir(ctx)))
+        faltam = [d for d in passo.depende if d not in prontos]
+        estado = Estado(False, f"depende de {', '.join(faltam)}") if faltam else passo.medir(ctx)
+        if estado.pronto:
+            prontos.add(passo.nome)
+        medidos.append((passo, estado))
     return medidos
 
 
@@ -448,7 +463,7 @@ def main(argv: list[str]) -> int:
     ctx = _contexto()
     print(f"Projeto {ctx.projeto} em {ctx.regiao} (medido agora):")
     medidos = medir(ctx)
-    ctx = dataclasses.replace(ctx, projeto_existe=medidos[0][1].pronto)
+    ctx = dataclasses.replace(ctx, prontos=frozenset(p.nome for p, e in medidos if e.pronto))
     for passo, estado in medidos:
         marca = "✅" if estado.pronto else "⬜"
         print(f"  {marca} {passo.nome:<12} {passo.descricao}: {estado.detalhe}")

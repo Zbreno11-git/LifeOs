@@ -14,7 +14,11 @@ Base da abertura (2026-09-29): `1884 passed`, CI de `26ddc71` verde.
 - C0, C1 e C2 feitos: o repo está **privado** desde 22:28Z (gitleaks: 106 commits limpos no CI);
 - C4 feito: Firestore passa o contrato no emulador (0 vermelhos em 40 rodadas); a reserva é
   comparar-e-trocar, não transação (a transação dava lock timeout com execuções juntas);
-- C3: `scripts/nuvem.py` lê a nuvem de verdade (tudo "a criar"); falta o ok do dono para criar.
+- C3 feito (ok do dono): `python scripts/nuvem.py` → os 8 passos ✅ (2026-09-29 ~23:55Z). O
+  faturamento bateu no limite de 9 projetos da conta do dono; ele escolheu desligar o do
+  `dbt-project` (23:48Z) para ligar o do Viking. Orçamento de 105 BRL (US$ 20 na PTAX de
+  5,2204). As contas são `viking-motor@` e `viking-cli@` (o ID pede de 6 a 30 caracteres);
+- próximo: C5, o motor.
 
 **Próximo passo exato:** o primeiro checkpoint ⬜ do mapa abaixo.
 
@@ -127,7 +131,7 @@ pedidos.
 | C0 | memória do fuso (Brasil em ~1 mês); plano no `PROGRESSO.md`; `sessoes.md` com a 10 dividida e a seção 10b; D47 revista e D58 aberta; classe 2 (20); commit | — | ✅ |
 | C1 | lock atualizado, suíte antes e depois iguais, `test_lock` verde; commit próprio | C0 | ✅ |
 | C2 | gitleaks no CI e no hook, limpo no histórico, canário reprovado; **ok do dono** → repo privado, conferido pela API | C1 | ✅ |
-| C3 | `scripts/nuvem.py` só-leitura mostra tudo "a criar"; **ok** → projeto, faturamento, APIs, orçamento, Firestore em SP, registry, contas de serviço e índices; o só-leitura mostra "nada a criar" | C2 | ⬜ |
+| C3 | `scripts/nuvem.py` só-leitura mostra tudo "a criar"; **ok** → projeto, faturamento, APIs, orçamento, Firestore em SP, registry, contas de serviço e índices; o só-leitura mostra "nada a criar" | C2 | ✅ |
 | C4 | store Firestore passa o contrato no emulador (VPS e CI), sem pulado; mutações novas mortas | C1 | 🔶 no VPS (CI e mutações a conferir) |
 | C5 | motor (Starlette) com testes de 401/403/identidade e sem conteúdo em log; Dockerfile; imagem constrói | C4 | ⬜ |
 | C6 | **ok** → primeiro deploy; `describe` = SHA; sem login → 403 do Google; fumaça com o `cli@` exerce `/versao` e `/lembretes` (e `vencidos` na produção) | C3, C5 | ⬜ |

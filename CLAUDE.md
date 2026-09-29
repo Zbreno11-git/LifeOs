@@ -8,10 +8,10 @@ trabalhar neste repo a partir de uma sessão do Claude Code.
 
 ## Como o trabalho acontece aqui
 
-O ambiente do Claude Code neste projeto é um **VPS Linux sem tela e sem as chaves de API**. Isso
-significa que há uma classe inteira de coisas que **não dá para validar aqui**, só escrever:
+O ambiente do Claude Code neste projeto é um **VPS Linux sem tela**. Isso significa que há uma
+classe inteira de coisas que **não dá para validar aqui**, só escrever:
 
-- qualquer chamada ao Gemini ou ao OpenRouter (as chaves vivem no Mac do dono);
+- qualquer chamada ao OpenRouter (a chave do Jev vive no Mac do dono);
 - qualquer coisa que toque um Chrome de verdade (o Browser Harness exige um clique humano em "Allow
   remote debugging" na primeira vez, e aqui não há display);
 - o fluxo OAuth do Google (Calendar e Gmail).
@@ -22,6 +22,12 @@ no navegador dele: aprovado, age na conta real. Em 2026-09-29 isso mandou um e-m
 deixou um token `gmail.modify` no VPS; o dono mandou apagá-lo (o VPS não guarda token do Gmail).
 Antes de rodar um `viking …` que fala com o Google, `ls secrets/`, e nada que envie, apague ou
 arquive por aqui (`docs/erros.md`, classe 2).
+
+**O `.env` do VPS tem as chaves do Gemini e da Pluggy** (desde 2026-09-26; medido na abertura da
+Sessão 10, e o `CLAUDE.md` dizia o contrário). O dono decidiu mantê-las: são a fonte do que a nuvem
+vai usar. Nada daqui as usa sem pedido: um `viking chat` ou `viking financas` no VPS gastaria
+tokens de verdade e leria o banco de verdade. A da Pluggy alcança PIX, e ir para a nuvem continua
+condicionado à D51.
 
 **E o VPS tem o `gcloud` logado com a conta do dono** (desde 2026-09-07, de propósito, para os
 projetos dele; o ADC junto). O projeto padrão da configuração é **outro** projeto dele: todo

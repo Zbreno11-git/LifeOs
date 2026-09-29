@@ -141,7 +141,7 @@ def test_sem_projeto_a_listagem_nao_le_nada_alem_do_projeto(nuvem, ctx, monkeypa
     monkeypatch.setattr(nuvem, "_contexto", lambda: ctx)
     assert nuvem.main([]) == 0
     assert [c[1:3] for c in gravador.comandos] == [["projects", "describe"]]
-    assert "→ gcloud iam service-accounts create cli" in capsys.readouterr().out
+    assert "→ gcloud iam service-accounts create viking-cli" in capsys.readouterr().out
 
 
 def test_executar_roda_so_o_passo_pedido_e_mede_de_novo(nuvem, ctx, monkeypatch):
@@ -160,8 +160,20 @@ def test_sem_projeto_os_passos_seguintes_nao_sao_medidos(nuvem, ctx, monkeypatch
     gravador = _Gravador()
     monkeypatch.setattr(nuvem, "_rodar", gravador)
     medidos = nuvem.medir(ctx)
-    assert [e.detalhe for _p, e in medidos[1:]] == ["depende do projeto"] * (len(medidos) - 1)
+    assert all(e.detalhe.startswith("depende de ") for _p, e in medidos[1:])
     assert len(gravador.comandos) == 1
+
+
+def test_passo_com_dependencia_pendente_nao_e_medido(nuvem, ctx, monkeypatch):
+    """Achado na criação de verdade (2026-09-29): com o projeto criado e as APIs desligadas, medir
+    o Firestore respondia SERVICE_DISABLED e derrubava o script antes de executar o passo seguinte."""
+    gravador = _Gravador({"projects describe": {"lifecycleState": "ACTIVE"}})
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    estados = {p.nome: e for p, e in nuvem.medir(ctx)}
+    assert estados["projeto"].pronto
+    assert estados["firestore"].detalhe == "depende de apis"
+    assert estados["indices"].detalhe == "depende de firestore"
+    assert not any("firestore" in c for c in gravador.comandos)
 
 
 def test_erro_que_nao_e_ausencia_sobe(nuvem, ctx, monkeypatch):
@@ -207,3 +219,12 @@ def test_indices_vem_do_store(nuvem, ctx, monkeypatch):
     campos = [a.split("field-path=")[1] for a in comando if "field-path=" in a]
     ((_colecao, esperados),) = store_firestore.INDICES
     assert campos == [f"{c},order={o.lower()}" for c, o in esperados]
+
+
+def test_ids_das_contas_de_servico_cabem_na_regra_do_google(nuvem):
+    """Achado na criação de verdade (2026-09-29): "motor" foi recusado; o ID tem de 6 a 30
+    caracteres, minúsculas, dígitos e hífen, começando por letra."""
+    import re
+
+    for nome in (nuvem.MOTOR, nuvem.CLI):
+        assert re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", nome), nome
