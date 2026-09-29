@@ -19,7 +19,7 @@
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 18 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 14 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
+| 4 | Teste que não separava o certo do errado | 15 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 8 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 9 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -280,6 +280,14 @@ modos antes de virar o teste.
 **O antídoto, concreto:** mutação vista caindo antes de dar por pronto (a Sessão 4b torna isso
 repetível em `scripts/mutacoes.py`); a entrada do teste é dimensionada pela diferença entre o
 certo e o errado, com folga para máquina rápida.
+
+**2026-09-28 — o teste-guarda do repo público passou no VPS porque ainda não estava no git.**
+`tests/test_repo_publico.py` lê os arquivos de `git ls-files` e reprova `/Users/<nome>`; o
+próprio teste tinha um caminho de exemplo escrito inteiro na régua (um nome inventado depois de
+`/Users/`). No VPS ficou verde porque o arquivo
+ainda não estava versionado (o `ls-files` não o via); no CI, já commitado, reprovou a si mesmo.
+O que tem de novo: um teste que lê **o conjunto de arquivos do git** muda de universo no commit;
+rodar a suíte com o arquivo já em `git add` antes de commitar.
 
 ### 5. A ferramenta fez outra coisa do que eu li
 

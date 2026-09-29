@@ -11,7 +11,9 @@ import subprocess
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
-_CAMINHO_DO_MAC = re.compile(r"/Users/([^/\s`'\"<>]+)")
+# O nome como o macOS o aceita (letras, números, `.`, `_`, `-`): um `/Users/<exemplo>`, uma
+# f-string ou esta própria regex não são caminho de ninguém.
+_CAMINHO_DO_MAC = re.compile(r"/Users/([A-Za-z0-9][A-Za-z0-9._-]*)")
 _EXEMPLOS = {"x", "voce", "usuario"}
 
 
@@ -37,5 +39,7 @@ def test_nenhum_nome_de_usuario_do_mac_no_repo():
 
 def test_a_regua_enxerga_um_caminho_real():
     """Sem isto, uma regex que não casa nada ficaria verde à toa."""
-    assert _CAMINHO_DO_MAC.findall("VIKING_JEV_DIR=/Users/fulano/jev") == ["fulano"]
+    # Montado em partes: com o caminho escrito inteiro aqui, este arquivo reprovaria a si mesmo
+    # (no VPS passou antes do commit só porque o `git ls-files` ainda não o via).
+    assert _CAMINHO_DO_MAC.findall("VIKING_JEV_DIR=/Users/" + "fulano/jev") == ["fulano"]
     assert _CAMINHO_DO_MAC.findall("/Users/<seu-usuario>/jev") == []
