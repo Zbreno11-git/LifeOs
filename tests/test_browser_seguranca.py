@@ -239,3 +239,35 @@ def test_recusa_com_detalhe_estranho_nao_inventa_botao():
     texto = formatar(result_from([evento], 2, None, ["g"]))
     assert "Botão recusado" not in texto
     assert "nada foi clicado" in texto
+
+
+# --- o que o envelope escondeu dos modelos (Sessão 8b) ---------------------------------------
+
+
+def _resultado_com(*contagens):
+    eventos = [{"type": "redigido", "contagem": c} for c in contagens]
+    eventos.append({"type": "result", "status": "done", "steps": 1})
+    return result_from(eventos, 0, None, ["g"])
+
+
+def test_o_resultado_leva_o_maximo_por_tipo_nao_a_soma():
+    """A mesma página em 3 passos são 3 eventos com o mesmo CPF: é 1 CPF, não 3."""
+    resultado = _resultado_com({"CPF": 1}, {"CPF": 1, "cartão": 2}, {"CPF": 1})
+    assert resultado.redacoes == {"CPF": 1, "cartão": 2}
+
+
+@pytest.mark.parametrize(
+    "contagem",
+    [{"CPF": "1"}, {"CPF": True}, {"CPF": -2}, {"CPF": 0}, {"inventado": 3}, ["CPF"], "CPF"],
+)
+def test_contagem_torta_e_ignorada(contagem):
+    assert _resultado_com(contagem).redacoes == {}
+
+
+def test_o_texto_diz_o_que_foi_escondido():
+    texto = formatar(_resultado_com({"CPF": 1, "cartão": 2}))
+    assert "Escondi dos modelos, antes de enviar a página: 1 CPF, 2 cartão." in texto
+
+
+def test_sem_nada_escondido_sem_a_linha():
+    assert "Escondi" not in formatar(_resultado_com())

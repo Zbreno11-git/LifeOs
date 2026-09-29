@@ -472,7 +472,7 @@ MUTACOES = [
     Mutacao(
         "envelope: página sai sem redação para o OpenRouter",
         "src/lifeos/browser/_jev_subprocess.py",
-        "decisao = choose(_redacao.pagina(page), goal, history)",
+        "decisao = choose(_redigida(page), goal, history)",
         "decisao = choose(page, goal, history)",
         "tests/test_jev_subprocess_main.py::test_choose_recebe_pagina_redigida_e_estado_fica_intacto",
     ),
@@ -1419,6 +1419,34 @@ MUTACOES = [
         '            "completa": resposta.dados.completa,',
         '            "completa": True,',
         "tests/test_mcp_server.py::test_lista_acima_do_teto_diz_que_esta_incompleta",
+    ),
+    Mutacao(
+        "envelope: contexto do campo sai sem redação",
+        "src/lifeos/browser/_jev_subprocess.py",
+        "        return field_context(goal, action, _redigida(page), history)",
+        "        return field_context(goal, action, page, history)",
+        "tests/test_jev_subprocess_main.py::test_field_context_tambem_passa_pelo_envelope",
+    ),
+    Mutacao(
+        "contador: conta a página já redigida (nunca acha nada)",
+        "src/lifeos/browser/_jev_subprocess.py",
+        "        contagem = _redacao.escondidos(page, redigida)",
+        "        contagem = _redacao.escondidos(redigida, redigida)",
+        "tests/test_jev_subprocess_main.py::test_o_envelope_conta_o_que_escondeu_dos_modelos",
+    ),
+    Mutacao(
+        "contador: marca que a página já tinha conta como escondida",
+        "src/lifeos/browser/_redacao.py",
+        "            trocados = depois.count(marca) - antes.count(marca)",
+        "            trocados = depois.count(marca)",
+        "tests/test_jev_subprocess_main.py::test_marca_que_a_pagina_ja_tinha_nao_conta",
+    ),
+    Mutacao(
+        "contador: soma os passos em vez do máximo",
+        "src/lifeos/browser/jev_runner.py",
+        "                maximo[tipo] = max(maximo.get(tipo, 0), quantos)",
+        "                maximo[tipo] = maximo.get(tipo, 0) + quantos",
+        "tests/test_browser_seguranca.py::test_o_resultado_leva_o_maximo_por_tipo_nao_a_soma",
     ),
 ]
 

@@ -208,4 +208,7 @@ def formatar(result: BrowserResult) -> str:
             partes.append(_PODE_ESTAR_PARCIAL if codigo in _PARCIAL else _NAO_DESFEITO)
             partes.append(_bloco_da_pagina(result, acoes=False, trecho=False))
 
+    if result.redacoes:
+        escondido = ", ".join(f"{quantos} {tipo}" for tipo, quantos in result.redacoes.items())
+        partes.append(f"🔒 Escondi dos modelos, antes de enviar a página: {escondido}.")
     return "\n".join(p for p in partes if p)

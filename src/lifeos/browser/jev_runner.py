@@ -63,6 +63,8 @@ class BrowserResult:
     acao_sensivel: dict | None = None
     liberavel: bool = False
     liberado: bool = False
+    # O que o envelope escondeu dos modelos, por tipo ({"CPF": 1}): o máximo numa página.
+    redacoes: dict = field(default_factory=dict)
 
 
 def build_command(
@@ -149,7 +151,7 @@ def ambiente_do_jev(nonce: str = "", origem: Mapping[str, str] | None = None) ->
 
 
 SCHEMA = 1
-TIPOS = frozenset({"start", "health", "step", "liberado", "result", "error"})
+TIPOS = frozenset({"start", "health", "step", "liberado", "redigido", "result", "error"})
 
 
 def parse_event(linha: str, nonce: str) -> dict | None:
@@ -276,6 +278,7 @@ def _montar_resultado(
         "kept_open": bool(final.get("kept_open")),
         "usage": dict(final.get("usage") or {}),
         "liberado": any(e.get("type") == "liberado" for e in eventos),
+        "redacoes": _redacoes(eventos),
     }
     if final["type"] == "error":
         acao_sensivel = _acao_sensivel(final)
@@ -293,6 +296,20 @@ def _montar_resultado(
         **comum,
         **base,
     )
+
+
+def _redacoes(eventos: Sequence[dict]) -> dict:
+    """O máximo de cada tipo nos eventos `redigido`, na ordem de `_redacao.TIPOS_ESCONDIDOS`.
+    Contagem torta (tipo desconhecido, número que não é inteiro positivo) é ignorada."""
+    maximo: dict[str, int] = {}
+    for evento in eventos:
+        contagem = evento.get("contagem") if evento.get("type") == "redigido" else None
+        if not isinstance(contagem, dict):
+            continue
+        for tipo, quantos in contagem.items():
+            if tipo in _redacao.TIPOS_ESCONDIDOS and type(quantos) is int and quantos > 0:
+                maximo[tipo] = max(maximo.get(tipo, 0), quantos)
+    return {tipo: maximo[tipo] for tipo in _redacao.TIPOS_ESCONDIDOS if tipo in maximo}
 
 
 def _erro(codigo: str, detalhe: str, goals: Sequence[str]) -> BrowserResult:

@@ -155,6 +155,33 @@ def mascarar_digitado(rotulo, texto):
     return redigir(texto)
 
 
+# As marcas que `redigir` escreve, na ordem em que o texto para o dono as lista.
+_MARCAS = {
+    "[token]": "token",
+    "[chave]": "chave",
+    "[CNPJ]": "CNPJ",
+    "[CPF]": "CPF",
+    "[cartão]": "cartão",
+    "[SSN]": "SSN",
+}
+TIPOS_ESCONDIDOS = tuple(_MARCAS.values())
+
+
+def escondidos(original, redigida):
+    """Quantos de cada tipo a redação trocou no texto e no título de uma página (Sessão 8b): a
+    diferença entre as marcas depois e antes, porque a página pode já ter escrito `[CPF]`. É a
+    prova de que o modelo não viu o dado, que a saída não dá: ela é redigida de novo na volta."""
+    contagem = {}
+    for campo in ("text", "title"):
+        antes = str((original or {}).get(campo) or "")
+        depois = str((redigida or {}).get(campo) or "")
+        for marca, tipo in _MARCAS.items():
+            trocados = depois.count(marca) - antes.count(marca)
+            if trocados > 0:
+                contagem[tipo] = contagem.get(tipo, 0) + trocados
+    return contagem
+
+
 def pagina(page):
     """Cópia rasa da página com texto, título e URL redigidos. Nunca muta o original: o Jev usa
     esse dict (fingerprint) para conferir se a página ainda é a mesma antes de clicar."""

@@ -223,15 +223,24 @@ def instalar_protecao(bloqueados, liberar=None):
             return
         raise AcaoSensivel(motivo, decisao.get("usage"), {**digital, "url": url}, liberavel)
 
+    def _redigida(page):
+        """A página que o modelo recebe, e a contagem do que foi escondido dela (o runner fica
+        com o máximo por tipo: a mesma página em vários passos conta uma vez)."""
+        redigida = _redacao.pagina(page)
+        contagem = _redacao.escondidos(page, redigida)
+        if contagem:
+            emit(type="redigido", contagem=contagem)
+        return redigida
+
     def choose_protegido(page, goal, history):
         _checar(page)
-        decisao = choose(_redacao.pagina(page), goal, history)
+        decisao = choose(_redigida(page), goal, history)
         _frear(page, decisao)
         return decisao
 
     def field_context_protegido(goal, action, page, history):
         _checar(page)
-        return field_context(goal, action, _redacao.pagina(page), history)
+        return field_context(goal, action, _redigida(page), history)
 
     agente.choose = choose_protegido
     agente.field_context = field_context_protegido

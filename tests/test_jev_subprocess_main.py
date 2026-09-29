@@ -369,6 +369,37 @@ def test_choose_recebe_pagina_redigida_e_estado_fica_intacto(jev_falso, monkeypa
     assert estado["page"] == original
 
 
+def _redigidos(capsys) -> list[dict]:
+    return [e["contagem"] for e in _linhas(capsys) if e["type"] == "redigido"]
+
+
+def test_o_envelope_conta_o_que_escondeu_dos_modelos(jev_falso, monkeypatch, capsys):
+    """Sessão 8b: a saída do Viking é redigida de novo na volta, então um `[CPF]` no fim não
+    separa "o modelo nunca viu" de "viu, e a saída escondeu". A contagem vem de quem redigiu."""
+    estado = {**_estado("done", 1), "page": _pagina_sensivel()}
+    jev_falso.proximos_estados = [estado]
+    _rodar(monkeypatch, "--timeout", "5")
+    assert _redigidos(capsys) == [{"CPF": 1, "cartão": 1, "token": 1}]
+    (enviada,) = jev_falso.enviados["choose"]
+    assert "529.982.247-25" not in enviada["title"]
+
+
+def test_marca_que_a_pagina_ja_tinha_nao_conta(jev_falso, monkeypatch, capsys):
+    """Uma página que fala de redação (e já escreve `[CPF]`) não vira "escondi 1 CPF"."""
+    pagina = {"url": "https://x.com", "title": "[CPF] e [cartão]", "text": "sem nada real [CPF]"}
+    jev_falso.proximos_estados = [{**_estado("done", 1), "page": pagina}]
+    _rodar(monkeypatch, "--timeout", "5")
+    assert _redigidos(capsys) == []
+
+
+def test_field_context_tambem_conta(jev_falso, capsys):
+    import jev_ultrafast.agent as agente
+
+    runner.instalar_protecao([])
+    agente.field_context("meta", {"label": "Nome"}, _pagina_sensivel(), [])
+    assert _redigidos(capsys) == [{"CPF": 1, "cartão": 1, "token": 1}]
+
+
 def test_field_context_tambem_passa_pelo_envelope(jev_falso):
     import jev_ultrafast.agent as agente
 
