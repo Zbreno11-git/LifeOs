@@ -268,7 +268,10 @@ def consumir(acao: str, codigo: str, *, agora: datetime | None = None) -> Regist
         )
         if cursor.rowcount != 1:
             raise JaUsado("esse código já foi usado")
-        return _registro(_mais_recente(conn, acao, codigo))
+        gasta = conn.execute("SELECT * FROM confirmacoes WHERE id = ?", (linha["id"],)).fetchone()
+        if gasta is None:  # a mesma transação acabou de gastá-la: não some sem outro erro antes
+            raise ErroConfirmacao("a proposta sumiu durante a confirmação")
+        return _registro(gasta)
 
 
 def registrar(registro_id: int, resultado: dict[str, Any]) -> None:

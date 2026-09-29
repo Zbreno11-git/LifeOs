@@ -150,6 +150,8 @@ def acao(
                 momento.isoformat(),
             ),
         )
+        if cursor.lastrowid is None:  # um INSERT sem erro sempre tem rowid; se faltar, erra alto
+            raise sqlite3.DatabaseError("o registro da ação não voltou do banco")
         marca = Marca(cursor.lastrowid)
     try:
         yield marca

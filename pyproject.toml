@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+dev = ["pytest", "ruff", "mypy"]
 hardware = ["pyserial"]
 
 [project.scripts]
@@ -52,3 +52,14 @@ extend-exclude = [".claude"]
 [tool.ruff.format]
 # Nos `.md` o Python é citação (o patch do Jev em `docs/arquitetura/`, exemplos): fica como veio.
 exclude = ["*.md"]
+
+[tool.mypy]
+# Portão do CI desde a Sessão 9 (dono, 2026-09-29), só nos módulos de dados: o repo inteiro tem
+# 68 erros (backlog em `sessoes.md`). `tests/test_ci_workflow.py` exige aqui todo módulo que
+# abre o banco.
+files = [
+    "src/lifeos/banco.py",
+    "src/lifeos/reminders",
+    "src/lifeos/registro.py",
+    "src/lifeos/confirmacao.py",
+]

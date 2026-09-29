@@ -103,7 +103,7 @@ vencido nas últimas 24 h. Rodado duas vezes, ou em dois processos ao mesmo temp
 |---|---|---|---|
 | C0 | plano aqui; memória na S13; backlog do `mypy` com o número de hoje | — | ✅ |
 | C1 | teste vermelho "a suíte não toca o banco real" → `banco.py` com o caminho único + `conftest` → verde; erro classe 6; commit | C0 | ✅ (3 vermelhos → `1807 passed`; `sha256sum data/viking.db` igual antes e depois da suíte; cada camada tirada sozinha derruba o teste dela) |
-| C2 | `mypy` no lock e no CI para os módulos de dados; os 3 erros consertados; `test_lock` e `test_ci_workflow` verdes; commit | C1 | ⬜ |
+| C2 | `mypy` no lock e no CI para os módulos de dados; os 3 erros consertados; `test_lock` e `test_ci_workflow` verdes; commit | C1 | ✅ (lista única em `[tool.mypy] files`; `Success: no issues found in 7 source files`; a régua deriva do código quem importa `banco`; `1829 passed`) |
 | C3 | migrations 1–4 + ledger + transação + checksum + recusa do mais novo + backup; os três módulos por `banco`; testes contra o banco antigo com dados; commit | C2 | ⬜ |
 | C4 | migração 5 (UUID e colunas de envio) + interface + contrato; chat e MCP sem `#id`; commit | C3 | ⬜ |
 | C5 | `viking lembretes [--enviar]` com reserva, janela de 24 h e limite; testes de sequência e de dois processos; commit | C4 | ⬜ |

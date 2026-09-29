@@ -97,3 +97,34 @@ def test_scanner_nao_ignora_nenhuma_falha():
     Ignorar uma volta a ser decisão do dono, escrita na D45, e este teste muda junto."""
     assert _ignorados() == []
     assert "--ignore-vuln" not in _codigo()
+
+
+def _arquivos_do_mypy() -> list[str]:
+    import tomllib
+
+    return tomllib.loads((RAIZ / "pyproject.toml").read_text())["tool"]["mypy"]["files"]
+
+
+def test_mypy_cobre_todo_modulo_que_abre_o_banco():
+    """Portão de tipos nos módulos de dados (Sessão 9): quem importa `lifeos.banco` entra na lista
+    do `pyproject`, derivado do código. Um módulo novo de dados que ficasse fora passaria sem
+    checagem."""
+    import ast
+
+    cobertos = [RAIZ / caminho for caminho in _arquivos_do_mypy()]
+
+    def coberto(arquivo: Path) -> bool:
+        return any(arquivo == c or arquivo.is_relative_to(c) for c in cobertos if c.exists())
+
+    usam = []
+    for arquivo in (RAIZ / "src" / "lifeos").rglob("*.py"):
+        for no in ast.walk(ast.parse(arquivo.read_text(encoding="utf-8"))):
+            nomes = []
+            if isinstance(no, ast.ImportFrom) and no.module == "lifeos":
+                nomes = [a.name for a in no.names]
+            elif isinstance(no, ast.ImportFrom) and no.module == "lifeos.banco":
+                nomes = ["banco"]
+            if "banco" in nomes:
+                usam.append(arquivo)
+    assert len(usam) >= 3  # lembretes, registro, confirmações
+    assert [a for a in [*usam, RAIZ / "src/lifeos/banco.py"] if not coberto(a)] == []

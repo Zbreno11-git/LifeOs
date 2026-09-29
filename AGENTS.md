@@ -135,6 +135,8 @@ python -m pytest               # roda os testes (testpaths = tests/)
 python -m ruff check .         # lint (line-length 100, src+tests)
 python -m ruff format --check . # formatação: zero arquivos a formatar (sem baseline desde
                                # 2026-09-28; os `.md` ficam fora, D45)
+python -m mypy                 # tipos, só nos módulos de dados (a lista está no `pyproject`;
+                               # Sessão 9); o resto do repo segue no backlog
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
                                # acessar, egress e das contas de finanças (à mão; não
                                # editar nada enquanto roda;

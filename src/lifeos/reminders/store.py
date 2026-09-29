@@ -124,7 +124,10 @@ def add(
             ),
         )
         reminder_id = cursor.lastrowid
-    return get(reminder_id)
+    lembrete = get(reminder_id) if reminder_id is not None else None
+    if lembrete is None:  # gravado sem erro e não volta: erra alto, nunca "criado" sem prova
+        raise sqlite3.DatabaseError("o lembrete gravado não voltou do banco")
+    return lembrete
 
 
 def get(reminder_id: int) -> Reminder | None:

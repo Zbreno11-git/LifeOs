@@ -40,6 +40,8 @@ jobs:
         run: uv run --locked python -m ruff check .
       - name: Formatação
         run: uv run --locked python -m ruff format --check .
+      - name: Tipos (só os módulos de dados; a lista está no pyproject)
+        run: uv run --locked python -m mypy
       - name: Falhas conhecidas nas dependências do lock
         # Nenhuma ignorada: ignorar uma falha é decisão do dono, escrita na D45.
         run: |
