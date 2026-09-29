@@ -30,8 +30,34 @@ registro nem por e-mail; nada de endereço de terceiros nem `/Users/<nome>` no r
 background, sem `timeout`; nunca presumir o fuso do dono; o VPS tem o cliente OAuth do Google e o
 token da agenda: nada que envie, apague ou arquive rodado daqui.
 
-**Depende do dono:** as perguntas da abertura da 10 (projeto GCP com o faturamento dele, o repo
-privado); apagar as cópias `viking.db.antes-*` do Mac quando quiser.
+**Para planejar a 10 (anotado em 2026-09-29, antes do compact; conferir na abertura):**
+- a seção dela em `sessoes.md` é a proposta de partida (D53 (4)): o repo privado **antes** de
+  qualquer infraestrutura, com um scanner de segredos nosso no CI e no commit antes da troca;
+  Cloud Run com 0 instâncias mínimas, Scheduler e Secret Manager, sem load balancer (D47); dois
+  serviços (o motor fechado por IAM); Firestore recomendado, escolhido na abertura pelo custo
+  medido; deploy sem credencial fixa no VPS (token de 1 h gerado no Mac, mecanismo **não
+  conferido**);
+- **evento com data:** a prova de que o login do Gmail não vence em 7 dias só vale **depois de
+  2026-10-03** (o token do Mac é de 2026-09-26; o dono roda `viking gmail --login` no Mac, que tem
+  de passar sem abrir o navegador). Se a 10 abrir antes disso, esse passo fica para o fim dela;
+- o que a 9 deixou para a 10: o contrato `tests/test_reminders_contrato.py` (o Firestore entra em
+  `IMPLEMENTACOES`), `reminders/interface.py` e a D57 (o que mora onde; a aprovação e o registro
+  moram onde a ação roda);
+- o VPS tem `secrets/google_credentials.json` e `secrets/google_token.json` (agenda): o scanner de
+  segredos tem de passar sem acusá-los (estão no `.gitignore`) e acusar um igual fora de `secrets/`;
+- o dono pediu, para a 9, "precisão, otimização e software resiliente": vale como critério da 10
+  também (checkpoint com comando e número; nada que custe dinheiro sem medir antes; o script de
+  deploy só lê sem a flag e pede ok a cada passo, skill `nuvem-e-deploy` §6);
+- a 10 é candidata a ser dividida (nota do roteiro): o tamanho sai da medição da abertura, e
+  dividir é decisão do dono.
+
+**Depende do dono:** as perguntas da abertura da 10 (criar o projeto GCP com o faturamento dele e
+o alerta de orçamento; quando o repo vira privado; dividir ou não); apagar as cópias
+`viking.db.antes-*` do Mac quando quiser.
+
+**Antes de confiar neste bloco:** `git status --short` vazio; HEAD = `bee1d2e` ou o checkpoint
+logo depois dele; `ls .mutacao.lock` → não existe; `.venv/bin/python -m pytest -q` →
+`1884 passed`; `gh run list --commit $(git rev-parse HEAD)` → `success`.
 
 ## Plano — Sessão 9: fundação de dados (fechada no Mac em 2026-09-29)
 
