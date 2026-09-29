@@ -5,27 +5,64 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 8 fechada no Mac; próximo: abrir e planejar a 8b
+## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 8 fechada; próximo: abrir, planejar e executar a 8b (começando pelo e-mail com formatação)
 
-**Estado:** a Sessão 8 fechou no Mac do dono em 2026-09-28 (C0–C6 ✅; o que o teste mostrou e o
-conserto do "eu" estão no diário e em `sessoes.md`). HEAD e CI: conferir com `git log --oneline -1`
-e `gh run list --commit $(git rev-parse HEAD)` (SHA inteiro). Portões em 2026-09-28: `1686
-passed`, `ruff` limpo, formatação zero; mutações: 183/183 na bateria inteira antes do conserto, e
-as 9 do envio (com a nova do "eu") depois.
+**Estado do repositório:** conferir com `git log --oneline -3`: o checkpoint antes do compact, em
+cima de `af4dfec` · igual ao remoto · travas: nenhuma · background: nenhum. Portões em 2026-09-28:
+`1688 passed`, `ruff` limpo, formatação zero. Mutações: 183/183 na bateria inteira da 8; as 9 do
+envio depois do "eu". CI conferido pelo SHA inteiro (o `gh` só filtra assim).
 
-**Próximo passo exato:** abrir a Sessão 8b pela skill `software-build`:
-1. a rotina de abertura (`uv lock --upgrade --dry-run`, CI pelo SHA inteiro);
-2. os dois primeiros passos já escritos na seção dela: o "manda pra mim" ao vivo, e a pergunta
-   sobre o nome de usuário do Mac nas 3 linhas antigas do repo público;
-3. depois, a paginação da agenda e as validações ao vivo das parciais 4 e 3b.
+**Onde parou:**
+- a Sessão 8 fechou no Mac (C0–C6 ✅, diário e `sessoes.md`);
+- depois dela:
+  - o dono confirmou o "manda pra mim" ao vivo;
+  - pediu para tirar o nome de usuário do Mac do repo: feito, com teste-guarda;
+  - mostrou o e-mail com markdown cru. Está medido, e o plano está escrito no 1º passo da 8b.
+
+**Próximo passo exato: abrir a Sessão 8b pela skill `software-build`.**
+1. Rotina de abertura: `uv lock --upgrade --dry-run` e o CI do HEAD pelo SHA inteiro.
+2. Confirmar com o dono o plano do e-mail formatado (seção da 8b em `sessoes.md`): texto fonte
+   único aprovado no terminal → `text/plain` limpo + `text/html` de um conversor nosso que
+   escapa tudo antes. Isso reabre a D46 no "sem HTML".
+3. Implementar com teste vermelho antes: hoje o teste exige uma parte só, e a entrada
+   adversarial não pode produzir `<a`, `<img`, `<script>`, `on…=`.
+4. O resto da 8b:
+   - a paginação de `calendar/service.buscar()` (`nextPageToken` até um teto declarado, que diz
+     quando a lista está incompleta);
+   - as validações ao vivo das parciais 4 (CPF numa página real) e 3b (MCP contra a agenda real).
+5. Fechar com o teste no Mac: "manda pra mim um e-mail apresentando quem você é" chega com
+   negrito e lista de verdade.
+
+**Reler, nesta ordem:**
+1. `CLAUDE.md`/`AGENTS.md`.
+2. Este bloco.
+3. Em `sessoes.md`: o ▶️ e a Sessão 8b inteira, com a medição e o plano do e-mail.
+4. `docs/decisoes.md`: D46 e D53.
+5. `docs/fontes/gmail-api.md`: a seção "Enviar".
+6. O índice de `docs/erros.md`.
+7. A memória do Claude.
+8. As skills `software-build` (com `referencia/plano-de-sessao.md`), `seguranca` (§6, conteúdo
+   de fora e HTML), `testes-que-provam` e `falha-ruidosa` (§2, teto silencioso, para a
+   paginação).
+9. O código: `src/lifeos/gmail/envio.py` (`montar`, `_texto`), `gmail/tools.py`
+   (`texto_do_envio` e as docstrings de `enviar_email`/`responder_email`),
+   `tests/test_gmail_envio.py` e `calendar/service.py` (`buscar`).
 
 **Não pode ser esquecido:**
-- O endereço da noiva do dono **nunca** entra no repo (é público).
-- Mutações em background e sem `timeout`, com a saída inteira num arquivo.
-- Nunca presumir o fuso do dono.
+- **O código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail** (D26, D52).
+- **O que o dono aprova é o texto fonte.** O HTML sai dele por uma função pura, e nenhum HTML do
+  Gemini passa: escapar **antes** de formatar.
+- **O endereço da noiva do dono nunca entra no repo**, e nenhum `/Users/<nome>` também
+  (`tests/test_repo_publico.py`).
+- **Mutações:** em background, sem `timeout`, com a saída inteira num arquivo (nunca por `tail`,
+  `docs/erros.md` classe 5).
+- **Nunca presumir o fuso do dono.** Script para o Mac segue a classe 1.
 
-**Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` (não existe);
-`python -m pytest -q` → `1686 passed`.
+**Depende do dono:** confirmar o plano do e-mail formatado (e se quer a linha do Viking em cinza);
+o teste no Mac no fim.
+
+**Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
+`python -m pytest -q` → `1688 passed`; `gh run list --commit $(git rev-parse HEAD)` → `success`.
 
 ## Plano — Sessão 8: e-mail que sai, mais o furo do bloqueio e a rotina de versões (fechada em 2026-09-28)
 

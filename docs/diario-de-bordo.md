@@ -471,7 +471,7 @@ As ressalvas "não validado ao vivo" acima ficam resolvidas: o dono rodou o rote
 (`git pull` até `ac2b84f`, `.venv` ativado corretamente) e confirmou, com saída real colada:
 
 - **Sessão 2 — config:** `VIKING_DB_PATH=./x.db` rodado de `/tmp` resolveu para dentro do repo
-  (`/Users/luanabreno/LifeOs/x.db`); `VIKING_BROWSER_TIMEOUT_S=nan` derrubou o import com
+  (`~/LifeOs/x.db`); `VIKING_BROWSER_TIMEOUT_S=nan` derrubou o import com
   `ValueError` citando a variável.
 - **Sessão 2 — lembretes:** criados via `viking chat` (com e sem prazo) saíram de `list_open()` na
   ordem certa — prazo mais próximo primeiro, sem prazo por último.
@@ -691,7 +691,7 @@ no `git status`, restaurado pelo `git show HEAD:`; classe nova 8.
 ### 2026-09-26 — Validação ao vivo da Sessão 4b, no Mac do dono
 
 Saída real colada pelo dono (`git pull` até `86dd7e9`, `which python` →
-`/Users/luanabreno/LifeOs/.venv/bin/python`):
+`~/LifeOs/.venv/bin/python`):
 
 - **`444 passed in 7.37s`**, nenhum pulado — inclusive os dois testes de contrato contra o clone
   do Jev de lá.
@@ -1045,6 +1045,21 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Não medido:** desfazer um reagendamento e evento com convidados — primeiro passo da Sessão 6.
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
+
+### 2026-09-28 — Depois da 8: o "eu" confirmado no Mac, o nome de usuário fora do repo, o markdown medido
+
+- **"manda pra mim" no Mac:** o dono testou e saiu direto, sem perguntar o endereço. O 1º passo
+  da 8b fechou.
+- **Nome de usuário do Mac:** a pedido do dono, saiu das 3 linhas do repo público (`.env.example`
+  e duas do diário, trocado por `~` e `<seu-usuario>`). `tests/test_repo_publico.py` reprova um
+  `/Users/<nome>` que não seja de exemplo; conferido que cai sem o conserto. O histórico do git
+  ainda tem 3 commits com ele; reescrever exigiria force push, e isso fica para o repo privado na
+  Sessão 10.
+- **E-mail com markdown cru:** a captura de tela do dono mostrou `**negrito**` e listas `- `
+  como texto no Gmail, porque o Viking manda só `text/plain`. Medido no VPS: a stdlib monta
+  `multipart/alternative` (texto + HTML) sem parte de anexo. O plano, com um conversor nosso que
+  escapa tudo antes e só depois formata um subconjunto, está como primeiro passo da 8b em
+  `sessoes.md`.
 
 ### 2026-09-28 — Sessão 8 fechada no Mac; o "manda pra mim" que perguntava o endereço
 

@@ -23,8 +23,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** abrir e planejar a 8b pela skill `software-build` (primeiros passos já escritos na
-  seção dela).
+- **Agora:** abrir, planejar e executar a 8b pela skill `software-build`, começando pelo e-mail
+  com formatação de verdade (medição e plano já escritos na seção dela).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -480,11 +480,55 @@ O que estava escrito na abertura:
 
 ## Sessão 8b — pequenos (curta, planejada em 2026-09-28)
 
-- **Primeiros passos (adiados da 8, 2026-09-28):**
-  1. No Mac, `manda pra mim um e-mail…` sai direto, sem o Gemini perguntar o endereço (o
-     conserto do "eu", feito depois do teste da 8).
-  2. Perguntar ao dono: o nome de usuário do Mac aparece em 3 linhas antigas do repo público
-     (`.env.example:20` e duas no diário). Tirar, ou deixar até o repo virar privado na 10?
+- **Feito antes da abertura (2026-09-28):**
+  - ~~o "manda pra mim" ao vivo~~: o dono testou no Mac, e saiu direto, sem perguntar o endereço;
+  - ~~o nome de usuário do Mac no repo público~~: tirado das 3 linhas, a pedido do dono, com um
+    teste que impede a volta (`tests/test_repo_publico.py`). O histórico do git ainda tem 3
+    commits antigos com ele: reescrever exigiria force push, e isso se resolve com o repo privado
+    na Sessão 10.
+- **Primeiro passo (pedido do dono, 2026-09-28): o e-mail sai com formatação de verdade.**
+  - **Medido:**
+    - No Gmail do dono (captura de tela, 2026-09-28), um e-mail do Viking mostrou `**Gestão de
+      Calendário:**` e as listas `- ` como texto cru. O Gemini escreve em markdown, e o Viking
+      manda só `text/plain` (`envio.montar`; o teste exige uma parte só).
+    - No VPS, com o Python 3.12.3: o `EmailMessage` com `set_content(texto)` e
+      `add_alternative(html, subtype="html")` gera `multipart/alternative` com `text/plain` e
+      `text/html`, `iter_attachments()` vazio, e `get_body(("html", "plain"))` escolhe o HTML.
+    - **Não medido:** como o Gmail do dono mostra a parte HTML (esperado: a HTML, pela RFC 2046),
+      e se ele transforma em link uma URL solta dentro do HTML.
+  - **Plano proposto (confirmar com o dono na abertura; reabre a D46 só no "sem HTML", e o
+    gatilho é o pedido dele):**
+    1. **A fonte continua uma só:** o texto que o Gemini escreve e que o dono aprova no terminal.
+       O código liga esse texto. As duas partes saem dele por uma **função pura** (`envio.montar`),
+       testada, então o aprovado e o enviado não divergem.
+    2. **Um conversor nosso, pequeno, só stdlib, sem lib de markdown:** `html.escape` em **tudo**
+       primeiro; depois só um subconjunto:
+       - `**x**` → `<b>`, `*x*` → `<i>`;
+       - linhas `- `/`* ` → `<ul><li>`, e `1. ` → `<ol><li>`;
+       - linha `# x` → `<b>x</b>`;
+       - parágrafo → `<p>`, quebra simples → `<br>`.
+
+       Nada de `<a>`, imagem, estilo externo ou HTML vindo do Gemini: um `<img src=…>` no texto
+       sai escapado, como texto. Recusadas: `markdown`/`mistune`, que seriam dependência nova e
+       deixam HTML cru passar sem configuração a medir.
+    3. **A parte `text/plain`** perde os marcadores (`**x**` → `x`), para cliente sem HTML ler
+       limpo. A linha "Escrito pelo Viking (Assistente AI)" vai no fim das duas, e no HTML em
+       cinza. É o lugar da logo, depois.
+    4. **O terminal mostra o texto fonte**, mais uma linha: "no Gmail, **negrito** e listas saem
+       formatados".
+    5. **A docstring das tools diz o subconjunto:** negrito, itálico, listas; sem tabelas nem
+       títulos grandes.
+    6. **Testes:**
+       - entrada adversarial (`<script>`, `<img onerror>`, `"><a href=…>`, `**` sem fechar,
+         `***x***`, lista dentro de parágrafo): nenhum `<a`, `<img`, `<script`, `<style`, `on…=`
+         no HTML;
+       - nenhuma parte de anexo;
+       - a parte texto sem `**`;
+       - o emoji com ZWJ inteiro;
+       - o teste de "uma parte só" vira "exatamente `text/plain` + `text/html`, sem anexo".
+       - Mutações: tirar o escape; deixar `<a` passar; manter `**` no texto.
+    7. **No Mac:** o mesmo pedido da captura ("manda pra mim um e-mail apresentando quem você
+       é") chega com negrito e lista de verdade.
 
 - **Entrega:** uma série semanal de 300 ocorrências aparece inteira na busca; os testes ao vivo
   que faltam nas parciais 4 (redação de CPF/cartão numa página real) e 3b (tools de calendário
