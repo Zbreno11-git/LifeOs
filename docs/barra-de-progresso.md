@@ -7,13 +7,44 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-29 (Sessão 8b fechada no seu Mac, e com ela as parciais 4 e 3b).**
+**Última atualização: 2026-09-29 (Sessão 9 pronta no VPS; falta o seu teste no Mac).**
 
-`██████████░░░░░░░░░░ 14 de 28 sessões fechadas`
+`██████████░░░░░░░░░░ 14 de 28 sessões fechadas, 1 parcial`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8 e 8b;
-parciais: nenhuma; na fila: 9 a 11, **11b (formulários, pedida por você em 2026-09-29)** e 12 a 21.
-O total foi de 27 para 28 por causa da 11b, não porque algo voltou atrás.
+parcial: 9 (falta o Mac); na fila: 10, 11, 11b (formulários) e 12 a 21.
+
+## 2026-09-29 — Sessão 9: a base dos dados (pronta no VPS; falta o seu Mac)
+
+**O que ficou pronto:**
+- **Um defeito meu, achado e fechado:** desde a Sessão 5, cada vez que os testes rodavam, um
+  lembrete falso "Pagar conta" era gravado (e concluído na hora) no seu banco de verdade. Não
+  aparecia na lista, por isso ninguém viu. Parou; e um script apaga os antigos, só quando você
+  mandar, depois de copiar o banco.
+- **O banco agora sabe mudar de formato com segurança.** Cada mudança é numerada e anotada, com
+  uma impressão digital. Se algo der errado no meio, o banco volta a ser exatamente o que era.
+  Antes de mudar, o Viking guarda uma cópia do banco. E se um dia o banco for de uma versão mais
+  nova que o código (você esqueceu um `git pull`), ele se recusa a abrir e diz o que fazer, em vez
+  de estragar os dados.
+- **Lembretes prontos para a nuvem:** cada um ganhou um código único (a nuvem não tem o "#12"),
+  e as regras que a nuvem terá de seguir estão escritas como testes. No chat você passa a ver só
+  título e prazo, sem número.
+- **Lembrete por e-mail:** `viking lembretes --enviar` manda para o seu e-mail um e-mail por
+  lembrete vencido nas últimas 24 h. Rodado duas vezes, ou duas vezes ao mesmo tempo, manda um
+  só. Se o Google não confirmar, ele diz "não sei se saiu" e não manda de novo. Os vencidos há
+  mais tempo ele só lista.
+- **Checagem de tipos** (uma revisão automática que pega "isto pode estar vazio e ninguém
+  tratou") agora roda no GitHub a cada envio, nas partes que mexem no banco.
+
+**Como sabemos:** 1884 testes passando no VPS; 215 de 215 defeitos plantados de propósito
+derrubados pelo teste certo (duas regras de "dois ao mesmo tempo" só passaram a ser provadas
+depois que a rodada mostrou que o teste antigo dependia de sorte); e uma cópia do banco do VPS,
+no formato de antes, migrou sem perder nenhuma linha.
+
+**Erros meus desta sessão:** o dos testes gravando no seu banco (da Sessão 5), e um de hoje:
+rodei o envio de lembrete no VPS achando que aqui não havia acesso ao Google; o login abriu, você
+aprovou, e um e-mail de teste chegou na sua caixa. O acesso ao Gmail foi apagado do VPS, como
+você pediu.
 
 ## 2026-09-29 — Sessão 8b: e-mail formatado, agenda sem corte e a prova da redação (fechada no seu Mac)
 

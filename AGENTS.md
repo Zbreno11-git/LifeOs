@@ -40,6 +40,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `cli.py` — entrypoint `viking` (`chat`, `browser`, `mcp-server`, `gmail`, `financas`,
     `registro`, `aprovar`)
   - `config.py` — carga única de `.env` + caminhos (`secrets/`, `data/`) e knobs do navegador
+  - `banco.py` — o `viking.db`: o **único** lugar que abre o SQLite (`conectar()`) e as
+    migrations numeradas do arquivo inteiro, com ledger `migracoes` e checksum (Sessão 9, D56);
+    lembretes, registro e confirmações só consomem
   - `custos.py` — contabilidade de uso dos modelos (real para o Jev, estimada para o Gemini)
   - `google_auth.py` — login OAuth do Google compartilhado pelo calendário e pelo Gmail (confere o
     escopo gravado no token; grava com permissão 600)
@@ -77,7 +80,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     freio recusou (dinheiro nunca; D38); `trava.py` é a trava entre processos: um navegador por
     vez, e quem está usando na mensagem de "ocupado" (D40); `versao_jev.py` confere o clone do
     Jev (ramo, commit, mudanças não salvas, patch OpenRouter pelo conteúdo) e só avisa (D41)
-  - `reminders/` — schema + armazenamento SQLite de lembretes/notas ("RAG-ready", sem embeddings ainda)
+  - `reminders/` — lembretes/notas: `interface.py` (o `Protocol` do store, com id UUID e só
+    instantes em UTC; o contrato em `tests/test_reminders_contrato.py` é o que o Firestore da S10
+    tem de passar), `store.py` (SQLite), `service.py` (a borda: o fuso do dono entra aqui) e
+    `envio.py` (`viking lembretes --enviar`: um e-mail por lembrete vencido em 24 h, com reserva
+    no banco para sair uma vez só)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
@@ -113,7 +120,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   `wristband-fail-test/` (Arduino Uno R3 → Serial → Windows-MCP, funcional, ver seu próprio README).
 - `secrets/` — gitignored (exceto `.gitkeep`): credenciais OAuth reais (`google_credentials.json`,
   `google_token.json`, `google_token_gmail.json`). Nunca commitar.
-- `data/` — local, gitignored exceto `.gitkeep`; inclui `viking.db` (SQLite de lembretes) em runtime.
+- `data/` — local, gitignored exceto `.gitkeep`; inclui `viking.db` (lembretes, registro de
+  ações e confirmações; `lifeos/banco.py`) em runtime e, depois de uma migração, a cópia de antes
+  (`viking.db.antes-da-migracao-N`, que o Viking nunca apaga).
 - `jev-ultrafast/` — clone externo (gitignored, próprio `.git`) do agente de automação de navegador
   "Jev". `origin` = fork pessoal `Zbreno11-git/jev-ultrafast` (branch `viking-openrouter`, que carrega
   o patch do endpoint OpenRouter), `upstream` = `browser-use/jev-ultrafast`. Ver
@@ -161,6 +170,8 @@ viking financas --conectar      # abre a janela da Pluggy (MeuPluggy) e mostra o
 viking financas                 # confere as conexões de PLUGGY_ITEM_IDS (sem saldo nem extrato)
 viking registro                 # o que o Viking fez (7 dias; --dias N, --ids, --desfazer ID)
 viking aprovar                  # aprova com código os pedidos que outros apps fizeram pelo MCP
+viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
+                               # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
                                # (só num terminal interativo)
 viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
                                # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
@@ -380,6 +391,16 @@ trechos e passa cada um por `html.escape`, e só as tags dele ficam sem escape. 
 markdown (deixam HTML cru passar). `tests/test_gmail_formato.py` confere, com a lista das nossas
 tags escrita à mão, que sem elas não sobra `<` no HTML e que as palavras batem com a parte
 texto. O código de aprovação liga o texto fonte; as duas partes saem dele na hora de montar.
+
+**O `viking.db` abre só por `banco.conectar()`, e migração publicada não se edita.** Antes da 9
+cada módulo abria o arquivo, e o `conftest` isolava dois dos três: a suíte gravou um lembrete no
+banco real a cada `pytest` (132 no VPS). `tests/test_banco.py` proíbe `sqlite3.connect` fora de
+`banco.py`, e os testes trocam só `banco.CAMINHO`. Mudar o schema = **migração nova** no fim de
+`banco.MIGRACOES`, com o checksum dela em `PUBLICADAS` (`tests/test_banco_migracoes.py`); editar
+uma publicada (nem o comentário, nem o formatador) faz o banco do dono recusar abrir. Dentro de
+uma migração, um `execute` por comando: o `executescript` **comita sozinho** a transação (medido
+em 2026-09-29), e a falha no meio deixaria meio banco. O backup é por **outra** conexão: pela
+mesma, com a transação aberta, o `backup` trava para sempre.
 
 **Todo efeito externo passa pelo registro de ações.** `tests/test_registro_ganchos.py` lê o código:
 toda chamada `events().delete/patch/insert`, `batchModify`, `store.add`/`store.complete` fica dentro

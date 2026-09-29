@@ -5,29 +5,59 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 9 aberta e planejada; em execução
+## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 9 feita no VPS; falta o teste no Mac (C7)
 
-**Estado:** conferir com `git log --oneline -3` e `git status --short` · travas: nenhuma ·
-background: nenhum. Base da 9 (2026-09-29): HEAD `5d0ace4` (CI success), `1804 passed`.
+**Estado:** `git log --oneline -3` e `git status --short` (limpo) · igual ao remoto · travas:
+nenhuma · background: nenhum. Portões em 2026-09-29: `1884 passed`, `ruff` limpo, formatação zero,
+`mypy` sem erro nos 10 arquivos de dados, mutações 215/215. CI conferido pelo SHA inteiro.
 
-**Onde parou:** plano aprovado pelo dono (as respostas estão na tabela abaixo). Executando a partir
-do primeiro checkpoint ⬜ do mapa.
+**Onde parou:** C0–C6 ✅. Falta o C7, o roteiro abaixo, no Mac do dono.
 
-**Próximo passo exato:** o primeiro ⬜ do mapa de checkpoints, com o comando do checkpoint dele.
+**Próximo passo exato:** o dono roda o roteiro e cola a saída; eu confiro contra os números
+esperados de cada linha. Com o C7 verde: a 9 fecha (diário, `sessoes.md`, barra 15 de 28) e o
+▶️ aponta para a 10.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `sessoes.md`
-(Sessões 9 e 10); `docs/decisoes.md` (D45–D55); o índice de `docs/erros.md`; as skills
-`software-build`, `dados-e-banco`, `testes-que-provam` e `falha-ruidosa`; o código de
-`src/lifeos/banco.py` (novo), `reminders/store.py`, `registro.py` e `confirmacao.py`.
+**Roteiro do Mac (C7)** — antes, feche o `viking chat` e qualquer app que use o MCP do Viking (um
+processo antigo aberto escreveria no formato velho depois da migração e falharia):
 
-**Não pode ser esquecido:** o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem
-por e-mail; nenhum endereço de terceiros nem `/Users/<nome>` no repo; mutações em background, sem
-`timeout`, saída inteira num arquivo; nunca presumir o fuso do dono (UTC no store, conversão só
-na borda); o `viking.db` do Mac tem dados reais: o roteiro copia o arquivo antes de migrar, e a
-migração também faz o próprio backup; **uma migração aplicada não se edita** (nem o comentário):
-cria-se a seguinte.
+```
+cd ~/LifeOs
+git pull && git log --oneline -1
+cp data/viking.db data/viking.db.antes-da-sessao-9
+ls -la data/
+uv sync --locked --extra dev
+source .venv/bin/activate
+which python
+shasum data/viking.db
+python -m pytest -q
+shasum data/viking.db
+viking lembretes
+ls -la data/
+python scripts/limpar_lembretes_de_teste.py
+python scripts/limpar_lembretes_de_teste.py --aplicar
+viking lembretes
+```
 
-**Depende do dono:** o teste no Mac no fim (C7), com o backup do banco.
+Esperado:
+- as duas linhas do `shasum` iguais (a suíte não toca mais o banco);
+- o 1º `viking lembretes` migra: aparece `viking.db.antes-da-migracao-1` no `data/`;
+- a lista sai sem `#`, com as datas no seu fuso;
+- a limpeza acha N (um por `pytest` rodado no Mac desde 2026-09-27) e apaga N;
+- o total do "depois" = o "antes" menos N.
+
+Depois, no `viking chat`: "me lembra de testar o Viking daqui a 2 minutos". Espere 2 min, `viking
+lembretes --enviar` → "1 lembrete enviado" (e o e-mail na caixa) e saída 0; de novo → "Nenhum
+lembrete vencido nas últimas 24 h."; `viking registro` → uma linha `gmail.enviar`.
+
+**Não pode ser esquecido:** uma migração publicada não se edita (nem pelo formatador): cria-se a
+seguinte, com o checksum em `PUBLICADAS`; o código de aprovação nunca vai ao Gemini, ao MCP, ao
+registro nem por e-mail; nada de endereço de terceiros nem `/Users/<nome>` no repo; mutações em
+background, sem `timeout`; nunca presumir o fuso do dono; **o VPS tem o cliente OAuth do Google e
+o token da agenda**: nada que envie, apague ou arquive rodado daqui (o token do Gmail foi apagado
+do VPS a pedido do dono, 2026-09-29).
+
+**Depende do dono:** o roteiro acima; apagar as cópias `viking.db.antes-*` quando quiser (o
+Viking nunca as apaga).
 
 ## Plano — Sessão 9: fundação de dados (aberta em 2026-09-29)
 
@@ -109,7 +139,7 @@ vencido nas últimas 24 h. Rodado duas vezes, ou em dois processos ao mesmo temp
 | C3 | migrations 1–4 + ledger + transação + checksum + recusa do mais novo + backup; os três módulos por `banco`; testes contra o banco antigo com dados; commit | C2 | ✅ (18 testes; o fixture bate com o banco que o código de `5d0ace4` cria; a cópia do banco do VPS migrou com 133 lembretes e 2 ações iguais; os mutantes sem `BEGIN IMMEDIATE` e com `executescript` derrubam os testes de falha no meio; `viking` abre o banco antes de tudo; `1845 passed`) |
 | C4 | migração 5 (UUID e colunas de envio) + interface + contrato; chat e MCP sem `#id`; commit | C3 | ✅ (contrato: 11 vermelhos → 13 verdes, um deles defeito de hoje: concluir de novo mudava a hora; a cópia real do VPS migra com 133 lembretes iguais pelo conteúdo e UUIDs únicos; o `mypy` pega o store fora do `Protocol`; testes de fuso com o dono em Seattle; `1862 passed`) |
 | C5 | `viking lembretes [--enviar]` com reserva, janela de 24 h e limite; testes de sequência e de dois processos; commit | C4 | ✅ (15 testes, com 4 processos de verdade; o mutante da reserva sem prazo derruba 4; `1877 passed`. **Incidente:** rodei o `--enviar` no VPS achando que não havia credencial; o dono aprovou o login que abriu, e um e-mail de teste saiu para a caixa dele; o token do Gmail foi apagado do VPS por decisão dele; erros classe 2 e `CLAUDE.md`) |
-| C6 | script de limpeza; mutações; portões; duas passadas de revisão; D56/D57, docs; push; CI pelo SHA | C5 | ⬜ |
+| C6 | script de limpeza; mutações; portões; duas passadas de revisão; D56/D57, docs; push; CI pelo SHA | C5 | ✅ (215 de 215 mutações mortas; na 1ª rodada, as 2 de concorrência sobreviveram: o teste de processos dependia de sorte, e dois testes determinísticos com um gancho no `BEGIN` as mataram; a revisão achou o login caindo no meio escondendo o que já saiu; `1884 passed`) |
 | C7 | roteiro do Mac: backup, migração, limpeza, envio duas vezes | C6 | ⬜ |
 
 ### Fase 0 — adiados (C0)

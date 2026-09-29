@@ -366,7 +366,6 @@ def _lembretes(args: argparse.Namespace) -> int:
     """Sem opção: os pendentes. `--enviar`: 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial
     (limite, "não sei se saiu", recusado); 1 = não rodou (sem login no Gmail, cota)."""
     from lifeos import config
-    from lifeos.gmail import service as gmail_service
     from lifeos.reminders import envio, service
 
     if not args.enviar:
@@ -377,10 +376,12 @@ def _lembretes(args: argparse.Namespace) -> int:
         if not pendentes:
             print("Nenhum lembrete pendente.")
         return 0
-    try:
-        resultado = envio.enviar_vencidos()
-    except gmail_service.ErroGmail as exc:
-        print(f"❌ Não consegui mandar pelo Gmail: {exc}. Nada ficou reservado.", file=sys.stderr)
+    resultado = envio.enviar_vencidos()
+    if resultado.parou and not resultado.enviados and not resultado.incertos:
+        print(
+            f"❌ Não consegui mandar pelo Gmail: {resultado.parou}. Nada saiu nem ficou reservado.",
+            file=sys.stderr,
+        )
         return 1
     print(envio.texto(resultado))
     return 2 if resultado.parcial else 0

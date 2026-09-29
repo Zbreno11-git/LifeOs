@@ -1046,6 +1046,56 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-29 — Sessão 9: fundação de dados (migrations, UUID, envio de lembrete; falta o Mac)
+
+**Abertura, conferida contra o disco (04:30 UTC).** HEAD `5d0ace4` = origin, limpo, sem trava,
+`1804 passed`, CI `success` pelo SHA inteiro, `uv lock --upgrade --dry-run` sem nada novo. Uma
+divergência com o bloco: ao abrir o `data/viking.db` do VPS para medir, 132 lembretes, **todos**
+"Pagar conta" concluídos em ≤ 0,014 s: a suíte gravava um no banco real a cada `pytest` desde a
+Sessão 5 (o `conftest` isolava `confirmacao` e `registro`, e não o store dos lembretes; erros,
+classe 6). No Mac, um por rodada, no banco do dono.
+
+**Respostas do dono:** a checagem de tipos só no que a 9 toca; as tabelas de memória para a S13;
+um e-mail por lembrete (assunto = título); só os vencidos das últimas 24 h (os mais velhos
+listados); apagar o lixo de teste do Mac com o critério exato; o chat sem o `#12`.
+
+**C1.** `lifeos/banco.py` é o único que abre o SQLite; o `conftest` troca um nome só, por teste,
+e a `VIKING_DB_PATH` antes de importar o `lifeos`. Um teste por camada; o hash do
+`data/viking.db` igual antes e depois da suíte.
+
+**C2.** `mypy` no lock e no CI, com a lista de arquivos no `pyproject` e um teste que deriva do
+código quem importa `banco`. Os 3 erros eram `None` possíveis que viravam objeto em silêncio:
+agora erram alto.
+
+**C3, as migrations.** Uma lista só para o arquivo, ledger com checksum; as 1–4 recriam o formato
+de `5d0ace4`. Duas medições decidiram o desenho: o `executescript` **comita sozinho** a
+transação aberta, e o `backup` pela mesma conexão com `BEGIN IMMEDIATE` **trava para sempre**
+(por outra conexão funciona e copia só o comitado). Testes contra um banco no formato antigo com
+dados (DDL literal, conferido contra o banco que o próprio código de `5d0ace4` cria): migra sem
+perder linha, duas vezes não muda nada, falha no meio deixa o despejo idêntico, 4 processos
+juntos, banco mais novo não abre, checksum editado não abre, backup uma vez. A cópia do banco do
+VPS migrou com as 133 linhas.
+
+**C4.** Migração 5: lembretes com UUID (reconstrução), colunas da reserva, instantes em UTC de
+largura fixa. `reminders/interface.py` e o contrato parametrizado; o contrato achou um defeito de
+hoje: concluir de novo mudava a hora. O store só grava instantes; o fuso do dono entra e sai na
+borda. Testes de fuso com o dono em Seattle: no VPS em UTC, "14h" passaria por acaso.
+
+**C5.** `viking lembretes [--enviar]`: reserva no banco antes de mandar (4 processos de verdade
+mandam cada lembrete uma vez); "pode ter saído" marca `incerto` e não reenvia; recusa e limite
+soltam. **Incidente meu:** rodei o `--enviar` no VPS esperando "sem login"; o VPS tem o cliente
+OAuth do Google (desde 2026-09-20), o login abriu, o VS Code do dono abriu a aba, ele aprovou, e
+um e-mail de teste saiu para a caixa dele. Token do Gmail apagado do VPS por decisão dele; o
+`CLAUDE.md` agora diz o que o VPS tem (erros, classe 2).
+
+**C6.** `scripts/limpar_lembretes_de_teste.py` (sem `--aplicar` só conta): na cópia do banco do
+VPS achou 132 de 133 (o 133º é o do meu teste vermelho do C1, outro título). 17 mutações novas.
+D56 (fundação de dados) e D57 (o que mora onde).
+
+**Erros desta sessão:** o isolamento dos testes da Sessão 5 (classe 6, achado na abertura); o
+envio de verdade pelo VPS (classe 2); e a revisão pegou a CLI dizendo "Nada ficou reservado"
+quando o login caía no meio com e-mails já enviados.
+
 ### 2026-09-29 — Sessão 8b fechada no Mac; as parciais 4 e 3b também
 
 Saída colada pelo dono:

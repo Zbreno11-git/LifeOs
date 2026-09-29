@@ -1455,6 +1455,135 @@ MUTACOES = [
         "    return Eventos(eventos, completa=True)",
         "tests/test_calendar_service.py::test_paginas_vazias_sem_fim_param_e_dizem_que_esta_incompleta",
     ),
+    # --- Sessão 9: o banco, os lembretes e o envio ------------------------------------------
+    Mutacao(
+        "banco: sem a trava de escrita desde o começo (DEFERRED)",
+        "src/lifeos/banco.py",
+        '    conn.execute("BEGIN IMMEDIATE")',
+        '    conn.execute("BEGIN DEFERRED")',
+        "tests/test_banco_migracoes.py::test_a_trava_de_escrita_vem_no_begin",
+    ),
+    Mutacao(
+        "banco: falha no meio comita o que já rodou",
+        "src/lifeos/banco.py",
+        '        if conn.in_transaction:\n            conn.execute("ROLLBACK")',
+        '        if conn.in_transaction:\n            conn.execute("COMMIT")',
+        "tests/test_banco_migracoes.py::test_falha_no_meio_de_um_banco_de_hoje_deixa_o_banco_como_estava",
+    ),
+    Mutacao(
+        "banco: passos com executescript (comita sozinho)",
+        "src/lifeos/banco.py",
+        "            for comando in self.passo:\n                conn.execute(comando)",
+        '            conn.executescript(";\\n".join(self.passo))',
+        "tests/test_banco_migracoes.py::test_falha_no_meio_de_um_banco_de_hoje_deixa_o_banco_como_estava",
+    ),
+    Mutacao(
+        "banco: não relê o ledger depois da trava",
+        "src/lifeos/banco.py",
+        "    if not _pendentes(conn):\n"
+        "        return  # o caminho de toda abertura: uma leitura do ledger, sem trava\n"
+        '    conn.execute("BEGIN IMMEDIATE")\n'
+        "    try:\n"
+        "        pendentes = _pendentes(conn)  # relido com a trava: outro processo pode ter migrado",
+        "    pendentes = _pendentes(conn)\n"
+        "    if not pendentes:\n"
+        "        return\n"
+        '    conn.execute("BEGIN IMMEDIATE")\n'
+        "    try:\n"
+        "        pass",
+        "tests/test_banco_migracoes.py::test_outro_processo_migra_entre_a_leitura_e_a_trava",
+    ),
+    Mutacao(
+        "banco: abre um banco migrado por versão mais nova",
+        "src/lifeos/banco.py",
+        "    if desconhecidas := sorted(set(aplicadas) - set(conhecidas)):",
+        "    if desconhecidas := []:",
+        "tests/test_banco_migracoes.py::test_banco_migrado_por_versao_mais_nova_nao_abre",
+    ),
+    Mutacao(
+        "banco: não confere o checksum das aplicadas",
+        "src/lifeos/banco.py",
+        "        if conhecidas[numero].checksum != checksum:",
+        "        if False:",
+        "tests/test_banco_migracoes.py::test_migracao_editada_depois_de_aplicada_nao_abre",
+    ),
+    Mutacao(
+        "banco: migra sem o backup",
+        "src/lifeos/banco.py",
+        "            _copiar(pendentes[0].numero)",
+        "            pass",
+        "tests/test_banco_migracoes.py::test_backup_antes_de_migrar_um_banco_com_dados",
+    ),
+    Mutacao(
+        "cli: banco mais novo vira traceback",
+        "src/lifeos/cli.py",
+        "    except banco.ErroDeBanco as exc:",
+        "    except ZeroDivisionError as exc:",
+        "tests/test_banco_migracoes.py::test_viking_com_banco_mais_novo_diz_o_que_fazer_e_sai_com_1",
+    ),
+    Mutacao(
+        "testes: cada teste sem o próprio banco",
+        "tests/conftest.py",
+        '    monkeypatch.setattr("lifeos.banco.CAMINHO", tmp_path / "viking.db")',
+        "    pass",
+        "tests/test_banco.py::test_cada_teste_tem_o_proprio_banco",
+    ),
+    Mutacao(
+        "store: a reserva ignora a reserva viva de outra execução",
+        "src/lifeos/reminders/store.py",
+        '            "AND (envio_reservado_ate IS NULL OR envio_reservado_ate <= ?)",',
+        '            "AND ? IS NOT NULL",',
+        "tests/test_reminders_contrato.py::test_so_uma_execucao_ganha_a_reserva",
+    ),
+    Mutacao(
+        "store: concluir de novo muda a hora",
+        "src/lifeos/reminders/store.py",
+        '            "WHERE id = ? AND completed_at IS NULL",',
+        '            "WHERE id = ?",',
+        "tests/test_reminders_contrato.py::test_concluir_de_novo_nao_muda_a_hora",
+    ),
+    Mutacao(
+        "store: horário sem fuso é aceito",
+        "src/lifeos/reminders/store.py",
+        "    if momento.tzinfo is None or momento.utcoffset() is None:",
+        "    if False:",
+        "tests/test_reminders_contrato.py::test_horario_sem_fuso_e_recusado_e_nada_e_gravado",
+    ),
+    Mutacao(
+        "store: add repetido sobrescreve o que existe",
+        "src/lifeos/reminders/store.py",
+        '            "ON CONFLICT (id) DO NOTHING",',
+        '            "ON CONFLICT (id) DO UPDATE SET title = excluded.title",',
+        "tests/test_reminders_contrato.py::test_add_repetido_com_o_mesmo_id_nao_duplica",
+    ),
+    Mutacao(
+        "lembretes: horário sem fuso vira o do relógio da máquina",
+        "src/lifeos/reminders/service.py",
+        "    return prazo if prazo.tzinfo is not None else prazo.replace(tzinfo=config.TIMEZONE)",
+        "    return prazo if prazo.tzinfo is not None else prazo.astimezone()",
+        "tests/test_reminders_service.py::test_criar_lembrete_com_quando_data_e_hora",
+    ),
+    Mutacao(
+        "lembretes: a janela não para em 24 h",
+        "src/lifeos/reminders/envio.py",
+        "    vencidos = store.vencidos(agora - JANELA, agora)",
+        "    vencidos = store.vencidos(agora - 1000 * JANELA, agora)",
+        "tests/test_lembretes_envio.py::test_vencido_ha_mais_de_24h_nao_sai_e_e_listado",
+    ),
+    Mutacao(
+        "lembretes: 'pode ter saído' solta a reserva e reenvia",
+        "src/lifeos/reminders/envio.py",
+        "            store.marcar_envio(lembrete.id, por=execucao, estado=interface.INCERTO, agora=agora)",
+        "            store.soltar_envio(lembrete.id, por=execucao)",
+        "tests/test_lembretes_envio.py::test_falha_que_pode_ter_enviado_nao_reenvia",
+    ),
+    Mutacao(
+        "limpeza: sem o limite de 1 s",
+        "scripts/limpar_lembretes_de_teste.py",
+        "- datetime.fromisoformat(criado) < LIMITE",
+        "- datetime.fromisoformat(criado) < LIMITE * 100000",
+        "tests/test_script_limpar_lembretes.py::test_aplicar_apaga_so_o_lixo",
+    ),
 ]
 
 

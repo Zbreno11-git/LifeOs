@@ -370,3 +370,71 @@ def test_primeiro_viking_depois_do_pull_migra_e_faz_o_backup(antigo, monkeypatch
 
     assert len(_ledger(antigo)) == len(banco.MIGRACOES)
     assert banco.caminho_do_backup(1).exists()
+
+
+# --- a corrida, sem depender de sorte ---------------------------------------------------------
+# O teste dos processos acima quase nunca sobrepõe as migrações (sobem com dezenas de ms de
+# diferença; migrar leva poucos ms): a rodada de mutações da Sessão 9 mostrou as duas regras
+# abaixo vivas com ele verde. Estes dois forçam a corrida com uma conexão que intercepta o BEGIN.
+
+
+def _conexao_com_gancho(caminho, gancho_antes=None, gancho_depois=None):
+    class ComGancho(sqlite3.Connection):
+        def execute(self, sql, *args):
+            eh_begin = sql.lstrip().upper().startswith("BEGIN")
+            if eh_begin and gancho_antes:
+                gancho_antes()
+            resultado = super().execute(sql, *args)
+            if eh_begin and gancho_depois:
+                gancho_depois()
+            return resultado
+
+    conn = sqlite3.connect(caminho, isolation_level=None, factory=ComGancho)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _migrar_por_outra_conexao(caminho) -> None:
+    outra = sqlite3.connect(caminho, isolation_level=None)
+    outra.row_factory = sqlite3.Row
+    try:
+        banco.migrar(outra)
+    finally:
+        outra.close()
+
+
+def test_outro_processo_migra_entre_a_leitura_e_a_trava(antigo):
+    """Leu o ledger sem trava (pendentes), e antes do BEGIN outro processo migrou tudo: depois da
+    trava o ledger é relido, e nada é aplicado de novo."""
+    conn = _conexao_com_gancho(antigo, gancho_antes=lambda: _migrar_por_outra_conexao(antigo))
+    try:
+        banco.migrar(conn)
+    finally:
+        conn.close()
+
+    assert [n for n, _nome, _c in _ledger(antigo)] == [m.numero for m in banco.MIGRACOES]
+
+
+def test_a_trava_de_escrita_vem_no_begin(antigo):
+    """Logo depois do BEGIN, ninguém mais consegue a trava de escrita: com um BEGIN que só lê
+    (DEFERRED), outro processo leria o mesmo ledger e os dois tentariam migrar."""
+    tentativas = []
+
+    def outro_tenta_escrever():
+        outra = sqlite3.connect(antigo, isolation_level=None, timeout=0)
+        try:
+            outra.execute("BEGIN IMMEDIATE")
+            outra.execute("ROLLBACK")
+            tentativas.append("conseguiu")
+        except sqlite3.OperationalError as exc:
+            tentativas.append(str(exc))
+        finally:
+            outra.close()
+
+    conn = _conexao_com_gancho(antigo, gancho_depois=outro_tenta_escrever)
+    try:
+        banco.migrar(conn)
+    finally:
+        conn.close()
+
+    assert tentativas == ["database is locked"]

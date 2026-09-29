@@ -151,8 +151,8 @@ def test_sem_login_nao_deixa_reserva_presa(gmail, monkeypatch):
         return conta_de_verdade()
 
     monkeypatch.setattr(gmail_envio, "conta", conta)
-    with pytest.raises(gmail_envio.service.SemLogin):
-        envio.enviar_vencidos(AGORA)
+    parada = envio.enviar_vencidos(AGORA)
+    assert parada.parou == "sem token" and parada.parcial and parada.ficaram == 1
     sem_token["agora"] = False
 
     assert envio.enviar_vencidos(AGORA).enviados == ["Dentista"]  # nada ficou reservado
@@ -258,3 +258,28 @@ def test_cli_lista_os_pendentes_no_fuso_do_dono(monkeypatch, capsys):
     assert _rodar(monkeypatch) == 0
     saida = capsys.readouterr().out
     assert "Dentista (01/10/2026 14:00)" in saida and "Sem prazo" in saida
+
+
+def test_login_que_cai_no_meio_mostra_o_que_ja_saiu_e_sai_com_dois(gmail, monkeypatch, capsys):
+    """Achado da revisão: com um e-mail já enviado, o erro do segundo não pode esconder o
+    primeiro ("Nada ficou reservado" era verdade, e enganava)."""
+    _vencido("Primeiro", ha=2 * HORA)
+    _vencido("Segundo")
+    conta_de_verdade = gmail_envio.conta
+    chamadas = []
+
+    def conta():
+        chamadas.append(1)
+        if len(chamadas) > 1:
+            raise gmail_envio.service.SemLogin("o login venceu")
+        return conta_de_verdade()
+
+    monkeypatch.setattr(gmail_envio, "conta", conta)
+
+    assert _rodar(monkeypatch, "--enviar") == 2
+
+    saida = capsys.readouterr().out
+    assert "✅ Primeiro" in saida
+    assert "o login venceu" in saida and "Segundo" not in saida.split("✅")[-1].split("\n")[0]
+    (segundo,) = [r for r in store.list_open() if r.title == "Segundo"]
+    assert segundo.enviado_em is None

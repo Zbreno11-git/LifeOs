@@ -16,23 +16,23 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 9 — fundação de dados. A 8b fechou no Mac em 2026-09-29, e com ela as parciais 4 e
-  3b.
+- **Sessão:** 9 — fundação de dados, **feita no VPS em 2026-09-29; falta o teste no Mac** (o
+  roteiro está no topo de `PROGRESSO.md`, com o backup do banco antes). Depois dele, a 10.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** abrir, planejar e executar a 9 pela skill `software-build`. A pergunta da abertura
-  está na seção dela (a checagem de tipos antes da refatoração?).
+- **Agora:** o teste da 9 no Mac; depois, abrir a 10 pela skill `software-build` (o primeiro passo
+  dela é o repo privado; o token do Gmail só vence depois de 2026-10-03).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as perguntas da abertura da 9.
+- **Depende do dono:** rodar o roteiro da 9 no Mac e colar a saída.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -556,7 +556,19 @@ O que estava escrito na abertura:
   silencioso é uma interrupção). Janela com `timeMax` quando a pergunta tem prazo. Nenhuma lib
   nova.
 
-## Sessão 9 — fundação de dados (planejada em 2026-09-28)
+## Sessão 9 — fundação de dados (feita em 2026-09-29; falta o teste no Mac)
+
+- **Feito (2026-09-29, detalhe no diário e em `PROGRESSO.md`; decisões D56 e D57):**
+  - `lifeos/banco.py` é o único que abre o `viking.db`, com uma lista de migrations para o arquivo
+    inteiro, ledger com checksum, transação, backup automático e recusa de banco mais novo;
+    testado contra o formato de `5d0ace4` com dados;
+  - a suíte não grava mais no banco real (gravava um "Pagar conta" por rodada desde a Sessão 5);
+    `scripts/limpar_lembretes_de_teste.py` apaga o lixo no Mac;
+  - lembretes com UUID, `reminders/interface.py` e o contrato que a S10 reusa;
+  - `viking lembretes --enviar`: um e-mail por lembrete vencido em 24 h, uma vez só (reserva);
+  - `mypy` como portão do CI nos módulos de dados;
+  - "o que mora onde" na D57; as tabelas de memória foram para a S13 (dono).
+- **Falta:** o roteiro do Mac (backup, migração, limpeza, envio duas vezes), em `PROGRESSO.md`.
 
 - **Entrega:**
   - migrations numeradas em todos os módulos que usam o `viking.db`, e um banco no formato antigo
@@ -1060,7 +1072,7 @@ O que estava escrito na abertura:
   (Assistente AI)"; uma imagem exige HTML ou anexo, que a D46 deixou de fora.
 
 Com sessão desde 2026-09-28: paginação e séries (8b), notas buscáveis (13), migrations formais
-(9), RAG (13–14), aprovação fora do terminal (17). Sem sessão: decidir se o Viking é só-checkout
+(feitas na 9), RAG (13–14), aprovação fora do terminal (17). Sem sessão: decidir se o Viking é só-checkout
 ou pacote instalável de verdade (§9.3); anexos no e-mail; MCP para outros apps na nuvem (fica
 local por stdio até existir autenticação); multiusuário (o dono decidiu: só ele); teste preventivo para o caso de uma função virar tool do Gemini e do MCP ao mesmo
 tempo (armadilha do future-import) — sem bug real hoje (conferido na Sessão 3), só rede de

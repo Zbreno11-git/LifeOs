@@ -13,7 +13,8 @@ Um envio só, por reserva no banco (`interface.Lembretes.reservar_envio`): duas 
 - **pode ter saído** (5xx, tempo esgotado) → `marcar_envio(INCERTO)` e o texto diz "Não sei se":
   reenviar a cada rodada mandaria duplicado, e o registro já tem a linha `incerta`;
 - recusa definitiva, texto recusado, limite do dia → `soltar_envio`: a próxima rodada tenta;
-- qualquer outra exceção (sem login, erro inesperado) → solta e sobe: nada fica preso.
+- sem login ou sem cota do Gmail → solta e para a rodada, dizendo o que já saiu antes;
+- qualquer outra exceção → solta e sobe: nada fica preso.
 
 Sobra um caso, declarado: se o processo morre **entre** o Google aceitar e o `marcar_envio`, a
 reserva vence em `PRAZO_DA_RESERVA` e a próxima rodada manda de novo (duplicado para o próprio
@@ -49,11 +50,12 @@ class Resultado:
     pulados: int = 0  # reservados por outra execução em curso
     atrasados: list[str] = field(default_factory=list)  # vencidos antes da janela: não saem
     avisos: list[str] = field(default_factory=list)
+    parou: str = ""  # sem login, cota do Gmail: vale para todos os seguintes, a rodada para
 
     @property
     def parcial(self) -> bool:
         """Algo que venceu não saiu com certeza (a CLI sai com 2)."""
-        return bool(self.incertos or self.recusados or self.limite or self.avisos)
+        return bool(self.incertos or self.recusados or self.limite or self.avisos or self.parou)
 
 
 def _prazo_do_dono(lembrete: Reminder) -> str:
@@ -84,7 +86,8 @@ def _enviar_um(lembrete: Reminder, execucao: str, agora: datetime, resultado: Re
             return True
         store.soltar_envio(lembrete.id, por=execucao)
         if isinstance(exc, gmail_service.SemLogin | gmail_service.LimiteDoGmail):
-            raise  # vale para todos os seguintes: parar e dizer
+            resultado.parou = str(exc)  # vale para todos os seguintes: parar e dizer
+            return False
         resultado.recusados.append((lembrete.title, str(exc)))
         return True
     except BaseException:
@@ -137,6 +140,11 @@ def texto(resultado: Resultado) -> str:
     if resultado.limite:
         linhas.append(
             f"  ⏸️ Parei: {resultado.limite}. {resultado.ficaram} ficam para a próxima rodada."
+        )
+    if resultado.parou:
+        linhas.append(
+            f"  ⛔ Parei: {resultado.parou}. {resultado.ficaram} ficam para a próxima rodada "
+            "(nada ficou reservado)."
         )
     linhas += [f"  ⚠️ {aviso}" for aviso in resultado.avisos]
     if resultado.pulados:
