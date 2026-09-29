@@ -341,3 +341,34 @@ def test_mcp_nao_passa_pela_regua_do_fuso(calendario):
 def test_sem_fuso_ou_invalido_nao_e_fuso_diferente(calendario, valor):
     """Formato inválido é problema do serviço (mensagem própria), não da régua do fuso."""
     assert service.fuso_diferente(valor) is None
+
+
+# --- lista incompleta (Sessão 8b) ------------------------------------------------------------
+
+
+def _serie(n: int) -> list[dict]:
+    return [
+        {"id": f"s{i}", "summary": "Aula", "start": {"date": f"2027-01-{i % 28 + 1:02d}"}}
+        for i in range(n)
+    ]
+
+
+def test_busca_incompleta_diz_que_ha_mais(calendario):
+    calendario["itens"] = _serie(600)
+    texto = tools.buscar_eventos_por_termo("Aula")
+    assert texto.count("\n- [") == 500
+    assert "há mais" in texto
+    assert "500" in texto.splitlines()[0]
+
+
+def test_por_data_incompleta_diz_que_ha_mais(calendario):
+    calendario["itens"] = _serie(600)
+    texto = tools.listar_eventos_por_data("2027-01-01", "2027-12-31")
+    assert "há mais" in texto
+
+
+def test_lista_completa_nao_avisa(calendario):
+    calendario["itens"] = _serie(300)
+    texto = tools.buscar_eventos_por_termo("Aula")
+    assert texto.count("\n- [") == 300
+    assert "há mais" not in texto

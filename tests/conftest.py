@@ -119,7 +119,15 @@ class _Events:
         if self._estado.get("falhar_list"):
             raise RuntimeError("API fora do ar")
         self._estado["consultas"].append(kwargs)
-        return _Exec({"items": self._estado["itens"]})
+        # Como o Google: 250 por página se não pedir outro número, e `nextPageToken` enquanto
+        # houver mais (https://developers.google.com/workspace/calendar/api/v3/reference/events/list).
+        itens = self._estado["itens"]
+        inicio = int(kwargs.get("pageToken") or 0)
+        fim = inicio + int(kwargs.get("maxResults") or 250)
+        resposta = {"items": itens[inicio:fim]}
+        if fim < len(itens):
+            resposta["nextPageToken"] = str(fim)
+        return _Exec(resposta)
 
 
 class _Service:

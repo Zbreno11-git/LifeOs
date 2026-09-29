@@ -51,13 +51,25 @@ def _linhas(eventos: list[Evento]) -> list[str]:
     return [f"- [{e.inicio}]: {e.titulo} (ID: {e.id})" for e in eventos]
 
 
+def _aviso_de_teto(eventos: service.Eventos) -> list[str]:
+    """Uma linha quando a lista parou no teto: sem ela, "estes são todos" seria dito sem saber."""
+    if eventos.completa:
+        return []
+    return [
+        (
+            f"(Mostrando só os primeiros {len(eventos)}: há mais no calendário. Para ver o resto, "
+            "restrinja o termo ou as datas.)"
+        )
+    ]
+
+
 def responder_proximos(max_results: int = 10) -> Resposta:
     try:
         eventos = service.proximos(max_results)
     except FalhaDaApi as exc:
         return _falha_da_api(exc)
     if not eventos:
-        return Resposta("Nenhum próximo evento encontrado.", dados=[])
+        return Resposta("Nenhum próximo evento encontrado.", dados=eventos)
     return Resposta("\n".join(_linhas(eventos)), dados=eventos)
 
 
@@ -70,9 +82,13 @@ def responder_por_data(data_inicio: str, data_fim: str | None = None) -> Respost
         return _falha_da_api(exc)
     fim_exibido = data_fim or data_inicio
     if not eventos:
-        return Resposta(f"Nenhum evento encontrado entre {data_inicio} e {fim_exibido}.", dados=[])
+        return Resposta(
+            f"Nenhum evento encontrado entre {data_inicio} e {fim_exibido}.", dados=eventos
+        )
     cabecalho = f"Eventos encontrados de {data_inicio} até {fim_exibido}:"
-    return Resposta("\n".join([cabecalho, *_linhas(eventos)]), dados=eventos)
+    return Resposta(
+        "\n".join([cabecalho, *_aviso_de_teto(eventos), *_linhas(eventos)]), dados=eventos
+    )
 
 
 def responder_buscar(termo_busca: str) -> Resposta:
@@ -81,8 +97,10 @@ def responder_buscar(termo_busca: str) -> Resposta:
     except FalhaDaApi as exc:
         return _falha_da_api(exc)
     if not eventos:
-        return Resposta(f"Nenhum evento futuro encontrado com o termo '{termo_busca}'.", dados=[])
-    linhas = [f"{len(eventos)} evento(s) com o termo '{termo_busca}':"]
+        return Resposta(
+            f"Nenhum evento futuro encontrado com o termo '{termo_busca}'.", dados=eventos
+        )
+    linhas = [f"{len(eventos)} evento(s) com o termo '{termo_busca}':", *_aviso_de_teto(eventos)]
     linhas += [f"- [{e.inicio}] {e.titulo} (ID: {e.id})" for e in eventos]
     return Resposta("\n".join(linhas), dados=eventos)
 

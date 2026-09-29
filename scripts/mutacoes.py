@@ -1392,6 +1392,34 @@ MUTACOES = [
         "    if True:",
         "tests/test_gmail_envio_chat.py::test_o_terminal_mostra_o_texto_fonte_e_avisa_da_formatacao",
     ),
+    Mutacao(
+        "agenda: a busca ignora as páginas seguintes",
+        "src/lifeos/calendar/service.py",
+        '        pagina = resposta.get("nextPageToken")',
+        "        pagina = None",
+        "tests/test_calendar_service.py::test_busca_com_300_ocorrencias_vem_inteira",
+    ),
+    Mutacao(
+        "agenda: parar no teto diz que veio inteira",
+        "src/lifeos/calendar/service.py",
+        "            return Eventos(eventos[:TETO_EVENTOS], completa=False)",
+        "            return Eventos(eventos[:TETO_EVENTOS], completa=True)",
+        "tests/test_calendar_service.py::test_busca_acima_do_teto_para_e_diz_que_esta_incompleta",
+    ),
+    Mutacao(
+        "agenda: o texto não avisa que a lista parou no teto",
+        "src/lifeos/calendar/tools.py",
+        "    if eventos.completa:",
+        "    if True:",
+        "tests/test_calendar_tools.py::test_busca_incompleta_diz_que_ha_mais",
+    ),
+    Mutacao(
+        "agenda: o MCP diz completa sem perguntar",
+        "src/lifeos/mcp_server/server.py",
+        '            "completa": resposta.dados.completa,',
+        '            "completa": True,',
+        "tests/test_mcp_server.py::test_lista_acima_do_teto_diz_que_esta_incompleta",
+    ),
 ]
 
 

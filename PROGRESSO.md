@@ -76,7 +76,7 @@ no Google Calendar no dia escolhido e só é apagado pelo `viking aprovar`.
 |---|---|---|---|
 | C0 | plano aqui; Sessão 11b e D55 escritas | — | ✅ |
 | C1 | `formato.py` + `montar` com duas partes: teste vermelho antes, verde depois; terminal e docstrings; mutações mortas | C0 | ✅ (3 vermelhos + o módulo inexistente → `1776 passed`; 5 mutações mortas) |
-| C2 | paginação de `buscar` e `por_data` com `completa`; texto do chat e do MCP diz quando falta | C1 | ⬜ |
+| C2 | paginação de `buscar` e `por_data` com `completa`; texto do chat e do MCP diz quando falta | C1 | ✅ (12 vermelhos → `1786 passed`; 4 mutações mortas) |
 | C3 | contador de redação no subprocesso e na saída de `viking browser` | C2 | ⬜ |
 | C4 | `scripts/calendario_mcp_ao_vivo.py` com teste offline pelo dublê | C3 | ⬜ |
 | C5 | portões, duas passadas de revisão, D46, docs, commits, push, CI pelo SHA | C4 | ⬜ |

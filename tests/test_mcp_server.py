@@ -146,14 +146,25 @@ def test_listar_proximos_traz_eventos_estruturados(calendario):
                 "all_day": False,
                 "link": "http://cal/e1",
             }
-        ]
+        ],
+        "completa": True,
     }
 
 
 def test_lista_vazia_nao_e_erro(calendario):
     resultado = _chamar("viking_buscar_eventos", {"termo_busca": "nada"})
     assert resultado.is_error is False
-    assert resultado.structured_content == {"eventos": []}
+    assert resultado.structured_content == {"eventos": [], "completa": True}
+
+
+def test_lista_acima_do_teto_diz_que_esta_incompleta(calendario):
+    """Quem chama pelo MCP (outro app) também fica sabendo que parou no teto (Sessão 8b)."""
+    calendario["itens"] = [
+        {"id": f"s{i}", "summary": "Aula", "start": {"date": "2027-01-01"}} for i in range(600)
+    ]
+    resultado = _chamar("viking_buscar_eventos", {"termo_busca": "Aula"})
+    assert len(resultado.structured_content["eventos"]) == 500
+    assert resultado.structured_content["completa"] is False
 
 
 def test_texto_do_mcp_e_o_mesmo_do_gemini(calendario):

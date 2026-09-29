@@ -134,3 +134,63 @@ def test_titulo_de_convite_com_controle_chega_limpo(calendario):
     ]
     (evento,) = service.proximos()
     assert evento.titulo == "[2JReunião fdp"
+
+
+# --- paginação (Sessão 8b; skill `falha-ruidosa` §2: um teto silencioso é uma interrupção) -----
+
+
+def _serie(n: int) -> list[dict]:
+    """Uma série semanal que se repete `n` vezes (`singleEvents=True` devolve cada ocorrência)."""
+    return [
+        {"id": f"s{i}", "summary": "Aula", "start": {"date": f"2027-01-{i % 28 + 1:02d}"}}
+        for i in range(n)
+    ]
+
+
+def test_busca_com_300_ocorrencias_vem_inteira(calendario):
+    """Antes lia só a 1ª página: 250 de 300, sem aviso."""
+    calendario["itens"] = _serie(300)
+    eventos = service.buscar("Aula")
+    assert len(eventos) == 300
+    assert eventos.completa is True
+    assert len(calendario["consultas"]) == 2
+
+
+def test_busca_acima_do_teto_para_e_diz_que_esta_incompleta(calendario):
+    calendario["itens"] = _serie(600)
+    eventos = service.buscar("Aula")
+    assert service.TETO_EVENTOS == 500
+    assert len(eventos) == 500
+    assert eventos.completa is False
+    assert len(calendario["consultas"]) == 2
+
+
+def test_exatamente_no_teto_e_completa(calendario):
+    calendario["itens"] = _serie(500)
+    eventos = service.buscar("Aula")
+    assert len(eventos) == 500
+    assert eventos.completa is True
+
+
+def test_por_data_tambem_pagina(calendario):
+    """O vizinho com o mesmo teto de 250 (erros, classe 6)."""
+    calendario["itens"] = _serie(600)
+    eventos = service.por_data("2027-01-01", "2027-12-31")
+    assert len(eventos) == 500
+    assert eventos.completa is False
+    assert [c.get("pageToken") for c in calendario["consultas"]] == [None, "250"]
+
+
+def test_busca_vem_na_ordem_do_inicio(calendario):
+    """Com teto, os que ficam são os mais próximos: a ordem é pedida à API."""
+    service.buscar("Aula")
+    assert calendario["consultas"][0]["orderBy"] == "startTime"
+    assert calendario["consultas"][0]["singleEvents"] is True
+
+
+def test_proximos_pede_o_numero_e_e_completo(calendario):
+    """`proximos` responde o que foi pedido (os N primeiros): completo por definição."""
+    calendario["itens"] = _serie(30)
+    eventos = service.proximos(10)
+    assert len(eventos) == 10
+    assert eventos.completa is True

@@ -256,7 +256,41 @@ def _conferido(service, event_id: str, titulo_esperado: str) -> tuple[Evento, di
     return evento, item
 
 
-def proximos(max_results: int = 10) -> list[Evento]:
+# O Google devolve no máximo 250 eventos por página se não se pede outro número, e o resto vem por
+# `nextPageToken`. Antes da Sessão 8b, `buscar` e `por_data` liam só a 1ª página: uma série semanal
+# com 300 ocorrências voltava com 250, sem aviso (auditoria §4.5). Agora seguem as páginas até o
+# teto, e quem bate no teto diz (skill `falha-ruidosa` §2: um teto silencioso é uma interrupção).
+POR_PAGINA = 250
+TETO_EVENTOS = 500  # agente, 2026-09-29: cabe uma série de 300; mais que isso o Gemini não lê bem
+
+
+class Eventos(list):
+    """Uma lista de `Evento` que sabe se veio inteira. `completa=False`: parou no teto, e há mais
+    no Google do que está aqui."""
+
+    def __init__(self, eventos=(), *, completa: bool):
+        super().__init__(eventos)
+        self.completa = completa
+
+
+def _listar(service, **pedido) -> Eventos:
+    eventos: list[Evento] = []
+    pagina = None
+    while True:
+        consulta = {**pedido, "maxResults": min(POR_PAGINA, TETO_EVENTOS - len(eventos))}
+        if pagina:
+            consulta["pageToken"] = pagina
+        resposta = _executar(lambda c=consulta: service.events().list(calendarId="primary", **c))
+        eventos += [_evento_de(item) for item in resposta.get("items", [])]
+        pagina = resposta.get("nextPageToken")
+        if not pagina:
+            return Eventos(eventos, completa=True)
+        if len(eventos) >= TETO_EVENTOS:
+            return Eventos(eventos[:TETO_EVENTOS], completa=False)
+
+
+def proximos(max_results: int = 10) -> Eventos:
+    """Os `max_results` primeiros: responde exatamente o que foi pedido, então é completa."""
     service = get_calendar_service()
     resposta = _executar(
         lambda: service.events().list(
@@ -267,39 +301,32 @@ def proximos(max_results: int = 10) -> list[Evento]:
             orderBy="startTime",
         )
     )
-    return [_evento_de(item) for item in resposta.get("items", [])]
+    return Eventos([_evento_de(item) for item in resposta.get("items", [])], completa=True)
 
 
-def por_data(data_inicio: str, data_fim: str | None = None) -> list[Evento]:
+def por_data(data_inicio: str, data_fim: str | None = None) -> Eventos:
     # A janela é validada antes de abrir o serviço: data inválida não chega a chamar a API.
     try:
         time_min, time_max = _janela(data_inicio, data_fim)
     except ValueError as exc:
         raise EntradaInvalida(str(exc), campo="data") from exc
-    service = get_calendar_service()
-    resposta = _executar(
-        lambda: service.events().list(
-            calendarId="primary",
-            timeMin=time_min,
-            timeMax=time_max,
-            singleEvents=True,
-            orderBy="startTime",
-        )
+    return _listar(
+        get_calendar_service(),
+        timeMin=time_min,
+        timeMax=time_max,
+        singleEvents=True,
+        orderBy="startTime",
     )
-    return [_evento_de(item) for item in resposta.get("items", [])]
 
 
-def buscar(termo_busca: str) -> list[Evento]:
-    service = get_calendar_service()
-    resposta = _executar(
-        lambda: service.events().list(
-            calendarId="primary",
-            q=termo_busca,
-            timeMin=datetime.now(UTC).isoformat(),
-            singleEvents=True,
-        )
+def buscar(termo_busca: str) -> Eventos:
+    return _listar(
+        get_calendar_service(),
+        q=termo_busca,
+        timeMin=datetime.now(UTC).isoformat(),
+        singleEvents=True,
+        orderBy="startTime",
     )
-    return [_evento_de(item) for item in resposta.get("items", [])]
 
 
 def fuso_da_agenda() -> str | None:

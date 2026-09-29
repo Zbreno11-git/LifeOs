@@ -65,7 +65,11 @@ def _resultado(resposta: calendario.Resposta) -> ToolResult:
             "aprovar_com": "viking aprovar",
         }
     elif isinstance(resposta.dados, list):
-        dados = {"eventos": [_evento_para_dict(e) for e in resposta.dados]}
+        # `completa`: se a lista parou no teto (Sessão 8b); sem o atributo, falha aqui, não mente.
+        dados = {
+            "eventos": [_evento_para_dict(e) for e in resposta.dados],
+            "completa": resposta.dados.completa,
+        }
     else:
         dados = _evento_para_dict(resposta.dados)
     return ToolResult(content=resposta.texto, structured_content=dados)
