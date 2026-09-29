@@ -5,66 +5,153 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 8 fechada; próximo: abrir, planejar e executar a 8b (começando pelo e-mail com formatação)
+## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 8b aberta e planejada; executando
 
-**Estado do repositório:** conferir com `git log --oneline -4`: o checkpoint `5f46403` teve o CI
-**vermelho** (o teste-guarda do repo público reprovava a si mesmo; `docs/erros.md` classe 4), e o
-conserto `396031b` ficou verde; este bloco foi atualizado num commit depois dele · igual ao remoto
-· travas: nenhuma · background: nenhum. Portões em 2026-09-28:
-`1688 passed`, `ruff` limpo, formatação zero. Mutações: 183/183 na bateria inteira da 8; as 9 do
-envio depois do "eu". CI conferido pelo SHA inteiro (o `gh` só filtra assim).
+**Estado:** conferir com `git log --oneline -3` e `git status --short`. Abertura em 2026-09-29
+00:48 UTC: HEAD `70f25ab` = origin, limpo, sem trava, `1688 passed`, CI `success` pelo SHA
+inteiro, `uv lock --upgrade --dry-run` → "No lockfile changes detected".
 
-**Onde parou:**
-- a Sessão 8 fechou no Mac (C0–C6 ✅, diário e `sessoes.md`);
-- depois dela:
-  - o dono confirmou o "manda pra mim" ao vivo;
-  - pediu para tirar o nome de usuário do Mac do repo: feito, com teste-guarda;
-  - mostrou o e-mail com markdown cru. Está medido, e o plano está escrito no 1º passo da 8b.
+**Próximo passo:** o primeiro checkpoint ⬜ do mapa abaixo.
 
-**Próximo passo exato: abrir a Sessão 8b pela skill `software-build`.**
-1. Rotina de abertura: `uv lock --upgrade --dry-run` e o CI do HEAD pelo SHA inteiro.
-2. Confirmar com o dono o plano do e-mail formatado (seção da 8b em `sessoes.md`): texto fonte
-   único aprovado no terminal → `text/plain` limpo + `text/html` de um conversor nosso que
-   escapa tudo antes. Isso reabre a D46 no "sem HTML".
-3. Implementar com teste vermelho antes: hoje o teste exige uma parte só, e a entrada
-   adversarial não pode produzir `<a`, `<img`, `<script>`, `on…=`.
-4. O resto da 8b:
-   - a paginação de `calendar/service.buscar()` (`nextPageToken` até um teto declarado, que diz
-     quando a lista está incompleta);
-   - as validações ao vivo das parciais 4 (CPF numa página real) e 3b (MCP contra a agenda real).
-5. Fechar com o teste no Mac: "manda pra mim um e-mail apresentando quem você é" chega com
-   negrito e lista de verdade.
+**Não pode ser esquecido:** o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem
+por e-mail; o que o dono aprova é o texto fonte, e as duas partes saem dele por função pura;
+nenhum endereço de terceiros nem `/Users/<nome>` no repo; mutações em background, sem `timeout`,
+saída inteira num arquivo; nunca presumir o fuso do dono (a data do evento de teste da 3b é ele
+quem escolhe).
 
-**Reler, nesta ordem:**
-1. `CLAUDE.md`/`AGENTS.md`.
-2. Este bloco.
-3. Em `sessoes.md`: o ▶️ e a Sessão 8b inteira, com a medição e o plano do e-mail.
-4. `docs/decisoes.md`: D46 e D53.
-5. `docs/fontes/gmail-api.md`: a seção "Enviar".
-6. O índice de `docs/erros.md`.
-7. A memória do Claude.
-8. As skills `software-build` (com `referencia/plano-de-sessao.md`), `seguranca` (§6, conteúdo
-   de fora e HTML), `testes-que-provam` e `falha-ruidosa` (§2, teto silencioso, para a
-   paginação).
-9. O código: `src/lifeos/gmail/envio.py` (`montar`, `_texto`), `gmail/tools.py`
-   (`texto_do_envio` e as docstrings de `enviar_email`/`responder_email`),
-   `tests/test_gmail_envio.py` e `calendar/service.py` (`buscar`).
+## Plano — Sessão 8b: e-mail formatado, paginação da agenda e as validações ao vivo 4 e 3b
 
-**Não pode ser esquecido:**
-- **O código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail** (D26, D52).
-- **O que o dono aprova é o texto fonte.** O HTML sai dele por uma função pura, e nenhum HTML do
-  Gemini passa: escapar **antes** de formatar.
-- **O endereço da noiva do dono nunca entra no repo**, e nenhum `/Users/<nome>` também
-  (`tests/test_repo_publico.py`).
-- **Mutações:** em background, sem `timeout`, com a saída inteira num arquivo (nunca por `tail`,
-  `docs/erros.md` classe 5).
-- **Nunca presumir o fuso do dono.** Script para o Mac segue a classe 1.
+### O que esta sessão entrega (verificável)
+(a) "manda pra mim um e-mail apresentando quem você é" chega no Gmail do dono com **negrito e
+lista de verdade** e a linha do Viking em cinza, menor; um texto com `<script>`, `<img onerror>`
+ou `<a href>` chega como **texto**, nunca como marcação.
+(b) Uma busca na agenda com mais de 250 ocorrências vem inteira até o teto declarado (500), e,
+acima dele, a resposta **diz** que a lista está incompleta. O mesmo vale para a lista por data.
+(c) No Mac: a página real da Wikipédia com um CPF de exemplo termina com "escondi 1 CPF dos
+modelos" (o contador novo); o evento de dia inteiro "Teste Viking 3b" criado **pelo MCP** aparece
+no Google Calendar no dia escolhido e só é apagado pelo `viking aprovar`.
 
-**Depende do dono:** confirmar o plano do e-mail formatado (e se quer a linha do Viking em cinza);
-o teste no Mac no fim.
+### O que ela NÃO faz (e para onde foi)
+- Formulários (pedido do dono de 2026-09-29) → **Sessão 11b**, escrita em `sessoes.md`, D55.
+- Logo do Viking → backlog (como estava).
+- Links clicáveis, imagens, tabelas e títulos grandes no e-mail → fora por construção (o conversor
+  não os gera).
 
-**Antes de confiar neste bloco:** `git status --short` vazio; `ls .mutacao.lock` → não existe;
-`python -m pytest -q` → `1688 passed`; `gh run list --commit $(git rev-parse HEAD)` → `success`.
+### Respostas do dono (2026-09-29)
+| Pergunta | Resposta | Consequência no plano |
+|---|---|---|
+| Plano do e-mail formatado (reabre a D46 no "só texto") | confirmado | C1; a D46 ganha "HTML só do nosso conversor" |
+| A linha do Viking | cinza e menor | só no HTML; no texto puro igual a hoje |
+| Validações ao vivo 4 e 3b | no roteiro do Mac no fim | C4 e C6 |
+| Formulários: posição | depois da 11 (Sessão 11b) | escrito em `sessoes.md` e D55 (C0) |
+| Formulários: dados | pessoais, sem dinheiro | D55 |
+| Formulários: envio | o Viking só preenche; o dono clica | D55 |
+
+### Decisões técnicas minhas (declaradas; o dono pode derrubar)
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **Conversor em `gmail/formato.py`, só stdlib.** Primeiro divide o texto **cru** em trechos (texto, negrito, itálico) e blocos (parágrafo, lista, título); depois **cada trecho passa por `html.escape`** e só as tags que nós escrevemos ficam sem escape | escapar trecho a trecho, a partir da mesma divisão, faz a parte texto e a HTML mostrarem exatamente as mesmas palavras. Escapar a linha inteira antes e procurar `**` depois faria as duas divergirem num `**a < b**` | um caso real que a divisão não represente |
+| **Subconjunto:** `**x**` → `<b>`, `*x*` → `<i>` (sem `*` colado a letra ou número dos dois lados: `2*3*4` fica como está), linhas `- `/`* `/`• ` → `<ul>`, `1. `/`1) ` → `<ol>` (com `start` se não começar em 1, só dígitos), `# x` → parágrafo em negrito, linha em branco → novo `<p>`, quebra simples → `<br>`. Aninhado não existe: o que não casa fica literal nas duas partes | é o que o Gemini escreveu na captura; menos regra, menos superfície | o Mac mostrar um formato comum que sai cru |
+| **Propriedade testada:** tirar as nossas tags do HTML e desfazer o escape devolve as mesmas palavras da parte texto, para toda entrada adversarial | uma régua que não depende da lista de ataques que eu lembrei | — |
+| **Parte texto:** tira só `**`/`*` de ênfase e o `# `; mantém `- ` e `1. ` das listas (legíveis como estão) | cliente sem HTML lê limpo | — |
+| **Terminal:** mostra o texto fonte (o que o código liga) e, quando há formatação, a linha "No Gmail, negrito, itálico e listas saem formatados" | o dono aprova o que o Gemini escreveu; a formatação é derivada | — |
+| **Paginação:** `_listar(pedido, teto=500)` segue o `nextPageToken` em páginas de 250, no máximo `teto/250` páginas; devolve `Eventos(lista, completa)`. `buscar` ganha `orderBy="startTime"` (os primeiros são os mais próximos); `por_data` usa o mesmo. `proximos` fica (já tem `maxResults` pedido) | `falha-ruidosa` §2: teto silencioso é interrupção; `por_data` é o vizinho com o mesmo teto de 250 (classe 6) | o Gemini se perder com 500 linhas (medir no Mac) |
+| **Contador de redação** no subprocesso do Jev: o envelope conta, por tipo, quantas trocas `_redacao.pagina` fez antes de cada chamada ao modelo (o máximo por página, não a soma dos passos) e o evento final leva `redacoes`; `viking browser` mostra "escondi N CPF dos modelos" | a saída é redigida de novo na volta: sem o contador, um `[CPF]` no fim não separa "o modelo nunca viu" de "viu e a saída escondeu" | — |
+| **Roteiro da 3b num script** (`scripts/calendario_mcp_ao_vivo.py DATA`): cliente MCP de verdade em memória, cria o evento de dia inteiro, lista por data, busca, pede para apagar; imprime estado e título, nunca ID | como o `pedido_mcp_de_teste.py` da Sessão 5; repo público | — |
+
+### Medido na abertura (2026-09-29, VPS)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repositório | `git status`, `git rev-parse HEAD origin/master`, `ls .mutacao.lock` | limpo; `70f25ab` = origin; sem trava | ok |
+| Suíte | `python -m pytest -q` | `1688 passed in 20.45s` | base |
+| CI do HEAD | `gh run list --commit <sha inteiro>` | `completed success` | ok |
+| Versões | `uv lock --upgrade --dry-run` | "No lockfile changes detected" | nada a atualizar |
+| Leitura de volta | `gmail/service._corpo` | prefere `text/plain` | o Viking relê a parte texto (sem `**`) |
+| Vizinho da paginação | `grep events().list src/` | `buscar` e `por_data` sem `maxResults` nem `pageToken` (padrão da API: 250); `proximos` com `maxResults` | os dois entram |
+| Página para o CPF | `curl` do artigo "Cadastro de pessoas físicas" da Wikipédia (pt) | `123.456.789-09` em texto; `_redacao.redigir` o troca por `[CPF]` (dígito válido) | página real do C6 |
+| Saída redigida de novo | `jev_runner._higienizar` → `_redacao.redigir` | um CPF escrito pelo modelo também vira `[CPF]` na saída | o contador (decisão acima) |
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | plano aqui; Sessão 11b e D55 escritas | — | ✅ |
+| C1 | `formato.py` + `montar` com duas partes: teste vermelho antes, verde depois; terminal e docstrings; mutações mortas | C0 | ✅ (3 vermelhos + o módulo inexistente → `1776 passed`; 5 mutações mortas) |
+| C2 | paginação de `buscar` e `por_data` com `completa`; texto do chat e do MCP diz quando falta | C1 | ⬜ |
+| C3 | contador de redação no subprocesso e na saída de `viking browser` | C2 | ⬜ |
+| C4 | `scripts/calendario_mcp_ao_vivo.py` com teste offline pelo dublê | C3 | ⬜ |
+| C5 | portões, duas passadas de revisão, D46, docs, commits, push, CI pelo SHA | C4 | ⬜ |
+| C6 | roteiro do Mac: e-mail formatado, CPF, 3b | C5 | ⬜ |
+
+### Fase 1 — e-mail formatado (C1)
+**Faz:** teste antes em `tests/test_gmail_formato.py` (novo) e em `tests/test_gmail_envio.py`:
+- o "uma parte só" vira "exatamente `text/plain` + `text/html` em `multipart/alternative`,
+  `iter_attachments()` vazio";
+- adversarial (`<script>`, `<img src=x onerror=…>`, `"><a href=…>`, `<style>`, `**` sem fechar,
+  `***x***`, lista colada num parágrafo, `javascript:` no texto, `&lt;` já escapado): nenhum
+  `<a`, `<img`, `<script`, `<style`, `on…=` no HTML; e a propriedade (sem as nossas tags e com
+  `html.unescape`, as palavras são as da parte texto);
+- parte texto sem `**`; emoji com ZWJ inteiro nas duas; assinatura nas duas, cinza no HTML;
+- "sai exatamente o aprovado" confere as duas partes contra o `corpo` aprovado.
+
+Depois `gmail/formato.py`, `envio.montar`, `tools.texto_do_envio` e as docstrings das duas tools.
+Mutações: tirar o `html.escape` do trecho; manter `**` na parte texto; montar o HTML de outro
+campo que não o aprovado.
+
+**✅ Checkpoint:** `python -m pytest tests/test_gmail_formato.py tests/test_gmail_envio.py
+tests/test_gmail_envio_chat.py -q` vermelho antes (conto quantos), verde depois; mutações novas
+mortas; suíte inteira verde.
+
+**🐞 Previsto → Depurar:** classe 4 (a propriedade passar porque as duas partes saem da mesma
+função errada) → o teste literal com o HTML esperado escrito à mão para um caso; classe 7 (o
+itálico pegar `2*3*4` ou um `*` de lista) → vizinhos legítimos listados no teste.
+
+### Fase 2 — paginação (C2)
+**Faz:** teste antes com o dublê do calendário devolvendo 300 e 600 ocorrências em páginas de 250
+(o dublê passa a respeitar `maxResults` e `pageToken`): 300 vêm inteiras e `completa`; 600 param
+em 500 e `completa=False`; o texto de `responder_buscar`/`responder_listar_por_data` diz
+"mostrando os primeiros 500 … há mais"; o MCP leva `completa` no conteúdo estruturado.
+**✅ Checkpoint:** `python -m pytest tests/test_calendar_service.py tests/test_mcp_server.py -q`
+verde; mutação "ignorar o `nextPageToken`" e "`completa` sempre verdadeiro" mortas.
+**🐞 Previsto → Depurar:** classe 6 (consertar `buscar` e esquecer `por_data`, ou o texto do MCP)
+→ `grep -n "events().list" src/`.
+
+### Fase 3 — contador de redação (C3)
+**Faz:** teste antes em `tests/test_jev_subprocess_main.py`: uma página falsa com um CPF válido →
+o evento final traz `redacoes == {"CPF": 1}` e o texto que chegou ao `choose` falso não tem o
+número; página sem nada → sem a linha. `_redacao` ganha uma contagem (stdlib), o envelope guarda o
+máximo por tipo, o runner carrega o campo e `formatar` escreve a linha.
+**✅ Checkpoint:** `python -m pytest tests/test_jev_subprocess_main.py tests/test_redacao.py
+tests/test_browser_seguranca.py -q` verde; mutação "o contador conta a página já redigida" morta.
+**🐞 Previsto → Depurar:** classe 5 (contar `[CPF]` que a página já tinha escrito) → contar a
+diferença entre o antes e o depois, com teste de página que contém `[CPF]` literal.
+
+### Fase 4 — script da 3b (C4)
+**Faz:** `scripts/calendario_mcp_ao_vivo.py DATA [--conferir]`, com teste offline pelo dublê do
+calendário e o `Client(mcp)` em memória: cria, lista, busca, pede para apagar; `--conferir`
+só conta quantos "Teste Viking 3b" restam. Nunca imprime ID.
+**✅ Checkpoint:** o teste do script verde; saída sem nenhum ID do dublê.
+
+### Fase 5 — fechamento (C5)
+Portões lidos; duas passadas de revisão; D46 atualizada; `AGENTS.md`, `docs/fontes/gmail-api.md`,
+diário, barra (a Sessão 11b entra na contagem: 28), `sessoes.md`; commits com o porquê; push; CI
+pelo SHA inteiro.
+
+### Verificação ponta a ponta (C6, Mac)
+`cd ~/LifeOs` → `git pull && git log --oneline -1` → `uv sync --locked --extra dev` → `source
+.venv/bin/activate` → `which python` → `python -m pytest -q`. Depois:
+1. `viking chat`: "manda pra mim um e-mail apresentando quem você é" → chega com negrito, lista e
+   a linha cinza.
+2. `viking browser` na página da Wikipédia do CPF → a saída diz "escondi 1 CPF dos modelos" (ou
+   mais) e não mostra o número.
+3. `python scripts/calendario_mcp_ao_vivo.py <data que ele escolher>` → conferir no Google
+   Calendar → `viking aprovar` → `python scripts/calendario_mcp_ao_vivo.py <data> --conferir` →
+   0 restantes.
+
+### Riscos e o que é irreversível
+- E-mail enviado não se desfaz: o teste do Mac é para a própria conta.
+- O evento de teste é criado na agenda real: apagado pelo `viking aprovar` no mesmo roteiro.
+- A Wikipédia mudar o artigo: o contador mostra 0 e o roteiro diz o que fazer (trocar a página).
+- Custa só tokens do Gemini e do Jev no teste do Mac.
 
 ## Plano — Sessão 8: e-mail que sai, mais o furo do bloqueio e a rotina de versões (fechada em 2026-09-28)
 

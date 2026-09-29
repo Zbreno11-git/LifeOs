@@ -29,7 +29,7 @@ from email import policy
 from email.message import EmailMessage
 
 from lifeos import aprovacoes, confirmacao, registro
-from lifeos.gmail import service
+from lifeos.gmail import formato, service
 
 ACAO = aprovacoes.GMAIL_ENVIAR
 LIMITE_LIVRE = 20  # e-mails para a própria conta em 24 h (dono, 2026-09-28)
@@ -60,8 +60,13 @@ class Rascunho:
 
     @property
     def texto_final(self) -> str:
-        """O corpo exatamente como sai (e como o dono o vê no terminal)."""
+        """O texto fonte com a assinatura: o que o dono vê no terminal e aprova."""
         return f"{self.corpo}\n\n— {ASSINATURA}\n"
+
+    @property
+    def texto_puro(self) -> str:
+        """A parte `text/plain`: o mesmo texto, sem os marcadores de negrito e itálico."""
+        return f"{formato.texto_puro(self.corpo)}\n\n— {ASSINATURA}\n"
 
 
 @dataclass(frozen=True)
@@ -154,8 +159,9 @@ def destinatarios(para, *, dono: str) -> tuple[str, ...]:
 
 
 def montar(rascunho: Rascunho, *, de: str) -> bytes:
-    """A mensagem inteira: só texto (nenhuma parte de anexo existe aqui), com a marca. O
-    `EmailMessage` recusa CR/LF num cabeçalho (medido no Python 3.12.3, 2026-09-28)."""
+    """A mensagem inteira, com a marca: `multipart/alternative` com a parte texto e a HTML,
+    as duas saídas do corpo aprovado por `formato` (Sessão 8b; nenhuma parte de anexo existe
+    aqui). O `EmailMessage` recusa CR/LF num cabeçalho (medido no Python 3.12.3, 2026-09-28)."""
     mensagem = EmailMessage(policy=policy.SMTP)
     mensagem["From"] = de
     mensagem["To"] = ", ".join(rascunho.para)
@@ -166,7 +172,10 @@ def montar(rascunho: Rascunho, *, de: str) -> bytes:
             r for r in (rascunho.referencias, rascunho.em_resposta_a) if r
         )
     mensagem[service.MARCA] = service.MARCA_VALOR
-    mensagem.set_content(rascunho.texto_final)
+    mensagem.set_content(rascunho.texto_puro)
+    mensagem.add_alternative(
+        formato.documento(rascunho.corpo, assinatura=ASSINATURA), subtype="html"
+    )
     return mensagem.as_bytes()
 
 

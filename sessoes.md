@@ -696,6 +696,37 @@ O que estava escrito na abertura:
   - só o `googleapiclient`, para o Drive, que já está no lock;
   - o scanner de segredos, escolhido na abertura.
 
+## Sessão 11b — formulários: o Viking preenche, o dono envia (pedida em 2026-09-29)
+
+- **Pedido do dono (2026-09-29):** "o Viking consegue preencher formulários pra mim? … ele teria
+  que saber meu cpf e etc, mas ia ser bom ele conseguir responder e preencher formulários". Posta
+  depois da 11 por decisão dele: as Sessões 10–11 mudam como o navegador recebe tarefas (o Mac
+  vira as "mãos"), e o preenchimento passa exatamente por aí (D55).
+- **Entrega:** num formulário de teste e num real escolhido pelo dono, o Viking preenche nome,
+  CPF e endereço a partir de um pedido na conversa e **para antes de enviar**; o CPF não aparece
+  em nenhum texto que saiu para o Gemini ou o OpenRouter (conferido na saída e no registro).
+- **Decidido pelo dono (2026-09-29, D55):**
+  - o cofre guarda **só dados pessoais**: nome, CPF, RG, data de nascimento, endereço, telefone,
+    e-mail. Cartão, conta bancária e senha **nunca** (dinheiro continua proibido ao navegador,
+    D38);
+  - **o Viking só preenche; quem clica em "Enviar" é o dono**, na Chrome.
+- **Escolhas de arquitetura previstas (confirmar na abertura):**
+  - **Cofre local no Mac**, fora do repo e fora do banco que vai para a nuvem (arquivo com
+    permissão 600, como os tokens em `secrets/`); nada disso vai para a memória da Sessão 13,
+    que o Gemini lê.
+  - **Os modelos veem só o apelido** (`{cpf}`, `{endereco}`): o Gemini e o modelo do Jev decidem
+    "digitar {cpf} no campo CPF", e o subprocesso no Mac troca o apelido pelo valor na hora de
+    digitar. A redação da Sessão 4 continua valendo, e o valor digitado em campo sensível
+    continua redigido no que volta.
+  - **Parar antes de enviar:** o freio de cliques (`_acoes_sensiveis`) ganha a classe "enviar
+    formulário"; recusada sempre nesta tarefa, sem liberação por código.
+  - Testes offline: um apelido que o modelo inventa (`{cartao}`) não vira nada; o valor nunca
+    aparece no envelope enviado ao modelo; página que pede "digite seu CPF aqui" num campo que
+    não é de CPF (injeção) — decidir na abertura quem casa campo com apelido.
+- **Perguntas para a abertura:** onde o dono cadastra os dados (comando `viking cofre`?); se o
+  Viking pode perguntar um dado que falta e guardá-lo; quais formulários reais ele quer usar no
+  teste.
+
 ## Sessão 12 — agente geral (planejada em 2026-09-28)
 
 - **Entrega:**

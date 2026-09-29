@@ -47,6 +47,23 @@ def test_para_outra_pessoa_o_texto_e_o_codigo_vao_so_ao_terminal(caixa, capsys):
     assert caixa["enviados"] == []
 
 
+def test_o_terminal_mostra_o_texto_fonte_e_avisa_da_formatacao(caixa, capsys):
+    """O dono aprova o texto que o Gemini escreveu (com os `**`); o aviso diz que no Gmail isso
+    sai formatado (Sessão 8b). Sem formatação, sem aviso."""
+    tools.enviar_email(ANA, "Lista", "**Compras:**\n- água")
+    terminal = capsys.readouterr().out
+    assert "**Compras:**\n- água" in terminal
+    assert tools.AVISO_DE_FORMATO in terminal
+    tools.enviar_email(ANA, "Lembrete", "Compra água. Te amo!")
+    assert tools.AVISO_DE_FORMATO not in capsys.readouterr().out
+
+
+def test_as_tools_dizem_ao_gemini_o_que_sai_formatado():
+    for tool in (tools.enviar_email, tools.responder_email):
+        assert "**negrito**" in tool.__doc__
+        assert "sem link" in tool.__doc__
+
+
 def test_para_a_propria_conta_sai_e_o_terminal_nao_mostra_codigo(caixa, capsys):
     retorno = tools.enviar_email(DONO, "Nota", "comprar água")
     assert retorno.startswith("Enviei para a conta do usuário")

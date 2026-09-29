@@ -1357,6 +1357,41 @@ MUTACOES = [
         "--disable-pip --progress-spinner off --ignore-vuln PYSEC-2026-3552\n",
         "tests/test_ci_workflow.py::test_scanner_nao_ignora_nenhuma_falha",
     ),
+    Mutacao(
+        "formato: trecho do texto entra no HTML sem escape",
+        "src/lifeos/gmail/formato.py",
+        "        escapado = html.escape(texto)",
+        "        escapado = texto",
+        "tests/test_gmail_formato.py::test_nada_do_texto_vira_marcacao",
+    ),
+    Mutacao(
+        "formato: a parte texto mantém os asteriscos",
+        "src/lifeos/gmail/formato.py",
+        '    return "".join(texto for _estilo, texto in _trechos(linha))',
+        "    return linha",
+        "tests/test_gmail_formato.py::test_o_email_da_captura_sai_formatado",
+    ),
+    Mutacao(
+        "formato: itálico pega asterisco colado a letra (2*3*4)",
+        "src/lifeos/gmail/formato.py",
+        r'_ITALICO = re.compile(r"(?<![\w*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![\w*])")',
+        r'_ITALICO = re.compile(r"(?<![*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?![*])")',
+        "tests/test_gmail_formato.py::test_vizinhos_legitimos_ficam_como_estao",
+    ),
+    Mutacao(
+        "formato: o HTML sai de outro campo que não o corpo aprovado",
+        "src/lifeos/gmail/envio.py",
+        '        formato.documento(rascunho.corpo, assinatura=ASSINATURA), subtype="html"',
+        '        formato.documento(rascunho.assunto, assinatura=ASSINATURA), subtype="html"',
+        "tests/test_gmail_envio.py::test_as_duas_partes_saem_do_texto_aprovado",
+    ),
+    Mutacao(
+        "formato: o aviso do terminal aparece sem formatação",
+        "src/lifeos/gmail/tools.py",
+        "    if formato.tem_formatacao(r.corpo):",
+        "    if True:",
+        "tests/test_gmail_envio_chat.py::test_o_terminal_mostra_o_texto_fonte_e_avisa_da_formatacao",
+    ),
 ]
 
 

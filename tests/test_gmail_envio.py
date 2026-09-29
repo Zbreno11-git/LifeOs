@@ -53,9 +53,13 @@ def _enviado(gmail, n=0):
     return gmail["enviados"][n]["mensagem"]
 
 
+def _parte(mensagem, tipo: str) -> str:
+    """Uma das duas partes, com as linhas como no terminal (no fio a política SMTP usa CRLF)."""
+    return mensagem.get_body((tipo,)).get_content().replace("\r\n", "\n")
+
+
 def _texto(mensagem) -> str:
-    """O corpo como o dono o leu: no fio o e-mail usa CRLF (política SMTP), no terminal é `\n`."""
-    return mensagem.get_content().replace("\r\n", "\n")
+    return _parte(mensagem, "plain")
 
 
 def _linhas_do_registro():
@@ -68,17 +72,20 @@ def _linhas_do_registro():
 # --- a mensagem -------------------------------------------------------------------------------
 
 
-def test_mensagem_e_so_texto_com_a_marca_e_a_assinatura():
-    rascunho = envio.Rascunho(para=(ANA,), assunto="Oi", corpo="Olá")
+def test_mensagem_e_texto_mais_html_sem_anexo_com_a_marca_e_a_assinatura():
+    """Sessão 8b (pedido do dono): duas versões do mesmo texto, e nenhuma é anexo."""
+    rascunho = envio.Rascunho(para=(ANA,), assunto="Oi", corpo="Olá **você**")
     mensagem = message_from_bytes(envio.montar(rascunho, de=DONO), policy=policy.default)
-    assert not mensagem.is_multipart()
-    assert mensagem.get_content_type() == "text/plain"
+    assert mensagem.get_content_type() == "multipart/alternative"
+    assert [p.get_content_type() for p in mensagem.iter_parts()] == ["text/plain", "text/html"]
     assert list(mensagem.iter_attachments()) == []
+    assert _texto(mensagem).startswith("Olá você")
+    assert "<b>você</b>" in _parte(mensagem, "html")
+    assert envio.ASSINATURA in _parte(mensagem, "html")
     assert mensagem["From"] == DONO
     assert mensagem["To"] == ANA
     assert mensagem[service.MARCA] == service.MARCA_VALOR
     assert _texto(mensagem).rstrip().endswith(envio.ASSINATURA)
-    assert _texto(mensagem).startswith("Olá")
 
 
 def test_emailmessage_tambem_recusa_quebra_de_linha_no_cabecalho():
@@ -232,7 +239,18 @@ def test_nada_sai_antes_do_codigo_e_sai_exatamente_o_aprovado(caixa):
     assert mensagem["To"] == ANA
     assert mensagem["Subject"] == "Lembrete"
     assert _texto(mensagem) == pedido.rascunho.texto_final
+    assert "Compra água, te amo" in _parte(mensagem, "html")
     assert confirmado.enviado.id == "enviado1"
+
+
+def test_as_duas_partes_saem_do_texto_aprovado(caixa):
+    """O código liga o texto fonte; o texto puro e o HTML saem dele na hora de montar."""
+    pedido = envio.novo(ANA, "Lista", "**Compras:**\n- água\n- pão")
+    envio.confirmar(CODIGO)
+    mensagem = _enviado(caixa)
+    assert _texto(mensagem) == f"Compras:\n- água\n- pão\n\n— {envio.ASSINATURA}\n"
+    assert "<p><b>Compras:</b></p><ul><li>água</li><li>pão</li></ul>" in _parte(mensagem, "html")
+    assert pedido.rascunho.corpo == "**Compras:**\n- água\n- pão"
 
 
 def test_codigo_errado_usado_ou_substituido_nao_envia(caixa):
