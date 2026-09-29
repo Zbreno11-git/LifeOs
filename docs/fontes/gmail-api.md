@@ -105,11 +105,18 @@ cota num relógio falso. O corpo do erro traz o número do projeto OAuth: não s
   <da original, na resposta>})`, com o escopo `gmail.modify` que já temos (ele autoriza `send`,
   medido em 2026-09-26). Custa **100 unidades** da cota (a tabela de cota lida em 2026-09-26; o
   dublê cobra o mesmo). Uma só chamada no código, dentro de `registro.acao("gmail.enviar")`.
-- **Mensagem:** `email.message.EmailMessage` com a política SMTP (linhas em CRLF no fio), só
-  `text/plain` UTF-8, `From` = a conta (`users.getProfile`), cabeçalho `X-Viking:
-  enviado-pelo-viking` e, no fim do corpo, "— Escrito pelo Viking (Assistente AI)". O
-  `EmailMessage` recusa CR/LF num cabeçalho (medido no Python 3.12.3); a nossa validação recusa
-  antes, com mensagem clara.
+- **Mensagem:** `email.message.EmailMessage` com a política SMTP (linhas em CRLF no fio),
+  `From` = a conta (`users.getProfile`), cabeçalho `X-Viking: enviado-pelo-viking` e, no fim, "—
+  Escrito pelo Viking (Assistente AI)". O `EmailMessage` recusa CR/LF num cabeçalho (medido no
+  Python 3.12.3); a nossa validação recusa antes, com mensagem clara.
+- **Duas versões do mesmo texto (Sessão 8b, 2026-09-29):** até a 8 saía só `text/plain`, e o
+  markdown do Gemini aparecia cru no Gmail do dono (`**Gestão de Calendário:**`). Agora é
+  `multipart/alternative`: `text/plain` sem os marcadores e `text/html` de `gmail/formato.py`
+  (negrito, itálico, listas; assinatura em cinza e menor), as duas saídas do texto que o dono
+  aprovou. O conversor divide o texto cru e escapa cada trecho antes de formatar: nada do
+  Gemini vira link, imagem ou script. Medido no Python 3.12.3: `iter_attachments()` vazio e
+  `get_body(("html", "plain"))` escolhe o HTML. A leitura de volta (`service._corpo`) prefere o
+  `text/plain`. **Não medido aqui:** como o Gmail mostra o HTML (o teste é no Mac).
 - **Resposta na conversa:** `threadId` da original, `In-Reply-To` = o `Message-ID` dela e
   `References` = as dela + o `Message-ID` (só o que tem a forma `<…>`; até 20), e o `Subject` com
   "Re: " (sem duplicar) — https://developers.google.com/workspace/gmail/api/guides/threads.

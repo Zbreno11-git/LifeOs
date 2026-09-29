@@ -1046,6 +1046,52 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-29 — Sessão 8b: e-mail formatado, agenda paginada, contador de redação (falta o Mac)
+
+**Abertura, conferida contra o disco (00:48 UTC).** HEAD `70f25ab` = origin, limpo, sem trava,
+`1688 passed`, CI `success` pelo SHA inteiro, `uv lock --upgrade --dry-run` sem nada novo. Nenhuma
+divergência com o bloco de retomada.
+
+**Respostas do dono:** o plano do e-mail formatado confirmado (reabre a D46 no "só texto"); a
+linha do Viking em cinza e menor; as validações ao vivo 4 e 3b no roteiro do Mac. No meio da
+sessão ele pediu **formulários** ("ele teria que saber meu cpf e etc"): virou a **Sessão 11b**,
+depois da 11, com a D55 — cofre local no Mac, só dados pessoais, os modelos veem só apelidos, e
+o Viking **só preenche**: quem clica em "Enviar" é ele.
+
+**C1, o e-mail formatado.** `gmail/formato.py` (só stdlib) divide o texto cru em blocos e trechos
+e escapa cada trecho antes de escrever as nossas tags; o e-mail sai em `multipart/alternative`
+(texto puro sem os `**` + HTML), as duas partes do texto que o dono aprovou. A régua principal
+não depende da lista de ataques: tiradas as tags que nós escrevemos (lista à mão no teste), não
+sobra `<` no HTML, e as palavras batem com a parte texto. 5 mutações mortas.
+
+**C2, a agenda.** `buscar` e `por_data` liam só a 1ª página (250): agora seguem o
+`nextPageToken` até 500 e dizem "há mais" (texto e MCP, `completa`). Achado na 1ª passada de
+revisão: a referência do Google diz que uma página pode vir "none at all, even if there are
+more events" — o laço contava só eventos e giraria para sempre; o teste novo travou até o
+`timeout`, e o conserto é um teto de 10 páginas, que também diz "incompleta".
+
+**C3, o contador de redação.** A saída do Viking é redigida de novo na volta, então um `[CPF]`
+no fim não prova que o modelo não viu o número. O envelope agora conta o que escondeu (antes ×
+depois, por tipo) e o texto termina com "🔒 Escondi dos modelos…". Medido no clone do Jev: ele
+só lê o texto **visível na tela** (`snapshot.js`), e no artigo da Wikipédia o CPF de exemplo está
+longe do topo — o roteiro abre direto em `#Formato`, onde aparecem `12345678909` e
+`123.456.789-09` (medido pelo `curl` do artigo).
+
+**C4.** `scripts/calendario_mcp_ao_vivo.py`: o roteiro da 3b pelo MCP em memória, sem imprimir ID.
+
+**Fechamento:** `1804 passed`; `ruff` limpo; bateria inteira de mutações `198 · mortas pelo
+teste esperado: 198`, `recusadas: 0`.
+
+**Erros meus registrados:**
+- classe 3: desenhei a paginação sem ler a referência do `events.list` (a página vazia com mais
+  por vir); pego na revisão, antes do commit do fechamento;
+- classe 5: um `ruff check` falhou no meio de uma cadeia `&&` e as mutações da agenda não foram
+  gravadas — o verde das âncoras que veio depois era das antigas; e criei um arquivo de teste com
+  `cat >`, contra o antídoto escrito.
+
+**Não verificado aqui:** o HTML no Gmail do dono; o contador numa página real; a 3b contra o
+Google. Tudo isso é o roteiro do Mac.
+
 ### 2026-09-28 — Depois da 8: o "eu" confirmado no Mac, o nome de usuário fora do repo, o markdown medido
 
 - **"manda pra mim" no Mac:** o dono testou e saiu direto, sem perguntar o endereço. O 1º passo

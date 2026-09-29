@@ -194,3 +194,13 @@ def test_proximos_pede_o_numero_e_e_completo(calendario):
     eventos = service.proximos(10)
     assert len(eventos) == 10
     assert eventos.completa is True
+
+
+def test_paginas_vazias_sem_fim_param_e_dizem_que_esta_incompleta(calendario):
+    """A referência do `events.list` (lida em 2026-09-29): uma página pode vir "less than this
+    value, or none at all, even if there are more events". Contar só eventos giraria para sempre."""
+    calendario["paginas_vazias"] = True
+    eventos = service.buscar("Aula")
+    assert list(eventos) == []
+    assert eventos.completa is False
+    assert len(calendario["consultas"]) == service.MAX_PAGINAS

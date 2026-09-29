@@ -123,6 +123,8 @@ class _Events:
         self._estado["consultas"].append(kwargs)
         # Como o Google: 250 por página se não pedir outro número, e `nextPageToken` enquanto
         # houver mais (https://developers.google.com/workspace/calendar/api/v3/reference/events/list).
+        if self._estado.get("paginas_vazias"):  # o Google pode: página vazia com mais por vir
+            return _Exec({"items": [], "nextPageToken": "mais"})
         itens = self._estado["itens"]
         inicio = int(kwargs.get("pageToken") or 0)
         fim = inicio + int(kwargs.get("maxResults") or 250)

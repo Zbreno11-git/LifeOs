@@ -64,6 +64,14 @@ que é de onde `Agent.command()` os chama.
 se o upstream mudar a forma de chamar, o teste falha. Se as funções sumirem, o runner **recusa
 navegar** (`protecao_indisponivel`).
 
+**O que foi escondido, contado (Sessão 8b, 2026-09-29).** A saída do Viking é redigida de novo
+na volta (`_higienizar`), então um `[CPF]` no fim não prova que o modelo não viu o número. Quem
+prova é quem redigiu: o envelope compara a página antes e depois (`_redacao.escondidos`; uma
+marca que a página já tinha não conta) e emite o evento `redigido`; o runner guarda o máximo por
+tipo em `BrowserResult.redacoes`, e o texto termina com "🔒 Escondi dos modelos, antes de enviar
+a página: 1 CPF." Primeira validação ao vivo: a página da Wikipédia (pt) sobre o CPF, que traz
+`123.456.789-09` (dígito válido) em texto.
+
 **Residual consciente (não redigido):** o objetivo (escrito pelo usuário/Gemini — redigir
 quebraria a tarefa), rótulos e valores atuais dos campos da página e o histórico de ações que o Jev
 reenvia ao modelo. Por que não o valor dos campos: a regra do Jev (`questions.py`) manda não

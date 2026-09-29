@@ -64,7 +64,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     desfazer por 7 dias). Desde a Sessão 8, **enviar** (`envio.py`, D46): para a própria conta
     sai na hora (até 20 em 24 h; `para="eu"` é a conta); para qualquer outro endereço, o e-mail
     inteiro e o código vão só ao terminal, e sai depois de `confirma NNNN`; responder não tem
-    parâmetro de destinatário (sai do cabeçalho da original). Só o `viking chat` registra essas
+    parâmetro de destinatário (sai do cabeçalho da original). O e-mail sai em duas versões do
+    texto aprovado (`formato.py`, Sessão 8b): texto puro e HTML com negrito, itálico e listas,
+    cada trecho escapado antes de formatar. Só o `viking chat` registra essas
     tools, o MCP não (decisão do dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL, o ambiente que ele recebe); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
@@ -369,6 +371,13 @@ registra pedidos, o código aparece só em `viking aprovar` (que exige terminal 
 `tests/test_mcp_aprovacao.py` proíbe `print`, `consumir` e `executar_aprovado` no servidor. A
 origem das ações (`registro.ORIGEM`) é marcada **por chamada** (`_pelo_mcp()`): o FastMCP roda cada
 tool num contexto copiado.
+
+**O HTML do e-mail sai só de `gmail/formato.py`, e escapa antes de formatar.** O Gemini escreve
+markdown (e pode copiar HTML de um e-mail injetado); o conversor divide o texto **cru** em
+trechos e passa cada um por `html.escape`, e só as tags dele ficam sem escape. Nada de lib de
+markdown (deixam HTML cru passar). `tests/test_gmail_formato.py` confere, com a lista das nossas
+tags escrita à mão, que sem elas não sobra `<` no HTML e que as palavras batem com a parte
+texto. O código de aprovação liga o texto fonte; as duas partes saem dele na hora de montar.
 
 **Todo efeito externo passa pelo registro de ações.** `tests/test_registro_ganchos.py` lê o código:
 toda chamada `events().delete/patch/insert`, `batchModify`, `store.add`/`store.complete` fica dentro

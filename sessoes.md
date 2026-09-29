@@ -16,22 +16,23 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 8b — pequenos (a 8, e-mail que sai, fechou no Mac em 2026-09-28).
+- **Sessão:** 8b — pequenos: **pronta no VPS em 2026-09-29, falta o teste do dono no Mac**
+  (roteiro no bloco ▶️ do `PROGRESSO.md`). Depois dela, a 9.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** abrir, planejar e executar a 8b pela skill `software-build`, começando pelo e-mail
-  com formatação de verdade (medição e plano já escritos na seção dela).
+- **Agora:** o teste da 8b no Mac (e-mail formatado, CPF na Wikipédia, 3b pelo MCP); com ele
+  verde, a 8b fecha e as parciais 4 e 3b também. Depois, abrir a 9.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as perguntas da abertura da 8b.
+- **Depende do dono:** o teste da 8b no Mac; depois, as perguntas da abertura da 9.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -478,7 +479,14 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nenhuma nova. A stdlib `email` e o `googleapiclient` que já temos
   bastam.
 
-## Sessão 8b — pequenos (curta, planejada em 2026-09-28)
+## Sessão 8b — pequenos (curta, planejada em 2026-09-28; feita no VPS em 2026-09-29, falta o Mac)
+
+- **Feito no VPS (2026-09-29; plano e checkpoints no `PROGRESSO.md`):** e-mail em
+  `multipart/alternative` a partir do texto aprovado (`gmail/formato.py`, D46 reaberta no "só
+  texto" pelo dono); `buscar`/`por_data` seguem as páginas até 500 eventos e 10 páginas, e dizem
+  quando param; o contador do que o envelope escondeu dos modelos (a régua do teste ao vivo da
+  4); o roteiro da 3b (`scripts/calendario_mcp_ao_vivo.py`). Pedido novo do dono no meio: a
+  Sessão 11b (formulários, D55).
 
 - **Feito antes da abertura (2026-09-28):**
   - ~~o "manda pra mim" ao vivo~~: o dono testou no Mac, e saiu direto, sem perguntar o endereço;

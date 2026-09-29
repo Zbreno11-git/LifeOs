@@ -1448,6 +1448,13 @@ MUTACOES = [
         "                maximo[tipo] = maximo.get(tipo, 0) + quantos",
         "tests/test_browser_seguranca.py::test_o_resultado_leva_o_maximo_por_tipo_nao_a_soma",
     ),
+    Mutacao(
+        "agenda: acabar as páginas permitidas diz que veio inteira",
+        "src/lifeos/calendar/service.py",
+        "    return Eventos(eventos, completa=False)",
+        "    return Eventos(eventos, completa=True)",
+        "tests/test_calendar_service.py::test_paginas_vazias_sem_fim_param_e_dizem_que_esta_incompleta",
+    ),
 ]
 
 

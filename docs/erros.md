@@ -18,9 +18,9 @@
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 18 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 5 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 3 | Estimei em vez de medir | 6 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 15 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 8 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 10 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 9 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
@@ -204,6 +204,15 @@ documentação da Pluggy mostrou que o `balance` do cartão é o limite usado, n
 chamá-lo de "fatura atual". O que tem de novo: medir a forma de um campo não é medir o que ele
 quer dizer; data e instante têm a mesma forma.
 
+**2026-09-29 — paginação desenhada sem ler a referência (Sessão 8b, C2).** Escrevi o laço do
+`nextPageToken` parando quando acabassem as páginas ou quando chegasse ao teto de eventos. A
+referência do `events.list`, lida só na 1ª passada de revisão, diz que uma página pode vir com
+menos eventos que o pedido, "or none at all, even if there are more events": com páginas vazias,
+o laço nunca chegaria ao teto. O teste novo travou até o `timeout` matar. O conserto é um teto de
+páginas (`MAX_PAGINAS`), que também diz "incompleta". O que tem de novo: é o mesmo "limite do
+terceiro lido antes de desenhar" da Sessão Gmail, agora num laço — um laço que depende do
+terceiro para terminar tem de terminar por conta própria.
+
 > **Um número sem comando é hipótese, mesmo quando parece óbvio.**
 
 **O antídoto, concreto:** o procedimento de medição de tokens do `AGENTS.md`; para linha, medir a
@@ -336,6 +345,15 @@ que a notificação mostrou era o do `tail`, não o do script (sem `pipefail`). 
 mortas. Rodei de novo com a saída inteira num arquivo. O que tem de novo: a skill manda ler a
 linha literal "do topo", e fui eu que cortei o topo; resultado de portão vai inteiro para um
 arquivo, e o status é o do comando, não o do pipe.
+
+**2026-09-29 — mutações que não foram gravadas (Sessão 8b, C2).** Num comando só, `ruff format
+… && ruff check … && python3 (grava as mutações)`, seguido de `ruff format` e do teste das
+âncoras. O `ruff check` falhou (ISC004), a cadeia parou antes de gravar as mutações, e as linhas
+seguintes rodaram: "3 passed" nas âncoras, que eram as antigas. Pego ao ler "1 file left
+unchanged" onde esperava uma mudança. No mesmo dia criei um arquivo de teste com `cat >`, contra
+o antídoto desta classe (sem dano: `ruff` e a varredura passaram). O que tem de novo: um verde
+que vem **depois** de um passo que falhou mede o estado anterior; e o antídoto escrito não
+bastou para o `cat >` — agora a varredura de invisíveis roda também nos arquivos novos.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 

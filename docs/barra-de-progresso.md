@@ -7,14 +7,40 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-28 (Sessão 8 fechada: testada no seu Mac).**
+**Última atualização: 2026-09-29 (Sessão 8b pronta no VPS; falta o seu teste no Mac).**
 
-`█████████░░░░░░░░░░░ 11 de 27 sessões fechadas + 2 parciais (= 12 de 27)`
+`█████████░░░░░░░░░░░ 11 de 28 sessões fechadas + 2 parciais (= 12 de 28)`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7 e 8; parciais 4 e
-3b (falta só a validação ao vivo, que é a Sessão 8b); na fila: 8b e 9 a 21. Cada parcial vale
-meia sessão na barra. A barra "encolheu" de 11/12 para 11/27 porque o roteiro cresceu, não porque
-algo voltou atrás.
+3b (falta só a validação ao vivo, que está no roteiro da 8b); na fila: 8b (pronta no VPS, falta
+o Mac), 9 a 11, **11b (formulários, pedida por você em 2026-09-29)** e 12 a 21. Cada parcial vale
+meia sessão na barra. O total foi de 27 para 28 por causa da 11b, não porque algo voltou atrás.
+
+## 2026-09-29 — Sessão 8b: e-mail formatado, agenda sem corte e a prova da redação (falta o Mac)
+
+**O que ficou pronto (no VPS, testado aqui sem o Google):**
+- **E-mail com formatação de verdade:** o negrito e as listas que o Gemini escreve chegam
+  formatados no Gmail, e a linha "Escrito pelo Viking" vai em cinza, menor. Você continua
+  aprovando no terminal exatamente o texto que ele escreveu; a versão formatada sai desse texto.
+  Se o Gemini (ou um e-mail malicioso que ele copiou) escrever um link escondido, uma imagem ou
+  um código, isso chega como texto, nunca como link ou imagem.
+- **A agenda não corta mais em silêncio:** uma busca com mais de 250 eventos (uma aula semanal
+  por anos, por exemplo) vinha pela metade sem avisar. Agora vem até 500 e, passando disso, diz
+  "há mais".
+- **A prova de que os modelos não viram o seu CPF:** quando o navegador esconde um CPF, cartão ou
+  chave de uma página antes de mandar para os modelos, agora ele diz no fim "🔒 Escondi dos
+  modelos: 1 CPF". Antes não dava para saber se tinha escondido ou se só a resposta final foi
+  apagada.
+- **Formulários entraram no roteiro** (Sessão 11b), do jeito que você escolheu: seus dados ficam
+  só no Mac, sem cartão nem senha, e ele para antes de enviar — quem clica é você.
+
+**Como sabemos:** 1804 testes passando no VPS em 2026-09-29 e as mutações (defeitos plantados de
+propósito) derrubadas pelo teste certo. **Ainda não visto:** o e-mail no seu Gmail, o contador
+numa página real e a agenda pelo MCP — é o seu teste no Mac.
+
+**Erros meus desta sessão:** desenhei a busca na agenda sem ler antes a regra do Google (uma
+página pode vir vazia mesmo havendo mais); a revisão pegou antes de chegar a você. E um comando
+meu parou no meio sem eu perceber na hora; peguei lendo a saída.
 
 ## 2026-09-28 — Sessão 8: o Viking manda e-mail (fechada no seu Mac)
 

@@ -262,6 +262,10 @@ def _conferido(service, event_id: str, titulo_esperado: str) -> tuple[Evento, di
 # teto, e quem bate no teto diz (skill `falha-ruidosa` §2: um teto silencioso é uma interrupção).
 POR_PAGINA = 250
 TETO_EVENTOS = 500  # agente, 2026-09-29: cabe uma série de 300; mais que isso o Gemini não lê bem
+# A página pode vir com menos que o pedido, "or none at all, even if there are more events"
+# (referência do `events.list`, lida em 2026-09-29): contar só eventos giraria para sempre numa
+# sequência de páginas vazias. O teto de páginas fecha o laço, e também diz "incompleta".
+MAX_PAGINAS = 10
 
 
 class Eventos(list):
@@ -276,7 +280,7 @@ class Eventos(list):
 def _listar(service, **pedido) -> Eventos:
     eventos: list[Evento] = []
     pagina = None
-    while True:
+    for _ in range(MAX_PAGINAS):
         consulta = {**pedido, "maxResults": min(POR_PAGINA, TETO_EVENTOS - len(eventos))}
         if pagina:
             consulta["pageToken"] = pagina
@@ -287,6 +291,7 @@ def _listar(service, **pedido) -> Eventos:
             return Eventos(eventos, completa=True)
         if len(eventos) >= TETO_EVENTOS:
             return Eventos(eventos[:TETO_EVENTOS], completa=False)
+    return Eventos(eventos, completa=False)
 
 
 def proximos(max_results: int = 10) -> Eventos:

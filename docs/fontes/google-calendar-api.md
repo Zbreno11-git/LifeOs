@@ -26,8 +26,15 @@
 - `calendar/tools.py` — o texto. Cada `responder_*` devolve `Resposta(texto, dados, erro)`; as
   tools do Gemini devolvem só o `texto` (idêntico ao de antes — docstrings e assinaturas
   conferidas contra um retrato do código anterior).
-- `mcp_server/server.py` — mesmo `texto` + `structured_content` (`{"eventos": [...]}` nas
-  leituras, o evento afetado nas mutações). Recusa de trava e falha da API viram `is_error=True`
+- **Paginação (Sessão 8b, 2026-09-29):** o `events.list` devolve até 250 por página se não se
+  pede outro número, e o resto por `nextPageToken`. `buscar` e `por_data` seguem as páginas até
+  `service.TETO_EVENTOS` (500) e devolvem `Eventos` com `completa`; quem para no teto diz "há
+  mais" no texto. `proximos` pede N e é completa por definição. A referência diz que uma página
+  pode vir com menos que o pedido, "or none at all, even if there are more events" (lida em
+  2026-09-29): por isso há também `MAX_PAGINAS` (10), achado na revisão — sem ele, páginas
+  vazias com `nextPageToken` fariam o laço girar para sempre.
+- `mcp_server/server.py` — mesmo `texto` + `structured_content` (`{"eventos": [...],
+  "completa": bool}` nas leituras, o evento afetado nas mutações). Recusa de trava e falha da API viram `is_error=True`
   com `{"erro": codigo, ...}`.
 - Títulos passam por `limpar_controles`: vêm de convites de terceiros.
 - Testes nunca falam com o Google de verdade: `tests/conftest.py` troca `get_calendar_service` por

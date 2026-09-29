@@ -457,7 +457,7 @@ def preparar_limpeza(remetentes: str) -> str:
 
 
 def enviar_email(para: str, assunto: str, corpo: str) -> str:
-    """Escreve e envia um e-mail novo, só texto (sem anexo, sem cópia). `para`: endereços
+    """Escreve e envia um e-mail novo (sem anexo, sem cópia). `para`: endereços
     separados por vírgula (até 5); para o PRÓPRIO usuário use `eu` (não pergunte o endereço
     dele). Para o próprio usuário sai na hora; para
     qualquer outra pessoa NADA sai: o Viking mostra o e-mail inteiro e um código só ao usuário,
