@@ -7,8 +7,10 @@
 
 ## ▶️ RETOMAR AQUI — 2026-09-28, Sessão 8 fechada; próximo: abrir, planejar e executar a 8b (começando pelo e-mail com formatação)
 
-**Estado do repositório:** conferir com `git log --oneline -3`: o checkpoint antes do compact, em
-cima de `af4dfec` · igual ao remoto · travas: nenhuma · background: nenhum. Portões em 2026-09-28:
+**Estado do repositório:** conferir com `git log --oneline -4`: o checkpoint `5f46403` teve o CI
+**vermelho** (o teste-guarda do repo público reprovava a si mesmo; `docs/erros.md` classe 4), e o
+conserto `396031b` ficou verde; este bloco foi atualizado num commit depois dele · igual ao remoto
+· travas: nenhuma · background: nenhum. Portões em 2026-09-28:
 `1688 passed`, `ruff` limpo, formatação zero. Mutações: 183/183 na bateria inteira da 8; as 9 do
 envio depois do "eu". CI conferido pelo SHA inteiro (o `gh` só filtra assim).
 
