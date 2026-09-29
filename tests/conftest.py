@@ -113,6 +113,8 @@ class _Events:
             raise RuntimeError("API fora do ar")
         self._estado["enviados"].append(body)
         self._estado.setdefault("extras", []).append(("insert", extra))
+        if self._estado.get("insert_aparece"):  # como o Google: o criado passa a ser listado
+            self._estado["itens"].append({**body, "id": "novo123"})
         return _Exec({"id": "novo123", "htmlLink": "http://exemplo"})
 
     def list(self, calendarId, **kwargs):
