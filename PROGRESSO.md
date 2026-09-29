@@ -17,6 +17,17 @@ esperado de cada passo. Defeito achado ali se conserta nesta sessão (sem dívid
 certo: 8b, 4 e 3b fechadas (`sessoes.md`; a barra passaria a 14 de 28 — recontar na hora),
 e abrir a 9.
 
+**Resultado no Mac (colado pelo dono em 2026-09-29):**
+- passo 1: "Enviei para a sua conta o e-mail 'Apresentação do Viking'", sem código ✅. **Falta** o
+  dono dizer como o e-mail aparece no Gmail (negrito, lista, linha cinza);
+- passo 2: "🔒 Escondi dos modelos, antes de enviar a página: 2 CPF.", trecho com `[CPF]` nos
+  dois lugares, 0 ações em 0,5 s ✅ (fecha a parcial 4);
+- passo 3: criar ok (dia inteiro), listar 1 em 2026-10-20, buscar 1 (completa), pedido
+  `aguardando_aprovacao`; `viking aprovar` apagou com o código; `--conferir` → 0 ✅ (fecha a
+  parcial 3b);
+- **falta:** a linha final do `python -m pytest -q` no Mac (o dono disse "tá demorando muito"
+  antes de colar; não se sabe se foi o pytest).
+
 **Roteiro do Mac (C6):**
 ```
 cd ~/LifeOs
