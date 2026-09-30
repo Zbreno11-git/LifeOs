@@ -8,6 +8,8 @@ O ok do dono vem antes, na conversa, passo a passo: criar recurso ou gastar é d
     python scripts/nuvem.py --executar projeto    (um passo)
     python scripts/nuvem.py deploy                (o que está no ar, o que mudou, e as provas)
     python scripts/nuvem.py deploy --executar     (constrói, envia, publica e prova)
+    python scripts/nuvem.py segredo NOME [--executar]  (mede; ou sobe a versão pela entrada padrão)
+    python scripts/nuvem.py prova-chat [MENSAGEM]      (um turno real no ar: gasta, só quando pedido)
 
 Roda com o login do `gcloud` do VPS, que é a conta do dono e alcança **todos** os projetos dele
 (D47 revista, 2026-09-29). Por isso todo `gcloud` sai de `_gcloud`, que acrescenta
@@ -43,6 +45,7 @@ APIS = (
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "billingbudgets.googleapis.com",
+    "secretmanager.googleapis.com",  # a chave do Gemini e o token da agenda (Sessão 10b)
 )
 REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
@@ -80,10 +83,14 @@ def _gcloud(ctx: Contexto, *args: str, cota: bool = False) -> list[str]:
     return comando
 
 
-def _rodar(comando: list[str]) -> subprocess.CompletedProcess:
+def _rodar(comando: list[str], *, entrada: str | None = None) -> subprocess.CompletedProcess:
+    """`entrada` vai pela entrada padrão: é por ali que um segredo chega ao `gcloud`, nunca pelo
+    argv (que aparece em `ps` e no histórico)."""
     if comando[0] != "gcloud" or not any(a.startswith("--project=") for a in comando):
         raise ErroDoGcloud(f"comando fora de _gcloud: {comando[:3]}")
-    return subprocess.run(comando, capture_output=True, text=True, check=False, timeout=300)
+    return subprocess.run(
+        comando, input=entrada, capture_output=True, text=True, check=False, timeout=300
+    )
 
 
 # Como o gcloud diz "não existe" (cada comando do seu jeito; os textos são os medidos)
@@ -111,6 +118,10 @@ def _ler(comando: list[str]) -> object | None:
 class Estado:
     pronto: bool
     detalhe: str
+    # Falso quando uma dependência não está pronta e o passo nem foi lido: os comandos de criação
+    # saem marcados como "só se não existir" (o recurso pode já existir: na abertura da 10b, uma
+    # API nova fez a listagem sugerir criar de novo o Firestore, as contas e o orçamento).
+    medido: bool = True
 
 
 @dataclass(frozen=True)
@@ -390,6 +401,112 @@ def _c_indices(ctx: Contexto) -> list[list[str]]:
     ]
 
 
+@dataclass(frozen=True)
+class Segredo:
+    nome: str  # no Secret Manager
+    caminho: str  # o arquivo no volume do motor
+    variavel: str  # a variável que diz ao `config` onde está o arquivo
+
+
+# Os segredos do motor (Sessão 10b, D59): entregues como arquivo de um volume, nunca como variável
+# de ambiente (o Google manda fixar a versão nesse caso, e o valor ficaria no ambiente do processo).
+# Um diretório por segredo: o Cloud Run monta cada um no seu.
+SEGREDOS = (
+    Segredo("viking-gemini", "/segredos/gemini/chave", "VIKING_GEMINI_CHAVE_ARQUIVO"),
+    Segredo("viking-agenda", "/segredos/agenda/token.json", "VIKING_AGENDA_TOKEN_ARQUIVO"),
+)
+LER_SEGREDO = "roles/secretmanager.secretAccessor"
+
+
+def _versoes(ctx: Contexto, nome: str) -> int:
+    dados = _ler(_gcloud(ctx, "secrets", "versions", "list", nome, "--filter=state:ENABLED"))
+    return len(dados or [])
+
+
+def _m_segredos(ctx: Contexto) -> Estado:
+    detalhes, pronto = [], True
+    for segredo in SEGREDOS:
+        if _ler(_gcloud(ctx, "secrets", "describe", segredo.nome)) is None:
+            detalhes.append(f"{segredo.nome}: não existe")
+            pronto = False
+            continue
+        politica = _ler(_gcloud(ctx, "secrets", "get-iam-policy", segredo.nome))
+        if f"serviceAccount:{ctx.conta(MOTOR)}" not in _membros(politica, LER_SEGREDO):
+            detalhes.append(f"{segredo.nome}: o motor@ não lê")
+            pronto = False
+            continue
+        versoes = _versoes(ctx, segredo.nome)
+        if not versoes:
+            detalhes.append(
+                f"{segredo.nome}: vazio (suba com `python scripts/nuvem.py segredo "
+                f"{segredo.nome} --executar`)"
+            )
+            pronto = False
+        else:
+            detalhes.append(f"{segredo.nome}: {versoes} versão(ões)")
+    return Estado(pronto, "; ".join(detalhes))
+
+
+def _c_segredos(ctx: Contexto) -> list[list[str]]:
+    """Cria o segredo vazio (o valor sobe por `segredo`, pela entrada padrão) e dá ao `motor@` a
+    leitura **só nele**, não no projeto."""
+    criar = [
+        _gcloud(
+            ctx,
+            "secrets",
+            "create",
+            s.nome,
+            "--replication-policy=automatic",
+            "--labels=app=viking",
+        )
+        for s in SEGREDOS
+        if "apis" not in ctx.prontos or _ler(_gcloud(ctx, "secrets", "describe", s.nome)) is None
+    ]
+    ler = [
+        _gcloud(
+            ctx,
+            "secrets",
+            "add-iam-policy-binding",
+            s.nome,
+            f"--member=serviceAccount:{ctx.conta(MOTOR)}",
+            f"--role={LER_SEGREDO}",
+        )
+        for s in SEGREDOS
+    ]
+    return [*criar, *ler]
+
+
+TTL = ("acoes", "expira_em")  # (coleção, campo): o registro de ações vive 30 dias na nuvem
+
+
+def _m_ttl(ctx: Contexto) -> Estado:
+    colecao, campo = TTL
+    dados = _ler(_gcloud(ctx, "firestore", "fields", "ttls", "list", "--database=(default)"))
+    for item in dados or []:
+        if item.get("name", "").endswith(f"/collectionGroups/{colecao}/fields/{campo}"):
+            estado = (item.get("ttlConfig") or {}).get("state", "")
+            return Estado(estado == "ACTIVE", f"{colecao}.{campo}: {estado or '?'}")
+    return Estado(False, f"{colecao}.{campo}: desligada")
+
+
+def _c_ttl(ctx: Contexto) -> list[list[str]]:
+    colecao, campo = TTL
+    return [
+        _gcloud(
+            ctx,
+            "firestore",
+            "fields",
+            "ttls",
+            "update",
+            campo,
+            f"--collection-group={colecao}",
+            "--database=(default)",
+            "--enable-ttl",
+            "--async",  # ligar leva minutos; a medida diz quando fica ACTIVE
+        )
+    ]
+
+
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
     Passo(
@@ -412,6 +529,21 @@ PASSOS = (
     Passo("registro", "Artifact Registry das imagens", _m_registro, _c_registro, ("apis",)),
     Passo("contas", "contas de serviço e papéis", _m_contas, _c_contas, ("apis",)),
     Passo("indices", "índices compostos do Firestore", _m_indices, _c_indices, ("firestore",)),
+    Passo(
+        "segredos",
+        "a chave do Gemini e o token da agenda (só o motor@ lê)",
+        _m_segredos,
+        _c_segredos,
+        depende=("apis", "contas"),
+    ),
+    Passo(
+        "ttl",
+        "o registro de ações apaga sozinho depois de 30 dias",
+        _m_ttl,
+        _c_ttl,
+        depende=("firestore",),
+        irreversivel="apaga o registro de ações com mais de 30 dias (a regra do dono)",
+    ),
 )
 
 
@@ -533,14 +665,19 @@ def comandos_do_deploy(ctx: Contexto, sha: str) -> list[list[str]]:
             "--concurrency=10",
             "--cpu=1",
             "--memory=512Mi",
-            "--timeout=60",
+            # 300 s: um turno medido levou até 3 s (2026-09-30), e as esperas de cota do Gmail
+            # (10c) somam até 126 s; só é cobrado enquanto o pedido roda.
+            "--timeout=300",
             "--labels=app=viking",
+            # Todos os segredos, como volumes, e nenhum outro (o `--set-secrets` troca a lista).
+            "--set-secrets=" + ",".join(f"{s.caminho}={s.nome}:latest" for s in SEGREDOS),
             "--set-env-vars="
             + ",".join(
                 [
                     f"VIKING_NUVEM_PROJETO={ctx.projeto}",
                     f"VIKING_NUVEM_URL={_url(ctx)}",
                     f"VIKING_TIMEZONE={_fuso()}",
+                    *(f"{s.variavel}={s.caminho}" for s in SEGREDOS),
                 ]
             ),
         ),
@@ -598,6 +735,23 @@ class Prova:
     detalhe: str
 
 
+def _segredos_so_como_volume(servico: dict) -> tuple[bool, str]:
+    """No `describe` do serviço: as variáveis são só as esperadas (nenhuma com `valueFrom`, que
+    seria um segredo no ambiente), e cada segredo está montado como volume."""
+    modelo = servico["spec"]["template"]["spec"]
+    variaveis = {v.get("name"): v for v in modelo["containers"][0].get("env", [])}
+    esperadas = {"VIKING_NUVEM_PROJETO", "VIKING_NUVEM_URL", "VIKING_TIMEZONE"} | {
+        s.variavel for s in SEGREDOS
+    }
+    sem_segredo = set(variaveis) <= esperadas and not any(
+        "valueFrom" in v for v in variaveis.values()
+    )
+    volumes = {(v.get("secret") or {}).get("secretName") for v in modelo.get("volumes", [])}
+    montados = {s.nome for s in SEGREDOS} <= volumes
+    nomes = sorted(v for v in volumes if v)
+    return sem_segredo and montados, f"variáveis {sorted(variaveis)}; volumes {nomes}"
+
+
 def provas(ctx: Contexto, sha: str) -> list[Prova]:
     """Rodam sempre, com ou sem deploy (skill `nuvem-e-deploy` §6 e §8): a imagem no ar, o IAM do
     serviço, a recusa sem token, a recusa do nosso código, o caminho com a identidade certa, a
@@ -611,6 +765,8 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
     imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
     no_ar = imagem.rsplit("/", 1)[-1]
     resultado.append(Prova("imagem no ar = a esperada", imagem == _imagem(ctx, sha), no_ar))
+    certo, detalhe = _segredos_so_como_volume(servico)
+    resultado.append(Prova("segredos só como volume, nada no ambiente", certo, detalhe))
     # O `status.url` é a URL antiga, com hash; a determinística (com o número do projeto) é a
     # audience que o motor exige, e o Cloud Run a lista nesta anotação (medido em 2026-09-30).
     anotacoes = servico["metadata"].get("annotations", {})
@@ -668,13 +824,23 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
     commit = versao.json().get("commit") if versao.status_code == 200 else None
     detalhe = f"HTTP {versao.status_code}" + (f", depois de {esperou} s" if esperou else "")
     resultado.append(Prova("viking-cli@: /versao = a imagem no ar", commit == sha, detalhe))
-    for rota in ("/lembretes", "/fumaca/vencidos"):
+    for rota in ("/lembretes", "/fumaca/vencidos", "/fumaca/registro"):
         resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
         resultado.append(
             Prova(
                 f"viking-cli@: {rota}", resposta.status_code == 200, f"HTTP {resposta.status_code}"
             )
         )
+
+    segredos = requests.get(f"{url}/fumaca/segredos", headers=cabecalho, timeout=60)
+    lidos = segredos.json() if segredos.status_code == 200 else {}
+    resultado.append(
+        Prova(
+            "viking-cli@: /fumaca/segredos (a chave lê, o token da agenda renova)",
+            lidos == {"gemini": True, "agenda": True},
+            f"HTTP {segredos.status_code} {lidos}",
+        )
+    )
 
     filtro = (
         f'resource.type="cloud_run_revision" AND resource.labels.service_name="{SERVICO}" '
@@ -725,6 +891,93 @@ def deploy(ctx: Contexto, executar: bool) -> int:
 # --- a linha de comando ------------------------------------------------------------------------
 
 
+# --- os valores dos segredos e o turno real no ar (Sessão 10b) ----------------------------------
+
+
+def _chave_do_gemini() -> str:
+    chave = (config.GEMINI_API_KEY or "").strip()
+    if not chave:
+        raise SystemExit("nuvem.py: o .env não tem GEMINI_API_KEY (nada foi enviado)")
+    return chave
+
+
+def _token_da_agenda() -> str:
+    """O token da agenda deste computador, conferido antes de subir (sem mostrar nada dele)."""
+    try:
+        texto = config.GOOGLE_TOKEN_PATH.read_text()
+        info = json.loads(texto)
+    except (OSError, ValueError):
+        raise SystemExit(
+            "nuvem.py: o token da agenda não abriu como JSON (nada foi enviado)"
+        ) from None
+    escopos = info.get("scopes") or []
+    if isinstance(escopos, str):
+        escopos = escopos.split()
+    if not info.get("refresh_token") or "https://www.googleapis.com/auth/calendar" not in escopos:
+        raise SystemExit(
+            "nuvem.py: o token da agenda não renova ou não tem a permissão da agenda (nada foi "
+            "enviado)"
+        )
+    return texto
+
+
+FONTES: dict[str, tuple[str, Callable[[], str]]] = {
+    "viking-gemini": ("o GEMINI_API_KEY do .env", _chave_do_gemini),
+    "viking-agenda": ("o token da agenda de secrets/", _token_da_agenda),
+}
+
+
+def segredo(ctx: Contexto, nome: str, executar: bool) -> int:
+    """Sem flag, mede; com `--executar`, sobe uma versão nova com o valor pela entrada padrão do
+    `gcloud`. O valor nunca aparece no argv, na saída nem na conversa."""
+    origem, ler = FONTES[nome]
+    print(f"{nome}: {_versoes(ctx, nome)} versão(ões) habilitada(s); a fonte é {origem}.")
+    if not executar:
+        print("Nada foi enviado (sem --executar).")
+        return 0
+    valor = ler()
+    resultado = _rodar(
+        _gcloud(ctx, "secrets", "versions", "add", nome, "--data-file=-"), entrada=valor
+    )
+    if resultado.returncode != 0:
+        linhas = resultado.stderr.strip().splitlines()
+        print(f"❌ {nome}: {linhas[-1] if linhas else '?'}", file=sys.stderr)
+        return 1
+    print(f"✅ {nome}: versão nova enviada ({_versoes(ctx, nome)} habilitada(s)).")
+    return 0
+
+
+def prova_chat(ctx: Contexto, mensagem: str) -> int:
+    """Um turno real do chat no ar, com o `viking-cli@`: gasta (poucos décimos de centavo), por
+    isso só roda quando pedido. Mostra o tempo, o gasto e o começo da resposta."""
+    import requests
+
+    url = _url(ctx)
+    token = _token(
+        ctx,
+        "print-identity-token",
+        f"--impersonate-service-account={ctx.conta(CLI)}",
+        f"--audiences={url}",
+        "--include-email",
+    )
+    pedido = {"mensagem": mensagem, "historico": [], "nota": "", "sessao": "prova", "numero": 1}
+    inicio = time.monotonic()
+    resposta = requests.post(
+        f"{url}/chat", json=pedido, headers={"Authorization": f"Bearer {token}"}, timeout=320
+    )
+    segundos = time.monotonic() - inicio
+    dados = (
+        resposta.json()
+        if resposta.headers.get("content-type", "").startswith("application/json")
+        else {}
+    )
+    print(f"HTTP {resposta.status_code} em {segundos:.1f} s")
+    print(f"consumo: {dados.get('consumo') or '-'} · gasto: {dados.get('gasto')}")
+    texto = dados.get("resposta") or dados.get("erro") or ""
+    print(f"resposta (começo): {str(texto)[:200]!r}")
+    return 0 if resposta.status_code == 200 and dados.get("resposta") else 2
+
+
 def _contexto() -> Contexto:
     faltam = [
         nome
@@ -767,7 +1020,11 @@ def medir(ctx: Contexto) -> list[tuple[Passo, Estado]]:
     prontos: set[str] = set()
     for passo in PASSOS:
         faltam = [d for d in passo.depende if d not in prontos]
-        estado = Estado(False, f"depende de {', '.join(faltam)}") if faltam else passo.medir(ctx)
+        estado = (
+            Estado(False, f"depende de {', '.join(faltam)}", medido=False)
+            if faltam
+            else passo.medir(ctx)
+        )
         if estado.pronto:
             prontos.add(passo.nome)
         medidos.append((passo, estado))
@@ -775,6 +1032,16 @@ def medir(ctx: Contexto) -> list[tuple[Passo, Estado]]:
 
 
 def main(argv: list[str]) -> int:
+    if argv[:1] == ["segredo"]:
+        leitor = argparse.ArgumentParser(prog="nuvem.py segredo")
+        leitor.add_argument("nome", choices=sorted(FONTES))
+        leitor.add_argument("--executar", action="store_true")
+        args = leitor.parse_args(argv[1:])
+        return segredo(_contexto(), args.nome, args.executar)
+    if argv[:1] == ["prova-chat"]:
+        leitor = argparse.ArgumentParser(prog="nuvem.py prova-chat")
+        leitor.add_argument("mensagem", nargs="?", default="o que tenho amanhã na agenda?")
+        return prova_chat(_contexto(), leitor.parse_args(argv[1:]).mensagem)
     if argv[:1] == ["deploy"]:
         leitor = argparse.ArgumentParser(prog="nuvem.py deploy")
         leitor.add_argument("--executar", action="store_true")
@@ -790,8 +1057,11 @@ def main(argv: list[str]) -> int:
         marca = "✅" if estado.pronto else "⬜"
         print(f"  {marca} {passo.nome:<12} {passo.descricao}: {estado.detalhe}")
         if not estado.pronto and args.executar is None:
+            seta = "→" if estado.medido else "?→"
+            if not estado.medido:
+                print("       não medido: os comandos abaixo só valem se o recurso não existir")
             for comando in passo.comandos(ctx):
-                print(f"       → {_legivel(comando)}")
+                print(f"       {seta} {_legivel(comando)}")
             if passo.irreversivel:
                 print(f"       ⚠️  irreversível: {passo.irreversivel}")
     if args.executar is None:

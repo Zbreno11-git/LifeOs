@@ -396,3 +396,170 @@ def test_servico_inexistente_e_ausencia_nao_erro(nuvem, ctx, monkeypatch):
     real = "ERROR: (gcloud.run.services.describe) Cannot find service [motor]"
     monkeypatch.setattr(nuvem, "_rodar", lambda c: subprocess.CompletedProcess(c, 1, "", real))
     assert nuvem._ler(["gcloud", "run", "services", "describe", "motor", "--project=x"]) is None
+
+
+# --- os segredos e a TTL (Sessão 10b) -----------------------------------------------------------
+
+
+def test_deploy_entrega_os_segredos_so_como_volume_e_o_prazo_do_turno(nuvem, ctx, mundo):
+    mundo()
+    implantar, _permitir = nuvem.comandos_do_deploy(ctx, SHA)
+    (segredos,) = [a for a in implantar if a.startswith("--set-secrets=")]
+    pares = segredos.removeprefix("--set-secrets=").split(",")
+    assert pares == [f"{s.caminho}={s.nome}:latest" for s in nuvem.SEGREDOS]
+    assert all(par.startswith("/") for par in pares)  # caminho de arquivo, nunca NOME=segredo
+    assert len({par.rsplit("/", 1)[0] for par in pares}) == len(pares)  # um diretório cada
+    assert not any(a.startswith(("--update-secrets", "--set-secrets=GEMINI")) for a in implantar)
+    (variaveis,) = [a for a in implantar if a.startswith("--set-env-vars=")]
+    for s in nuvem.SEGREDOS:
+        assert f"{s.variavel}={s.caminho}" in variaveis
+    assert "GEMINI_API_KEY" not in variaveis
+    assert "--timeout=300" in implantar
+
+
+def test_as_variaveis_dos_segredos_sao_as_que_o_config_le(nuvem):
+    from lifeos import config
+
+    fonte = Path(config.__file__).read_text()
+    for s in nuvem.SEGREDOS:
+        assert f'os.getenv("{s.variavel}")' in fonte
+
+
+class _Gcloud:
+    def __init__(self, versoes=1, politica=None, existe=True, ttl=None):
+        self.chamadas: list[tuple[list[str], str | None]] = []
+        self.versoes, self.politica, self.existe, self.ttl = versoes, politica, existe, ttl
+
+    def rodar(self, comando, *, entrada=None):
+        self.chamadas.append((comando, entrada))
+        corpo = [a for a in comando[1:] if not a.startswith("--")]
+        if corpo[:3] == ["secrets", "versions", "list"]:
+            saida = json.dumps([{"name": f"v{n}"} for n in range(self.versoes)])
+        elif corpo[:2] == ["secrets", "describe"]:
+            if not self.existe:
+                return subprocess.CompletedProcess(comando, 1, "", "NOT_FOUND")
+            saida = json.dumps({"name": corpo[2]})
+        elif corpo[:2] == ["secrets", "get-iam-policy"]:
+            saida = json.dumps(self.politica or {})
+        elif corpo[:3] == ["firestore", "fields", "ttls"]:
+            saida = json.dumps(self.ttl or [])
+        else:
+            saida = ""
+        return subprocess.CompletedProcess(comando, 0, saida, "")
+
+
+def test_segredo_sem_flag_so_mede(nuvem, ctx, monkeypatch, capsys):
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    assert nuvem.segredo(ctx, "viking-gemini", executar=False) == 0
+    assert not any("add" in c for c, _ in g.chamadas)
+    assert "Nada foi enviado" in capsys.readouterr().out
+
+
+FALSA = "valor falso do teste"  # não tem forma de chave: o scanner não confunde
+
+
+def test_segredo_sobe_pela_entrada_padrao_e_nunca_aparece(nuvem, ctx, monkeypatch, capsys):
+    from lifeos import config
+
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    monkeypatch.setattr(config, "GEMINI_API_KEY", FALSA)
+    assert nuvem.segredo(ctx, "viking-gemini", executar=True) == 0
+    ((comando, entrada),) = [(c, e) for c, e in g.chamadas if "add" in c]
+    assert "--data-file=-" in comando and entrada == FALSA
+    assert not any(FALSA in a for c, _ in g.chamadas for a in c)
+    assert f"--project={ctx.projeto}" in comando
+    assert FALSA not in capsys.readouterr().out
+
+
+def test_token_da_agenda_que_nao_renova_nao_sobe(nuvem, ctx, monkeypatch, tmp_path):
+    from lifeos import config
+
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    token = tmp_path / "token.json"
+    token.write_text(
+        json.dumps({"token": "t", "scopes": ["https://www.googleapis.com/auth/calendar"]})
+    )
+    monkeypatch.setattr(config, "GOOGLE_TOKEN_PATH", token)
+    with pytest.raises(SystemExit, match="não renova"):
+        nuvem.segredo(ctx, "viking-agenda", executar=True)
+    assert not any("add" in c for c, _ in g.chamadas)
+
+
+def test_segredo_so_esta_pronto_com_a_leitura_do_motor_e_uma_versao(nuvem, ctx, monkeypatch):
+    le = {
+        "bindings": [
+            {
+                "role": nuvem.LER_SEGREDO,
+                "members": [f"serviceAccount:viking-motor@{ctx.projeto}.iam.gserviceaccount.com"],
+            }
+        ]
+    }
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(versoes=1, politica={}).rodar)
+    assert "não lê" in nuvem._m_segredos(ctx).detalhe
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(versoes=0, politica=le).rodar)
+    estado = nuvem._m_segredos(ctx)
+    assert not estado.pronto and "vazio" in estado.detalhe
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(versoes=1, politica=le).rodar)
+    assert nuvem._m_segredos(ctx).pronto
+
+
+def test_a_leitura_do_segredo_e_dada_em_cada_segredo_nao_no_projeto(nuvem, ctx, monkeypatch):
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(existe=False).rodar)
+    comandos = nuvem._c_segredos(ctx)
+    papeis = [c for c in comandos if any(a.startswith("--role=") for a in c)]
+    assert len(papeis) == len(nuvem.SEGREDOS)
+    assert all(c[1:3] == ["secrets", "add-iam-policy-binding"] for c in papeis)
+
+
+@pytest.mark.parametrize(("estado", "pronto"), [("ACTIVE", True), ("CREATING", False)])
+def test_ttl_so_esta_pronta_ativa(nuvem, ctx, monkeypatch, estado, pronto):
+    ttl = [
+        {
+            "name": "projects/p/databases/(default)/collectionGroups/acoes/fields/expira_em",
+            "ttlConfig": {"state": estado},
+        }
+    ]
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
+    assert nuvem._m_ttl(ctx).pronto is pronto
+
+
+def test_o_campo_da_ttl_e_o_do_store(nuvem):
+    from lifeos import registro_firestore
+
+    assert nuvem.TTL == (registro_firestore.COLECAO, "expira_em")
+    assert "expira_em" in registro_firestore._CAMPOS
+
+
+def _servico(env, volumes):
+    return {"spec": {"template": {"spec": {"containers": [{"env": env}], "volumes": volumes}}}}
+
+
+def test_a_prova_recusa_segredo_no_ambiente(nuvem):
+    volumes = [{"name": s.nome, "secret": {"secretName": s.nome}} for s in nuvem.SEGREDOS]
+    certo = [{"name": s.variavel, "value": s.caminho} for s in nuvem.SEGREDOS]
+    assert nuvem._segredos_so_como_volume(_servico(certo, volumes))[0]
+    vazado = [*certo, {"name": "GEMINI_API_KEY", "valueFrom": {"secretKeyRef": {"name": "x"}}}]
+    assert not nuvem._segredos_so_como_volume(_servico(vazado, volumes))[0]
+    assert not nuvem._segredos_so_como_volume(_servico(certo, volumes[:1]))[0]
+    # um nome esperado, mas com o valor vindo de um segredo (o segredo no ambiente do processo)
+    disfarcado = [
+        {"name": s.variavel, "valueFrom": {"secretKeyRef": {"name": s.nome}}}
+        for s in nuvem.SEGREDOS
+    ]
+    assert not nuvem._segredos_so_como_volume(_servico(disfarcado, volumes))[0]
+
+
+def test_passo_nao_medido_nao_afirma_que_falta(nuvem, ctx, monkeypatch, capsys):
+    """Achado na abertura da 10b (2026-09-30): uma API nova deixou o passo `apis` pendente, e a
+    listagem mostrava `firestore databases create` como se o banco não existisse."""
+    gravador = _Gravador({"projects describe": {"lifecycleState": "ACTIVE"}})
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    monkeypatch.setattr(nuvem, "_contexto", lambda: ctx)
+    nuvem.main([])
+    saida = capsys.readouterr().out
+    assert "?→ gcloud firestore databases create" in saida
+    assert "→ gcloud firestore databases create" not in saida.replace("?→", "")
+    assert "não medido: os comandos abaixo só valem se o recurso não existir" in saida
