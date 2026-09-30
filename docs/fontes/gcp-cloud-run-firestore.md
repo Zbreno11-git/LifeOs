@@ -41,6 +41,9 @@ e `src/lifeos/reminders/store_firestore.py`.
 - **Medido (2026-09-30):** o `status.url` do serviço é a URL antiga, com hash; a determinística
   (`https://motor-<número do projeto>.<região>.run.app`), que é a audience, está na anotação
   `run.googleapis.com/urls`.
+- **Medido (2026-09-30, no Mac):** `gcloud auth application-default login` grava como projeto
+  de cota o padrão do gcloud (lá, outro projeto do dono); sem `with_quota_project`, a chamada de
+  impersonação seria cobrada e limitada por aquele projeto. O cliente troca pela do Viking.
 - **Medido (2026-09-30):** a permissão `run.invoker` recém-dada ao `viking-cli@` levou menos de
   1 min para valer (403 do Google, depois 200).
 - **Medido (2026-09-29):** o ID de uma conta de serviço tem de 6 a 30 caracteres ("motor" foi

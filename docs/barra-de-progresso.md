@@ -7,15 +7,15 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-30 (Sessão 10 feita; falta o teste no seu Mac).**
+**Última atualização: 2026-09-30 (Sessão 10 fechada no seu Mac).**
 
-`██████████░░░░░░░░░░ 15 de 29 sessões fechadas, 1 parcial`
+`███████████░░░░░░░░░ 16 de 29 sessões fechadas`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b e
-9; parcial: 10 (feita e no ar, falta o teste no Mac); na fila: 10b (o chat na nuvem; a 10 foi
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9
+e 10; parciais: nenhuma; na fila: 10b (o chat na nuvem; a 10 foi
 dividida em duas, por isso o total passou de 28 para 29), 11, 11b (formulários) e 12 a 21.
 
-## 2026-09-30 — Sessão 10: o Viking ganhou uma casa na nuvem (falta o seu Mac)
+## 2026-09-30 — Sessão 10: o Viking ganhou uma casa na nuvem (fechada no seu Mac)
 
 **O que ficou pronto:**
 - **O repositório do código ficou privado**, e antes disso entrou um "detector de senhas"
@@ -33,8 +33,10 @@ dividida em duas, por isso o total passou de 28 para 29), 11, 11b (formulários)
 - **`viking lembretes --nuvem`** mostra os lembretes que moram na nuvem.
 
 **Como sabemos:** 9 provas feitas no ar, às 21:56 de Seattle de 29/09; 1997 testes passando no
-VPS; 228 de 228 defeitos plantados de propósito derrubados pelo teste certo. Falta o seu Mac: o
-roteiro está no `PROGRESSO.md`.
+VPS; 228 de 228 defeitos plantados de propósito derrubados pelo teste certo. No seu Mac: os
+testes passaram (1966, e os 31 pulados são as peças da nuvem que o Mac não instala), o Gmail
+entrou sem abrir o navegador, `viking lembretes --nuvem` respondeu da nuvem, e um pedido sem
+login levou "proibido".
 
 ## 2026-09-29 — Sessão 9: a base dos dados (fechada no seu Mac)
 

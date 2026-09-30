@@ -1046,6 +1046,17 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-30 — Sessão 10 fechada no Mac
+
+Saída colada pelo dono: `git pull` até `736fd1a`; o `uv sync` trouxe as 7 versões do C1;
+`1966 passed, 31 skipped` (no VPS, sem o jar do emulador nem o gitleaks no cache, deu os mesmos
+1966/31: 19 do contrato no Firestore, 7 do gitleaks, 5 do store do Firestore); `viking gmail
+--login` ok sem abrir o navegador (o google-auth-oauthlib 1.5.0 entra; não é a prova dos 7
+dias); o `gcloud` já estava instalado; `gcloud auth application-default login` guardou como
+projeto de cota **outro projeto do dono**, e `viking lembretes --nuvem` respondeu ("Nenhum
+lembrete pendente") porque o cliente troca a cota pela do Viking (`with_quota_project`, com
+mutação); `curl` sem token → `403`. Provas no ar de novo em 2026-09-30 03:01Z: 9 ✅.
+
 ### 2026-09-29/30 — Sessão 10: o motor na nuvem (feita no VPS; falta o Mac)
 
 O que mudou:

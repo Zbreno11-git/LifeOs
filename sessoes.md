@@ -16,17 +16,16 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10 — nuvem 1: o motor, **feita no VPS em 2026-09-30, falta o teste do Mac**
-  (dividida: o chat na nuvem foi para a 10b). A 9 fechou no Mac em 2026-09-29.
+- **Sessão:** 10b — nuvem 1b: o chat na nuvem. A 10 fechou no Mac em 2026-09-30.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** o teste da 10 no Mac (o roteiro está no bloco de `PROGRESSO.md`); depois, abrir a
-  10b, cujo primeiro passo é a prova de que o token do Gmail renova sozinho (só vale **depois de
-  2026-10-03**).
+- **Agora:** abrir, planejar e executar a 10b pela skill `software-build`. O primeiro passo dela
+  é a prova de que o token do Gmail renova sozinho, que só vale **depois de 2026-10-03** (se a
+  10b abrir antes, esse passo vai para o fim dela).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -604,7 +603,7 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nenhuma lib de migrations. A régua numerada é pequena e é nossa:
   Alembic traria o SQLAlchemy só para isso.
 
-## Sessão 10 — nuvem 1: o motor (feita no VPS em 2026-09-30; falta o teste do Mac)
+## Sessão 10 — nuvem 1: o motor (feita e testada no Mac em 2026-09-30)
 
 > **Dividida pelo dono na abertura (2026-09-29):** esta sessão entrega o chão da nuvem e um
 > caminho de ponta a ponta pelos lembretes; o chat na nuvem foi para a **10b**. O plano com as
@@ -618,7 +617,11 @@ O que estava escrito na abertura:
 > - **Feito (2026-09-30, medido):** tudo acima no ar; `python scripts/nuvem.py deploy` → 9 provas
 >   ✅ (o token pessoal do dono passou pelo IAM e o motor recusou; o `viking-cli@` recebeu 200);
 >   228/228 mutações; o faturamento ligou depois de o dono desligar o de outro projeto (limite de 9
->   da conta). O teste do Mac é o roteiro em `PROGRESSO.md`.
+>   da conta). **No Mac (2026-09-30):** `1966 passed, 31 skipped` (os 31 = Firestore e gitleaks, que
+>   o Mac não instala; conferido no VPS simulando o Mac: os mesmos 1966/31); `viking gmail
+>   --login` entrou sem navegador; `viking lembretes --nuvem` respondeu da nuvem; `curl` sem
+>   token → 403. O login do Google Cloud do Mac guardou como cota outro projeto do dono, e o
+>   cliente a trocou pela do Viking, como desenhado.
 > - **Deploy:** com o login do `gcloud` que o VPS já tem, por decisão do dono (D47 revista); todo
 >   comando leva `--project` do Viking explícito, preso por teste. O ritual do token de 1 h saiu.
 > - O texto abaixo é a proposta de partida de 2026-09-28, mantida como registro.

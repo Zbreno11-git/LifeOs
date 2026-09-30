@@ -5,49 +5,65 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10 feita no VPS; falta o teste do Mac (C9)
+## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10 fechada no Mac; próximo: abrir a 10b
 
-**Estado:** `git log --oneline -3` e `git status --short` (limpo) · igual ao remoto · travas:
-nenhuma · background: nenhum. Portões em 2026-09-30: `1997 passed` no VPS, `ruff` limpo,
-formatação zero, `mypy` limpo (14 arquivos), gitleaks limpo, mutações 228/228. CI pelo SHA
-inteiro.
+**Estado (2026-09-30 03:01Z):** `git status --short` limpo · HEAD igual ao remoto · travas:
+nenhuma · background: nenhum. Portões: `1997 passed` no VPS; no Mac `1966 passed, 31 skipped`
+(os 31 = Firestore e gitleaks, que o Mac não instala; o VPS simulando o Mac dá os mesmos);
+`ruff`, formatação, `mypy` (14 arquivos) e gitleaks limpos; mutações 228/228. Barra 16 de 29.
 
-**No ar (medido em 2026-09-30 00:56Z, `python scripts/nuvem.py deploy`):** o motor `b7a0635` em
-`southamerica-east1`; 9 provas ✅. Depois dele só entraram commits fora dos caminhos da imagem (o
-script diz "0 desde ela"). O VPS tem no `.env` o projeto, a URL, a conta de faturamento, o
-orçamento e o fuso da nuvem.
+**No ar (medido em 2026-09-30 03:01Z, `python scripts/nuvem.py deploy`):** o motor `b7a0635` em
+`southamerica-east1`, 9 provas ✅, 0 commits nos caminhos da imagem desde ela. O repo é privado.
 
-**Próximo passo exato:** o dono roda o roteiro abaixo no Mac e cola a saída. Se passar: a 10
-fecha (barra 16 de 29) e o próximo é abrir a 10b, cujo primeiro passo é a prova do token do
-Gmail **depois de 2026-10-03**.
+**Próximo passo exato:** abrir a 10b pela skill `software-build`: `uv lock --upgrade --dry-run`,
+o CI do HEAD pelo SHA inteiro, `python scripts/nuvem.py` (8 ✅) e `python scripts/nuvem.py
+deploy` (9 ✅) antes de tudo; depois as medições e as perguntas da abertura (abaixo).
 
-**Roteiro do Mac (C9):**
-1. `cd ~/LifeOs && git pull && git log --oneline -1`
-2. `uv sync --locked --extra dev && source .venv/bin/activate && which python`
-3. `python -m pytest -q` (esperado: 0 falhas; os pulados incluem o Firestore e o gitleaks, que
-   o Mac não instala)
-4. `viking gmail --login` (o google-auth-oauthlib 1.5.0 ainda entra; não é a prova dos 7 dias)
-5. `which gcloud`; sem ele: `brew install --cask google-cloud-sdk`, e abrir um terminal novo
-6. `gcloud auth application-default login` (abre o navegador uma vez)
-7. acrescentar ao `.env` do Mac o projeto e a URL (os valores vão na conversa, não no repo)
-8. `viking lembretes --nuvem` → "☁️ Lembretes da nuvem:" e "Nenhum lembrete pendente."
-9. `curl -s -o /dev/null -w "%{http_code}\n" <URL>/versao` → `403`
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️, a 10 inteira, a
+10b e a 11); `docs/decisoes.md` D46, D47 (revista), D52, D53, D57 e D58; o índice de
+`docs/erros.md`; `docs/fontes/gcp-cloud-run-firestore.md`; a memória. Skills: `software-build`
+(e `referencia/plano-de-sessao.md`), `nuvem-e-deploy`, `seguranca`, `integracoes`,
+`falha-ruidosa`. Código: `src/lifeos/nuvem/` (motor e cliente), `scripts/nuvem.py`,
+`src/lifeos/assistant/agent.py` (o laço do chat e `aprovacao_local`), `src/lifeos/confirmacao.py`,
+`src/lifeos/registro.py`, `src/lifeos/custos.py`.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (10 e 10b); D47 e D58;
-`docs/fontes/gcp-cloud-run-firestore.md`.
+**Para planejar a 10b (anotado em 2026-09-30, conferir na abertura):**
+- **evento com data:** a prova do token do Gmail (`viking gmail --login` no Mac sem navegador)
+  só vale depois de 2026-10-03; o token é de 2026-09-26. Se pedir login de novo, os tokens do
+  Google não sobem (a verificação do Google ou um escopo menor primeiro);
+- o motor hoje **só lê**: não tem registro de ações nem aprovação. `registro.py` e
+  `confirmacao.py` gravam no SQLite (`banco.conectar`); na nuvem precisam de um store no
+  Firestore (D57: moram onde a ação roda), pelo mesmo caminho da 10 (interface + contrato);
+- o Secret Manager ainda não está nas APIs de `scripts/nuvem.py` (entra como passo novo); a
+  chave do Gemini está no `.env` do VPS (o dono decidiu mantê-la para isto) e sobe sem aparecer
+  na conversa (`printf '%s'` para o `gcloud secrets versions add --data-file=-`);
+- o Cloud Run do motor tem `--timeout=60` e `--concurrency=10`: um turno de chat com tools pode
+  passar de 60 s (medir);
+- o código de aprovação atravessa a rede num campo próprio, com limite de tentativas (D52; a
+  seção da 10b em `sessoes.md`);
+- as perguntas ao dono estão na seção da 10b (o que o chat na nuvem faz sem o navegador e as
+  finanças, que continuam no Mac até a S11/D51; o destino do `viking chat` local);
+- critérios do dono, herdados: "precisão, otimização e software resiliente"; nada que custe
+  dinheiro ou publique sem o ok dele naquele passo; a 10b é candidata a ser dividida.
 
 **Não pode ser esquecido:**
 - todo `gcloud` do Viking leva `--project` (o login do VPS é o do dono; o projeto padrão é outro);
-- o `.env` do VPS tem as chaves do Gemini e da Pluggy (o dono decidiu manter): nada daqui as usa
-  sem pedido;
-- publicar = `python scripts/nuvem.py deploy --executar`, com o ok do dono a cada deploy;
-- o fuso da nuvem é `VIKING_NUVEM_FUSO` no `.env` do VPS (America/Los_Angeles até o dono voltar
-  ao Brasil, em ~1 mês);
-- o motor só lê: registro de ações e aprovação na nuvem são da 10b;
-- migração publicada não se edita; mutações em background, sem timeout.
+- o `.env` do VPS tem as chaves do Gemini e da Pluggy e os valores da nuvem (projeto, URL,
+  faturamento, orçamento `105BRL`, fuso `America/Los_Angeles`); nada daqui usa as chaves sem
+  pedido; o fuso troca quando o dono voltar ao Brasil (~fim de outubro);
+- publicar = `python scripts/nuvem.py deploy --executar`, com o ok do dono a cada deploy; a
+  permissão nova no IAM leva <1 min (a prova espera);
+- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail;
+- migração publicada não se edita; mutações em background, sem `timeout`; nada de endereço de
+  terceiros nem `/Users/<nome>` no repo; nem ID de projeto nem URL no repo (ficam no `.env`).
 
-**Depende do dono:** o roteiro acima; o `dbt-project` ficou sem faturamento (o dataset do
-BigQuery dele entra no modo sandbox, onde as tabelas expiram em 60 dias).
+**Depende do dono:** as perguntas da abertura da 10b; a prova do token do Gmail depois de
+2026-10-03; o `dbt-project` ficou sem faturamento (o dataset do BigQuery dele está no modo
+sandbox, com tabelas que expiram em 60 dias).
+
+**Antes de confiar neste bloco:** `git status --short` vazio; HEAD = o checkpoint depois de
+`736fd1a`; `ls .mutacao.lock` → não existe; `.venv/bin/python -m pytest -q` → `1997 passed`;
+`gh run list --commit $(git rev-parse HEAD)` → `success`; `python scripts/nuvem.py deploy` → 9 ✅.
 
 ## Plano — Sessão 10: nuvem 1, o motor (a 10b leva o chat para a nuvem)
 
@@ -146,7 +162,7 @@ pedidos.
 | C6 | **ok** → primeiro deploy; `describe` = SHA; sem login → 403 do Google; fumaça com o `cli@` exerce `/versao` e `/lembretes` (e `vencidos` na produção) | C3, C5 | ✅ |
 | C7 | `viking lembretes --nuvem` (cliente com `IDTokenCredentials`), testes offline; roteiro do Mac | C6 | ✅ |
 | C8 | portões, duas passadas de revisão, docs, commits, push, CI pelo SHA | C7 | ✅ |
-| C9 | teste do dono no Mac | C8 | ⬜ |
+| C9 | teste do dono no Mac | C8 | ✅ |
 
 ### Fase 0 — documentos (C0)
 - **Memória** `user-fuso-seattle`: ele volta a morar no Brasil por volta de 2026-10-29; lá é a casa
