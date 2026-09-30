@@ -5,39 +5,63 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30 ~06:50Z: Sessão 10b fechada no Mac; a próxima é a 10c (depois de 2026-10-03)
+## ▶️ RETOMAR AQUI — 2026-09-30 ~07:00Z (29/09 ~24:00 em Seattle): 10b fechada no Mac; a próxima é a 10c
 
-**Estado (2026-09-30 ~06:50Z):**
-- `git status --short` limpo, HEAD = o commit "Sessão 10b fechada no Mac" = remoto (CI conferido
-  pelo SHA inteiro depois do push); travas e background: nenhum.
-- Suíte `2112 passed` no VPS e `2048 passed, 64 skipped` no Mac; mutações 251/251.
-- **No ar (05:21:46Z):** o motor `36fcd13`, 12 provas ✅; a infraestrutura com 10 ✅. Os commits
-  depois dele são só de documentação.
-- A narrativa da 10b está no diário (dois registros de 2026-09-30), as decisões na D59, os erros
-  em `docs/erros.md` (classes 4, 5 e 7), e o plano e as provas literais logo abaixo.
+**Estado (2026-09-30 ~07:00Z):**
+- `git status --short` limpo · HEAD = o checkpoint depois de `46ae846` = remoto · travas e
+  background: nenhum.
+- CI verde pelo SHA inteiro em `4a27b69` e `46ae846`.
+- Suíte `2112 passed` no VPS e `2048 passed, 64 skipped` no Mac; mutações 251/251 (2026-09-30).
+- **No ar (medido às 06:54Z, `python scripts/nuvem.py deploy`):** o motor `36fcd13`, 12 provas ✅;
+  a infraestrutura com 10 ✅ (05:17Z).
+  Os commits depois dele são só de documentação, fora dos caminhos da imagem.
+- A 10b está no diário (três registros de 2026-09-30), as decisões na D59, os erros em
+  `docs/erros.md` (classes 4, 5 e 7), e o plano e as provas literais logo abaixo.
 
-**Próximo passo exato:** depois de 2026-10-03, abrir a 10c pela seção dela em `sessoes.md`.
-- O primeiro passo é do dono: `viking gmail --login` no Mac, sem abrir o navegador (o token do
-  Gmail é de 2026-09-26).
-- Se pedir login de novo, os tokens do Gmail não sobem para a nuvem, e a 10c muda.
-- Ao abrir: `uv lock --upgrade --dry-run`, o CI do HEAD pelo SHA e `python scripts/nuvem.py
-  deploy` (o motor `36fcd13`, 12 ✅).
+**A prova do Gmail (o portão da 10c):**
+- O token do Gmail do Mac é de 2026-09-26, e o modo "Testing" do Google o venceria em 7 dias.
+- A prova é `viking gmail --login` no Mac **a partir de 2026-10-04 (Seattle)**, sem abrir o
+  navegador.
+- O login de 2026-09-29 23:50 (Seattle) entrou, mas com 3 a 4 dias ainda não prova nada. Como
+  não houve consentimento novo, a contagem segue (registrado na 10c de `sessoes.md`).
+- Indício a favor: o token da agenda, do mesmo cliente OAuth, renovou com 10 dias.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️, 10b e 10c); D57,
-D58 e D59; o índice de `docs/erros.md`; `docs/fontes/gcp-cloud-run-firestore.md`.
+**Próximo passo exato:** abrir e planejar a 10c pela skill `software-build`, com a leitura e as
+conferências de abertura antes.
+- **Proposta do agente, a levar ao dono na primeira rodada de perguntas (não decidida):**
+  construir e testar já a parte da 10c que não depende da prova. Isso é `confirmacao` atrás de
+  uma interface com o store do Firestore, o campo `ao_dono`, o limite de tentativas erradas e as
+  tools do Gmail na nuvem com dublê.
+- A prova fica como portão, antes de subir o token do Gmail e de publicar.
+
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️, 10c, 11); D52, D57,
+D58 e D59; o índice de `docs/erros.md`; `docs/fontes/gcp-cloud-run-firestore.md` e
+`docs/fontes/gmail-api.md`; o código de `confirmacao.py`, `aprovacoes.py`,
+`assistant/agent.py` (`aprovacao_local`), `assistant/na_nuvem.py` (`barreira`), `gmail/tools.py`
+(`_ao_dono`) e `gmail/service.py` (a cota e as esperas).
 
 **Não pode ser esquecido:**
 - todo `gcloud` do Viking leva `--project`;
 - segredo só pela entrada padrão;
-- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail. Na 10c ele volta
-  num campo próprio da resposta, com limite de tentativas (D52);
-- o VPS não guarda token do Gmail: o token sobe do Mac;
+- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail. Na nuvem ele
+  volta num campo próprio da resposta, com limite de tentativas (D52);
+- o VPS não guarda token do Gmail: o token sobe do Mac, por um comando que o dono roda lá;
 - o VPS tem o cliente OAuth e o token da agenda: nada que envie, apague ou arquive rodado daqui;
 - migração publicada não se edita;
 - mutações em background, sem `timeout`;
-- nunca presumir o fuso do dono.
+- nunca presumir o fuso do dono (Seattle até ~fim de outubro, depois o Brasil).
 
-**Depende do dono:** a prova do token do Gmail depois de 2026-10-03.
+**Depende do dono:**
+- a prova do token do Gmail a partir de 2026-10-04;
+- as respostas da abertura da 10c.
+
+**Antes de confiar neste bloco:**
+- `git status --short` vazio, HEAD = o checkpoint depois de `46ae846`;
+- `ls .mutacao.lock` → não existe;
+- `.venv/bin/python -m pytest -q` → `2112 passed`;
+- `gh run list --commit $(git rev-parse HEAD)` → `success`;
+- `python scripts/nuvem.py` → 10 ✅;
+- `python scripts/nuvem.py deploy` → o motor `36fcd13`, 12 ✅, 0 commits nos caminhos da imagem.
 
 ## Plano — Sessão 10b: nuvem 1b, o chat na nuvem (o Gmail e o código pela rede vão para a 10c)
 
