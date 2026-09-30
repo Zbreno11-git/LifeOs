@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30 ~17:45Z (10:45 em Seattle): 10c, C0 e C1 ✅; em curso o C2
+## ▶️ RETOMAR AQUI — 2026-09-30 ~18:30Z (11:30 em Seattle): 10c, C0–C2 ✅; em curso o C3
 
 **Estado:** plano aprovado pelo dono (logo abaixo), com as cinco respostas na D60.
 - C0: o lock em `2529615` (suíte `2125 passed` antes e depois), os docs em `38e1870`.
@@ -14,6 +14,15 @@
   tests/test_confirmacao_firestore.py` → `74 passed`, 0 pulados); a migração 6 (`erros`); 3
   erradas cancelam. Suíte `2174 passed`; `python scripts/mutacoes.py confirmação` → 18/18 mortas
   pelo teste esperado (8 novas, 7 antigas com âncora nova: o código mudou de arquivo).
+- **CI do `8cba1fd` falhou (3.13)** no teste novo de corrida: `propor` do SQLite lia os reservados
+  fora da transação (defeito desde a Sessão 5, só com `substituir=False`, o MCP). Consertado em
+  `52570bc` (`BEGIN IMMEDIATE`; o teste agora cai 10/10 sem o conserto), CI `success` pelo SHA.
+- C2 (~18:30Z): `lifeos/ao_dono.py` (a porta do que só o dono vê; na nuvem, o campo `ao_dono`, e
+  sem o coletor erra alto); `interativo` no pedido; a barreira da nuvem = `agent.aprovacao_local`
+  + o número sozinho; "verbo + 4 dígitos" barrado também no Mac (`agent.NAO_E_CODIGO_AQUI`); as 7
+  tools do Gmail na nuvem; o texto de sistema da nuvem com o Gmail. `tests/test_na_nuvem_gmail.py`
+  (13). Suíte `2192 passed`; mutações do C2 e vizinhas 78/78 pelo teste esperado (uma âncora
+  minha casava como pedaço de linha e virava erro de sintaxe: corrigida).
 
 **Próximo passo exato:** o primeiro ⬜ do mapa de checkpoints abaixo.
 
@@ -149,7 +158,7 @@ C2 e C3 são independentes entre si (C3 só toca `gmail/service`, `prazo.py` e o
 |---|---|---|---|
 | C0 | lock atualizado em commit próprio (suíte `2125 passed` antes e depois, CI verde pelo SHA); este plano no topo do `PROGRESSO.md`; `sessoes.md` 10c com as respostas; D60; commit | — | ✅ |
 | C1 | confirmacao atrás da interface; contrato nos dois stores (emulador, 0 pulados); migração 6 (`erros`); 3 erradas cancelam; corridas com 16 threads recolhendo exceções | C0 | ✅ |
-| C2 | `ao_dono.py`; `interativo`; `barreira` = `aprovacao_local` + a regra; a mesma regra no Mac; as tools do Gmail na nuvem com dublê; o texto de sistema; o sentinela só em `ao_dono`; `capsys.out == ""` num turno inteiro da nuvem | C1 | ⬜ |
+| C2 | `ao_dono.py`; `interativo`; `barreira` = `aprovacao_local` + a regra; a mesma regra no Mac; as tools do Gmail na nuvem com dublê; o texto de sistema; o sentinela só em `ao_dono`; `capsys.out == ""` num turno inteiro da nuvem | C1 | ✅ |
 | C3 | `prazo.py` e os quatro pontos que o consultam; relógio falso: o pior caso termina em ≤ 220 s + um pedido | C0 | ⬜ |
 | C4 | `SEGREDOS` + `viking-gmail`; `credenciais_da_nuvem` para o Gmail; `/fumaca/segredos` com `gmail`; `_token_do_gmail`; `segredo` só com o projeto; o passo `ttl` com `confirmacoes`; o cliente com `interativo` e `ao_dono`; a prova do deploy exige o volume do Gmail | C2, C3 | ⬜ |
 | C5 | portões lidos; mutações novas + 251 antigas em background; duas passadas; docs parciais; push; CI pelo SHA; **ok** → o segredo `viking-gmail` vazio e o papel, e a TTL de `confirmacoes`; `python scripts/nuvem.py` → 10 ✅; roteiro do Mac **só leitura** | C4 | ⬜ |

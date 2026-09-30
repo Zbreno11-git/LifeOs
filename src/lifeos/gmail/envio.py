@@ -21,14 +21,13 @@ Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 
 from __future__ import annotations
 
-import sys
 import unicodedata
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from email import policy
 from email.message import EmailMessage
 
-from lifeos import aprovacoes, confirmacao, registro
+from lifeos import ao_dono, aprovacoes, confirmacao, registro
 from lifeos.gmail import formato, service
 
 ACAO = aprovacoes.GMAIL_ENVIAR
@@ -44,8 +43,7 @@ class LimiteDiario(service.ErroGmail):
     codigo = "limite_diario"
 
 
-class SemTerminal(service.ErroGmail):
-    codigo = "sem_terminal"
+SemTerminal = service.SemTerminal
 
 
 @dataclass(frozen=True)
@@ -188,8 +186,9 @@ def conta() -> str:
 
 
 def _terminal() -> bool:
-    """O código só se mostra a uma pessoa (como `browser/liberacao.terminal_interativo`)."""
-    return sys.stdin.isatty() and sys.stdout.isatty()
+    """O código só se mostra a uma pessoa: no Mac, o terminal deste processo; na nuvem, o que o
+    terminal do Mac declarou no pedido (`lifeos/ao_dono.py`)."""
+    return ao_dono.interativo()
 
 
 def usados_hoje(agora: datetime | None = None) -> int:

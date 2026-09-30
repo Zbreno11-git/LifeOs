@@ -14,9 +14,9 @@ nunca uma tool — a mesma regra da limpeza do Gmail (D26/D30). A URL reaberta �
 from __future__ import annotations
 
 import json
-import sys
 from collections.abc import Callable
 
+from lifeos import ao_dono as ao_dono_
 from lifeos import aprovacoes, confirmacao, custos
 from lifeos.browser import _acoes_sensiveis
 from lifeos.browser._redacao import limpar_controles
@@ -40,13 +40,13 @@ _CATEGORIAS = {"sair": "sair da conta", "conta": "mexer na conta"}
 
 def terminal_interativo() -> bool:
     """O código só se mostra a uma pessoa: sem terminal nos dois lados (`--json`, pipe, MCP),
-    não há proposta."""
-    return sys.stdin.isatty() and sys.stdout.isatty()
+    não há proposta (`lifeos/ao_dono.py`)."""
+    return ao_dono_.interativo()
 
 
 def ao_dono(texto: str) -> None:
-    """Direto no terminal, fora do retorno da tool: o Gemini só lê o que a função devolve."""
-    print(texto, file=sys.stdout, flush=True)
+    """Fora do retorno da tool: o Gemini só lê o que a função devolve (`lifeos/ao_dono.py`)."""
+    ao_dono_.mostrar(texto)
 
 
 def _exibido(resultado: BrowserResult) -> str:

@@ -17,9 +17,8 @@ do bloco de não confiável (`nao_confiavel.bloco`).
 # das tools com isinstance(valor, anotação), e o future import transforma as anotações em strings,
 # quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
 import re
-import sys
 
-from lifeos import confirmacao
+from lifeos import ao_dono, confirmacao
 from lifeos.browser import _redacao
 from lifeos.config import TIMEZONE
 from lifeos.gmail import envio, formato, limpeza, service
@@ -54,6 +53,11 @@ def mensagem_de_erro(exc: service.ErroGmail) -> str:
         return f"NÃO preparei nada: {detalhe}."
     if isinstance(exc, service.LimiteDoGmail):
         return f"Parei: {detalhe}. Nada foi perdido."
+    if isinstance(exc, service.SemTerminal):
+        return (
+            f"NÃO preparei nada: {detalhe}. O código só se mostra num terminal interativo: "
+            "peça ao usuário para abrir o `viking chat` num terminal."
+        )
     if isinstance(exc, service.SemLogin):
         return (
             f"Não consegui entrar no Gmail ({detalhe}). No Mac do usuário, "
@@ -232,8 +236,9 @@ def texto_da_proposta(proposta: limpeza.Proposta) -> str:
 
 
 def _ao_dono(texto: str) -> None:
-    """Direto no terminal, fora do retorno da tool: o Gemini só lê o que a função devolve."""
-    print(texto, file=sys.stdout, flush=True)
+    """Fora do retorno da tool (o Gemini só lê o que a função devolve): no Mac, o terminal; na
+    nuvem, o campo `ao_dono` da resposta (`lifeos/ao_dono.py`)."""
+    ao_dono.mostrar(texto)
 
 
 def responder_preparar_limpeza(remetentes: str) -> str:

@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from lifeos import aprovacoes, confirmacao
+from lifeos import ao_dono, aprovacoes, confirmacao
 from lifeos.gmail import service
 
 ACAO = aprovacoes.GMAIL_ARQUIVAR
@@ -46,6 +46,12 @@ class Desfeito:
 
 
 def preparar(remetentes) -> Proposta:
+    if ao_dono.pela_rede() and not ao_dono.interativo():
+        # Pela nuvem, sem terminal do lado do dono, ninguém leria o código (dono, 2026-09-30, D60);
+        # recusa antes de ler o Gmail, sem gastar cota. No Mac a limpeza continua como era.
+        raise service.SemTerminal(
+            "sem um terminal interativo, não há como mostrar o código ao dono"
+        )
     selecao = service.selecionar(remetentes)
     if not selecao.ids:
         # Sem o que aprovar, nenhum código novo — e o da proposta anterior também deixa de valer:

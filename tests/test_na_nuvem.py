@@ -126,18 +126,45 @@ def test_toda_tool_do_mac_decide_onde_mora():
 
 def test_a_nuvem_nao_tem_tool_do_mac():
     nomes = {f.__name__ for f in na_nuvem.FERRAMENTAS}
-    assert (
-        not {"navegar_e_executar", "preparar_limpeza", "enviar_email", "saldos_das_contas"} & nomes
-    )
+    assert not {"navegar_e_executar", "saldos_das_contas", "fatura_do_cartao"} & nomes
+
+
+def test_o_gmail_mora_na_nuvem_desde_a_10c():
+    nomes = {f.__name__ for f in na_nuvem.FERRAMENTAS}
+    gmail = {
+        "buscar_emails",
+        "emails_nao_lidos_de_hoje",
+        "ler_email",
+        "raio_x_da_caixa",
+        "preparar_limpeza",
+        "enviar_email",
+        "responder_email",
+    }
+    assert gmail <= nomes
+    assert set(na_nuvem.SO_NO_MAC) == {
+        "navegar_e_executar",
+        "saldos_das_contas",
+        "gastos_do_periodo",
+        "buscar_transacoes",
+        "fatura_do_cartao",
+    }
 
 
 def test_instrucao_da_nuvem_so_fala_do_que_ela_tem():
     texto = turno.instrucao(na_nuvem.FERRAMENTAS, "HOJE")
-    for ausente in ("Browser Harness", "preparar_limpeza", "enviar_email", "FINANÇAS", "PIX"):
+    for ausente in ("Browser Harness", "FINANÇAS", "PIX", "e-mail nem finanças"):
         assert ausente not in texto, ausente
     for presente in ("APAGAR", "REAGENDAR", "`desfaz`", "acoes_recentes", "lembrete", "HOJE"):
         assert presente in texto, presente
-    assert "não tem navegador, e-mail nem finanças" in texto
+    for presente in ("preparar_limpeza", "enviar_email", "lê o Gmail"):
+        assert presente in texto, presente
+    assert "não tem navegador nem finanças" in texto
+
+
+def test_instrucao_da_nuvem_sem_o_gmail_continua_a_da_10b():
+    sem_gmail = [f for f in na_nuvem.FERRAMENTAS if f.__name__ in {"listar_lembretes"}]
+    texto = turno.instrucao(sem_gmail, "HOJE")
+    assert "não tem navegador, e-mail nem finanças" in texto and "Gmail" not in texto
 
 
 def test_instrucao_do_mac_tem_o_que_o_mac_tem_e_nada_so_da_nuvem():
@@ -145,6 +172,7 @@ def test_instrucao_do_mac_tem_o_que_o_mac_tem_e_nada_so_da_nuvem():
     for presente in ("Browser Harness", "preparar_limpeza", "enviar_email", "FINANÇAS"):
         assert presente in texto, presente
     assert "não tem navegador, e-mail nem finanças" not in texto
+    assert "não tem navegador nem finanças" not in texto
 
 
 def test_lembrete_criado_na_nuvem_avisa_que_nao_sai_por_email():
@@ -172,8 +200,8 @@ def test_lembrete_criado_na_nuvem_avisa_que_nao_sai_por_email():
     ],
 )
 def test_linha_com_cara_de_aprovacao_nunca_vai_ao_modelo(linha):
-    texto, _nota = na_nuvem.barreira(linha)
-    assert texto == na_nuvem.AINDA_NAO_APROVA
+    """Sem proposta aberta aqui, cada forma ganha uma resposta do Viking e nunca vai ao modelo."""
+    assert na_nuvem.barreira(linha) is not None
 
 
 @pytest.mark.parametrize(
@@ -194,7 +222,7 @@ def test_frase_comum_segue_para_o_modelo(linha):
 def test_desfaz_sozinho_sem_acao_nesta_conversa(teto, gemini):
     roteiro = gemini()
     saida = na_nuvem.turno(_pedido("desfaz"))
-    assert saida["resposta"] == na_nuvem.NADA_A_DESFAZER
+    assert saida["ao_dono"] == [na_nuvem.NADA_A_DESFAZER] and saida["resposta"] is None
     assert roteiro.enviados == []
 
 
@@ -204,7 +232,8 @@ def test_codigo_nao_chega_ao_modelo_nem_ao_historico(teto, gemini):
     saida = na_nuvem.turno(_pedido("confirma 4821", historico=historico, nota="nota velha"))
     assert roteiro.enviados == []
     assert saida["historico"] == historico  # o mesmo que chegou: a linha não entrou
-    assert not aparece("4821", saida["historico"]) and saida["nota"] == "nota velha"
+    assert not aparece("4821", saida["historico"])
+    assert saida["nota"].startswith("nota velha\n") and not aparece("4821", saida["nota"])
 
 
 # --- o turno e o histórico --------------------------------------------------------------------

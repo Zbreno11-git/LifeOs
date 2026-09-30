@@ -929,8 +929,8 @@ MUTACOES = [
     Mutacao(
         "aprovação: número que não é código vivo é roubado do Gemini",
         "src/lifeos/assistant/agent.py",
-        "        if not vivos:\n            return None",
-        '        if not vivos:\n            return _COMO_APROVAR, ""',
+        '                return NAO_E_CODIGO_AQUI, ""\n            return None',
+        '                return NAO_E_CODIGO_AQUI, ""\n            return _COMO_APROVAR, ""',
         "tests/test_gmail_aprovacao.py::test_numero_que_nao_e_codigo_vivo_segue_para_o_gemini",
     ),
     Mutacao(
@@ -1315,22 +1315,22 @@ MUTACOES = [
     Mutacao(
         "nuvem: a linha de aprovação vai ao modelo",
         "src/lifeos/assistant/na_nuvem.py",
-        "    if local is not None:  # nunca ao modelo, nunca no histórico",
-        "    if False:",
+        "    if local is not None:  # nunca ao modelo, nunca no histórico; a resposta, só ao dono",
+        "    if False:  # nunca ao modelo, nunca no histórico; a resposta, só ao dono",
         "tests/test_na_nuvem.py::test_codigo_nao_chega_ao_modelo_nem_ao_historico",
     ),
     Mutacao(
-        "nuvem: verbo e número numa frase vão ao modelo",
-        "src/lifeos/assistant/na_nuvem.py",
-        "    if agent._VERBO.search(linha) and agent._NUMERO_DE_CODIGO.search(linha):",
-        "    if False:",
-        "tests/test_na_nuvem.py::test_linha_com_cara_de_aprovacao_nunca_vai_ao_modelo",
+        "barreira: verbo e número numa frase vão ao modelo (Mac e nuvem, D60)",
+        "src/lifeos/assistant/agent.py",
+        "            if _VERBO.search(linha) and _NUMERO_DE_CODIGO.search(linha):",
+        "            if False:",
+        "tests/test_gmail_aprovacao.py::test_verbo_com_numero_que_nao_e_codigo_vivo_nao_vai_ao_gemini",
     ),
     Mutacao(
         "nuvem: uma tool do Mac (o navegador) entra no chat da nuvem",
         "src/lifeos/assistant/na_nuvem.py",
-        "    acoes_recentes,\n]",
-        "    acoes_recentes,\n    agent.navegar_e_executar,\n]",
+        "    agent.responder_email,\n]",
+        "    agent.responder_email,\n    agent.navegar_e_executar,\n]",
         "tests/test_na_nuvem.py::test_toda_tool_do_mac_decide_onde_mora",
     ),
     Mutacao(
@@ -1897,6 +1897,67 @@ MUTACOES = [
         '        conn.execute("BEGIN IMMEDIATE")',
         "        pass",
         "tests/test_confirmacao.py::test_varias_propostas_ao_mesmo_tempo_nunca_repetem_o_codigo",
+    ),
+    Mutacao(
+        "ao_dono: na nuvem, sem o coletor, imprime (o stdout é o log)",
+        "src/lifeos/ao_dono.py",
+        '    if config.STORE == "firestore":\n        raise SemCanal',
+        "    if False:\n        raise SemCanal",
+        "tests/test_na_nuvem_gmail.py::test_na_nuvem_sem_coletor_mostrar_erra_alto_e_nao_imprime",
+    ),
+    Mutacao(
+        "gmail: o código da proposta volta a sair por print",
+        "src/lifeos/gmail/tools.py",
+        "    ao_dono.mostrar(texto)",
+        "    print(texto, flush=True)",
+        "tests/test_na_nuvem_gmail.py::test_o_codigo_da_limpeza_so_volta_no_campo_ao_dono",
+    ),
+    Mutacao(
+        "nuvem: a resposta da barreira volta no texto, fora do campo ao_dono",
+        "src/lifeos/assistant/na_nuvem.py",
+        "        ao_dono.mostrar(texto)\n"
+        "        juntas = turno_nucleo.juntar(nota, nota_nova)\n"
+        "        return _resposta(historico=historico_json, nota=juntas, teto=teto, "
+        "so_ao_dono=so_ao_dono)",
+        "        juntas = turno_nucleo.juntar(nota, nota_nova)\n"
+        "        return _resposta(historico=historico_json, nota=juntas, teto=teto, "
+        "so_ao_dono=so_ao_dono, resposta=texto)",
+        "tests/test_na_nuvem_gmail.py::test_aprovar_pela_nuvem_arquiva_sem_passar_pelo_modelo",
+    ),
+    Mutacao(
+        "nuvem: a barreira não aprova (sem o laço do Mac)",
+        "src/lifeos/assistant/na_nuvem.py",
+        "    local = agent.aprovacao_local(linha)",
+        "    local = None",
+        "tests/test_na_nuvem_gmail.py::test_aprovar_pela_nuvem_arquiva_sem_passar_pelo_modelo",
+    ),
+    Mutacao(
+        "nuvem: só o número, sem proposta aberta, vai ao modelo",
+        "src/lifeos/assistant/na_nuvem.py",
+        '        return agent.NAO_E_CODIGO_AQUI, ""',
+        "        return None",
+        "tests/test_na_nuvem.py::test_linha_com_cara_de_aprovacao_nunca_vai_ao_modelo",
+    ),
+    Mutacao(
+        "limpeza: pela nuvem, sem terminal, a proposta nasce",
+        "src/lifeos/gmail/limpeza.py",
+        "    if ao_dono.pela_rede() and not ao_dono.interativo():",
+        "    if False:",
+        "tests/test_na_nuvem_gmail.py::test_sem_terminal_a_limpeza_nao_propoe_nem_le_o_gmail",
+    ),
+    Mutacao(
+        "envio: o terminal declarado pelo Mac é ignorado",
+        "src/lifeos/gmail/envio.py",
+        "    return ao_dono.interativo()",
+        "    return True",
+        "tests/test_na_nuvem_gmail.py::test_sem_terminal_o_envio_a_outra_pessoa_nao_propoe",
+    ),
+    Mutacao(
+        "ao_dono: o que o terminal do Mac declarou não vale",
+        "src/lifeos/ao_dono.py",
+        "    if declarado is not None:\n        return declarado",
+        "    if False:\n        return declarado",
+        "tests/test_na_nuvem_gmail.py::test_o_codigo_da_limpeza_so_volta_no_campo_ao_dono",
     ),
 ]
 

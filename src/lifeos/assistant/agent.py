@@ -206,6 +206,16 @@ _COMO_APROVAR = (
     "Para aprovar, digite `confirma` e o código de 4 números que o Viking mostrou (ou só o "
     "código). Para desfazer uma limpeza do Gmail: `desfaz` e o código."
 )
+# "Verbo + 4 dígitos" com um número que NÃO é código vivo aqui também não vai ao Gemini (dono,
+# 2026-09-30, D60): desde a 10c há códigos vivos em dois lugares (o chat do Mac e o da nuvem), e
+# um código de um lado, digitado numa frase no outro, chegaria ao modelo. Uma frase rara como
+# "confirma se a reunião é às 1530" paga isso: a resposta ensina a escrever 15:30.
+NAO_E_CODIGO_AQUI = (
+    "Não mandei essa linha ao modelo: ela tem cara de aprovação (um verbo como “confirma” e um "
+    "número de 4 dígitos), mas esse número não é um código vivo neste chat. Se é um código do "
+    "outro chat (o `viking chat` do Mac ou o `viking chat --nuvem`), digite-o lá. Se é outra "
+    "coisa, escreva o número de outro jeito (um horário como 15:30, por exemplo). Nada foi feito."
+)
 _SO_NO_TERMINAL = (
     "Esse código é de um pedido que veio de outro app (pelo servidor MCP): ele se aprova só no "
     "terminal, com `viking aprovar`. Nada foi feito."
@@ -258,6 +268,8 @@ def aprovacao_local(linha: str) -> tuple[str, str] | None:
     else:
         vivos = _vivos(linha)
         if not vivos:
+            if _VERBO.search(linha) and _NUMERO_DE_CODIGO.search(linha):
+                return NAO_E_CODIGO_AQUI, ""
             return None
         if any(not tipo.no_chat for tipo, _c in vivos):
             return _SO_NO_TERMINAL, ""

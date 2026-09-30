@@ -100,6 +100,12 @@ class EntradaInvalida(ErroGmail):
     codigo = "entrada_invalida"
 
 
+class SemTerminal(ErroGmail):
+    """Uma proposta com código sem uma pessoa diante de um terminal para lê-lo (D46, D60)."""
+
+    codigo = "sem_terminal"
+
+
 class NaoEncontrado(ErroGmail):
     codigo = "nao_encontrado"
 

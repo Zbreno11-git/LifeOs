@@ -140,13 +140,27 @@ def test_codigo_vivo_sem_verbo_nunca_vai_ao_gemini(caixa, frase):
 
 
 @pytest.mark.parametrize(
-    "frase",
-    ["confirma se a reunião é às 1530", "desfaz o evento de 2027", "tenho 4821 e-mails?"],
+    "frase", ["a reunião é às 1530?", "o evento de 2027", "tenho 4821 e-mails?"]
 )
 def test_numero_que_nao_e_codigo_vivo_segue_para_o_gemini(caixa, frase):
+    """Sem verbo de aprovação, um número que não é código vivo continua indo ao modelo."""
     tools.preparar_limpeza(LOJA)
     agent.aprovacao_local(f"confirma {CODIGO}")
     assert agent.aprovacao_local(frase) is None
+
+
+@pytest.mark.parametrize(
+    "frase",
+    ["confirma se a reunião é às 1530", "desfaz o evento de 2027", "confirma o 4821 da nuvem"],
+)
+def test_verbo_com_numero_que_nao_e_codigo_vivo_nao_vai_ao_gemini(caixa, frase):
+    """D60 (dono, 2026-09-30): um código do chat da nuvem, digitado numa frase no do Mac, não
+    chega ao Gemini do Mac. A frase rara paga isso, e a resposta ensina a escrever 15:30."""
+    tools.preparar_limpeza(LOJA)
+    agent.aprovacao_local(f"confirma {CODIGO}")
+    texto, nota = agent.aprovacao_local(frase)
+    assert texto == agent.NAO_E_CODIGO_AQUI and nota == ""
+    assert "15:30" in texto
 
 
 def test_chat_novo_desfaz_em_frase_livre_sem_chamar_o_gemini(caixa, monkeypatch, capsys):

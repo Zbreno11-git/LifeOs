@@ -5,13 +5,18 @@ volta a conversa nova: o motor não guarda a conversa (decisão do dono, 2026-09
 
 1. **a barreira de aprovação**, antes de tudo: uma linha com cara de aprovação (`confirma NNNN`,
    só o número, a palavra sozinha, verbo e número numa frase) nunca vai ao Gemini nem entra no
-   histórico. Na 10b a nuvem ainda não aprova nada (a aprovação pela rede é da 10c), e o risco é
-   o dono digitar aqui um código que o chat do Mac mostrou. O `desfaz` sozinho desfaz a última
-   exclusão ou reagendamento da agenda desta conversa, como no Mac;
+   histórico. Desde a 10c (D60) a nuvem aprova: é o mesmo laço do Mac
+   (`agent.aprovacao_local`), com as confirmações no Firestore. O `desfaz` sozinho desfaz a
+   última exclusão ou reagendamento da agenda desta conversa, como no Mac;
 2. **o teto de gasto** (`custos.Teto`), conferido antes do turno e antes de cada chamada ao modelo;
 3. **o turno**, pelo mesmo núcleo do chat do Mac (`turno.py`), só com as tools que moram na nuvem
    (`FERRAMENTAS`; o que fica no Mac está em `SO_NO_MAC`, com o motivo). O Gemini tem prazo por
    chamada e um limite de chamadas de tool por turno.
+
+Tudo que só o dono vê (o código, a lista de uma limpeza, o e-mail antes de sair, e as respostas
+da barreira) volta no campo `ao_dono` da resposta (`lifeos/ao_dono.py`): nunca no texto do
+modelo, no histórico ou no log. `interativo` (o que o terminal do Mac declarou) decide se uma
+proposta com código pode nascer.
 
 NÃO adicionar `from __future__ import annotations` aqui: `criar_lembrete` é tool do Gemini, e o
 google-genai valida argumentos com `isinstance(valor, anotação)`.
@@ -23,7 +28,7 @@ from typing import Any
 
 from google.genai import types
 
-from lifeos import config, confirmacao, custos, registro
+from lifeos import ao_dono, config, confirmacao, custos, registro
 from lifeos.assistant import agent
 from lifeos.assistant import turno as turno_nucleo
 from lifeos.browser._redacao import limpar_controles
@@ -38,11 +43,6 @@ _SESSAO = re.compile(r"[A-Za-z0-9-]{1,40}")
 AVISO_SEM_EMAIL = (
     "Aviso: este lembrete mora na nuvem, e o aviso por e-mail dele ainda não existe (chega numa "
     "próxima etapa); o `viking lembretes --enviar` do Mac só envia os lembretes do Mac."
-)
-AINDA_NAO_APROVA = (
-    "Na nuvem ainda não há o que aprovar com código: isso chega ao chat da nuvem numa próxima "
-    "etapa. Se o código é de uma ação do Mac (Gmail, navegador), digite-o no `viking chat` do Mac. "
-    "Nada foi enviado ao modelo."
 )
 NADA_A_DESFAZER = (
     "Não achei nesta conversa uma exclusão ou um reagendamento na agenda para desfazer. Nada mudou."
@@ -70,18 +70,18 @@ FERRAMENTAS: list[Callable[..., Any]] = [
     agent.listar_lembretes,
     agent.concluir_lembrete,
     acoes_recentes,
+    agent.buscar_emails,
+    agent.emails_nao_lidos_de_hoje,
+    agent.ler_email,
+    agent.raio_x_da_caixa,
+    agent.preparar_limpeza,
+    agent.enviar_email,
+    agent.responder_email,
 ]
 # As tools do chat do Mac que não vêm para a nuvem, e por quê. `tests/test_na_nuvem.py` exige que
 # toda tool do Mac esteja numa das duas listas: uma tool nova tem de decidir onde mora.
 SO_NO_MAC = {
     "navegar_e_executar": "o navegador é o do Mac até a S11 (as mãos)",
-    "buscar_emails": "o Gmail na nuvem é da 10c",
-    "emails_nao_lidos_de_hoje": "o Gmail na nuvem é da 10c",
-    "ler_email": "o Gmail na nuvem é da 10c",
-    "raio_x_da_caixa": "o Gmail na nuvem é da 10c",
-    "preparar_limpeza": "o Gmail na nuvem é da 10c (e aprova com código)",
-    "enviar_email": "o Gmail na nuvem é da 10c (e aprova com código)",
-    "responder_email": "o Gmail na nuvem é da 10c (e aprova com código)",
     "saldos_das_contas": "as finanças seguem a D51",
     "gastos_do_periodo": "as finanças seguem a D51",
     "buscar_transacoes": "as finanças seguem a D51",
@@ -92,33 +92,31 @@ SO_NO_MAC = {
 def barreira(linha: str) -> tuple[str, str] | None:
     """(texto para o dono, nota para o Gemini) se a linha não pode ir ao modelo; senão `None`.
 
-    As mesmas formas que o laço do Mac reconhece (`agent.aprovacao_local`), mais uma: verbo e um
-    número de 4 dígitos na mesma frase, mesmo sem código vivo aqui (os códigos vivos estão no Mac,
-    e a nuvem não os vê)."""
+    É o laço do Mac (`agent.aprovacao_local`: aprova, desfaz, e barra "verbo + 4 dígitos"), com as
+    confirmações da nuvem, mais uma forma: só um número de 4 dígitos, mesmo sem proposta aberta
+    aqui (pode ser um código do chat do Mac)."""
     linha = linha or ""
     palavra = agent._SO_PALAVRA.match(linha)
-    if palavra:
-        if palavra.group(1).lower().startswith("desfa"):
-            desfeito = agent._desfazer_no_calendario()
-            return desfeito if desfeito is not None else (NADA_A_DESFAZER, "")
-        return AINDA_NAO_APROVA, ""
-    if agent._APROVACAO.match(linha):
-        return AINDA_NAO_APROVA, ""
+    if palavra and palavra.group(1).lower().startswith("desfa"):
+        desfeito = agent._desfazer_no_calendario()
+        return desfeito if desfeito is not None else (NADA_A_DESFAZER, "")
+    local = agent.aprovacao_local(linha)
+    if local is not None:
+        return local
     so_numero = agent._SO_NUMERO.match(linha)
     if so_numero and len("".join(so_numero.group(1).split())) == confirmacao.DIGITOS:
-        return AINDA_NAO_APROVA, ""
-    if agent._VERBO.search(linha) and agent._NUMERO_DE_CODIGO.search(linha):
-        return AINDA_NAO_APROVA, ""
+        return agent.NAO_E_CODIGO_AQUI, ""
     return None
 
 
-def _validar(dados: Any) -> tuple[list[Any], str, str, str, int]:
+def _validar(dados: Any) -> tuple[list[Any], str, str, str, int, bool]:
     """Os campos do pedido, conferidos; `ValueError` (o motor responde 400) sem ecoar conteúdo."""
     if not isinstance(dados, dict):
         raise ValueError("o pedido tem de ser um objeto JSON")  # noqa: TRY004 - o motor: 400
     mensagem, nota = dados.get("mensagem"), dados.get("nota", "")
     sessao, numero = dados.get("sessao"), dados.get("numero")
     historico = dados.get("historico", [])
+    interativo = dados.get("interativo", False)  # um terminal velho não manda: ninguém lê
     if not isinstance(mensagem, str) or not mensagem.strip() or len(mensagem) > MAX_MENSAGEM:
         raise ValueError(f"a mensagem tem de ser um texto de 1 a {MAX_MENSAGEM} caracteres")
     if not isinstance(nota, str) or len(nota) > MAX_NOTA:
@@ -129,7 +127,9 @@ def _validar(dados: Any) -> tuple[list[Any], str, str, str, int]:
         raise ValueError("o número do turno tem de ser um inteiro positivo")
     if not isinstance(historico, list):
         raise ValueError("o histórico tem de ser uma lista")  # noqa: TRY004 - o motor: 400
-    return historico, mensagem.strip(), nota, sessao, numero
+    if not isinstance(interativo, bool):
+        raise ValueError("interativo tem de ser verdadeiro ou falso")  # noqa: TRY004 - o motor: 400
+    return historico, mensagem.strip(), nota, sessao, numero, interativo
 
 
 def _teto() -> custos.Teto:
@@ -165,8 +165,10 @@ def _resposta(
     erro: str = "",
     aviso: str = "",
     consumo: str = "",
+    so_ao_dono: list[str],
 ) -> dict[str, Any]:
     return {
+        "ao_dono": list(so_ao_dono),
         "resposta": resposta,
         "erro": erro,
         "aviso": aviso,
@@ -179,22 +181,37 @@ def _resposta(
 
 def turno(dados: Any) -> dict[str, Any]:
     """Um turno do chat da nuvem, do pedido à resposta (tudo JSON)."""
-    historico_json, mensagem, nota, sessao, numero = _validar(dados)
+    historico_json, mensagem, nota, sessao, numero, interativo = _validar(dados)
+    with ao_dono.coletar(interativo=interativo) as so_ao_dono:
+        return _turno(historico_json, mensagem, nota, sessao, numero, so_ao_dono)
+
+
+def _turno(
+    historico_json: list[Any],
+    mensagem: str,
+    nota: str,
+    sessao: str,
+    numero: int,
+    so_ao_dono: list[str],
+) -> dict[str, Any]:
     turno_id = f"{sessao}:{numero}"
     registro.ORIGEM.set("nuvem")
     registro.TURNO.set(turno_id)
     teto = _teto()
 
     local = barreira(mensagem)
-    if local is not None:  # nunca ao modelo, nunca no histórico
+    if local is not None:  # nunca ao modelo, nunca no histórico; a resposta, só ao dono
         texto, nota_nova = local
+        ao_dono.mostrar(texto)
         juntas = turno_nucleo.juntar(nota, nota_nova)
-        return _resposta(historico=historico_json, nota=juntas, teto=teto, resposta=texto)
+        return _resposta(historico=historico_json, nota=juntas, teto=teto, so_ao_dono=so_ao_dono)
     try:
         teto.conferir()
     except custos.TetoAtingido as exc:
         erro = f"Não mandei ao modelo: o teto de gasto foi atingido ({exc.gasto.texto()})."
-        return _resposta(historico=historico_json, nota=nota, teto=teto, erro=erro)
+        return _resposta(
+            historico=historico_json, nota=nota, teto=teto, erro=erro, so_ao_dono=so_ao_dono
+        )
 
     historico = turno_nucleo.historico_de_json(historico_json)
     cliente = _cliente()
@@ -213,6 +230,7 @@ def turno(dados: Any) -> dict[str, Any]:
             teto=teto,
             resposta=resultado.texto,
             consumo=gasto_do_turno,
+            so_ao_dono=so_ao_dono,
         )
     if isinstance(resultado.erro, custos.TetoAtingido):
         erro = f"Parei no meio: o teto de gasto foi atingido ({resultado.erro.gasto.texto()})."
@@ -226,4 +244,5 @@ def turno(dados: Any) -> dict[str, Any]:
         erro=erro,
         aviso=resultado.aviso,
         consumo=gasto_do_turno,
+        so_ao_dono=so_ao_dono,
     )
