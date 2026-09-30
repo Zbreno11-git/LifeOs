@@ -16,25 +16,26 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede. **Só abre depois de
-  2026-10-03**, pela prova do token do Gmail no Mac (a seção 10c abaixo). A 10b foi fechada no
-  Mac em 2026-09-30.
+- **Sessão:** 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede. **Em curso desde
+  2026-09-30:** a parte que não depende da prova do Gmail se constrói agora (decisão do dono); a
+  prova no Mac, **a partir de 2026-10-04 (Seattle)**, é o portão antes de subir o token do Gmail e
+  de publicar. Plano e estado no `PROGRESSO.md`; decisões na D60.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** depois de 2026-10-03, abrir a 10c pela prova do token do Gmail (`viking gmail
-  --login` no Mac, sem abrir o navegador).
+- **Agora:** a 10c do C1 ao C5 (o `PROGRESSO.md`); a partir de 2026-10-04 (Seattle), a prova do
+  token do Gmail no Mac (`viking gmail --login`, sem abrir o navegador) e o resto.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D59), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** a prova do token do Gmail no Mac depois de 2026-10-03 (primeiro passo da
-  10c).
+- **Depende do dono:** a prova do token do Gmail no Mac a partir de 2026-10-04 (o portão da 10c)
+  e os ok's do que custa ou publica.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -740,9 +741,14 @@ O que estava escrito na abertura:
     - `viking lembretes --nuvem` com a marca;
     - o `viking chat` local igual.
 
-## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (separada da 10b em 2026-09-30)
+## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (em curso desde 2026-09-30)
 
-- **Primeiro passo (adiado da 8, da 10 e da 10b; tem data):** provar que o login do Google não
+- **Respostas do dono na abertura (2026-09-30, D60):** começar já a parte que não depende da
+  prova, com a prova como portão antes de subir o token e publicar; 3 tentativas erradas cancelam
+  a proposta (nos dois chats e no `viking aprovar`); pela nuvem, envio e limpeza exigem terminal
+  interativo no Mac; só o Gmail (nada da S11); "verbo + 4 dígitos" barrado também no chat do Mac.
+  Plano, medições e checkpoints no `PROGRESSO.md`.
+- **Portão (adiado da 8, da 10 e da 10b; tem data):** provar que o login do Google não
   vence em 7 dias. `viking gmail --login` no Mac **depois de 2026-10-03**, sem abrir o navegador
   (o token do Gmail é de 2026-09-26). Se pedir login de novo, os tokens do Gmail não sobem (a
   verificação do Google, ou um escopo menor, antes). Indício a favor, medido na abertura da 10b:
@@ -758,7 +764,9 @@ O que estava escrito na abertura:
     no texto do modelo, e só é mostrado num terminal interativo; a linha `confirma NNNN` é lida
     pelo motor antes do modelo e não entra no histórico;
   - **limite de tentativas erradas por proposta** (hoje o TTY era a barreira);
-  - o prazo do motor conferido contra o pior caso do Gmail (as esperas de cota somam até 126 s).
+  - o prazo do motor conferido contra o pior caso do Gmail (as esperas de cota somam até 126 s):
+    um prazo de 220 s por turno na nuvem;
+  - nenhuma linha com verbo de aprovação e 4 dígitos vai ao Gemini, nos dois chats.
 - **Herdado da 10b:** o laço do chat no motor, o teto de gasto, o registro de ações no Firestore,
   os segredos como volume e `viking chat --nuvem`.
 
