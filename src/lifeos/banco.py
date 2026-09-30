@@ -247,12 +247,17 @@ CREATE TABLE lembretes_v5 (
     )
 
 
+# Sessão 10c (D60): quantos códigos errados a proposta já recebeu; no limite, ela é cancelada.
+_M6_TENTATIVAS = ("ALTER TABLE confirmacoes ADD COLUMN erros INTEGER NOT NULL DEFAULT 0",)
+
+
 MIGRACOES: tuple[Migracao, ...] = (
     Migracao(1, "lembretes: tabela e índice de prazo", _M1_LEMBRETES),
     Migracao(2, "lembretes: prazos em UTC", _m2_prazos_em_utc),
     Migracao(3, "registro: tabela de ações", _M3_ACOES),
     Migracao(4, "confirmações: tabela", _M4_CONFIRMACOES),
     Migracao(5, "lembretes: id UUID e reserva de envio", _m5_lembretes_com_uuid_e_envio),
+    Migracao(6, "confirmações: tentativas erradas", _M6_TENTATIVAS),
 )
 
 

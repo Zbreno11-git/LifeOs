@@ -77,6 +77,9 @@ files = [
     "src/lifeos/assistant/turno.py",
     "src/lifeos/assistant/na_nuvem.py",
     "src/lifeos/confirmacao.py",
+    "src/lifeos/confirmacao_interface.py",
+    "src/lifeos/confirmacao_sqlite.py",
+    "src/lifeos/confirmacao_firestore.py",
     "src/lifeos/cli.py",
     "src/lifeos/nuvem",
 ]

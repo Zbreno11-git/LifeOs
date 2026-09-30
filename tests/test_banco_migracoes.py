@@ -29,6 +29,12 @@ _CONTEUDO = (
 _INSTANTES = {4, 5, 9, 10}  # due_at, completed_at, created_at, updated_at, na ordem de _CONTEUDO
 
 
+def _migradas(antes: dict[str, list[tuple]]) -> dict[str, list[tuple]]:
+    """As linhas de antes, como ficam depois das migrações: a 6 (Sessão 10c) acrescenta a coluna
+    `erros` às confirmações, zerada; nenhum outro valor muda."""
+    return {**antes, "confirmacoes": [(*linha, 0) for linha in antes["confirmacoes"]]}
+
+
 def _lembretes(caminho) -> list[tuple]:
     """Os lembretes pelo conteúdo, sem o id: a migração 5 troca o inteiro por UUID e reescreve os
     instantes em largura fixa. Cada instante volta como `datetime`: o mesmo instante em dois
@@ -78,7 +84,7 @@ def test_banco_de_hoje_migra_sem_perder_nem_mudar_nenhuma_linha(antigo):
 
     _abrir()
 
-    assert {t: banco_antigo.linhas(antigo, t) for t in IGUAIS} == antes
+    assert {t: banco_antigo.linhas(antigo, t) for t in IGUAIS} == _migradas(antes)
     assert _lembretes(antigo) == lembretes
     assert [n for n, _nome, _c in _ledger(antigo)] == [m.numero for m in banco.MIGRACOES]
 
@@ -245,6 +251,7 @@ PUBLICADAS = {
     3: "38ad6a5da0e26b2acf1314aba0485842302656df3004259a2cea9ba7806d2924",
     4: "1684c0620d7745e7e85c8956b7a61d3da67af915068580aabc9b8408b0e8cbe5",
     5: "674966561ed3b66c5e6307acc97edb3bdaf1a2bc8182804a8db75e5fba0fdc76",
+    6: "d5342cd47e86be7612b88a44da0c92ab40af2a195a46bab6096637716f20141d",
 }
 
 
@@ -316,7 +323,7 @@ def test_processos_abrindo_juntos_um_banco_de_hoje(antigo):
     assert [p.returncode for p in processos] == [0] * 4, [e for _o, e in saidas]
     assert [o.strip() for o, _e in saidas] == [str(len(banco.MIGRACOES))] * 4
     assert [n for n, _nome, _c in _ledger(antigo)] == [m.numero for m in banco.MIGRACOES]
-    assert {t: banco_antigo.linhas(antigo, t) for t in IGUAIS} == antes
+    assert {t: banco_antigo.linhas(antigo, t) for t in IGUAIS} == _migradas(antes)
     assert _lembretes(antigo) == lembretes
     assert banco.caminho_do_backup(1).exists()
 

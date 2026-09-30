@@ -2,16 +2,32 @@
 
 É a trava que separa "o Gemini propôs" de "o dono aprovou" (D26). Cada teste é um jeito de um
 código errado, velho ou reaproveitado aprovar algo que o dono não viu.
+
+Desde a Sessão 10c é o **contrato** do store das confirmações
+(`confirmacao_interface.Confirmacoes`): todo teste roda no SQLite do Mac e no Firestore da nuvem
+(no emulador, limpo a cada teste). A regra fica em `confirmacao.py`.
 """
 
+import threading
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from lifeos import confirmacao
+from lifeos import confirmacao, confirmacao_firestore, confirmacao_sqlite
+
+STORES = {"sqlite": confirmacao_sqlite, "firestore": confirmacao_firestore}
+JUNTAS = 16
 
 T0 = datetime(2026, 9, 26, 12, 0, tzinfo=UTC)
 ACAO = "gmail.arquivar"
+
+
+@pytest.fixture(autouse=True, params=sorted(STORES))
+def store_da_confirmacao(request, monkeypatch):
+    if request.param == "firestore":  # o emulador, limpo a cada teste (`conftest`)
+        request.getfixturevalue("firestore_limpo")
+    monkeypatch.setattr(confirmacao, "_STORE", STORES[request.param])
+    return request.param
 
 
 def test_codigo_aprova_os_dados_exatos_uma_vez():
@@ -192,3 +208,130 @@ def test_acao_do_codigo():
     assert confirmacao.acao_do_codigo(f" {proposta.codigo} ") == OUTRA
     assert confirmacao.acao_do_codigo("99999") is None
     assert confirmacao.acao_do_codigo("abcd") is None
+
+
+# --- Sessão 10c: tentativas erradas, a janela de uso e as corridas (D60) ------------------------
+
+
+def _errado(codigo: str) -> str:
+    return f"{(int(codigo) + 1) % 10**confirmacao.DIGITOS:0{confirmacao.DIGITOS}d}"
+
+
+def test_a_terceira_errada_cancela_e_a_segunda_nao():
+    proposta = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    errado = _errado(proposta.codigo)
+    for restam in (2, 1):
+        with pytest.raises(confirmacao.CodigoInvalido, match=f"mais {restam} tentativa"):
+            confirmacao.consumir(ACAO, errado, agora=T0)
+        assert confirmacao.aberta(ACAO, agora=T0)
+    with pytest.raises(confirmacao.TentativasEsgotadas):
+        confirmacao.consumir(ACAO, errado, agora=T0)
+    assert not confirmacao.aberta(ACAO, agora=T0)
+    with pytest.raises(confirmacao.CodigoInvalido):  # nem o código certo aprova depois disso
+        confirmacao.consumir(ACAO, proposta.codigo, agora=T0)
+
+
+def test_o_limite_e_o_que_o_dono_decidiu():
+    assert confirmacao.TENTATIVAS == 3
+
+
+def test_errada_de_outra_acao_nao_conta():
+    proposta = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    for _ in range(confirmacao.TENTATIVAS):
+        with pytest.raises(confirmacao.CodigoInvalido):
+            confirmacao.consumir(OUTRA, _errado(proposta.codigo), agora=T0)
+    assert confirmacao.consumir(ACAO, proposta.codigo, agora=T0).dados == {"ids": ["a"]}
+
+
+def test_vencido_e_ja_usado_nao_contam_como_errados():
+    usada = confirmacao.propor(OUTRA, {"event_id": "u"}, substituir=False, agora=T0)
+    confirmacao.consumir(OUTRA, usada.codigo, agora=T0)
+    aberta = confirmacao.propor(OUTRA, {"event_id": "a"}, substituir=False, agora=T0)
+    for _ in range(confirmacao.TENTATIVAS):
+        with pytest.raises(confirmacao.JaUsado):
+            confirmacao.consumir(OUTRA, usada.codigo, agora=T0)
+    assert confirmacao.consumir(OUTRA, aberta.codigo, agora=T0).dados == {"event_id": "a"}
+
+
+def test_errada_sem_proposta_aberta_nao_promete_tentativas():
+    with pytest.raises(confirmacao.CodigoInvalido) as erro:
+        confirmacao.consumir(ACAO, "0001", agora=T0)
+    assert "tentativa" not in str(erro.value)
+    assert not isinstance(erro.value, confirmacao.TentativasEsgotadas)
+
+
+def test_proposta_nova_comeca_sem_erros():
+    velha = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    for _ in range(confirmacao.TENTATIVAS - 1):
+        with pytest.raises(confirmacao.CodigoInvalido):
+            confirmacao.consumir(ACAO, _errado(velha.codigo), agora=T0)
+    nova = confirmacao.propor(ACAO, {"ids": ["b"]}, agora=T0)
+    with pytest.raises(confirmacao.CodigoInvalido, match="mais 2 tentativas"):
+        confirmacao.consumir(ACAO, _errado(nova.codigo), agora=T0)
+
+
+def test_codigo_usado_volta_a_ser_sorteavel_depois_da_janela(monkeypatch):
+    _sorteio(monkeypatch, 1234, 1234, 5678, 1234)
+    usada = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    confirmacao.consumir(ACAO, usada.codigo, agora=T0)
+    na_janela = T0 + confirmacao.JANELA_UNICA
+    assert confirmacao.propor(OUTRA, {"event_id": "e"}, agora=na_janela).codigo == "5678"
+    depois = T0 + confirmacao.JANELA_UNICA + timedelta(seconds=1)
+    assert confirmacao.propor(OUTRA, {"event_id": "f"}, agora=depois).codigo == "1234"
+
+
+def _juntas(fazer) -> tuple[list, list[BaseException]]:
+    """Roda `fazer` em JUNTAS threads ao mesmo tempo; devolve os resultados e as exceções (uma
+    exceção numa thread não reprova o teste sozinha: erros, classe 4)."""
+    largada = threading.Barrier(JUNTAS)
+    resultados: list = []
+    excecoes: list[BaseException] = []
+    trava = threading.Lock()
+
+    def rodar():
+        largada.wait()
+        try:
+            r = fazer()
+        except BaseException as exc:  # noqa: BLE001 - recolhida e afirmada pelo teste
+            with trava:
+                excecoes.append(exc)
+        else:
+            with trava:
+                resultados.append(r)
+
+    threads = [threading.Thread(target=rodar) for _ in range(JUNTAS)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert not any(t.is_alive() for t in threads)
+    return resultados, excecoes
+
+
+def test_mesmo_codigo_gasto_por_varios_ao_mesmo_tempo_so_um_leva():
+    proposta = confirmacao.propor(ACAO, {"ids": ["a"]}, agora=T0)
+    feitos, erros = _juntas(lambda: confirmacao.consumir(ACAO, proposta.codigo, agora=T0))
+    assert len(feitos) == 1
+    assert len(erros) == JUNTAS - 1
+    assert all(isinstance(e, confirmacao.JaUsado) for e in erros), erros
+
+
+def test_varias_propostas_ao_mesmo_tempo_nunca_repetem_o_codigo(monkeypatch):
+    """Todas sorteiam primeiro o mesmo número: só uma fica com ele, e as outras sorteiam de novo."""
+    trava = threading.Lock()
+    chamadas = iter(range(10**6))
+
+    def sorteio(_n):
+        with trava:
+            n = next(chamadas)
+        return 42 if n < JUNTAS else 100 + n
+
+    monkeypatch.setattr(confirmacao.secrets, "randbelow", sorteio)
+    propostas, erros = _juntas(
+        lambda: confirmacao.propor(OUTRA, {"event_id": "e"}, substituir=False, agora=T0)
+    )
+    assert erros == []
+    codigos = [p.codigo for p in propostas]
+    assert len(codigos) == JUNTAS
+    assert len(set(codigos)) == JUNTAS
+    assert codigos.count("0042") == 1

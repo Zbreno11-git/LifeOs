@@ -209,6 +209,17 @@ def test_codigo_errado_pela_linha_nao_toca_na_caixa(caixa):
     assert caixa["modificacoes"] == []
 
 
+def test_tres_codigos_errados_pela_linha_cancelam_a_limpeza(caixa):
+    """D60: a 3ª errada cancela; o código certo, depois disso, não arquiva nada."""
+    tools.preparar_limpeza(LOJA)
+    textos = [agent.aprovacao_local("confirma 0001")[0] for _ in range(confirmacao.TENTATIVAS)]
+    assert "mais 2 tentativas" in textos[0] and "mais 1 tentativa" in textos[1]
+    assert "cancelei" in textos[-1] and "lista mais recente" not in textos[-1]
+    texto, _ = agent.aprovacao_local(f"confirma {CODIGO}")
+    assert texto.startswith("Não fiz nada")
+    assert caixa["modificacoes"] == []
+
+
 # --- o laço do chat de verdade, com um Gemini falso --------------------------------------
 
 

@@ -293,7 +293,7 @@ def texto_do_desfeito(desfeito: limpeza.Desfeito) -> str:
 def mensagem_de_aprovacao(exc: Exception, *, desfazendo: bool = False) -> str:
     if isinstance(exc, confirmacao.Expirado):
         return f"Não fiz nada: {exc}."
-    if isinstance(exc, confirmacao.JaUsado):
+    if isinstance(exc, confirmacao.JaUsado | confirmacao.TentativasEsgotadas):
         return f"Não fiz nada: {exc}."
     if isinstance(exc, confirmacao.CodigoInvalido):
         return (
@@ -397,6 +397,8 @@ def texto_do_confirmado(confirmado: envio.Confirmado) -> str:
 
 
 def mensagem_de_envio_aprovado(exc: Exception) -> str:
+    if isinstance(exc, confirmacao.TentativasEsgotadas):
+        return f"Não enviei nada: {exc}."
     if isinstance(exc, confirmacao.CodigoInvalido):
         return (
             f"Não enviei nada: {exc} (digite o código do e-mail mais recente; um pedido novo "

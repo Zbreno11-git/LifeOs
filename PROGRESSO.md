@@ -5,10 +5,15 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30 ~16:30Z (09:30 em Seattle): 10c aberta e planejada; em curso o C0
+## ▶️ RETOMAR AQUI — 2026-09-30 ~17:45Z (10:45 em Seattle): 10c, C0 e C1 ✅; em curso o C2
 
-**Estado:** plano aprovado pelo dono (logo abaixo), com as cinco respostas na D60. O C0 atualiza o
-lock (`charset-normalizer` 3.5.2, `cryptography` 50.0.2) num commit próprio e escreve os docs.
+**Estado:** plano aprovado pelo dono (logo abaixo), com as cinco respostas na D60.
+- C0: o lock em `2529615` (suíte `2125 passed` antes e depois), os docs em `38e1870`.
+- C1 (2026-09-30 ~17:40Z): a confirmação atrás de `confirmacao_interface`, com os stores SQLite e
+  Firestore; o contrato nos dois (`VIKING_EXIGIR_EMULADOR=1 pytest tests/test_confirmacao.py
+  tests/test_confirmacao_firestore.py` → `74 passed`, 0 pulados); a migração 6 (`erros`); 3
+  erradas cancelam. Suíte `2174 passed`; `python scripts/mutacoes.py confirmação` → 18/18 mortas
+  pelo teste esperado (8 novas, 7 antigas com âncora nova: o código mudou de arquivo).
 
 **Próximo passo exato:** o primeiro ⬜ do mapa de checkpoints abaixo.
 
@@ -142,8 +147,8 @@ C2 e C3 são independentes entre si (C3 só toca `gmail/service`, `prazo.py` e o
 ### Mapa de checkpoints
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
-| C0 | lock atualizado em commit próprio (suíte `2125 passed` antes e depois, CI verde pelo SHA); este plano no topo do `PROGRESSO.md`; `sessoes.md` 10c com as respostas; D60; commit | — | ⬜ |
-| C1 | confirmacao atrás da interface; contrato nos dois stores (emulador, 0 pulados); migração 6 (`erros`); 3 erradas cancelam; corridas com 16 threads recolhendo exceções | C0 | ⬜ |
+| C0 | lock atualizado em commit próprio (suíte `2125 passed` antes e depois, CI verde pelo SHA); este plano no topo do `PROGRESSO.md`; `sessoes.md` 10c com as respostas; D60; commit | — | ✅ |
+| C1 | confirmacao atrás da interface; contrato nos dois stores (emulador, 0 pulados); migração 6 (`erros`); 3 erradas cancelam; corridas com 16 threads recolhendo exceções | C0 | ✅ |
 | C2 | `ao_dono.py`; `interativo`; `barreira` = `aprovacao_local` + a regra; a mesma regra no Mac; as tools do Gmail na nuvem com dublê; o texto de sistema; o sentinela só em `ao_dono`; `capsys.out == ""` num turno inteiro da nuvem | C1 | ⬜ |
 | C3 | `prazo.py` e os quatro pontos que o consultam; relógio falso: o pior caso termina em ≤ 220 s + um pedido | C0 | ⬜ |
 | C4 | `SEGREDOS` + `viking-gmail`; `credenciais_da_nuvem` para o Gmail; `/fumaca/segredos` com `gmail`; `_token_do_gmail`; `segredo` só com o projeto; o passo `ttl` com `confirmacoes`; o cliente com `interativo` e `ao_dono`; a prova do deploy exige o volume do Gmail | C2, C3 | ⬜ |
