@@ -746,7 +746,10 @@ O que estava escrito na abertura:
   vence em 7 dias. `viking gmail --login` no Mac **depois de 2026-10-03**, sem abrir o navegador
   (o token do Gmail é de 2026-09-26). Se pedir login de novo, os tokens do Gmail não sobem (a
   verificação do Google, ou um escopo menor, antes). Indício a favor, medido na abertura da 10b:
-  o token da agenda, do mesmo cliente OAuth, renovou dez dias depois de feito.
+  o token da agenda, do mesmo cliente OAuth, renovou dez dias depois de feito. **Não é a prova:**
+  o `viking gmail --login` do dono em 2026-09-29 23:50 (Seattle) entrou sem navegador, mas o
+  token tinha só 3 a 4 dias. Como não houve consentimento novo, a contagem dos 7 dias continua a
+  partir de 2026-09-26.
 - **Entrega:**
   - as tools do Gmail no chat da nuvem, com o token do Gmail no Secret Manager (subido do Mac, que
     é onde ele mora: o VPS não guarda token do Gmail, D57);
