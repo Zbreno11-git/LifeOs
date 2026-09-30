@@ -100,3 +100,24 @@ def test_disputa_que_nao_termina_e_erro_nao_resposta(fs, monkeypatch):
     with pytest.raises(store_firestore.PerdeuADisputa):
         store_firestore._trocar(_MudouSempre(), decidir)
     assert len(chamadas) == store_firestore.TENTATIVAS  # relê e decide de novo a cada volta
+
+
+def test_quem_leu_antes_de_outro_gravar_rele_e_decide_de_novo(fs):
+    """Determinístico, sem threads: entre a leitura e a escrita, "outra execução" grava no mesmo
+    lembrete. Com a precondição (`last_update_time`), a escrita velha é recusada, e `_trocar` relê e
+    decide sobre o estado novo; sem ela, a escrita velha passaria por cima."""
+    lembrete = fs.add(title="Dentista", due_at=T0)
+    ref = fs_cliente().collection(store_firestore.COLECAO).document(lembrete.id)
+    vistos = []
+
+    def decidir(snap):
+        vistos.append(snap.get("envio_reservado_por"))
+        if len(vistos) == 1:  # a outra execução reserva depois da nossa leitura
+            ref.update({"envio_reservado_por": "outra", "envio_reservado_ate": T0})
+        if snap.get("envio_reservado_por") is not None:
+            return None, False
+        return {"envio_reservado_por": "eu", "envio_reservado_ate": T0}, True
+
+    assert store_firestore._trocar(ref, decidir) is False
+    assert vistos == [None, "outra"]  # releu e viu a reserva da outra
+    assert _cru(lembrete.id)["envio_reservado_por"] == "outra"

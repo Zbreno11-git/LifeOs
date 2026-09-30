@@ -238,10 +238,11 @@ SHA = "a" * 40
 class _Mundo:
     """O gcloud, o git, o docker e o gh de mentira, com o estado de um deploy."""
 
-    def __init__(self, *, limpo=True, publicado=True, ci="completed success", no_ar=None):
+    def __init__(self, *, limpo=True, publicado=True, ci="completed success", no_ar=None, mudou=3):
         self.gcloud: list[list[str]] = []
         self.local: list[tuple[list[str], str | None]] = []
         self.limpo, self.publicado, self.ci, self.no_ar = limpo, publicado, ci, no_ar
+        self.mudou = 0 if no_ar == SHA else mudou
 
     def rodar(self, comando):
         self.gcloud.append(comando)
@@ -265,7 +266,7 @@ class _Mundo:
             ("git", "rev-parse"): SHA,
             ("git", "ls-remote"): f"{SHA if self.publicado else 'b' * 40}\trefs/heads/master",
             ("git", "status"): "" if self.limpo else " M arquivo.py",
-            ("git", "rev-list"): "3",
+            ("git", "rev-list"): str(self.mudou),
             ("gh", "run"): self.ci,
         }
         return subprocess.CompletedProcess(comando, 0, saidas.get(tuple(comando[:2]), ""), "")
@@ -344,7 +345,24 @@ def test_o_head_ja_no_ar_so_prova(nuvem, ctx, mundo, capsys):
     m = mundo(no_ar=SHA)
     assert nuvem.deploy(ctx, executar=True) == 0
     assert not _publicou(m)
-    assert "já está no ar" in capsys.readouterr().out
+    assert "só as provas" in capsys.readouterr().out
+
+
+def test_commit_que_nao_mexe_na_imagem_nao_publica_de_novo(nuvem, ctx, mundo, monkeypatch):
+    """Um commit só em `scripts/` ou `tests/` não muda a imagem: a que está no ar já é o código de
+    agora, e as provas comparam com ela (não com o HEAD)."""
+    m = mundo(no_ar="b" * 40, mudou=0)
+    esperados = []
+    monkeypatch.setattr(nuvem, "provas", lambda _ctx, sha: esperados.append(sha) or [])
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert not _publicou(m)
+    assert esperados == ["b" * 40]
+
+
+def test_commit_que_mexe_na_imagem_publica(nuvem, ctx, mundo):
+    m = mundo(no_ar="b" * 40, mudou=1)
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert _publicou(m)
 
 
 def test_o_servico_nasce_fechado(nuvem, ctx, mundo):

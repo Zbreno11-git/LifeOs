@@ -28,6 +28,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -418,6 +419,7 @@ PASSOS = (
 
 SERVICO = "motor"
 RAIZ = config.REPO_ROOT
+ESPERA_DO_IAM_S = 180
 _LOCAIS = ("git", "docker", "gh")
 
 
@@ -607,9 +609,14 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
     if not isinstance(servico, dict):
         return [Prova("serviço no ar", False, "não existe")]
     imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
-    resultado.append(Prova("imagem = HEAD", imagem == _imagem(ctx, sha), imagem.rsplit("/", 1)[-1]))
-    url = servico["status"]["url"]
-    resultado.append(Prova("URL = a audience", url == _url(ctx), url))
+    no_ar = imagem.rsplit("/", 1)[-1]
+    resultado.append(Prova("imagem no ar = a esperada", imagem == _imagem(ctx, sha), no_ar))
+    # O `status.url` é a URL antiga, com hash; a determinística (com o número do projeto) é a
+    # audience que o motor exige, e o Cloud Run a lista nesta anotação (medido em 2026-09-30).
+    anotacoes = servico["metadata"].get("annotations", {})
+    urls = json.loads(anotacoes.get("run.googleapis.com/urls", "[]"))
+    url = _url(ctx)
+    resultado.append(Prova("URL = a audience", url in urls, url))
 
     politica = _ler(
         _gcloud(ctx, "run", "services", "get-iam-policy", SERVICO, f"--region={ctx.regiao}")
@@ -648,11 +655,19 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
         "--include-email",
     )
     cabecalho = {"Authorization": f"Bearer {cli}"}
-    versao = requests.get(f"{url}/versao", headers=cabecalho, timeout=60)
+    # A permissão de invocar recém-dada leva um tempo para valer (medido em 2026-09-30: <1 min).
+    # Espera só enquanto o 403 é a página do Google; um 403 do nosso código não é propagação.
+    esperou = 0
+    while True:
+        versao = requests.get(f"{url}/versao", headers=cabecalho, timeout=60)
+        propagando = versao.status_code == 403 and versao.text.lstrip().startswith("<")
+        if not propagando or esperou >= ESPERA_DO_IAM_S:
+            break
+        time.sleep(15)
+        esperou += 15
     commit = versao.json().get("commit") if versao.status_code == 200 else None
-    resultado.append(
-        Prova("viking-cli@: /versao = HEAD", commit == sha, f"HTTP {versao.status_code}")
-    )
+    detalhe = f"HTTP {versao.status_code}" + (f", depois de {esperou} s" if esperou else "")
+    resultado.append(Prova("viking-cli@: /versao = a imagem no ar", commit == sha, detalhe))
     for rota in ("/lembretes", "/fumaca/vencidos"):
         resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
         resultado.append(
@@ -684,20 +699,24 @@ def deploy(ctx: Contexto, executar: bool) -> int:
             f"({', '.join(caminhos_da_imagem())}): {agora.mudou_desde}"
         )
     pode = agora.limpo and agora.publicado and agora.ci == "completed success"
+    # Nada nos caminhos da imagem desde a que está no ar: ela já é o código de agora, e publicar
+    # de novo só trocaria a etiqueta (skill `nuvem-e-deploy` §4, a segunda pergunta).
+    em_dia = agora.no_ar is not None and agora.mudou_desde == 0
+    esperado = agora.no_ar if em_dia and agora.no_ar else agora.head
     if executar:
         if not pode:
             print("Não publico: a imagem tem de ser um commit limpo, no GitHub e com CI verde.")
             return 1
-        if agora.no_ar == agora.head:
-            print("O HEAD já está no ar; só as provas.")
+        if em_dia:
+            print("Nada mudou na imagem desde a que está no ar; só as provas.")
         else:
             publicar(ctx, agora.head)
-    elif agora.no_ar != agora.head:
+    elif not em_dia:
         for comando in comandos_do_deploy(ctx, agora.head):
             print(f"  → {_legivel(comando)}")
         print("Nada foi publicado (sem --executar).")
     print("Provas (rodam sempre):")
-    feitas = provas(ctx, agora.head)
+    feitas = provas(ctx, esperado)
     for prova in feitas:
         print(f"  {'✅' if prova.passou else '❌'} {prova.nome}: {prova.detalhe}")
     return 0 if all(p.passou for p in feitas) else 2
