@@ -15,7 +15,7 @@
 - **No ar (medido às 06:54Z, `python scripts/nuvem.py deploy`):** o motor `36fcd13`, 12 provas ✅;
   a infraestrutura com 10 ✅ (05:17Z).
   Os commits depois dele são só de documentação, fora dos caminhos da imagem.
-- A 10b está no diário (três registros de 2026-09-30), as decisões na D59, os erros em
+- A 10b está no diário (dois registros de 2026-09-30), as decisões na D59, os erros em
   `docs/erros.md` (classes 4, 5 e 7), e o plano e as provas literais logo abaixo.
 
 **A prova do Gmail (o portão da 10c):**
