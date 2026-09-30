@@ -1046,6 +1046,37 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-29/30 — Sessão 10: o motor na nuvem (feita no VPS; falta o Mac)
+
+O que mudou:
+- **Repo privado** (2026-09-29 22:28Z, com o ok do dono) depois do **gitleaks** no CI (histórico
+  inteiro, 106 commits limpos) e no commit do VPS; 3 achados antigos eram dados falsos do teste
+  da redação, dispensados um por um pela impressão digital.
+- **Projeto só do Viking em São Paulo** (o ID fica no `.env`), criado por `scripts/nuvem.py` (8 passos, cada um
+  medido; nada muda sem `--executar`). O faturamento bateu no limite de 9 projetos da conta; o
+  dono escolheu desligar o do `dbt-project`. Orçamento de 105 BRL (US$ 20 na PTAX de 5,2204).
+- **Firestore pelo contrato** do SQLite, no emulador (obrigatório no CI). A reserva é comparar e
+  trocar: a transação dava lock timeout com execuções juntas (5 de 10 rodadas; 0 de 40 depois).
+- **O motor** (Starlette no Cloud Run, 0 instâncias mínimas): verifica a assinatura, a audience e
+  o e-mail do token na primeira instrução de toda rota. **O cliente**: `viking lembretes --nuvem`.
+- 1ª execução de verdade: cinco consertos do script, cada um com teste (listar sem projeto, conta
+  de faturamento na saída, ID curto, índice além de 300 s, "Cannot find service"); e duas
+  descobertas do Cloud Run (a URL da audience está na anotação; a permissão levou <1 min).
+
+Evidência (2026-09-30 00:56Z, `python scripts/nuvem.py deploy`): 9 provas ✅ — imagem no ar =
+`b7a0635`; só o `viking-cli@` invoca; sem token → 403 do Google; o token pessoal do dono passou
+pelo IAM e o motor devolveu 401; o `viking-cli@` → 200 em `/versao`, `/lembretes` e
+`/fumaca/vencidos` (o índice composto funciona na produção); 0 erros no log. `viking lembretes
+--nuvem` do VPS, com o login do dono → "Nenhum lembrete pendente". Mutações 228/228. Suíte:
+`1997 passed` no VPS.
+
+Decisões: D47 revista (o deploy usa o login do gcloud do VPS, decisão do dono) e D58.
+
+Erros desta sessão (em `docs/erros.md`): a premissa "VPS sem credencial" sem abrir
+`~/.config/gcloud` (e o `.env` com as chaves do Gemini e da Pluggy, que o `CLAUDE.md` negava);
+a corrida de threads que passava com 7 threads explodindo; a promessa do docstring sem teste; dois
+números sem medida; o "não existe" do gcloud pelo caso típico.
+
 ### 2026-09-29 — Sessão 9 fechada no Mac
 
 Saída colada pelo dono:

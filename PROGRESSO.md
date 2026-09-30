@@ -1,49 +1,53 @@
-# Viking — progresso em curso
+\1| ✅ |1| ✅ |1| ✅ |
 
 > Arquivo de trabalho: descreve a sessão **atual** e é atualizado a cada etapa fechada, não só no
 > fim. É o que sobrevive a um `/compact` ou a uma conversa nova (skill `pre-compact`). Quando a
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-29, Sessão 10 em curso (C0)
+## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10 feita no VPS; falta o teste do Mac (C9)
 
-**Estado:** `git log --oneline -3` e `git status --short` · travas: nenhuma · background: nenhum.
-Base da abertura (2026-09-29): `1884 passed`, CI de `26ddc71` verde.
+**Estado:** `git log --oneline -3` e `git status --short` (limpo) · igual ao remoto · travas:
+nenhuma · background: nenhum. Portões em 2026-09-30: `1997 passed` no VPS, `ruff` limpo,
+formatação zero, `mypy` limpo (14 arquivos), gitleaks limpo, mutações 228/228. CI pelo SHA
+inteiro.
 
-**Onde parou (2026-09-29):**
-- C0, C1 e C2 feitos: o repo está **privado** desde 22:28Z (gitleaks: 106 commits limpos no CI);
-- C4 feito: Firestore passa o contrato no emulador (0 vermelhos em 40 rodadas); a reserva é
-  comparar-e-trocar, não transação (a transação dava lock timeout com execuções juntas);
-- C3 feito (ok do dono): `python scripts/nuvem.py` → os 8 passos ✅ (2026-09-29 ~23:55Z). O
-  faturamento bateu no limite de 9 projetos da conta do dono; ele escolheu desligar o do
-  `dbt-project` (23:48Z) para ligar o do Viking. Orçamento de 105 BRL (US$ 20 na PTAX de
-  5,2204). As contas são `viking-motor@` e `viking-cli@` (o ID pede de 6 a 30 caracteres);
-- C5 feito: o motor verifica a **assinatura** do token (emissor Google, audience = a URL) e o
-  e-mail (`viking-cli@`), primeira instrução de toda rota (régua AST); dois defeitos plantados
-  caíram (decodificar sem verificar: 4 testes; sem a lista: 6). A imagem: 512 MB, 97 MB
-  comprimida (a estimativa de "< 300 MB" do plano não foi medida; `.pyc` ficam de propósito,
-  partida fria); roda como 65532, sem log de acesso; sem token → 401 no contêiner local;
-- C6 em curso: `python scripts/nuvem.py deploy` (só lê) e `deploy --executar` (depois do ok).
+**No ar (medido em 2026-09-30 00:56Z, `python scripts/nuvem.py deploy`):** o motor `b7a0635` em
+`southamerica-east1`; 9 provas ✅. Depois dele só entraram commits fora dos caminhos da imagem (o
+script diz "0 desde ela"). O VPS tem no `.env` o projeto, a URL, a conta de faturamento, o
+orçamento e o fuso da nuvem.
 
-**Próximo passo exato:** o primeiro checkpoint ⬜ do mapa abaixo.
+**Próximo passo exato:** o dono roda o roteiro abaixo no Mac e cola a saída. Se passar: a 10
+fecha (barra 16 de 29) e o próximo é abrir a 10b, cujo primeiro passo é a prova do token do
+Gmail **depois de 2026-10-03**.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `sessoes.md` (10 e
-10b); `docs/decisoes.md` D47 (revista) e D58; skills `nuvem-e-deploy`, `seguranca`,
-`dados-e-banco`.
+**Roteiro do Mac (C9):**
+1. `cd ~/LifeOs && git pull && git log --oneline -1`
+2. `uv sync --locked --extra dev && source .venv/bin/activate && which python`
+3. `python -m pytest -q` (esperado: 0 falhas; os pulados incluem o Firestore e o gitleaks, que
+   o Mac não instala)
+4. `viking gmail --login` (o google-auth-oauthlib 1.5.0 ainda entra; não é a prova dos 7 dias)
+5. `which gcloud`; sem ele: `brew install --cask google-cloud-sdk`, e abrir um terminal novo
+6. `gcloud auth application-default login` (abre o navegador uma vez)
+7. acrescentar ao `.env` do Mac o projeto e a URL (os valores vão na conversa, não no repo)
+8. `viking lembretes --nuvem` → "☁️ Lembretes da nuvem:" e "Nenhum lembrete pendente."
+9. `curl -s -o /dev/null -w "%{http_code}\n" <URL>/versao` → `403`
+
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (10 e 10b); D47 e D58;
+`docs/fontes/gcp-cloud-run-firestore.md`.
 
 **Não pode ser esquecido:**
-- o VPS tem o `gcloud` logado com a conta do dono (decisão dele: usar), então **todo** comando do
-  `gcloud` leva `--project` do Viking; nunca o projeto padrão da configuração, que é outro projeto
-  dele;
-- o ADC do dono está vivo no VPS: nenhum teste constrói cliente de nuvem sem o emulador;
-- criar recurso ou gastar = pedir o ok do dono naquele passo; o local do Firestore é irreversível;
-- nenhum ID de projeto, URL ou conta de serviço no repo (vão no `.env`);
-- migração publicada não se edita;
-- mutações em background, sem timeout;
-- nunca presumir o fuso: o dono volta ao Brasil em ~1 mês.
+- todo `gcloud` do Viking leva `--project` (o login do VPS é o do dono; o projeto padrão é outro);
+- o `.env` do VPS tem as chaves do Gemini e da Pluggy (o dono decidiu manter): nada daqui as usa
+  sem pedido;
+- publicar = `python scripts/nuvem.py deploy --executar`, com o ok do dono a cada deploy;
+- o fuso da nuvem é `VIKING_NUVEM_FUSO` no `.env` do VPS (America/Los_Angeles até o dono voltar
+  ao Brasil, em ~1 mês);
+- o motor só lê: registro de ações e aprovação na nuvem são da 10b;
+- migração publicada não se edita; mutações em background, sem timeout.
 
-**Depende do dono:** os ok's de C2 (repo privado), C3 (cada recurso) e C6 (deploy); o teste do
-Mac (C9); a prova do token do Gmail depois de 2026-10-03 (primeiro passo da 10b).
+**Depende do dono:** o roteiro acima; o `dbt-project` ficou sem faturamento (o dataset do
+BigQuery dele entra no modo sandbox, onde as tabelas expiram em 60 dias).
 
 ## Plano — Sessão 10: nuvem 1, o motor (a 10b leva o chat para a nuvem)
 
@@ -137,11 +141,11 @@ pedidos.
 | C1 | lock atualizado, suíte antes e depois iguais, `test_lock` verde; commit próprio | C0 | ✅ |
 | C2 | gitleaks no CI e no hook, limpo no histórico, canário reprovado; **ok do dono** → repo privado, conferido pela API | C1 | ✅ |
 | C3 | `scripts/nuvem.py` só-leitura mostra tudo "a criar"; **ok** → projeto, faturamento, APIs, orçamento, Firestore em SP, registry, contas de serviço e índices; o só-leitura mostra "nada a criar" | C2 | ✅ |
-| C4 | store Firestore passa o contrato no emulador (VPS e CI), sem pulado; mutações novas mortas | C1 | 🔶 no VPS (CI e mutações a conferir) |
+| C4 | store Firestore passa o contrato no emulador (VPS e CI), sem pulado; mutações novas mortas | C1 | ✅ |
 | C5 | motor (Starlette) com testes de 401/403/identidade e sem conteúdo em log; Dockerfile; imagem constrói | C4 | ✅ |
-| C6 | **ok** → primeiro deploy; `describe` = SHA; sem login → 403 do Google; fumaça com o `cli@` exerce `/versao` e `/lembretes` (e `vencidos` na produção) | C3, C5 | ⬜ |
-| C7 | `viking lembretes --nuvem` (cliente com `IDTokenCredentials`), testes offline; roteiro do Mac | C6 | ⬜ |
-| C8 | portões, duas passadas de revisão, docs, commits, push, CI pelo SHA | C7 | ⬜ |
+| C6 | **ok** → primeiro deploy; `describe` = SHA; sem login → 403 do Google; fumaça com o `cli@` exerce `/versao` e `/lembretes` (e `vencidos` na produção) | C3, C5 | ✅ |
+| C7 | `viking lembretes --nuvem` (cliente com `IDTokenCredentials`), testes offline; roteiro do Mac | C6 | ✅ |
+| C8 | portões, duas passadas de revisão, docs, commits, push, CI pelo SHA | C7 | ✅ |
 | C9 | teste do dono no Mac | C8 | ⬜ |
 
 ### Fase 0 — documentos (C0)

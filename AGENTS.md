@@ -81,13 +81,26 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     vez, e quem está usando na mensagem de "ocupado" (D40); `versao_jev.py` confere o clone do
     Jev (ramo, commit, mudanças não salvas, patch OpenRouter pelo conteúdo) e só avisa (D41)
   - `reminders/` — lembretes/notas: `interface.py` (o `Protocol` do store, com id UUID e só
-    instantes em UTC; o contrato em `tests/test_reminders_contrato.py` é o que o Firestore da S10
-    tem de passar), `store.py` (SQLite), `service.py` (a borda: o fuso do dono entra aqui) e
+    instantes em UTC; o contrato em `tests/test_reminders_contrato.py` roda nos dois stores),
+    `store.py` (SQLite, o do Mac), `store_firestore.py` (a nuvem, Sessão 10: comparar e trocar
+    em vez de transação, todo documento inteiro, só UUID como id), `service.py` (a borda: o fuso
+    do dono entra aqui, e `VIKING_STORE` escolhe o store) e
     `envio.py` (`viking lembretes --enviar`: um e-mail por lembrete vencido em 24 h, com reserva
     no banco para sair uma vez só)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
+  - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
+    pelo IAM e, na primeira instrução de toda rota, pela verificação do token (assinatura,
+    audience, e-mail `viking-cli@`); `cliente.py` é o terminal do Mac falando com ele (`viking
+    lembretes --nuvem`), com o token do `viking-cli@` pedido pelo login do Google Cloud do dono
+- `Dockerfile`, `.dockerignore` — a imagem do motor: base por digest, só `pyproject`/`uv.lock`/
+  `src`, o extra `nuvem`, não-root, sem log de acesso (`tests/test_dockerfile.py`).
+- `scripts/nuvem.py` — a infraestrutura e o deploy do GCP: sem flag só lê e roda as provas; com
+  `--executar` cria um passo ou publica (só um commit limpo, no GitHub e com CI verde). Todo
+  `gcloud` leva o `--project` do Viking (o login do VPS é o do dono e alcança os outros projetos
+  dele). `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
+  com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `tests/` — pytest para `src/lifeos`.
 - `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
   D45). `pyproject.toml` diz as plataformas que o lock tem de servir sem compilar nada.
@@ -115,7 +128,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `browser-harness.md`, `jev-typesafe.md`, `google-calendar-api.md`, `gmail-api.md`, `fastmcp.md`,
     `pluggy-open-finance.md`,
     `mac-control-mcp-dead-end.md`, e `pesquisa-roteiro.md` (a pesquisa datada do roteiro 8–21:
-    libs, repos e assistentes avaliados, adotados ou recusados, e por quê)
+    libs, repos e assistentes avaliados, adotados ou recusados, e por quê), e
+    `gcp-cloud-run-firestore.md` (o que a Sessão 10 mediu no GCP: custo, log, identidade, Firestore)
 - `archive/` — trilhas pausadas mas preservadas (código real, não só docs). Hoje:
   `wristband-fail-test/` (Arduino Uno R3 → Serial → Windows-MCP, funcional, ver seu próprio README).
 - `secrets/` — gitignored (exceto `.gitkeep`): credenciais OAuth reais (`google_credentials.json`,
@@ -134,7 +148,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
 
 ```bash
 uv sync --locked --extra dev   # instala exatamente o uv.lock no .venv: o Viking editável +
-                               # pytest/ruff; remove da venv o que não está no lock (D45)
+                               # pytest/ruff; remove da venv o que não está no lock (D45).
+                               # No VPS e no CI também --extra nuvem (Firestore; o Mac não)
 source .venv/bin/activate
 uv lock --check                # o uv.lock bate com o pyproject (o CI instala com --locked)
 uv lock --upgrade --dry-run    # ao abrir cada sessão: há versão nova? Se houver, `uv lock
@@ -146,6 +161,11 @@ python -m ruff format --check . # formatação: zero arquivos a formatar (sem ba
                                # 2026-09-28; os `.md` ficam fora, D45)
 python -m mypy                 # tipos, só nos módulos de dados (a lista está no `pyproject`;
                                # Sessão 9); o resto do repo segue no backlog
+bash scripts/gitleaks.sh git . # segredos no histórico inteiro (o CI roda igual; o repo é
+                               # privado desde 2026-09-29 e o scanner do GitHub sumiu)
+bash scripts/instalar_hooks.sh # o mesmo scanner no commit desta cópia (uma vez)
+python scripts/nuvem.py        # a infraestrutura do GCP, medida (nada muda sem --executar)
+python scripts/nuvem.py deploy # o que está no ar, o que mudou desde, e as provas ao vivo
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
                                # acessar, egress e das contas de finanças (à mão; não
                                # editar nada enquanto roda;
@@ -172,7 +192,7 @@ viking registro                 # o que o Viking fez (7 dias; --dias N, --ids, -
 viking aprovar                  # aprova com código os pedidos que outros apps fizeram pelo MCP
 viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
                                # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
-                               # (só num terminal interativo)
+                               # (só num terminal interativo); --nuvem lista os da nuvem
 viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
                                # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
 ```
@@ -235,7 +255,10 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   estimativa de custo, US$ por 1M tokens)/`PLUGGY_CLIENT_ID`/`PLUGGY_CLIENT_SECRET`/
   `PLUGGY_ITEM_IDS` (IDs das conexões "espelho" do MeuPluggy, não os do site)/`VIKING_TIMEZONE` (zona IANA usada para resolver "amanhã"
   e montar janelas de dia no calendário e o instante de lembretes com prazo; sem ela, usa o offset
-  fixo da máquina — não acompanha horário de verão). Copiar de `.env.example`. Caminhos relativos
+  fixo da máquina — não acompanha horário de verão)/`VIKING_NUVEM_PROJETO` e `VIKING_NUVEM_URL` (a
+  nuvem, no Mac e no VPS)/`VIKING_NUVEM_FATURAMENTO`, `_ORCAMENTO` e `_FUSO` (só no VPS, para
+  `scripts/nuvem.py`; o fuso é o que o motor recebe, e troca quando o dono se mudar)/`VIKING_STORE`
+  (`sqlite` ou `firestore`, este só no motor). Copiar de `.env.example`. Caminhos relativos
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
   `viking` foi chamado.
 - Navegador: banco e e-mail são **bloqueados por padrão** (lista em `config._BLOQUEADOS_PADRAO`,
@@ -452,6 +475,21 @@ noutro fuso, que é o caso real.
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela
 ferramenta gravou o caractere bidi literal no código-fonte (Trojan Source). O `ruff` pega
 (`PLE2502`); para gravar escapes em arquivo, gere o texto por script.
+
+**O emulador do Firestore não é a produção, e a transação trava.** Medido na Sessão 10
+(2026-09-29/30): o emulador não exige índice composto (a produção devolve `FAILED_PRECONDITION`),
+por isso `store_firestore.INDICES` é a fonte que `scripts/nuvem.py` cria e a rota
+`/fumaca/vencidos` exerce no ar; e com várias execuções disputando a mesma reserva, a transação
+dava "Transaction lock timeout" e desistia em 5 tentativas (5 de 10 rodadas caíam), então o
+store usa comparar e trocar (`last_update_time`) e relê quando perde. Um teste com threads
+**recolhe as exceções** delas: exceção em thread não reprova o teste sozinha (erros, classe 4).
+
+**O `gcloud` do VPS é o login do dono, e o projeto padrão é outro projeto dele.** Todo comando
+de nuvem do Viking passa por `scripts/nuvem.py._gcloud`, que põe o `--project` do Viking, e
+`_rodar` recusa o que chega sem ele (`tests/test_nuvem_script.py`). Os testes nunca alcançam a
+nuvem real: o `conftest` troca o `CLOUDSDK_CONFIG` por uma pasta vazia, e o store do Firestore
+só abre no emulador sob pytest. O `status.url` do Cloud Run é a URL antiga, com hash; a audience
+do motor é a determinística, que está na anotação `run.googleapis.com/urls`.
 
 ## Perguntas em aberto
 

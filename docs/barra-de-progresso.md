@@ -7,12 +7,34 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-29 (Sessão 9 fechada no seu Mac).**
+**Última atualização: 2026-09-30 (Sessão 10 feita; falta o teste no seu Mac).**
 
-`███████████░░░░░░░░░ 15 de 28 sessões fechadas`
+`██████████░░░░░░░░░░ 15 de 29 sessões fechadas, 1 parcial`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b e
-9; parciais: nenhuma; na fila: 10, 11, 11b (formulários) e 12 a 21.
+9; parcial: 10 (feita e no ar, falta o teste no Mac); na fila: 10b (o chat na nuvem; a 10 foi
+dividida em duas, por isso o total passou de 28 para 29), 11, 11b (formulários) e 12 a 21.
+
+## 2026-09-30 — Sessão 10: o Viking ganhou uma casa na nuvem (falta o seu Mac)
+
+**O que ficou pronto:**
+- **O repositório do código ficou privado**, e antes disso entrou um "detector de senhas"
+  nosso, que roda a cada envio e a cada commit (o do GitHub não existe em repositório privado).
+  Ele leu os 106 commits da história: nenhuma senha de verdade.
+- **O Viking tem um projeto só dele no Google Cloud**, em São Paulo, com o seu cartão e um aviso
+  de gasto em R$ 105 (US$ 20). Para caber, o faturamento do `dbt-project` foi desligado, como
+  você escolheu. Parado, não custa nada.
+- **Um "motor" no ar:** um programa que fica na nuvem e responde mesmo com o Mac desligado. Hoje
+  ele só entrega a lista de lembretes da nuvem; o chat vai para lá na próxima (10b).
+- **A porta é trancada duas vezes:** o Google só deixa passar a identidade do seu terminal, e o
+  próprio motor confere de novo, com a assinatura do Google. Provado no ar: sem login, o Google
+  barra; com o seu login pessoal, o Google deixa passar e o motor barra; só a identidade do
+  terminal entra.
+- **`viking lembretes --nuvem`** mostra os lembretes que moram na nuvem.
+
+**Como sabemos:** 9 provas feitas no ar, às 21:56 de Seattle de 29/09; 1997 testes passando no
+VPS; 228 de 228 defeitos plantados de propósito derrubados pelo teste certo. Falta o seu Mac: o
+roteiro está no `PROGRESSO.md`.
 
 ## 2026-09-29 — Sessão 9: a base dos dados (fechada no seu Mac)
 

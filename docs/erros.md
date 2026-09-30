@@ -17,12 +17,12 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 20 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 6 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 2 | Afirmei sem abrir o lugar onde estaria | 21 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 16 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
 | 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 11 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 9 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 10 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
@@ -192,6 +192,12 @@ depois, agora com credencial de nuvem; a pergunta da abertura de uma sessão de 
 `gcloud auth list` e `ls ~/.config/gcloud`, e uma premissa de segurança sobre uma máquina se
 mede na máquina antes de virar decisão.
 
+**2026-09-29 — o docstring prometia esconder a conta de faturamento, e a saída a mostrava inteira
+(Sessão 10, C3).** `scripts/nuvem.py` dizia "a saída não mostra … a conta de faturamento
+inteira", e a primeira execução de verdade imprimiu o ID completo na conversa (não no repo).
+Consertado em `_legivel` e preso num teste. O que tem de novo: uma promessa escrita no
+docstring é uma afirmação sobre a saída; sem um teste que leia a saída, é só texto.
+
 > **Um texto nosso é registro de uma medição passada, ou nem isso.** Afirmar ausência ("não é o
 > mesmo", "não existe") é a afirmação mais fácil de fazer sem procurar.
 
@@ -238,6 +244,13 @@ terceiro para terminar tem de terminar por conta própria.
 
 **O antídoto, concreto:** o procedimento de medição de tokens do `AGENTS.md`; para linha, medir a
 linha real antes de quebrar; todo número no chat vem com "medido"/"estimado".
+
+**2026-09-29/30 — dois números meus sem medida, no mesmo dia (Sessão 10).** O plano dizia "imagem
+< 300 MB" (medido: 512 MB, 97 MB comprimida; a meta nunca foi calculada, e os `.pyc` ficam de
+propósito); e escrevi num comentário de teste "com 16 threads, quase sempre cai", que a rodada
+seguinte desmentiu (4 de 4 passaram sozinho; com o arquivo inteiro, 5 de 10). Os dois pegos
+antes do commit, trocados pelo número medido. O que tem de novo: um comentário de código é
+documento; o número nele passa pela mesma régua.
 
 ### 4. Teste que não separava o certo do errado
 
@@ -531,6 +544,12 @@ disfarces tem de sair da regra do leitor de verdade, não da minha imaginação.
 
 **O antídoto, concreto:** antes de escrever a regra, uma lista escrita de vizinhos legítimos e de
 disfarces, virando teste parametrizado dos dois lados (`tests/test_acoes_sensiveis.py` é o modelo).
+
+**2026-09-30 — o "não existe" do gcloud pelo caso típico (Sessão 10, C6).** `scripts/nuvem.py`
+reconhecia a ausência de um recurso por `NOT_FOUND`, "not found", "does not exist"; o `gcloud
+run services describe` diz "Cannot find service [motor]", e o primeiro deploy caiu num
+traceback antes de listar o que faria. O que tem de novo: cada comando do `gcloud` tem o seu
+texto; a lista cresce com o texto real medido, num teste, e qualquer outro erro continua erro.
 
 ### 8. Comando que escreve com alcance maior que a mudança
 

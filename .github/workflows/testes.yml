@@ -1,6 +1,7 @@
 # Portões do Viking a cada push: os mesmos que `AGENTS.md` ("Comandos") manda rodar à mão.
-# O CI verifica, não publica: sem segredo nenhum (o log é público, o repo também), permissão só de
-# leitura, actions fixadas por SHA (a tag fica no comentário). D45.
+# O CI verifica, não publica: sem segredo nenhum, permissão só de leitura, actions fixadas por SHA
+# (a tag fica no comentário). D45. O repo virou privado em 2026-09-29 (D58); a regra fica, e o
+# gitleaks entrou no lugar do secret scanning do GitHub.
 name: testes
 
 on:

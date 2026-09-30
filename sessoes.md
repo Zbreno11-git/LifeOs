@@ -16,16 +16,17 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10 — nuvem 1: o motor, **em curso desde 2026-09-29** (dividida: o chat na nuvem
-  foi para a 10b). A 9 fechou no Mac em 2026-09-29.
+- **Sessão:** 10 — nuvem 1: o motor, **feita no VPS em 2026-09-30, falta o teste do Mac**
+  (dividida: o chat na nuvem foi para a 10b). A 9 fechou no Mac em 2026-09-29.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** executar o plano da 10 (em `PROGRESSO.md`). A prova de que o token do Gmail renova
-  sozinho foi para o primeiro passo da 10b (só vale **depois de 2026-10-03**).
+- **Agora:** o teste da 10 no Mac (o roteiro está no bloco de `PROGRESSO.md`); depois, abrir a
+  10b, cujo primeiro passo é a prova de que o token do Gmail renova sozinho (só vale **depois de
+  2026-10-03**).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -603,7 +604,7 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nenhuma lib de migrations. A régua numerada é pequena e é nossa:
   Alembic traria o SQLAlchemy só para isso.
 
-## Sessão 10 — nuvem 1: o motor (planejada em 2026-09-28; aberta e dividida em 2026-09-29)
+## Sessão 10 — nuvem 1: o motor (feita no VPS em 2026-09-30; falta o teste do Mac)
 
 > **Dividida pelo dono na abertura (2026-09-29):** esta sessão entrega o chão da nuvem e um
 > caminho de ponta a ponta pelos lembretes; o chat na nuvem foi para a **10b**. O plano com as
@@ -612,7 +613,12 @@ O que estava escrito na abertura:
 >   (faturamento, orçamento de US$ 20 com alertas 50/90/100%) em `southamerica-east1` (o dono
 >   volta ao Brasil em ~1 mês); Firestore passando o contrato de `tests/test_reminders_contrato.py`
 >   no emulador; o motor no Cloud Run (0 instâncias mínimas, fechado por IAM, e o código recusa
->   quem não é o `cli@`), com o `describe` mostrando o SHA; `viking lembretes --nuvem` no Mac.
+>   quem não é o `viking-cli@`), com o `describe` mostrando o SHA; `viking lembretes --nuvem` no
+>   Mac.
+> - **Feito (2026-09-30, medido):** tudo acima no ar; `python scripts/nuvem.py deploy` → 9 provas
+>   ✅ (o token pessoal do dono passou pelo IAM e o motor recusou; o `viking-cli@` recebeu 200);
+>   228/228 mutações; o faturamento ligou depois de o dono desligar o de outro projeto (limite de 9
+>   da conta). O teste do Mac é o roteiro em `PROGRESSO.md`.
 > - **Deploy:** com o login do `gcloud` que o VPS já tem, por decisão do dono (D47 revista); todo
 >   comando leva `--project` do Viking explícito, preso por teste. O ritual do token de 1 h saiu.
 > - O texto abaixo é a proposta de partida de 2026-09-28, mantida como registro.
@@ -708,8 +714,9 @@ O que estava escrito na abertura:
 - **Perguntas para a abertura:** o que o chat na nuvem faz enquanto o navegador (S11) e as
   finanças (D51) ainda estão só no Mac — recusar com aviso, ou o chat local continuar existindo
   para essas tools; o que acontece com o `viking chat` local depois dela.
-- **Herdado da 10:** o motor, o `cli@`, `scripts/nuvem.py` (só lê sem flag), o store Firestore
-  e o cliente `lifeos/nuvem/cliente.py`.
+- **Herdado da 10:** o motor, o `viking-cli@`, `scripts/nuvem.py` (só lê sem flag; `deploy` roda
+  as provas), o store Firestore e o cliente `lifeos/nuvem/cliente.py`. O motor ainda não tem o
+  registro de ações nem a aprovação: a 10 só lê (D57 diz que moram onde a ação roda).
 
 ## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
 
