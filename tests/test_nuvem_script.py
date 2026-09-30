@@ -366,3 +366,10 @@ def test_sem_fuso_nao_publica(nuvem, ctx, mundo, monkeypatch):
     monkeypatch.delenv("VIKING_NUVEM_FUSO")
     with pytest.raises(SystemExit, match="VIKING_NUVEM_FUSO"):
         nuvem.comandos_do_deploy(ctx, SHA)
+
+
+def test_servico_inexistente_e_ausencia_nao_erro(nuvem, ctx, monkeypatch):
+    """O texto real do `gcloud run services describe` (2026-09-30), que derrubou o 1º deploy."""
+    real = "ERROR: (gcloud.run.services.describe) Cannot find service [motor]"
+    monkeypatch.setattr(nuvem, "_rodar", lambda c: subprocess.CompletedProcess(c, 1, "", real))
+    assert nuvem._ler(["gcloud", "run", "services", "describe", "motor", "--project=x"]) is None

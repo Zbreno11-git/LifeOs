@@ -83,7 +83,15 @@ def _rodar(comando: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(comando, capture_output=True, text=True, check=False, timeout=300)
 
 
-_NAO_EXISTE = ("NOT_FOUND", "not found", "does not exist", "may not exist", "was not found")
+# Como o gcloud diz "não existe" (cada comando do seu jeito; os textos são os medidos)
+_NAO_EXISTE = (
+    "NOT_FOUND",
+    "not found",
+    "does not exist",
+    "may not exist",
+    "was not found",
+    "Cannot find service",  # `run services describe`, medido em 2026-09-30
+)
 
 
 def _ler(comando: list[str]) -> object | None:
