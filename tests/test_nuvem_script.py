@@ -211,14 +211,19 @@ def test_orcamento_com_outro_valor_nao_esta_pronto(nuvem, ctx, monkeypatch):
 
 
 def test_indices_vem_do_store(nuvem, ctx, monkeypatch):
-    """Uma fonte só: o script cria exatamente os índices que o store declara para as consultas."""
+    """Uma fonte só: o script cria exatamente os índices que os stores declaram para as consultas
+    (os lembretes e, desde a 10b, o registro de ações)."""
+    from lifeos import registro_firestore
     from lifeos.reminders import store_firestore
 
+    assert nuvem.INDICES == store_firestore.INDICES + registro_firestore.INDICES
     monkeypatch.setattr(nuvem, "_ler", lambda _c: [])
-    (comando,) = nuvem._c_indices(ctx)
-    campos = [a.split("field-path=")[1] for a in comando if "field-path=" in a]
-    ((_colecao, esperados),) = store_firestore.INDICES
-    assert campos == [f"{c},order={o.lower()}" for c, o in esperados]
+    comandos = nuvem._c_indices(ctx)
+    assert len(comandos) == len(nuvem.INDICES) == 2
+    for comando, (colecao, esperados) in zip(comandos, nuvem.INDICES, strict=True):
+        assert f"--collection-group={colecao}" in comando
+        campos = [a.split("field-path=")[1] for a in comando if "field-path=" in a]
+        assert campos == [f"{c},order={o.lower()}" for c, o in esperados]
 
 
 def test_ids_das_contas_de_servico_cabem_na_regra_do_google(nuvem):

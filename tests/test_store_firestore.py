@@ -66,7 +66,9 @@ def test_microssegundos_e_fuso_voltam_iguais(fs):
 
 
 def test_sob_pytest_sem_emulador_nenhum_cliente_nasce(monkeypatch):
-    monkeypatch.setattr(store_firestore, "_CLIENTE", None)
+    from lifeos import firestore_comum
+
+    monkeypatch.setattr(firestore_comum, "_CLIENTE", None)
     monkeypatch.delenv("FIRESTORE_EMULATOR_HOST", raising=False)
     with pytest.raises(RuntimeError, match="emulador"):
         store_firestore._cliente()

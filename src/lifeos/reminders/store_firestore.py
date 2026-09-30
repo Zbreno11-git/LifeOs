@@ -22,18 +22,17 @@ Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 
 from __future__ import annotations
 
-import os
-import sys
 import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from lifeos import config
+from lifeos import firestore_comum
+from lifeos.firestore_comum import TENTATIVAS, PerdeuADisputa  # noqa: F401 - usados pelos testes
 from lifeos.reminders import interface
 from lifeos.reminders.models import Reminder
 
 if TYPE_CHECKING:
-    from google.cloud.firestore import Client, DocumentReference, DocumentSnapshot
+    from google.cloud.firestore import DocumentReference, DocumentSnapshot
 
 COLECAO = "lembretes"
 # (coleção, ((campo, ordem), …)): o que `vencidos`/`atrasados` pedem (igualdade em dois campos e
@@ -62,26 +61,9 @@ _CAMPOS = (
     "envio_reservado_ate",
 )
 
-_CLIENTE: Client | None = None
-
-
-def _cliente() -> Client:
-    global _CLIENTE
-    if _CLIENTE is None:
-        emulador = os.getenv("FIRESTORE_EMULATOR_HOST")
-        if "pytest" in sys.modules and not emulador:
-            raise RuntimeError(
-                "sob pytest o Firestore só abre no emulador (FIRESTORE_EMULATOR_HOST)"
-            )
-        projeto = config.NUVEM_PROJETO or ("viking-emulador" if emulador else "")
-        if not projeto:
-            raise RuntimeError(
-                "VIKING_NUVEM_PROJETO vazio: o Firestore não sabe em que projeto abrir"
-            )
-        from google.cloud import firestore
-
-        _CLIENTE = firestore.Client(project=projeto, database="(default)")
-    return _CLIENTE
+_cliente = firestore_comum.cliente
+_instante = firestore_comum.instante
+_lido = firestore_comum.lido
 
 
 def _ref(reminder_id: str) -> DocumentReference | None:
@@ -89,24 +71,6 @@ def _ref(reminder_id: str) -> DocumentReference | None:
     if not interface.id_valido(reminder_id):
         return None
     return _cliente().collection(COLECAO).document(reminder_id)
-
-
-def _instante(momento: datetime) -> datetime:
-    """Só instantes: sem fuso é recusado (a borda converte, `service.py`)."""
-    if momento.tzinfo is None or momento.utcoffset() is None:
-        raise ValueError("horário sem fuso: o store só grava instantes (converta na borda)")
-    return momento.astimezone(UTC)
-
-
-def _lido(valor: Any) -> datetime | None:
-    """O `Timestamp` do Firestore volta como uma subclasse de `datetime`: vira um `datetime` comum
-    em UTC, com os microssegundos."""
-    if valor is None:
-        return None
-    utc = valor.astimezone(UTC)
-    return datetime(
-        utc.year, utc.month, utc.day, utc.hour, utc.minute, utc.second, utc.microsecond, tzinfo=UTC
-    )
 
 
 def _agora() -> datetime:
@@ -209,45 +173,7 @@ def list_open(type: str | None = None) -> list[Reminder]:
     return _pela_ordem([_lembrete(s) for s in consulta.stream()])
 
 
-TENTATIVAS = 20  # cada volta perdida é uma escrita de outra execução que deu certo
-
-
-class PerdeuADisputa(RuntimeError):
-    """O documento mudou entre a leitura e a escrita em todas as tentativas."""
-
-
-def _trocar(ref: DocumentReference, decidir: Any) -> Any:
-    """Comparar e trocar: lê sem travar, `decidir(snap)` devolve `(mudança ou None, resposta)`, e a
-    mudança só grava se o documento não mudou desde a leitura (`last_update_time`). Se mudou, outra
-    execução gravou antes: lê de novo e decide sobre o estado novo.
-
-    Não é transação de propósito (medido no emulador em 2026-09-29): com 16 execuções juntas, a
-    transação trava o documento para cada leitor, as escritas se esperam até "Transaction lock
-    timeout", e em 5 de 10 rodadas quem desistia não achava vencedor nenhum. Aqui cada volta
-    perdida quer dizer que outra execução gravou, então a disputa sempre termina."""
-    import random
-    import time
-
-    from google.api_core.exceptions import Aborted, FailedPrecondition
-
-    for tentativa in range(TENTATIVAS):
-        snap = ref.get()
-        mudanca, resposta = decidir(snap)
-        if mudanca is None:
-            return resposta
-        opcao = _cliente().write_option(last_update_time=snap.update_time)
-        try:
-            ref.update(mudanca, option=opcao)
-        except FailedPrecondition:
-            continue  # outra execução gravou depois da leitura: o estado novo decide
-        except Aborted:
-            # A escrita não foi aplicada (escritas juntas no mesmo documento; o emulador responde
-            # "Transaction lock timeout"), mas isso não prova que outra venceu: espera um pouco,
-            # com sorteio para as execuções não voltarem juntas, e relê.
-            time.sleep(random.uniform(0, 0.05 * 2 ** min(tentativa, 5)))
-            continue
-        return resposta
-    raise PerdeuADisputa(f"o lembrete {ref.id} mudou em todas as {TENTATIVAS} tentativas")
+_trocar = firestore_comum.trocar
 
 
 def complete(reminder_id: str) -> Reminder | None:

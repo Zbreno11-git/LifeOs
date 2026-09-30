@@ -5,13 +5,28 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10b em curso (C1)
+## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10b em curso (C2)
 
 **Estado:** `git log --oneline -3` e `git status --short` · travas: nenhuma · background: nenhum.
 Base da abertura (2026-09-30): `1997 passed`, CI de `af146ad` verde, `nuvem.py` 8 ✅ e `deploy` 9
 ✅ (motor `b7a0635` no ar).
 
 **Próximo passo exato:** o primeiro checkpoint ⬜ do mapa do plano abaixo.
+
+**Feito até aqui (2026-09-30):**
+- **C0:** o turno medido (0,9–3,0 s, ~US$ 0,0006–0,0018 por turno); documentos; `c515bbc`.
+- **C1:** o registro atrás de `registro_interface.Registro`, com `registro_sqlite.py` (o SQL de
+  antes, igual) e `registro_firestore.py`; `tests/test_registro.py` é o contrato dos dois (19 no
+  SQLite, 19 no Firestore); o cliente e o `trocar` do Firestore em `firestore_comum.py`;
+  `banco.conectar` recusa na nuvem; `scripts/nuvem.py` cria os índices dos dois stores
+  (`INDICES`: o de `acoes (operacao, criada_em)` é novo e vai aparecer como "falta" até o C5).
+  Suíte `2029 passed`; mutações 232 (as 20 do registro, do Firestore e do banco mortas pelo teste
+  esperado, depois de uma que caiu por outro teste: o corte dos 30 dias em `do_turno`/`obter`
+  ganhou teste próprio).
+- **Desvio declarado do plano (C3):** as rotas do motor ficam `async`, com o trabalho que
+  bloqueia (a verificação do token e o turno) em `run_in_threadpool`, e a primeira instrução vira
+  `await _quem(request)`. Motivo: uma rota `def` do Starlette não lê o corpo do pedido; o
+  objetivo (não travar o laço de eventos durante um turno) é o mesmo.
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `sessoes.md` (10b e
 10c); `docs/decisoes.md` D57, D58 e D59; skills `nuvem-e-deploy`, `seguranca`, `integracoes`,
@@ -139,7 +154,7 @@ Todos os destinos são escritos no C0, antes de qualquer código.
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
 | C0 | medição do turno (5 turnos, tempos e custo num arquivo); `PROGRESSO` com a linha 1 consertada e este plano; `sessoes.md` (▶️, 10b, **10c nova**); D59; classe 5 (10); barra 16/30; commit | — | ✅ |
-| C1 | registro atrás da interface, Firestore passando o contrato nos dois stores (emulador, CI); `banco.conectar` recusa na nuvem; `_trocar` comum | C0 | ⬜ |
+| C1 | registro atrás da interface, Firestore passando o contrato nos dois stores (emulador, CI); `banco.conectar` recusa na nuvem; `_trocar` comum | C0 | ✅ |
 | C2 | núcleo do turno + tabela de tools por lugar; teto no Firestore; linha de aprovação barrada; o aviso do lembrete; o REPL local inalterado (os testes do chat de hoje verdes sem edição de asserção) | C1 | ⬜ |
 | C3 | motor: rotas `def`, `POST /chat`, limite de corpo, fumaças novas; `google_auth` modo nuvem; `config` lê segredo de arquivo; imagem constrói | C2 | ⬜ |
 | C4 | `viking chat --nuvem` (cliente com histórico e nota, prazo longo, erros em português) e a marca em `viking lembretes --nuvem`; testes offline | C3 | ⬜ |

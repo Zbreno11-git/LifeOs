@@ -11,6 +11,8 @@ import ast
 import hashlib
 from pathlib import Path
 
+import pytest
+
 from lifeos import banco, config
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -63,3 +65,11 @@ def test_so_o_banco_abre_o_sqlite():
         for arquivo in (RAIZ / "src").rglob("*.py")
     }
     assert {nome for nome, n in por_arquivo.items() if n} == {"src/lifeos/banco.py"}
+
+
+def test_na_nuvem_o_sqlite_nao_abre(monkeypatch):
+    """O motor guarda tudo no Firestore: um `viking.db` aberto lá seria um banco por instância, que
+    some a cada partida. Um caminho que ainda abre o SQLite na nuvem erra alto (Sessão 10b)."""
+    monkeypatch.setattr(banco.config, "STORE", "firestore")
+    with pytest.raises(RuntimeError, match="não abre na nuvem"), banco.conectar():
+        pass

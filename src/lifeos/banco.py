@@ -348,7 +348,15 @@ def migrar(conn: sqlite3.Connection) -> None:
 
 @contextmanager
 def conectar() -> Iterator[sqlite3.Connection]:
-    """Uma conexão ao `viking.db` já migrado: `commit` ao sair sem erro, `close` sempre."""
+    """Uma conexão ao `viking.db` já migrado: `commit` ao sair sem erro, `close` sempre.
+
+    Na nuvem (`VIKING_STORE=firestore`) recusa: o motor guarda tudo no Firestore, e um SQLite
+    aberto lá seria um banco efêmero, por instância, que some a cada partida (Sessão 10b)."""
+    if config.STORE == "firestore":
+        raise RuntimeError(
+            "o viking.db não abre na nuvem (VIKING_STORE=firestore): este caminho devia usar o "
+            "store do Firestore"
+        )
     CAMINHO.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(CAMINHO, timeout=ESPERA_S, isolation_level=None)
     try:

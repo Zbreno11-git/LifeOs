@@ -33,7 +33,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from lifeos import config
+from lifeos import config, registro_firestore
 from lifeos.reminders import store_firestore
 
 APIS = (
@@ -49,6 +49,8 @@ GUARDAR_IMAGENS = 5
 ORCAMENTO_NOME = "viking"
 ALERTAS = (0.5, 0.9, 1.0)
 MOTOR, CLI = "viking-motor", "viking-cli"  # contas de serviço (o ID pede de 6 a 30 letras)
+# Os índices compostos que as consultas pedem, declarados por cada store (uma fonte só).
+INDICES = store_firestore.INDICES + registro_firestore.INDICES
 
 
 class ErroDoGcloud(RuntimeError):
@@ -362,9 +364,7 @@ def _m_indices(ctx: Contexto) -> Estado:
         for i in dados or []
         if i.get("state") == "READY"
     }
-    faltam = [
-        f"{c}: {campos}" for c, campos in store_firestore.INDICES if (c, campos) not in existentes
-    ]
+    faltam = [f"{c}: {campos}" for c, campos in INDICES if (c, campos) not in existentes]
     return Estado(
         not faltam, "prontos" if not faltam else "faltam (ou construindo): " + "; ".join(faltam)
     )
@@ -386,7 +386,7 @@ def _c_indices(ctx: Contexto) -> list[list[str]]:
                 for campo, ordem in campos
             ),
         )
-        for colecao, campos in store_firestore.INDICES
+        for colecao, campos in INDICES
     ]
 
 

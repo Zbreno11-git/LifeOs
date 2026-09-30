@@ -3,17 +3,33 @@ feito também.
 
 As perguntas: um efeito que aconteceu some do registro? Uma falha ambígua vira "falhou" (e o dono
 repete)? Um dado sensível ou um caractere de controle entra cru? Desfazer duas vezes funciona?
+
+Desde a Sessão 10b é o **contrato** do store do registro (`registro_interface.Registro`): todo
+teste roda no SQLite do Mac e no Firestore da nuvem (no emulador, limpo a cada teste). A regra
+fica em `registro.py`; o que muda entre os dois é só onde se guarda.
 """
 
 import sqlite3
+import threading
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from lifeos import banco, registro
+from lifeos import banco, registro, registro_firestore, registro_sqlite
+
+STORES = {"sqlite": registro_sqlite, "firestore": registro_firestore}
+JUNTAS = 16
 
 T0 = datetime(2026, 9, 27, 12, 0, tzinfo=UTC)
 RLO = chr(0x202E)
+
+
+@pytest.fixture(autouse=True, params=sorted(STORES))
+def store_do_registro(request, monkeypatch):
+    if request.param == "firestore":  # o emulador, limpo a cada teste (`conftest`)
+        request.getfixturevalue("firestore_limpo")
+    monkeypatch.setattr(registro, "_STORE", STORES[request.param])
+    return request.param
 
 
 @pytest.fixture(autouse=True)
@@ -160,6 +176,7 @@ def test_texto_com_sql_e_gravado_literal():
     assert a.parametros["titulo"] == "x'); DROP TABLE acoes; --"
 
 
+@pytest.mark.parametrize("store_do_registro", ["sqlite"], indirect=True)
 def test_as_duas_tabelas_no_mesmo_arquivo():
     from lifeos import confirmacao
 
@@ -169,3 +186,80 @@ def test_as_duas_tabelas_no_mesmo_arquivo():
     with sqlite3.connect(banco.CAMINHO) as conn:
         tabelas = {n for (n,) in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     assert {"acoes", "confirmacoes"} <= tabelas
+
+
+def test_desfazer_disputado_so_um_leva():
+    """Duas execuções (o chat e a CLI, ou duas instâncias do motor) pedem o mesmo desfazer: a cópia
+    vai a uma só. Exceção numa thread não reprova o teste sozinha: são recolhidas."""
+    with registro.acao("calendario.apagar", {"event_id": "e1"}) as marca:
+        marca.feito(desfazer={"evento": {"id": "e1"}})
+    (a,) = registro.do_turno("sessao-a:1")
+    largada = threading.Barrier(JUNTAS)
+    levaram: list[dict] = []
+    erros: list[BaseException] = []
+
+    def tentar():
+        try:
+            largada.wait()
+            copia = registro.reivindicar_desfazer(a.id)
+            if copia is not None:
+                levaram.append(copia)
+        except BaseException as exc:  # noqa: BLE001 - recolhida e conferida abaixo
+            erros.append(exc)
+
+    threads = [threading.Thread(target=tentar) for _ in range(JUNTAS)]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
+    assert erros == []
+    assert levaram == [{"evento": {"id": "e1"}}]
+
+
+def test_contaveis_so_da_operacao_e_sem_as_que_falharam():
+    with registro.acao("gmail.enviar_para_si", {}, agora=T0) as marca:
+        marca.feito()
+    with pytest.raises(ValueError), registro.acao("gmail.enviar_para_si", {}, agora=T0):
+        raise ValueError("400")
+    with pytest.raises(_Ambigua), registro.acao("gmail.enviar_para_si", {}, agora=T0):
+        raise _Ambigua("timed out")
+    with registro.acao("calendario.criar", {}, agora=T0) as marca:
+        marca.feito()
+    contadas = registro.contaveis("gmail.enviar_para_si", desde=T0 - timedelta(hours=1))
+    assert [a.estado for a in contadas] == ["feita", "incerta"]
+    assert registro.contaveis("gmail.enviar_para_si", desde=T0 + timedelta(hours=1)) == []
+
+
+def test_obter_acha_pelo_id_e_nao_acha_o_que_nao_existe():
+    with registro.acao("calendario.criar", {"titulo": "x"}) as marca:
+        marca.feito()
+    assert registro.obter(marca.id).parametros == {"titulo": "x"}
+    assert registro.obter(marca.id + 10**12) is None
+
+
+def test_ids_crescem_na_ordem_em_que_as_acoes_nascem():
+    ids = []
+    for n in range(5):
+        with registro.acao(f"op{n}", {}) as marca:
+            marca.feito()
+        ids.append(marca.id)
+    assert ids == sorted(ids) and len(set(ids)) == 5
+    assert [a.operacao for a in registro.do_turno("sessao-a:1")] == [f"op{n}" for n in range(5)]
+
+
+def test_recentes_respeita_o_limite():
+    for n in range(4):
+        with registro.acao(f"op{n}", {}, agora=T0 + timedelta(minutes=n)) as marca:
+            marca.feito()
+    feitas = registro.recentes(limite=2, agora=T0 + timedelta(hours=1))
+    assert [a.operacao for a in feitas] == ["op3", "op2"]
+
+
+def test_o_que_passou_dos_30_dias_nao_volta_por_nenhum_caminho():
+    """A TTL do Firestore apaga com atraso: a leitura por turno e por id também corta nos 30 dias,
+    não só a listagem por data (que já filtra na consulta)."""
+    velha = datetime.now(UTC) - registro.RETENCAO - timedelta(days=1)
+    with registro.acao("calendario.apagar", {}, agora=velha) as marca:
+        marca.feito(desfazer={"evento": {}})
+    assert registro.do_turno("sessao-a:1") == []
+    assert registro.obter(marca.id) is None
