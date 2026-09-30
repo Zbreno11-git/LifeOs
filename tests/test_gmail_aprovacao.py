@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from tests.sentinela import aparece
 
 from lifeos import cli, confirmacao
 from lifeos.assistant import agent
@@ -46,7 +47,7 @@ def test_codigo_vai_ao_terminal_e_nunca_ao_gemini(caixa, capsys):
     texto = tools.preparar_limpeza(LOJA)
     impresso = capsys.readouterr().out
     assert f"confirma {CODIGO}" in impresso
-    assert CODIGO not in texto
+    assert not aparece(CODIGO, texto)
     assert "não sabe o código" in texto
     assert caixa["modificacoes"] == []
 
@@ -62,7 +63,7 @@ def test_injecao_no_assunto_fica_no_bloco_e_fora_do_terminal_cru(caixa, capsys):
 def test_pedido_invalido_nao_cria_codigo(caixa, capsys):
     texto = tools.preparar_limpeza(f"{LOJA} OR in:anywhere")
     assert texto.startswith("NÃO preparei nada")
-    assert CODIGO not in capsys.readouterr().out
+    assert not aparece(CODIGO, capsys.readouterr().out)
 
 
 def test_tool_de_limpeza_e_so_do_chat():
@@ -79,7 +80,7 @@ def test_linha_de_aprovacao_arquiva_sem_o_gemini(caixa, capsys, linha):
     tools.preparar_limpeza(LOJA)
     texto, nota = agent.aprovacao_local(linha)
     assert "Arquivei 2 e-mail(s)" in texto and f"desfaz {CODIGO}" in texto
-    assert CODIGO not in nota
+    assert not aparece(CODIGO, nota)
     assert not _na_caixa(caixa, "l1") and _na_caixa(caixa, "banco")
 
 
@@ -95,7 +96,7 @@ def test_so_o_numero_com_proposta_aberta_aprova_e_nao_vai_ao_gemini(caixa):
     """No Mac o dono digitou só o código, e ele foi parar no Gemini (2026-09-26)."""
     tools.preparar_limpeza(LOJA)
     texto, nota = agent.aprovacao_local(f" {CODIGO} ")
-    assert "Arquivei 2 e-mail(s)" in texto and CODIGO not in nota
+    assert "Arquivei 2 e-mail(s)" in texto and not aparece(CODIGO, nota)
 
 
 def test_numero_de_outro_tamanho_com_proposta_aberta_segue_para_o_gemini(caixa):
@@ -117,7 +118,7 @@ def test_desfazer_em_frase_livre_age_sem_o_gemini(caixa, frase):
     tools.preparar_limpeza(LOJA)
     agent.aprovacao_local(f"confirma {CODIGO}")
     texto, nota = agent.aprovacao_local(frase.format(c=CODIGO))
-    assert texto.startswith("Devolvi 2 e-mail(s)") and CODIGO not in nota
+    assert texto.startswith("Devolvi 2 e-mail(s)") and not aparece(CODIGO, nota)
     assert _na_caixa(caixa, "l1")
 
 
@@ -176,7 +177,7 @@ def test_desfaz_pela_linha_devolve_a_caixa(caixa):
     agent.aprovacao_local(f"confirma {CODIGO}")
     texto, nota = agent.aprovacao_local(f"desfaz {CODIGO}")
     assert texto.startswith("Devolvi 2 e-mail(s)")
-    assert _na_caixa(caixa, "l1") and CODIGO not in nota
+    assert _na_caixa(caixa, "l1") and not aparece(CODIGO, nota)
 
 
 def test_desfazer_que_falhou_no_meio_diz_que_da_para_repetir(caixa):
@@ -270,7 +271,7 @@ def test_laco_do_chat_nunca_manda_a_linha_de_aprovacao_ao_gemini(caixa, monkeypa
     agent.iniciar_assistente()
 
     assert len(chat.enviados) == 2
-    assert all(CODIGO not in enviado for enviado in chat.enviados)
+    assert not any(aparece(CODIGO, enviado) for enviado in chat.enviados)
     assert chat.enviados[1].startswith("[Nota do Viking, não do usuário")
     assert chat.enviados[1].endswith("e agora?")
     assert not _na_caixa(caixa, "l1")

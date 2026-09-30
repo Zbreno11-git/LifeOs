@@ -18,6 +18,7 @@ from email import message_from_bytes, policy
 from email.message import EmailMessage
 
 import pytest
+from tests.sentinela import aparece
 
 from lifeos import banco, confirmacao, registro
 from lifeos.gmail import envio, service
@@ -273,7 +274,7 @@ def test_o_codigo_nunca_entra_no_registro(caixa):
     envio.confirmar(CODIGO)
     linhas = _linhas_do_registro()
     assert len(linhas) == 1
-    assert all(CODIGO not in (campo or "") for linha in linhas for campo in linha)
+    assert not any(aparece(CODIGO, (campo or "")) for linha in linhas for campo in linha)
     assert "texto" not in linhas[0][2]  # o corpo também não
 
 

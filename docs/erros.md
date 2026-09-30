@@ -21,7 +21,7 @@
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 19 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 13 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 11 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 12 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
@@ -515,6 +515,16 @@ troca, e um teste proíbe `sqlite3.connect` fora dele.
 
 **O antídoto, concreto:** na revisão, listar todos os pontos por onde a falha entra antes de
 fechar; rodar os portões no repo inteiro, não só nos arquivos que eu lembro de ter tocado.
+
+**2026-09-30 — consertei um teste instável e deixei 24 irmãos (fechamento da 10b).** De manhã, o
+CI caiu porque o código falso `7391` apareceu nos microssegundos de um horário, e eu consertei
+só aquele teste. O vizinho que conferi (`test_gmail_envio`) lia colunas sem horário, e parei ali.
+À noite, o CI de um commit só de documentação caiu em `test_mcp_aprovacao` pelo mesmo motivo
+(`…148214` contendo `4821`). A varredura depois mostrou 25 asserções do mesmo formato
+(`CODIGO not in texto`) em 7 arquivos, várias sobre texto com horário, UUID ou id. Conserto de
+estrutura: `tests/sentinela.aparece` procura o código como número isolado, testado dos dois lados
+(`tests/test_sentinela.py`), e as 25 passaram a usá-lo; as 251 mutações seguiram mortas. O que tem
+de novo: conferir **um** vizinho não é varrer; o `grep` da forma inteira da asserção era o passo.
 
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 

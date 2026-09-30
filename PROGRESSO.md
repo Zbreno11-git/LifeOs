@@ -8,10 +8,14 @@
 ## ▶️ RETOMAR AQUI — 2026-09-30 ~07:00Z (29/09 ~24:00 em Seattle): 10b fechada no Mac; a próxima é a 10c
 
 **Estado (2026-09-30 ~07:00Z):**
-- `git status --short` limpo · HEAD = o checkpoint depois de `46ae846` = remoto · travas e
+- `git status --short` limpo · HEAD = o checkpoint depois de `d2d5163` = remoto · travas e
   background: nenhum.
-- CI verde pelo SHA inteiro em `4a27b69` e `46ae846`.
-- Suíte `2112 passed` no VPS e `2048 passed, 64 skipped` no Mac; mutações 251/251 (2026-09-30).
+- CI verde pelo SHA inteiro em `4a27b69`, `46ae846` e `1d1d273`. O `d2d5163` (só documentação)
+  caiu em `test_mcp_aprovacao`, porque o sentinela `4821` apareceu nos microssegundos de um
+  horário. Consertado no checkpoint: `tests/sentinela.aparece` nas 25 asserções do mesmo formato,
+  e as mutações de novo 251/251 (07:00–07:16Z). Classe 6 em `docs/erros.md`.
+- Suíte `2125 passed` no VPS (as 13 novas do verificador) e `2048 passed, 64 skipped` no Mac (antes
+  do verificador); mutações 251/251 (2026-09-30).
 - **No ar (medido às 06:54Z, `python scripts/nuvem.py deploy`):** o motor `36fcd13`, 12 provas ✅;
   a infraestrutura com 10 ✅ (05:17Z).
   Os commits depois dele são só de documentação, fora dos caminhos da imagem.
@@ -56,9 +60,9 @@ D58 e D59; o índice de `docs/erros.md`; `docs/fontes/gcp-cloud-run-firestore.md
 - as respostas da abertura da 10c.
 
 **Antes de confiar neste bloco:**
-- `git status --short` vazio, HEAD = o checkpoint depois de `46ae846`;
+- `git status --short` vazio, HEAD = o checkpoint depois de `d2d5163`;
 - `ls .mutacao.lock` → não existe;
-- `.venv/bin/python -m pytest -q` → `2112 passed`;
+- `.venv/bin/python -m pytest -q` → `2125 passed`;
 - `gh run list --commit $(git rev-parse HEAD)` → `success`;
 - `python scripts/nuvem.py` → 10 ✅;
 - `python scripts/nuvem.py deploy` → o motor `36fcd13`, 12 ✅, 0 commits nos caminhos da imagem.

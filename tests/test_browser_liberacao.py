@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from tests.sentinela import aparece
 
 import lifeos.browser
 from lifeos import aprovacoes, cli, confirmacao
@@ -73,7 +74,7 @@ def _abertas():
 def test_recusa_liberavel_vira_proposta_e_o_codigo_so_vai_ao_terminal(navegador, capsys):
     texto = agent.navegar_e_executar(URL, OBJETIVO)
     terminal = capsys.readouterr().out
-    assert CODIGO not in texto
+    assert not aparece(CODIGO, texto)
     assert texto.endswith(liberacao.AVISO_AO_GEMINI)
     assert f"confirma {CODIGO}" in terminal
     assert "«Sair» (sair da conta) em https://loja.example" in terminal
@@ -87,7 +88,7 @@ def test_sem_terminal_nao_ha_proposta(navegador, monkeypatch, capsys):
     texto = agent.navegar_e_executar(URL, OBJETIVO)
     assert _abertas() == []
     assert liberacao.AVISO_AO_GEMINI not in texto
-    assert CODIGO not in capsys.readouterr().out
+    assert not aparece(CODIGO, capsys.readouterr().out)
 
 
 @pytest.mark.parametrize(
@@ -149,7 +150,7 @@ def test_o_codigo_nunca_chega_ao_executor(navegador):
     """O registro de ações grava o que `run_jev` recebe: sem o código ali, sem código lá."""
     agent.navegar_e_executar(URL, OBJETIVO)
     liberacao.clicar_aprovado(CODIGO)
-    assert CODIGO not in json.dumps(navegador["chamadas"], default=str)
+    assert not aparece(CODIGO, json.dumps(navegador["chamadas"], default=str))
 
 
 @pytest.mark.parametrize(
@@ -229,8 +230,8 @@ def _rodar_chat(monkeypatch, linhas):
 def test_chat_confirma_libera_e_o_gemini_nunca_ve_o_codigo(navegador, monkeypatch, capsys):
     chat = _rodar_chat(monkeypatch, ["sai da loja", f"confirma {CODIGO}", "e agora?", "sair"])
     assert len(chat.enviados) == 2
-    assert all(CODIGO not in enviado for enviado in chat.enviados)
-    assert CODIGO not in chat.retorno_da_tool
+    assert not any(aparece(CODIGO, enviado) for enviado in chat.enviados)
+    assert not aparece(CODIGO, chat.retorno_da_tool)
     assert chat.enviados[1].startswith("[Nota do Viking, não do usuário")
     assert "o Viking o fez" in chat.enviados[1]
     assert navegador["chamadas"][-1]["liberar"] == DIGITAL
@@ -295,7 +296,7 @@ def test_cli_json_nao_propoe(navegador, monkeypatch, capsys):
     """`--json` é para outro programa ler: nada de código na saída."""
     assert _rodar_cli(monkeypatch, "--json") == 2
     assert _abertas() == []
-    assert CODIGO not in capsys.readouterr().out
+    assert not aparece(CODIGO, capsys.readouterr().out)
 
 
 # --- quem pode aprovar -------------------------------------------------------------------

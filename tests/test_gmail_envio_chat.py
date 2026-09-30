@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from tests.sentinela import aparece
 
 from lifeos import cli, confirmacao
 from lifeos.assistant import agent
@@ -42,7 +43,7 @@ def test_para_outra_pessoa_o_texto_e_o_codigo_vao_so_ao_terminal(caixa, capsys):
     assert f"confirma {CODIGO}" in terminal
     assert "Compra água. Te amo!" in terminal
     assert envio.ASSINATURA in terminal
-    assert CODIGO not in retorno
+    assert not aparece(CODIGO, retorno)
     assert "NADA foi enviado" in retorno
     assert caixa["enviados"] == []
 
@@ -120,7 +121,7 @@ def test_confirma_envia_e_nao_arquiva(caixa):
     assert texto.startswith("✉️ Enviei")
     assert len(caixa["enviados"]) == 1
     assert caixa["modificacoes"] == []
-    assert CODIGO not in nota
+    assert not aparece(CODIGO, nota)
 
 
 def test_so_o_numero_com_envio_aberto_envia(caixa):
@@ -181,7 +182,7 @@ def test_laco_do_chat_nunca_manda_o_codigo_ao_gemini(caixa, monkeypatch, capsys)
     monkeypatch.setattr(agent.custos, "instrumentar", lambda _cliente: None)
     agent.iniciar_assistente()
     assert len(chat.enviados) == 2
-    assert all(CODIGO not in enviado for enviado in chat.enviados)
+    assert not any(aparece(CODIGO, enviado) for enviado in chat.enviados)
     assert chat.enviados[1].startswith("[Nota do Viking, não do usuário")
     assert len(caixa["enviados"]) == 1
     assert "✉️ Enviei" in capsys.readouterr().out

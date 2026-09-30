@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from tests.sentinela import aparece
 
 from lifeos import aprovacoes, cli, confirmacao, registro
 from lifeos.calendar import service as calendario_service
@@ -63,7 +64,7 @@ def test_apagar_pelo_mcp_so_pede_e_o_codigo_nao_sai(pedidos):
     assert pedidos["apagados"] == []
     texto = resultado.content[0].text
     assert "NADA mudou ainda" in texto
-    assert SENTINELA not in texto and SENTINELA not in str(dados)
+    assert not aparece(SENTINELA, texto) and not aparece(SENTINELA, dados)
     (aberto,) = _abertos()
     assert aberto.codigo == SENTINELA  # o código existe — só não saiu pelo MCP
 
@@ -79,7 +80,7 @@ def test_reagendar_pelo_mcp_so_pede(pedidos):
         },
     )
     assert resultado.is_error is False and pedidos["patches"] == []
-    assert SENTINELA not in resultado.content[0].text
+    assert not aparece(SENTINELA, resultado.content[0].text)
 
 
 def test_dois_pedidos_convivem(pedidos):
@@ -129,7 +130,7 @@ def test_aprovar_sem_terminal_interativo_recusa(pedidos, monkeypatch, capsys):
     _pedir_apagar()
     assert _aprovar(monkeypatch, [], tty=False) == 2
     assert pedidos["apagados"] == [] and len(_abertos()) == 1
-    assert SENTINELA not in capsys.readouterr().out  # nem o código aparece
+    assert not aparece(SENTINELA, capsys.readouterr().out)  # nem o código aparece
 
 
 def test_aprovar_com_o_codigo_apaga_uma_vez(pedidos, monkeypatch, capsys):

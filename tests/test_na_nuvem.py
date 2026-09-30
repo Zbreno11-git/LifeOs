@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from google import genai
 from google.genai import types
+from tests.sentinela import aparece
 
 from lifeos import config, custos, registro
 from lifeos.assistant import agent, na_nuvem, turno
@@ -203,7 +204,7 @@ def test_codigo_nao_chega_ao_modelo_nem_ao_historico(teto, gemini):
     saida = na_nuvem.turno(_pedido("confirma 4821", historico=historico, nota="nota velha"))
     assert roteiro.enviados == []
     assert saida["historico"] == historico  # o mesmo que chegou: a linha não entrou
-    assert "4821" not in str(saida["historico"]) and saida["nota"] == "nota velha"
+    assert not aparece("4821", saida["historico"]) and saida["nota"] == "nota velha"
 
 
 # --- o turno e o histórico --------------------------------------------------------------------
