@@ -1959,6 +1959,48 @@ MUTACOES = [
         "    if False:\n        return declarado",
         "tests/test_na_nuvem_gmail.py::test_o_codigo_da_limpeza_so_volta_no_campo_ao_dono",
     ),
+    Mutacao(
+        "prazo: a espera do Gmail começa sem caber no turno",
+        "src/lifeos/gmail/service.py",
+        "    _no_prazo(segundos + REDE_S)\n    _dormir(segundos)",
+        "    _dormir(segundos)",
+        "tests/test_prazo.py::test_gmail_recusando_sempre_nao_passa_do_prazo",
+    ),
+    Mutacao(
+        "prazo: o pedido ao Gmail sai sem caber no turno",
+        "src/lifeos/gmail/service.py",
+        "        _no_prazo(REDE_S)\n        _COTA.gastar(custo)",
+        "        _COTA.gastar(custo)",
+        "tests/test_prazo.py::test_pedido_que_nao_cabe_no_prazo_nao_sai",
+    ),
+    Mutacao(
+        "prazo: o lote de leitura sai sem caber no turno",
+        "src/lifeos/gmail/service.py",
+        "            _no_prazo(REDE_S)\n            _COTA.gastar(CUSTO_GET",
+        "            _COTA.gastar(CUSTO_GET",
+        "tests/test_prazo.py::test_lote_de_leitura_que_nao_cabe_no_prazo_nao_sai",
+    ),
+    Mutacao(
+        "prazo: a espera do orçamento de cota ignora o turno",
+        "src/lifeos/gmail/service.py",
+        "            _esperar(max(espera, 0.01))",
+        "            _dormir(max(espera, 0.01))",
+        "tests/test_prazo.py::test_espera_do_orcamento_que_nao_cabe_nem_comeca",
+    ),
+    Mutacao(
+        "prazo: a chamada ao modelo sai sem caber no turno",
+        "src/lifeos/assistant/na_nuvem.py",
+        '    prazo.conferir(PRAZO_DO_GEMINI_MS / 1000, "a próxima chamada ao modelo")',
+        "    pass",
+        "tests/test_prazo.py::test_a_chamada_ao_modelo_que_nao_cabe_nao_sai",
+    ),
+    Mutacao(
+        "prazo: o turno da nuvem roda sem prazo",
+        "src/lifeos/assistant/na_nuvem.py",
+        "    with ao_dono.coletar(interativo=interativo) as so_ao_dono, prazo.ate(PRAZO_DO_TURNO_S):",
+        "    with ao_dono.coletar(interativo=interativo) as so_ao_dono:",
+        "tests/test_prazo.py::test_turno_que_agiu_e_ficou_sem_tempo_diz_o_que_fez",
+    ),
 ]
 
 

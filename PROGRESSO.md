@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30 ~18:30Z (11:30 em Seattle): 10c, C0–C2 ✅; em curso o C3
+## ▶️ RETOMAR AQUI — 2026-09-30 ~19:00Z (12:00 em Seattle): 10c, C0–C3 ✅; em curso o C4
 
 **Estado:** plano aprovado pelo dono (logo abaixo), com as cinco respostas na D60.
 - C0: o lock em `2529615` (suíte `2125 passed` antes e depois), os docs em `38e1870`.
@@ -22,7 +22,12 @@
   + o número sozinho; "verbo + 4 dígitos" barrado também no Mac (`agent.NAO_E_CODIGO_AQUI`); as 7
   tools do Gmail na nuvem; o texto de sistema da nuvem com o Gmail. `tests/test_na_nuvem_gmail.py`
   (13). Suíte `2192 passed`; mutações do C2 e vizinhas 78/78 pelo teste esperado (uma âncora
-  minha casava como pedaço de linha e virava erro de sintaxe: corrigida).
+  minha casava como pedaço de linha e virava erro de sintaxe: corrigida). CI de `9f6243d`: `success`.
+- C3 (~19:00Z): `lifeos/prazo.py`; o turno da nuvem com 220 s (`na_nuvem.PRAZO_DO_TURNO_S`); o
+  Gmail confere antes de cada espera (`_esperar`) e de cada pedido (`_no_prazo(REDE_S=60)`); o
+  gancho do Gemini exige 60 s de sobra (`_antes_do_modelo`). `tests/test_prazo.py` (9, relógio
+  falso). Suíte `2201 passed`; mutações `prazo:` 6/6 (rodadas em primeiro plano, por erro meu:
+  classe 5, sem dano).
 
 **Próximo passo exato:** o primeiro ⬜ do mapa de checkpoints abaixo.
 
@@ -159,7 +164,7 @@ C2 e C3 são independentes entre si (C3 só toca `gmail/service`, `prazo.py` e o
 | C0 | lock atualizado em commit próprio (suíte `2125 passed` antes e depois, CI verde pelo SHA); este plano no topo do `PROGRESSO.md`; `sessoes.md` 10c com as respostas; D60; commit | — | ✅ |
 | C1 | confirmacao atrás da interface; contrato nos dois stores (emulador, 0 pulados); migração 6 (`erros`); 3 erradas cancelam; corridas com 16 threads recolhendo exceções | C0 | ✅ |
 | C2 | `ao_dono.py`; `interativo`; `barreira` = `aprovacao_local` + a regra; a mesma regra no Mac; as tools do Gmail na nuvem com dublê; o texto de sistema; o sentinela só em `ao_dono`; `capsys.out == ""` num turno inteiro da nuvem | C1 | ✅ |
-| C3 | `prazo.py` e os quatro pontos que o consultam; relógio falso: o pior caso termina em ≤ 220 s + um pedido | C0 | ⬜ |
+| C3 | `prazo.py` e os quatro pontos que o consultam; relógio falso: o pior caso termina em ≤ 220 s + um pedido | C0 | ✅ |
 | C4 | `SEGREDOS` + `viking-gmail`; `credenciais_da_nuvem` para o Gmail; `/fumaca/segredos` com `gmail`; `_token_do_gmail`; `segredo` só com o projeto; o passo `ttl` com `confirmacoes`; o cliente com `interativo` e `ao_dono`; a prova do deploy exige o volume do Gmail | C2, C3 | ⬜ |
 | C5 | portões lidos; mutações novas + 251 antigas em background; duas passadas; docs parciais; push; CI pelo SHA; **ok** → o segredo `viking-gmail` vazio e o papel, e a TTL de `confirmacoes`; `python scripts/nuvem.py` → 10 ✅; roteiro do Mac **só leitura** | C4 | ⬜ |
 | C6 | **portão (dono, ≥ 2026-10-04 Seattle):** `viking gmail --login` sem navegador → ✅; então, no Mac, `python scripts/nuvem.py segredo viking-gmail --executar` → 1 versão; o VPS mede → 1 versão | C5 | ⬜ |

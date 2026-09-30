@@ -32,7 +32,7 @@ from html.parser import HTMLParser
 from googleapiclient.errors import HttpError
 
 # `_redacao` é stdlib pura e a única cópia da regra de caracteres de controle (ver D13).
-from lifeos import registro
+from lifeos import prazo, registro
 from lifeos.browser._redacao import limpar_controles
 from lifeos.config import TIMEZONE
 from lifeos.gmail.oauth import get_gmail_service
@@ -52,6 +52,9 @@ COTA_POR_MINUTO = 6000
 ORCAMENTO_POR_MINUTO = 4800  # 80%: outro processo do Viking pode estar gastando a mesma cota
 CUSTO_GET, CUSTO_LIST, CUSTO_MODIFY, CUSTO_SEND = 20, 5, 50, 100
 ESPERAS_S = (2, 4, 8, 16, 32, 64)  # espera crescente no erro de cota (o Google recomenda ≤ 64 s)
+# O teto de uma operação de rede do `googleapiclient` 2.200.0 (`DEFAULT_HTTP_TIMEOUT_SEC`, medido
+# em 2026-09-30): o prazo do turno na nuvem (`lifeos/prazo.py`) tem de caber um pedido inteiro.
+REDE_S = 60
 _MOTIVOS_DE_LIMITE = frozenset({"rateLimitExceeded", "userRateLimitExceeded"})
 MAX_REMETENTES_LIMPEZA = 10  # por proposta
 MAX_LISTAGEM = 5000  # IDs listados por consulta da limpeza; acima disso a contagem é piso
@@ -189,6 +192,22 @@ def _dormir(segundos: float) -> None:
     time.sleep(segundos)
 
 
+_SEM_TEMPO = "não deu tempo dentro do turno; nada foi feito nesta chamada, tente de novo"
+
+
+def _no_prazo(segundos: float) -> None:
+    """Na nuvem, o que vem a seguir (até `segundos`) cabe no prazo do turno? Se não, para ANTES de
+    esperar ou de mandar o pedido: é certeza de que nada foi feito. No Mac não há prazo."""
+    if not prazo.cabe(segundos):
+        raise LimiteDoGmail(_SEM_TEMPO)
+
+
+def _esperar(segundos: float) -> None:
+    """Toda espera do serviço: só começa se ela e o pedido que vem depois cabem no prazo."""
+    _no_prazo(segundos + REDE_S)
+    _dormir(segundos)
+
+
 def _avisar(texto: str) -> None:
     """Espera longa aparece no terminal: sem isto, a limpeza parecia travada."""
     print(texto, file=sys.stderr, flush=True)
@@ -213,7 +232,7 @@ class _Cota:
             espera = self._gastos[0][0] + 60 - agora
             if espera >= 1:
                 _avisar(f"⏳ Esperando {espera:.0f} s: o Gmail limita as consultas por minuto.")
-            _dormir(max(espera, 0.01))
+            _esperar(max(espera, 0.01))
 
 
 _COTA = _Cota()
@@ -256,6 +275,7 @@ def _executar(montar, custo: int = CUSTO_LIST):
     Falha ao montar, ou um 4xx, é certeza de que nada mudou; qualquer outra falha depois de o
     pedido sair (5xx, tempo esgotado, conexão) é `incerta` (como `calendar/service._executar`)."""
     for espera in (*ESPERAS_S, None):
+        _no_prazo(REDE_S)
         _COTA.gastar(custo)
         try:
             pedido = montar()
@@ -266,7 +286,7 @@ def _executar(montar, custo: int = CUSTO_LIST):
         except HttpError as exc:
             if _eh_limite(exc) and espera is not None:
                 _avisar(f"⏳ O Gmail pediu calma; tentando de novo em {espera} s.")
-                _dormir(espera)
+                _esperar(espera)
                 continue
             if _eh_limite(exc):
                 raise LimiteDoGmail(_LIMITE) from exc
@@ -315,6 +335,7 @@ def _metadados(service, ids: list[str]) -> tuple[list[Email], int]:
         falhas.clear()
         for inicio in range(0, len(pendentes), LOTE):
             lote_ids = pendentes[inicio : inicio + LOTE]
+            _no_prazo(REDE_S)
             _COTA.gastar(CUSTO_GET * len(lote_ids))
             lote = service.new_batch_http_request(callback=guardar)
             for email_id in lote_ids:
@@ -336,10 +357,10 @@ def _metadados(service, ids: list[str]) -> tuple[list[Email], int]:
             if espera is None:
                 break
             _avisar(f"⏳ O Gmail pediu calma; {len(pendentes)} e-mail(s) de novo em {espera} s.")
-            _dormir(espera)
+            _esperar(espera)
         elif outra_vez:
             outra_vez = False
-            _dormir(PAUSA_S)
+            _esperar(PAUSA_S)
         else:
             break
     return [_email_de(lidos[i]) for i in ids if i in lidos], len(pendentes)

@@ -28,7 +28,7 @@ from typing import Any
 
 from google.genai import types
 
-from lifeos import ao_dono, config, confirmacao, custos, registro
+from lifeos import ao_dono, config, confirmacao, custos, prazo, registro
 from lifeos.assistant import agent
 from lifeos.assistant import turno as turno_nucleo
 from lifeos.browser._redacao import limpar_controles
@@ -36,6 +36,9 @@ from lifeos.registro_texto import acoes_recentes
 
 PRAZO_DO_GEMINI_MS = 60_000  # por chamada; o turno medido levou até 3 s (2026-09-30)
 MAX_CHAMADAS_DE_TOOL = 10  # por turno: o turno medido usou até 2 (2026-09-30)
+# O turno inteiro (Sessão 10c, D60): com um pedido em curso de até 60 s (o Gemini ou o Google),
+# o pior caso fica em 280 s, abaixo dos 300 s do Cloud Run e dos 320 s do terminal do Mac.
+PRAZO_DO_TURNO_S = 220
 MAX_MENSAGEM = 8_000  # caracteres
 MAX_NOTA = 20_000
 _SESSAO = re.compile(r"[A-Za-z0-9-]{1,40}")
@@ -182,8 +185,14 @@ def _resposta(
 def turno(dados: Any) -> dict[str, Any]:
     """Um turno do chat da nuvem, do pedido à resposta (tudo JSON)."""
     historico_json, mensagem, nota, sessao, numero, interativo = _validar(dados)
-    with ao_dono.coletar(interativo=interativo) as so_ao_dono:
+    with ao_dono.coletar(interativo=interativo) as so_ao_dono, prazo.ate(PRAZO_DO_TURNO_S):
         return _turno(historico_json, mensagem, nota, sessao, numero, so_ao_dono)
+
+
+def _antes_do_modelo(teto: custos.Teto) -> None:
+    """Antes de CADA chamada ao Gemini: ela cabe no prazo do turno, e o teto de gasto deixa."""
+    prazo.conferir(PRAZO_DO_GEMINI_MS / 1000, "a próxima chamada ao modelo")
+    teto.conferir()
 
 
 def _turno(
@@ -217,7 +226,10 @@ def _turno(
     cliente = _cliente()
     consumo = custos.Sessao()
     custos.instrumentar(
-        cliente, sessao=consumo, antes=teto.conferir, depois=lambda c: teto.somar(c.custo)
+        cliente,
+        sessao=consumo,
+        antes=lambda: _antes_do_modelo(teto),
+        depois=lambda c: teto.somar(c.custo),
     )
     chat = cliente.chats.create(model=turno_nucleo.MODELO, config=_config(), history=historico)
     prompt = f"{nota}\n\n{mensagem}" if nota else mensagem
@@ -234,6 +246,11 @@ def _turno(
         )
     if isinstance(resultado.erro, custos.TetoAtingido):
         erro = f"Parei no meio: o teto de gasto foi atingido ({resultado.erro.gasto.texto()})."
+    elif isinstance(resultado.erro, prazo.TempoEsgotado):
+        erro = (
+            f"Parei no meio: {resultado.erro} (o turno na nuvem tem {PRAZO_DO_TURNO_S} s). "
+            "O que já foi feito está no aviso abaixo; peça o resto num turno novo."
+        )
     else:
         erro = f"Erro ao processar a resposta: {limpar_controles(str(resultado.erro))[:300]}"
     # O turno não entrou no histórico: a nota que ia com ele continua pendente, somada à nova.
