@@ -5,25 +5,14 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30 ~18:10Z (11:10 em Seattle): 10c, C0–C4 ✅ (a parte que não depende da prova, em código); o próximo é o C5
+## ▶️ RETOMAR AQUI — 2026-09-30 ~22:40Z (15:40 em Seattle): 10c, C0–C5 ✅ (falta só a saída do roteiro do Mac); o próximo é o portão de 2026-10-04
 
-**Estado (2026-09-30 ~18:10Z):**
-- `git status --short` limpo · HEAD = o checkpoint depois de `C4` (ver `git log --oneline -8`) =
-  remoto · trava de mutação: nenhuma · background: nenhum.
+**Estado (2026-09-30 ~22:40Z):**
+- `git status --short` limpo · HEAD = o checkpoint depois de `187079c` = remoto · trava de
+  mutação: nenhuma · background: nenhum.
 - Commits da 10c: `2529615` (lock), `38e1870` (plano, D60), `8cba1fd` (C1), `52570bc` (a corrida
-  do SQLite), `9f6243d` (C2), `51e61de` (C3), o do C4 e o checkpoint. CI `success` pelo SHA
-  inteiro em `38e1870`, `52570bc` e `9f6243d`; **o CI de `8cba1fd` falhou** (consertado em
-  `52570bc`, abaixo). O do C3, do C4 e do checkpoint: conferir.
-- Suíte `2214 passed` no VPS (depois do C4); `ruff`, formatação e `mypy` (25 arquivos) limpos.
-- Mutações: **280** em `scripts/mutacoes.py` (251 antes da 10c + 29 novas); rodadas **por grupo**
-  nesta sessão, todas mortas pelo teste esperado: confirmação 18/18 (+1 da corrida), C2 78/78, C3
-  6/6, C4 16/16. **A rodada inteira das 280 ainda não rodou** (é do C5).
-- **No ar:** medido às 18:05Z (`python scripts/nuvem.py` e `deploy`, só leitura): o motor
-  `36fcd13`, com 5 commits desde ele nos caminhos da imagem (o código da 10c). A infraestrutura:
-  8 ✅ e 2 ⬜ **esperados** até o ok do C5 (`segredos`: `viking-gmail: não existe`; `ttl`:
-  `confirmacoes.apagar_em: desligada`). O deploy só-leitura: 4 ❌ **esperados** (a imagem e o
-  `/versao` não são o código de agora; os volumes e o `/fumaca/segredos` ainda sem o Gmail) e 7 ✅
-  (IAM, as recusas, `/lembretes`, as fumaças, o log sem erro).
+  do SQLite), `9f6243d` (C2), `51e61de` (C3), `bded8f1` (C4), `ab8c704` (checkpoint), `187079c`
+  (C5) e este checkpoint. CI `success` pelo SHA inteiro em `ab8c704` e `187079c`.
 - C0: o lock em `2529615` (suíte `2125 passed` antes e depois), os docs em `38e1870`.
 - C1 (2026-09-30, commit às 17:33Z): a confirmação atrás de `confirmacao_interface`, com os stores SQLite e
   Firestore; o contrato nos dois (`VIKING_EXIGIR_EMULADOR=1 pytest tests/test_confirmacao.py
@@ -54,76 +43,76 @@
   manda `interativo` e mostra `ao_dono` só num terminal. Régua nova: todo `VIKING_*_ARQUIVO` que
   o `config` lê tem um segredo no deploy, nos dois sentidos. Uma mutação equivalente (o `True` no
   lugar de `creds.valid`, que só existe válido) foi trocada pela que importa (falha vira `True`).
+- C5 (2026-09-30, 21:00–22:40Z):
+  - portões lidos antes do commit `187079c`: `2216 passed in 45.55s`; `ruff check` "All checks
+    passed!"; `ruff format --check` "132 files already formatted"; `mypy` "Success: no issues
+    found in 25 source files"; gitleaks "no leaks found"; `uv lock --check` "Resolved 112
+    packages";
+  - `docker build` ok, 513 MB (a 10b: 512 MB);
+  - duas passadas de revisão. Achados, consertados em `187079c`: `gmail/service._avisar`
+    imprimia no stderr, que no motor é o log do Cloud Run (agora não sai lá; teste e mutação); o
+    teste do turno da nuvem exigia só o stdout vazio (agora stdout e stderr); textos velhos nos
+    passos `segredos` e `ttl` do `scripts/nuvem.py`; docstrings do Gmail diziam "direto no
+    terminal". Novo: `test_o_script_abre_no_mac_sem_o_extra_nuvem` (o `segredo viking-gmail`
+    roda no Mac, que não instala o extra `nuvem`), com mutação;
+  - `python scripts/mutacoes.py` (a rodada inteira, em background, sem `timeout`, ~22:39Z) →
+    `mutações: 282 · mortas pelo teste esperado: 282` · `recusadas: 0 · sobreviventes ou mal
+    atribuídas: 0`;
+  - docs parciais: `AGENTS.md` (estrutura, comandos, variáveis e as armadilhas "no motor o stdout
+    e o stderr são o log", "o terminal que conta é o do Mac", o `BEGIN IMMEDIATE`),
+    `.env.example`, `docs/fontes/gmail-api.md` (a nuvem);
+  - **com o ok do dono (2026-09-30, "sim - pode prosseguir... tem meu ok"):** `python
+    scripts/nuvem.py --executar segredos` (criou `viking-gmail` vazio; `secretAccessor` do
+    `motor@` nos três) e `--executar ttl` (`confirmacoes.apagar_em`: CREATING → ACTIVE em ~4
+    min). Medido depois: **10 ✅**, `viking-gmail: vazio (sobe do Mac…)`.
+- **No ar:** o motor `36fcd13` (sem o Gmail). O `deploy` só-leitura mostra 4 ❌ **esperados** até
+  o C7 (a imagem e o `/versao` não são o código de agora; os volumes e o `/fumaca/segredos` sem o
+  Gmail); e o deploy **recusa publicar** enquanto `viking-gmail` não tiver versão.
 
-**Próximo passo exato (C5, na ordem):**
-1. Ler o `PROGRESSO` (este bloco e o plano logo abaixo) e conferir o CI do HEAD pelo SHA.
-2. `docker build` em background (o checkpoint do C4 que ficou para cá): esperado ok, e o tamanho
-   anotado (a 10b: 512 MB descomprimida).
-3. Docs parciais: `AGENTS.md` (estrutura: `confirmacao_interface/_sqlite/_firestore`,
-   `ao_dono.py`, `prazo.py`; comandos: `segredo viking-gmail` no Mac; variável
-   `VIKING_GMAIL_TOKEN_ARQUIVO`; armadilhas: "no motor, o stdout é o log" e "o terminal que conta
-   é o do Mac"; a regra da barreira mudou: "verbo + 4 dígitos" barrado nos dois chats);
-   `.env.example` (`VIKING_GMAIL_TOKEN_ARQUIVO`); `docs/fontes/gmail-api.md` (o prazo, a nuvem).
-4. **A rodada inteira de mutações em background, sem `timeout`**, saída num arquivo:
-   `python scripts/mutacoes.py > <scratchpad>/mut_c5.txt 2>&1` → esperado `280 · mortas pelo
-   teste esperado: 280`. Não editar nada enquanto a trava existir.
-5. Duas passadas de revisão (`referencia/revisao.md`), com perguntas diferentes; o foco: quem mais
-   imprime no caminho da nuvem, quem mais confere o terminal, e o que o C1–C4 tornou falso em
-   comentário e doc.
-6. Commit, push, CI pelo SHA.
-7. **Pedir o ok do dono** (custo zero; mostrar os comandos antes): `python scripts/nuvem.py
-   --executar segredos` (cria `viking-gmail` **vazio** e dá `secretAccessor` ao `motor@` só nele)
-   e `python scripts/nuvem.py --executar ttl` (liga a TTL de `confirmacoes.apagar_em`: apaga
-   confirmações com mais de 30 dias). Esperado depois: `python scripts/nuvem.py` → 10 ✅, com
-   `viking-gmail: vazio (sobe do Mac…)`.
-8. Roteiro do Mac **só leitura**, para o dono colar: `cd ~/LifeOs && git pull && git log
-   --oneline -1`; `uv sync --locked --extra dev && source .venv/bin/activate && which python &&
-   python -m pytest -q`; `gcloud auth list`; `python scripts/nuvem.py segredo viking-gmail` →
-   "0 versão(ões)… a fonte é o token do Gmail de secrets/ (no Mac)", nada enviado.
+**Próximo passo exato:**
+1. Pedido ao dono: a saída do roteiro só-leitura do Mac (abaixo). Esperado: `git log` com o HEAD
+   do remoto; a suíte sem `failed`; `gcloud auth list` com a conta dele ativa; `segredo
+   viking-gmail` → "viking-gmail: 0 versão(ões) habilitada(s); a fonte é o token do Gmail de
+   secrets/ (no Mac)." e "Nada foi enviado (sem --executar)."
+2. **Portão (dono, a partir de 2026-10-04 em Seattle):** `viking gmail --login` no Mac **sem**
+   abrir o navegador; se passou, no Mac, `python scripts/nuvem.py segredo viking-gmail
+   --executar`; no VPS, `python scripts/nuvem.py` → `viking-gmail: 1 versão(ões)`.
+3. C7: ok → `python scripts/nuvem.py deploy --executar`; as provas ✅ (com `gmail: True`); ok →
+   `prova-chat` com uma pergunta do Gmail. Depois C8 (docs, barra 18/30) e C9 (o Mac).
 
-**Depois do C5, o portão (dono, a partir de 2026-10-04 em Seattle):** `viking gmail --login` no
-Mac sem abrir o navegador; se passou, `python scripts/nuvem.py segredo viking-gmail --executar`
-no Mac; então C7 (ok → deploy; ok → `prova-chat` com uma pergunta do Gmail), C8 (docs, barra
-18/30) e C9 (teste do Mac). Tudo no plano abaixo.
+**Roteiro do Mac, só leitura (entregue ao dono em 2026-09-30):**
+```
+cd ~/LifeOs && git pull && git log --oneline -1
+uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q
+gcloud auth list
+python scripts/nuvem.py segredo viking-gmail
+```
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano da 10c logo abaixo;
 `sessoes.md` (▶️ e 10c); D60 (e D57–D59); o índice de `docs/erros.md` e as ocorrências de
-2026-09-30 da 10c nas classes 2, 4 e 5 (dois escorregões repetidos da 10b); as skills
-`software-build` (`referencia/revisao.md`), `testes-que-provam`, `nuvem-e-deploy`, `seguranca`;
-o código: `ao_dono.py`, `prazo.py`, `confirmacao*.py`, `assistant/na_nuvem.py`,
-`assistant/agent.py` (`aprovacao_local`, `NAO_E_CODIGO_AQUI`), `gmail/service.py` (`_esperar`,
-`_no_prazo`), `nuvem/chat_cliente.py`, `scripts/nuvem.py` (`SEGREDOS`, `TTLS`, `deploy`).
+2026-09-30 da 10c nas classes 2, 4 e 5; as skills `software-build` (`referencia/revisao.md`),
+`testes-que-provam`, `nuvem-e-deploy`, `seguranca`; o código: `ao_dono.py`, `prazo.py`,
+`confirmacao*.py`, `assistant/na_nuvem.py`, `gmail/service.py`, `nuvem/chat_cliente.py`,
+`scripts/nuvem.py` (`SEGREDOS`, `TTLS`, `deploy`, `segredo`).
 
 **Não pode ser esquecido:**
 - o código de aprovação nunca vai ao Gemini, ao MCP, ao registro, ao log nem por e-mail; na
-  nuvem, só no campo `ao_dono` (o sentinela de teste aparece só lá: `tests/test_na_nuvem_gmail.py`);
-- no motor o stdout é o log do Cloud Run: nada que só o dono vê passa por `print` (a porta é
-  `ao_dono.mostrar`, que na nuvem sem o coletor erra alto);
+  nuvem, só no campo `ao_dono`;
+- no motor o stdout e o stderr são o log do Cloud Run: nada que só o dono vê passa por `print`;
 - o VPS não guarda token do Gmail: o token sobe do Mac, depois da prova, por um comando que o
   dono roda lá; nada que envie, apague ou arquive rodado do VPS;
 - todo `gcloud` do Viking leva `--project`; segredo só pela entrada padrão;
-- migração publicada não se edita (a 6 é a nova, com checksum em `PUBLICADAS`);
-- **mutações em background, sem `timeout`, saída num arquivo** (errei isto de novo nesta sessão);
-- **checagem antes de commit sem `| tail`** que engula o código de saída (errei nesta sessão);
-- emenda de arquivo por script ancora na linha inteira, não na primeira ocorrência do texto (a
-  docstring também tem `from __future__`: errei de novo);
+- migração publicada não se edita; mutações em background, sem `timeout`, saída num arquivo;
+  checagem antes de commit sem `| tail`; emenda por script ancora na linha inteira;
 - nunca presumir o fuso do dono (Seattle até ~fim de outubro, depois o Brasil).
 
-**Depende do dono:**
-- o ok do C5 (o segredo vazio e a TTL; custo zero) e a saída do roteiro só-leitura do Mac;
-- a prova do token do Gmail a partir de 2026-10-04 (Seattle), e então subir o token do Mac;
-- os ok's do C7 (deploy e o turno real, ~US$ 0,002).
+**Depende do dono:** a saída do roteiro do Mac; a prova a partir de 2026-10-04 e subir o token
+do Mac; os ok's do C7 (deploy e o turno real, ~US$ 0,002).
 
-**Antes de confiar neste bloco:**
-- `git status --short` vazio; `git log --oneline -3` com o checkpoint no topo, igual ao remoto;
-- `ls .mutacao.lock` → não existe;
-- `.venv/bin/python -m pytest -q` → `2214 passed`;
-- `gh run list --commit $(git rev-parse HEAD)` → `success`;
-- `python scripts/nuvem.py` → o que o "No ar" acima diz (o `segredos` e o `ttl` pendentes até o
-  ok do C5);
-- `python scripts/nuvem.py deploy` → o motor `36fcd13`; as provas do segredo como volume e de
-  `/fumaca/segredos` **❌ esperados** até o C7 (o código agora espera o Gmail, e o motor no ar
-  ainda não o tem).
+**Antes de confiar neste bloco:** `git status --short` vazio e HEAD = remoto; `ls .mutacao.lock`
+→ não existe; `.venv/bin/python -m pytest -q` → `2216 passed`; `gh run list --commit $(git
+rev-parse HEAD)` → `success`; `python scripts/nuvem.py` → 10 ✅; `python scripts/nuvem.py deploy`
+→ o motor `36fcd13` e os 4 ❌ esperados.
 
 ## Plano — Sessão 10c: nuvem 1c, o Gmail na nuvem e a aprovação pela rede (aprovado em 2026-09-30)
 
@@ -245,7 +234,7 @@ C2 e C3 são independentes entre si (C3 só toca `gmail/service`, `prazo.py` e o
 | C2 | `ao_dono.py`; `interativo`; `barreira` = `aprovacao_local` + a regra; a mesma regra no Mac; as tools do Gmail na nuvem com dublê; o texto de sistema; o sentinela só em `ao_dono`; `capsys.out == ""` num turno inteiro da nuvem | C1 | ✅ |
 | C3 | `prazo.py` e os quatro pontos que o consultam; relógio falso: o pior caso termina em ≤ 220 s + um pedido | C0 | ✅ |
 | C4 | `SEGREDOS` + `viking-gmail`; `credenciais_da_nuvem` para o Gmail; `/fumaca/segredos` com `gmail`; `_token_do_gmail`; `segredo` só com o projeto; o passo `ttl` com `confirmacoes`; o cliente com `interativo` e `ao_dono`; a prova do deploy exige o volume do Gmail | C2, C3 | ✅ |
-| C5 | portões lidos; mutações novas + 251 antigas em background; duas passadas; docs parciais; push; CI pelo SHA; **ok** → o segredo `viking-gmail` vazio e o papel, e a TTL de `confirmacoes`; `python scripts/nuvem.py` → 10 ✅; roteiro do Mac **só leitura** | C4 | ⬜ |
+| C5 | portões lidos; mutações novas + 251 antigas em background; duas passadas; docs parciais; push; CI pelo SHA; **ok** → o segredo `viking-gmail` vazio e o papel, e a TTL de `confirmacoes`; `python scripts/nuvem.py` → 10 ✅; roteiro do Mac **só leitura** | C4 | ✅ (falta a saída do Mac) |
 | C6 | **portão (dono, ≥ 2026-10-04 Seattle):** `viking gmail --login` sem navegador → ✅; então, no Mac, `python scripts/nuvem.py segredo viking-gmail --executar` → 1 versão; o VPS mede → 1 versão | C5 | ⬜ |
 | C7 | **ok** → `deploy --executar`; as provas ✅ (com `gmail: True`); **ok** → `prova-chat` com uma pergunta do Gmail (tempo, tokens, custo); o log sem conteúdo nem código | C6 | ⬜ |
 | C8 | diário, barra 18/30, `sessoes.md`, `AGENTS.md`, fontes, D60 fechada; commit, push, CI | C7 | ⬜ |
