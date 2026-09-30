@@ -18,7 +18,12 @@ Base da abertura (2026-09-29): `1884 passed`, CI de `26ddc71` verde.
   faturamento bateu no limite de 9 projetos da conta do dono; ele escolheu desligar o do
   `dbt-project` (23:48Z) para ligar o do Viking. Orçamento de 105 BRL (US$ 20 na PTAX de
   5,2204). As contas são `viking-motor@` e `viking-cli@` (o ID pede de 6 a 30 caracteres);
-- próximo: C5, o motor.
+- C5 feito: o motor verifica a **assinatura** do token (emissor Google, audience = a URL) e o
+  e-mail (`viking-cli@`), primeira instrução de toda rota (régua AST); dois defeitos plantados
+  caíram (decodificar sem verificar: 4 testes; sem a lista: 6). A imagem: 512 MB, 97 MB
+  comprimida (a estimativa de "< 300 MB" do plano não foi medida; `.pyc` ficam de propósito,
+  partida fria); roda como 65532, sem log de acesso; sem token → 401 no contêiner local;
+- C6 em curso: `python scripts/nuvem.py deploy` (só lê) e `deploy --executar` (depois do ok).
 
 **Próximo passo exato:** o primeiro checkpoint ⬜ do mapa abaixo.
 
@@ -133,7 +138,7 @@ pedidos.
 | C2 | gitleaks no CI e no hook, limpo no histórico, canário reprovado; **ok do dono** → repo privado, conferido pela API | C1 | ✅ |
 | C3 | `scripts/nuvem.py` só-leitura mostra tudo "a criar"; **ok** → projeto, faturamento, APIs, orçamento, Firestore em SP, registry, contas de serviço e índices; o só-leitura mostra "nada a criar" | C2 | ✅ |
 | C4 | store Firestore passa o contrato no emulador (VPS e CI), sem pulado; mutações novas mortas | C1 | 🔶 no VPS (CI e mutações a conferir) |
-| C5 | motor (Starlette) com testes de 401/403/identidade e sem conteúdo em log; Dockerfile; imagem constrói | C4 | ⬜ |
+| C5 | motor (Starlette) com testes de 401/403/identidade e sem conteúdo em log; Dockerfile; imagem constrói | C4 | ✅ |
 | C6 | **ok** → primeiro deploy; `describe` = SHA; sem login → 403 do Google; fumaça com o `cli@` exerce `/versao` e `/lembretes` (e `vencidos` na produção) | C3, C5 | ⬜ |
 | C7 | `viking lembretes --nuvem` (cliente com `IDTokenCredentials`), testes offline; roteiro do Mac | C6 | ⬜ |
 | C8 | portões, duas passadas de revisão, docs, commits, push, CI pelo SHA | C7 | ⬜ |

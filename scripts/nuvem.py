@@ -6,6 +6,8 @@ O ok do dono vem antes, na conversa, passo a passo: criar recurso ou gastar é d
 
     python scripts/nuvem.py                       (só lê)
     python scripts/nuvem.py --executar projeto    (um passo)
+    python scripts/nuvem.py deploy                (o que está no ar, o que mudou, e as provas)
+    python scripts/nuvem.py deploy --executar     (constrói, envia, publica e prova)
 
 Roda com o login do `gcloud` do VPS, que é a conta do dono e alcança **todos** os projetos dele
 (D47 revista, 2026-09-29). Por isso todo `gcloud` sai de `_gcloud`, que acrescenta
@@ -404,6 +406,295 @@ PASSOS = (
 )
 
 
+# --- o deploy do motor (Sessão 10, C6) ---------------------------------------------------------
+
+SERVICO = "motor"
+RAIZ = config.REPO_ROOT
+_LOCAIS = ("git", "docker", "gh")
+
+
+def _local(comando: list[str], *, entrada: str | None = None) -> subprocess.CompletedProcess:
+    """`git`, `docker` e `gh`: o que o deploy lê ou usa fora do GCP. O `gcloud` nunca passa aqui
+    (só por `_rodar`, com o projeto)."""
+    if comando[0] not in _LOCAIS:
+        raise ErroDoGcloud(f"comando local não previsto: {comando[0]}")
+    return subprocess.run(
+        comando, input=entrada, capture_output=True, text=True, check=False, timeout=1800, cwd=RAIZ
+    )
+
+
+def _saida(comando: list[str]) -> str:
+    resultado = _local(comando)
+    if resultado.returncode != 0:
+        raise ErroDoGcloud(f"{' '.join(comando[:3])}: {resultado.stderr.strip()[-300:]}")
+    return resultado.stdout.strip()
+
+
+def caminhos_da_imagem() -> list[str]:
+    """O que muda a imagem, derivado do próprio `Dockerfile` (skill `nuvem-e-deploy` §6): as
+    origens de cada `COPY` que não vem de outro estágio, mais o `Dockerfile` e o `.dockerignore`."""
+    caminhos = ["Dockerfile", ".dockerignore"]
+    for linha in (RAIZ / "Dockerfile").read_text().splitlines():
+        if linha.startswith("COPY ") and "--from=" not in linha:
+            caminhos += linha.split()[1:-1]
+    return caminhos
+
+
+@dataclass(frozen=True)
+class Situacao:
+    head: str
+    limpo: bool
+    publicado: bool
+    ci: str
+    no_ar: str | None  # o SHA da imagem no ar (a tag), ou None sem serviço
+    mudou_desde: int | None  # commits nos caminhos da imagem desde a do ar
+
+
+def situacao(ctx: Contexto) -> Situacao:
+    head = _saida(["git", "rev-parse", "HEAD"])
+    remoto = _saida(["git", "ls-remote", "origin", "refs/heads/master"]).split()[:1]
+    ci = _saida(
+        [
+            "gh",
+            "run",
+            "list",
+            "--commit",
+            head,
+            "--workflow",
+            "testes",
+            "--json",
+            "status,conclusion",
+            "--jq",
+            '.[0] | "\\(.status) \\(.conclusion)"',
+        ]
+    )
+    servico = _ler(_gcloud(ctx, "run", "services", "describe", SERVICO, f"--region={ctx.regiao}"))
+    no_ar = mudou = None
+    if isinstance(servico, dict):
+        imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
+        no_ar = imagem.rsplit(":", 1)[-1]
+        mudou = int(
+            _saida(["git", "rev-list", "--count", f"{no_ar}..{head}", "--", *caminhos_da_imagem()])
+        )
+    return Situacao(
+        head=head,
+        limpo=_saida(["git", "status", "--porcelain"]) == "",
+        publicado=remoto == [head],
+        ci=ci,
+        no_ar=no_ar,
+        mudou_desde=mudou,
+    )
+
+
+def _imagem(ctx: Contexto, sha: str) -> str:
+    return f"{ctx.regiao}-docker.pkg.dev/{ctx.projeto}/{REPOSITORIO}/{SERVICO}:{sha}"
+
+
+def _url(ctx: Contexto) -> str:
+    """A URL do serviço, que o Cloud Run monta com o número do projeto: é a audience que o motor
+    exige, e sai antes do primeiro deploy."""
+    dados = _ler(_gcloud(ctx, "projects", "describe", ctx.projeto))
+    assert isinstance(dados, dict)
+    return f"https://{SERVICO}-{dados['projectNumber']}.{ctx.regiao}.run.app"
+
+
+def _fuso() -> str:
+    fuso = os.getenv("VIKING_NUVEM_FUSO", "")
+    if not fuso:
+        raise SystemExit(
+            "nuvem.py: falta VIKING_NUVEM_FUSO no .env (o fuso do dono; a nuvem roda em UTC)"
+        )
+    return fuso
+
+
+def comandos_do_deploy(ctx: Contexto, sha: str) -> list[list[str]]:
+    return [
+        _gcloud(
+            ctx,
+            "run",
+            "deploy",
+            SERVICO,
+            f"--image={_imagem(ctx, sha)}",
+            f"--region={ctx.regiao}",
+            f"--service-account={ctx.conta(MOTOR)}",
+            "--no-allow-unauthenticated",
+            "--min-instances=0",
+            "--max-instances=2",
+            "--concurrency=10",
+            "--cpu=1",
+            "--memory=512Mi",
+            "--timeout=60",
+            "--labels=app=viking",
+            "--set-env-vars="
+            + ",".join(
+                [
+                    f"VIKING_NUVEM_PROJETO={ctx.projeto}",
+                    f"VIKING_NUVEM_URL={_url(ctx)}",
+                    f"VIKING_TIMEZONE={_fuso()}",
+                ]
+            ),
+        ),
+        _gcloud(
+            ctx,
+            "run",
+            "services",
+            "add-iam-policy-binding",
+            SERVICO,
+            f"--region={ctx.regiao}",
+            f"--member=serviceAccount:{ctx.conta(CLI)}",
+            "--role=roles/run.invoker",
+        ),
+    ]
+
+
+def _token(ctx: Contexto, *args: str) -> str:
+    """Um token do gcloud, que nunca é impresso nem gravado: vai para o `docker login` pela entrada
+    padrão ou para o cabeçalho de um pedido."""
+    resultado = _rodar(_gcloud(ctx, "auth", *args))
+    if resultado.returncode != 0 or not resultado.stdout.strip():
+        raise ErroDoGcloud(f"auth {args[0]}: {resultado.stderr.strip()[-200:]}")
+    return resultado.stdout.strip()
+
+
+def publicar(ctx: Contexto, sha: str) -> None:
+    """Constrói, envia e põe no ar. Só roda depois de `situacao` dizer que dá (árvore limpa, HEAD
+    no GitHub, CI verde) e do ok do dono."""
+    imagem = _imagem(ctx, sha)
+    print(f"$ docker build (VIKING_COMMIT={sha[:12]}) → {imagem}")
+    _saida(["docker", "build", "--build-arg", f"VIKING_COMMIT={sha}", "-t", imagem, "."])
+    registro = f"https://{ctx.regiao}-docker.pkg.dev"
+    login = _local(
+        ["docker", "login", "-u", "oauth2accesstoken", "--password-stdin", registro],
+        entrada=_token(ctx, "print-access-token"),
+    )
+    if login.returncode != 0:
+        raise ErroDoGcloud(f"docker login: {login.stderr.strip()[-200:]}")
+    try:
+        print(f"$ docker push {imagem}")
+        _saida(["docker", "push", imagem])
+    finally:
+        _local(["docker", "logout", registro])  # o token de 1 h não fica no ~/.docker
+    for comando in comandos_do_deploy(ctx, sha):
+        print(f"$ {_legivel(comando)}")
+        resultado = _rodar(comando)
+        if resultado.returncode != 0:
+            raise ErroDoGcloud(resultado.stderr.strip()[-400:])
+
+
+@dataclass(frozen=True)
+class Prova:
+    nome: str
+    passou: bool
+    detalhe: str
+
+
+def provas(ctx: Contexto, sha: str) -> list[Prova]:
+    """Rodam sempre, com ou sem deploy (skill `nuvem-e-deploy` §6 e §8): a imagem no ar, o IAM do
+    serviço, a recusa sem token, a recusa do nosso código, o caminho com a identidade certa, a
+    consulta que pede o índice, e os erros no log."""
+    import requests
+
+    resultado: list[Prova] = []
+    servico = _ler(_gcloud(ctx, "run", "services", "describe", SERVICO, f"--region={ctx.regiao}"))
+    if not isinstance(servico, dict):
+        return [Prova("serviço no ar", False, "não existe")]
+    imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
+    resultado.append(Prova("imagem = HEAD", imagem == _imagem(ctx, sha), imagem.rsplit("/", 1)[-1]))
+    url = servico["status"]["url"]
+    resultado.append(Prova("URL = a audience", url == _url(ctx), url))
+
+    politica = _ler(
+        _gcloud(ctx, "run", "services", "get-iam-policy", SERVICO, f"--region={ctx.regiao}")
+    )
+    quem = _membros(politica, "roles/run.invoker")
+    certo = quem == {f"serviceAccount:{ctx.conta(CLI)}"}
+    resultado.append(Prova("só o viking-cli@ invoca", certo, ", ".join(sorted(quem)) or "ninguém"))
+
+    sem = requests.get(f"{url}/versao", timeout=30)
+    nosso = sem.text.strip() in ("sem token", "token recusado", "identidade sem acesso")
+    resultado.append(
+        Prova(
+            "sem token: recusado pelo Google",
+            sem.status_code == 403 and not nosso,
+            f"HTTP {sem.status_code}",
+        )
+    )
+    dono = requests.get(
+        f"{url}/versao",
+        headers={"Authorization": f"Bearer {_token(ctx, 'print-identity-token')}"},
+        timeout=30,
+    )
+    resultado.append(
+        Prova(
+            "o dono em pessoa: recusado pelo motor",
+            dono.status_code in (401, 403)
+            and dono.text.strip() in ("token recusado", "identidade sem acesso"),
+            f"HTTP {dono.status_code} {dono.text.strip()[:40]!r}",
+        )
+    )
+    cli = _token(
+        ctx,
+        "print-identity-token",
+        f"--impersonate-service-account={ctx.conta(CLI)}",
+        f"--audiences={url}",
+        "--include-email",
+    )
+    cabecalho = {"Authorization": f"Bearer {cli}"}
+    versao = requests.get(f"{url}/versao", headers=cabecalho, timeout=60)
+    commit = versao.json().get("commit") if versao.status_code == 200 else None
+    resultado.append(
+        Prova("viking-cli@: /versao = HEAD", commit == sha, f"HTTP {versao.status_code}")
+    )
+    for rota in ("/lembretes", "/fumaca/vencidos"):
+        resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
+        resultado.append(
+            Prova(
+                f"viking-cli@: {rota}", resposta.status_code == 200, f"HTTP {resposta.status_code}"
+            )
+        )
+
+    filtro = (
+        f'resource.type="cloud_run_revision" AND resource.labels.service_name="{SERVICO}" '
+        "AND severity>=ERROR"
+    )
+    erros = _ler(_gcloud(ctx, "logging", "read", filtro, "--freshness=30m", "--limit=20"))
+    resultado.append(Prova("log sem erro (30 min)", not erros, f"{len(erros or [])} erro(s)"))
+    return resultado
+
+
+def deploy(ctx: Contexto, executar: bool) -> int:
+    agora = situacao(ctx)
+    print(
+        f"HEAD {agora.head[:12]} · árvore {'limpa' if agora.limpo else 'SUJA'} · "
+        f"{'no GitHub' if agora.publicado else 'NÃO está no GitHub'} · CI: {agora.ci or '?'}"
+    )
+    if agora.no_ar is None:
+        print("No ar: nada (o serviço ainda não existe).")
+    else:
+        print(
+            f"No ar: {agora.no_ar[:12]} · commits desde ela nos caminhos da imagem "
+            f"({', '.join(caminhos_da_imagem())}): {agora.mudou_desde}"
+        )
+    pode = agora.limpo and agora.publicado and agora.ci == "completed success"
+    if executar:
+        if not pode:
+            print("Não publico: a imagem tem de ser um commit limpo, no GitHub e com CI verde.")
+            return 1
+        if agora.no_ar == agora.head:
+            print("O HEAD já está no ar; só as provas.")
+        else:
+            publicar(ctx, agora.head)
+    elif agora.no_ar != agora.head:
+        for comando in comandos_do_deploy(ctx, agora.head):
+            print(f"  → {_legivel(comando)}")
+        print("Nada foi publicado (sem --executar).")
+    print("Provas (rodam sempre):")
+    feitas = provas(ctx, agora.head)
+    for prova in feitas:
+        print(f"  {'✅' if prova.passou else '❌'} {prova.nome}: {prova.detalhe}")
+    return 0 if all(p.passou for p in feitas) else 2
+
+
 # --- a linha de comando ------------------------------------------------------------------------
 
 
@@ -457,6 +748,10 @@ def medir(ctx: Contexto) -> list[tuple[Passo, Estado]]:
 
 
 def main(argv: list[str]) -> int:
+    if argv[:1] == ["deploy"]:
+        leitor = argparse.ArgumentParser(prog="nuvem.py deploy")
+        leitor.add_argument("--executar", action="store_true")
+        return deploy(_contexto(), leitor.parse_args(argv[1:]).executar)
     leitor = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     leitor.add_argument("--executar", choices=[p.nome for p in PASSOS])
     args = leitor.parse_args(argv)

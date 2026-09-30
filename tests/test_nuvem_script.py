@@ -61,7 +61,7 @@ def test_so_gcloud_monta_e_so_rodar_executa(nuvem):
     """Lendo o código: o literal "gcloud" só em `_gcloud`, `_rodar` e o `config get account` de
     `_contexto` (que lê a conta ativa, não um projeto); `subprocess` só nesses dois últimos."""
     arvore = ast.parse(SCRIPT.read_text())
-    permitidas = {"_gcloud", "_rodar", "_contexto"}
+    permitidas = {"_gcloud", "_rodar", "_contexto", "_local"}
     achados = []
     for funcao in ast.walk(arvore):
         if not isinstance(funcao, ast.FunctionDef):
@@ -228,3 +228,141 @@ def test_ids_das_contas_de_servico_cabem_na_regra_do_google(nuvem):
 
     for nome in (nuvem.MOTOR, nuvem.CLI):
         assert re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", nome), nome
+
+
+# --- o deploy do motor (C6) ---------------------------------------------------------------------
+
+SHA = "a" * 40
+
+
+class _Mundo:
+    """O gcloud, o git, o docker e o gh de mentira, com o estado de um deploy."""
+
+    def __init__(self, *, limpo=True, publicado=True, ci="completed success", no_ar=None):
+        self.gcloud: list[list[str]] = []
+        self.local: list[tuple[list[str], str | None]] = []
+        self.limpo, self.publicado, self.ci, self.no_ar = limpo, publicado, ci, no_ar
+
+    def rodar(self, comando):
+        self.gcloud.append(comando)
+        corpo = [a for a in comando[1:] if not a.startswith("--")]
+        if corpo[:2] == ["projects", "describe"]:
+            return subprocess.CompletedProcess(comando, 0, json.dumps({"projectNumber": "42"}), "")
+        if corpo[:3] == ["run", "services", "describe"]:
+            if self.no_ar is None:
+                return subprocess.CompletedProcess(comando, 1, "", "ERROR: NOT_FOUND")
+            servico = {
+                "spec": {"template": {"spec": {"containers": [{"image": f"x:{self.no_ar}"}]}}}
+            }
+            return subprocess.CompletedProcess(comando, 0, json.dumps(servico), "")
+        if corpo[:1] == ["auth"]:
+            return subprocess.CompletedProcess(comando, 0, "TOKEN-SECRETO-123\n", "")
+        return subprocess.CompletedProcess(comando, 0, "", "")
+
+    def rodar_local(self, comando, *, entrada=None):
+        self.local.append((comando, entrada))
+        saidas = {
+            ("git", "rev-parse"): SHA,
+            ("git", "ls-remote"): f"{SHA if self.publicado else 'b' * 40}\trefs/heads/master",
+            ("git", "status"): "" if self.limpo else " M arquivo.py",
+            ("git", "rev-list"): "3",
+            ("gh", "run"): self.ci,
+        }
+        return subprocess.CompletedProcess(comando, 0, saidas.get(tuple(comando[:2]), ""), "")
+
+
+@pytest.fixture
+def mundo(nuvem, monkeypatch):
+    def montar(**estado):
+        m = _Mundo(**estado)
+        monkeypatch.setattr(nuvem, "_rodar", m.rodar)
+        monkeypatch.setattr(nuvem, "_local", m.rodar_local)
+        monkeypatch.setattr(nuvem, "provas", lambda _ctx, _sha: [])
+        monkeypatch.setenv("VIKING_NUVEM_FUSO", "America/Los_Angeles")
+        return m
+
+    return montar
+
+
+def _publicou(m) -> bool:
+    return any(c[:2] == ["docker", "push"] for c, _ in m.local) or any(
+        "deploy" in c for c in m.gcloud
+    )
+
+
+def test_caminhos_da_imagem_saem_do_dockerfile(nuvem):
+    assert nuvem.caminhos_da_imagem() == [
+        "Dockerfile",
+        ".dockerignore",
+        "pyproject.toml",
+        "uv.lock",
+        "src",
+    ]
+
+
+def test_local_recusa_o_gcloud(nuvem):
+    with pytest.raises(nuvem.ErroDoGcloud):
+        nuvem._local(["gcloud", "run", "deploy", "--project=x"])
+
+
+def test_deploy_sem_flag_mostra_e_nao_publica(nuvem, ctx, mundo, capsys):
+    m = mundo()
+    assert nuvem.deploy(ctx, executar=False) == 0
+    assert not _publicou(m)
+    saida = capsys.readouterr().out
+    assert "Nada foi publicado" in saida and "→ gcloud run deploy motor" in saida
+
+
+@pytest.mark.parametrize(
+    ("estado", "motivo"),
+    [
+        ({"limpo": False}, "árvore suja"),
+        ({"publicado": False}, "HEAD fora do GitHub"),
+        ({"ci": "completed failure"}, "CI vermelho"),
+        ({"ci": "in_progress "}, "CI rodando"),
+    ],
+)
+def test_deploy_recusa_o_que_nao_e_um_commit_verde(nuvem, ctx, mundo, estado, motivo):
+    m = mundo(**estado)
+    assert nuvem.deploy(ctx, executar=True) == 1, motivo
+    assert not _publicou(m), motivo
+
+
+def test_deploy_publica_e_o_token_nunca_aparece(nuvem, ctx, mundo, capsys):
+    m = mundo()
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert _publicou(m)
+    (login,) = [(c, e) for c, e in m.local if c[:2] == ["docker", "login"]]
+    assert login[1] == "TOKEN-SECRETO-123"  # pela entrada padrão, nunca no argv
+    assert not any("TOKEN-SECRETO" in " ".join(c) for c, _ in m.local)
+    assert any(c[:2] == ["docker", "logout"] for c, _ in m.local)  # não fica no ~/.docker
+    saida = capsys.readouterr()
+    assert "TOKEN-SECRETO" not in saida.out + saida.err
+
+
+def test_o_head_ja_no_ar_so_prova(nuvem, ctx, mundo, capsys):
+    m = mundo(no_ar=SHA)
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert not _publicou(m)
+    assert "já está no ar" in capsys.readouterr().out
+
+
+def test_o_servico_nasce_fechado(nuvem, ctx, mundo):
+    mundo()
+    implantar, permitir = nuvem.comandos_do_deploy(ctx, SHA)
+    assert "--no-allow-unauthenticated" in implantar and "--min-instances=0" in implantar
+    assert "--max-instances=2" in implantar
+    assert f"--service-account=viking-motor@{ctx.projeto}.iam.gserviceaccount.com" in implantar
+    (variaveis,) = [a for a in implantar if a.startswith("--set-env-vars=")]
+    assert "VIKING_TIMEZONE=America/Los_Angeles" in variaveis
+    assert "VIKING_NUVEM_URL=https://motor-42.southamerica-east1.run.app" in variaveis
+    assert f"--member=serviceAccount:viking-cli@{ctx.projeto}.iam.gserviceaccount.com" in permitir
+    assert "--role=roles/run.invoker" in permitir
+    assert not any("allUsers" in a or "allAuthenticatedUsers" in a for a in implantar + permitir)
+
+
+def test_sem_fuso_nao_publica(nuvem, ctx, mundo, monkeypatch):
+    mundo()
+    monkeypatch.delenv("VIKING_NUVEM_FUSO")
+    with pytest.raises(SystemExit, match="VIKING_NUVEM_FUSO"):
+        nuvem.comandos_do_deploy(ctx, SHA)

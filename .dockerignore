@@ -1,0 +1,6 @@
+# Só entra na imagem o que o Dockerfile copia; o resto fica de fora, a começar pelos segredos.
+*
+!pyproject.toml
+!uv.lock
+!src/
+src/**/__pycache__

@@ -71,4 +71,5 @@ files = [
     "src/lifeos/registro.py",
     "src/lifeos/confirmacao.py",
     "src/lifeos/cli.py",
+    "src/lifeos/nuvem",
 ]
