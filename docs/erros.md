@@ -17,10 +17,10 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 21 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 22 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 19 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
-| 5 | A ferramenta fez outra coisa do que eu li | 13 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 4 | Teste que não separava o certo do errado | 20 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 5 | A ferramenta fez outra coisa do que eu li | 14 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 12 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
@@ -204,6 +204,17 @@ docstring é uma afirmação sobre a saída; sem um teste que leia a saída, é 
 **O antídoto, concreto:** antes de afirmar estado de repositório, `git log`/`git status`; antes de
 afirmar que algo é ou não é, abrir o arquivo onde estaria; "Armadilhas já pagas" só com incidente.
 
+**2026-09-30 — afirmei na docstring que "a conexão é a transação" sem abrir o `banco.conectar`
+(Sessão 10c, C1).** Ao mover o SQL da confirmação para `confirmacao_sqlite.py`, escrevi que
+`propor` rodava numa transação e por isso dois processos não sorteavam o mesmo código. O
+`banco.conectar` usa `isolation_level="DEFERRED"`: a transação só começa no primeiro comando que
+escreve, e a leitura dos reservados rodava fora dela. O CI do `8cba1fd` (Python 3.13) caiu no
+teste novo de corrida: duas propostas com `substituir=False` (as do MCP) ficaram com o mesmo
+código, um defeito desde a Sessão 5 que o chat nunca via (com `substituir=True` o UPDATE da
+frente serializava). Consertado com `BEGIN IMMEDIATE` (`52570bc`). O que tem de novo: uma
+afirmação sobre concorrência num comentário é uma afirmação sobre o código de outro módulo, e
+precisa do mesmo `grep` que um número.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -359,6 +370,13 @@ texto com números aleatórios tem falso positivo embutido; ela olha só os camp
 carregar o dado (o conserto lê os campos de texto e continua caindo com o código nos
 parâmetros).
 
+**2026-09-30 — o teste de corrida pegava o defeito em 1 de 10 rodadas (Sessão 10c, C1).** O
+teste das 16 propostas simultâneas passou no VPS e caiu no CI; sem o conserto, 3 de 30 rodadas
+caíam. Uma mutação que tirasse o conserto sobreviveria quase sempre. Uma pausa de 20 ms no
+sorteio, entre ler os reservados e gravar, fez o teste cair 10 de 10 sem o conserto e 0 de 10
+com ele. O que tem de novo: um teste de corrida se mede também sem o conserto, em muitas rodadas,
+antes de ser a régua.
+
 ### 5. A ferramenta fez outra coisa do que eu li
 
 **2026-09-26 — `\u202e` pela ferramenta de escrita (Sessão 4).** O parâmetro é JSON: o escape virou
@@ -433,6 +451,20 @@ contra a regra do `AGENTS.md` (background, sem `timeout`, saída num arquivo); s
 terminou. (3) Um valor falso com cara de chave do Google num teste (`AIza…`) foi barrado pelo
 hook do gitleaks no commit; trocado por um texto sem forma de chave. O que tem de novo: a busca
 por texto num código-fonte casa também o texto que **fala** do código.
+
+**2026-09-30 — quatro escorregões de ferramenta na mesma sessão (Sessão 10c, C1 a C4).**
+(1) A emenda do `confirmacao.py` cortou no primeiro `from __future__` do texto, que estava na
+docstring: o **mesmo** erro da 10b, refeito na hora a partir do git; a emenda agora ancora na
+linha com as quebras em volta. (2) Uma rodada de mutações (a do prazo) rodou em primeiro plano e
+com `timeout`, contra a regra do `AGENTS.md`: o **mesmo** da 10b, sem dano porque terminou. (3)
+Um commit (`52570bc`) saiu com a checagem `pytest … | tail -1 && git commit`: o `tail` engoliu o
+código de saída, e o commit seguiu com "1 failed" na tela. A queda era do trabalho não
+commitado (uma âncora de mutação deslocada pelo C2), e o HEAD limpo passou numa cópia de
+trabalho separada; o CI confirmou. (4) Estendi o comentário de uma linha que é âncora de mutação;
+a âncora continuou casando como pedaço da linha, e a troca virou erro de sintaxe (o runner
+acusou "caiu outro"). O que tem de novo: dois dos quatro são repetições da sessão anterior. A
+regra escrita não bastou; antes de emendar um arquivo ou rodar mutação, reler a entrada da
+classe 5 da 10b.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 
