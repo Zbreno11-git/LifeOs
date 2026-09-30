@@ -1126,6 +1126,19 @@ O que estava escrito na abertura:
 - §16: trilha de hardware arquivada — caminho padrão errado em `serial_mcp_bridge.py`
   (`parents[2]` aponta para `archive/windows-mcp`, deveria ser `parents[3]` ou config explícita) e
   docs que afirmam sucesso não comprovado no Bosgame.
+- **Pergunta do dono (2026-09-30, na 10b):** "o viking tem api depois que vai pra nuvem? ele pode
+  ser chamado num micro controlador dai?". Resposta registrada, sem decisão:
+  - sim, o motor é uma API HTTP (`POST /chat`, `GET /lembretes`), mas **fechada para sempre**
+    (D47, "duas portas"): só entra quem mostra um token de identidade assinado pelo Google de uma
+    conta da lista, hoje só o `viking-cli@`;
+  - um ESP32 fala HTTPS, mas para entrar ali precisaria de uma chave de conta de serviço gravada
+    no firmware, e isso é proibido (`AGENTS.md`: nunca chave em firmware; D47: nenhuma chave
+    baixada);
+  - o caminho que cabe no desenho: o dispositivo fala com uma **porta própria**, como o app da
+    S17 (um segundo serviço, com uma credencial por aparelho, revogável e limitada ao que o pulso
+    faz), e essa porta chama o motor pela conta de serviço dela;
+  - decidir quando a trilha voltar: o que o pulso pode pedir (só lembrete? chat por voz?), e se a
+    porta é a mesma do app da S17 ou uma só dele.
 
 ## Backlog sem sessão marcada
 
