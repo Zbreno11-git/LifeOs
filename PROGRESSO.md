@@ -89,6 +89,14 @@ CREATING, ~05:10Z). Os segredos `viking-gemini` e `viking-agenda` com 1 versão 
 - **C4:** `viking chat --nuvem` (`nuvem/chat_cliente.py`: a conversa e a nota no terminal, o texto
   da rede limpo de controles, `/custos` com o gasto do dia e do mês); `cliente.turno_de_chat` com
   prazo de 320 s (o do motor + 20). Suíte `2099 passed`; mutações 245 (as do C3 e do C4 mortas).
+- **C5 (2026-09-30 05:17Z, depois do compact):** `python scripts/nuvem.py` → 10 ✅ (`indices`:
+  prontos; `ttl`: `acoes.expira_em: ACTIVE`; os dois segredos com 1 versão).
+- **Divergência na retomada (05:15Z):** o CI do checkpoint `573d553` deu `failure` em
+  `test_codigo_de_aprovacao_nunca_entra_no_registro` (da Sessão 5): o teste procurava o código
+  falso `7391` no `repr` inteiro do registro, e os microssegundos de um horário eram `…147391`.
+  Instável desde a Sessão 5, sem vazamento. Conserto: só os campos de texto; conferido que o
+  teste ainda cai com o código nos parâmetros (mutação à mão, revertida). O vizinho
+  `test_gmail_envio` já lia só as colunas de texto.
 - **Desvio declarado do plano (C3):** as rotas do motor ficam `async`, com o trabalho que
   bloqueia (a verificação do token e o turno) em `run_in_threadpool`, e a primeira instrução vira
   `await _quem(request)`. Motivo: uma rota `def` do Starlette não lê o corpo do pedido; o
@@ -230,7 +238,7 @@ Todos os destinos são escritos no C0, antes de qualquer código.
 | C2 | núcleo do turno + tabela de tools por lugar; teto no Firestore; linha de aprovação barrada; o aviso do lembrete; o REPL local inalterado (os testes do chat de hoje verdes sem edição de asserção) | C1 | ✅ |
 | C3 | motor: rotas `def`, `POST /chat`, limite de corpo, fumaças novas; `google_auth` modo nuvem; `config` lê segredo de arquivo; imagem constrói | C2 | ✅ |
 | C4 | `viking chat --nuvem` (cliente com histórico e nota, prazo longo, erros em português) e a marca em `viking lembretes --nuvem`; testes offline | C3 | ✅ |
-| C5 | `scripts/nuvem.py`: API `secretmanager`, passos `segredos` e `ttl`, subcomando que sobe uma versão sem mostrar, deploy com volumes e prazo; **ok** → API, segredos, versões, TTL; só-leitura 10 ✅ | C3 | 🔶 falta o índice READY e a TTL ACTIVE |
+| C5 | `scripts/nuvem.py`: API `secretmanager`, passos `segredos` e `ttl`, subcomando que sobe uma versão sem mostrar, deploy com volumes e prazo; **ok** → API, segredos, versões, TTL; só-leitura 10 ✅ | C3 | ✅ (10 ✅ às 05:17Z) |
 | C6 | **ok** → deploy; provas antigas + novas ✅; **ok** → um turno real no ar (tempo e custo anotados) | C4, C5 | ⬜ |
 | C7 | portões, duas passadas, `/security-review` se houver, docs, mutações em background, commits, push, CI pelo SHA | C6 | ⬜ |
 | C8 | teste do dono no Mac | C7 | ⬜ |

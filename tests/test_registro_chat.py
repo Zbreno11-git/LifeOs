@@ -243,9 +243,14 @@ def test_codigo_de_aprovacao_nunca_entra_no_registro(gmail, monkeypatch):
     gmail_tools.preparar_limpeza("ofertas@loja.example")
     agent.aprovacao_local("confirma 7391")
     agent.aprovacao_local("desfaz 7391")
-    tudo = repr(registro.recentes(dias=30))
-    assert "gmail.arquivar" in tudo and "gmail.desarquivar" in tudo
-    assert "7391" not in tudo
+    acoes = registro.recentes(dias=30)
+    assert {a.operacao for a in acoes} >= {"gmail.arquivar", "gmail.desarquivar"}
+    # Só os campos que guardam texto: o id e os horários são números, e os microssegundos de um
+    # horário (…147391) derrubaram este teste no CI em 2026-09-30 sem código nenhum vazado.
+    campos = [
+        (a.turno, a.origem, a.operacao, a.parametros, a.estado, a.resultado, a.erro) for a in acoes
+    ]
+    assert "7391" not in repr(campos)
 
 
 def test_desfaz_sem_horario_antigo_inteiro_recusa(calendario, monkeypatch, capsys):
