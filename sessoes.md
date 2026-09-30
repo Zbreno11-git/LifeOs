@@ -16,24 +16,25 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10b — nuvem 1b: o chat na nuvem, **em curso** (aberta em 2026-09-30; o plano está
-  em `PROGRESSO.md`). Depois dela, a **10c** (o Gmail na nuvem), que só abre depois de
-  2026-10-03.
+- **Sessão:** 10b — nuvem 1b: o chat na nuvem, **feita no VPS e no ar em 2026-09-30**; falta o
+  teste do dono no Mac (o roteiro está no `PROGRESSO.md`). Depois dela, a **10c** (o Gmail na
+  nuvem), que só abre depois de 2026-10-03.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** executar a 10b até o fim pelo plano do `PROGRESSO.md`.
+- **Agora:** o teste da 10b no Mac (roteiro no `PROGRESSO.md`); depois de 2026-10-03, abrir a 10c
+  pela prova do token do Gmail.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D59), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** os ok's de cada recurso e de cada deploy da 10b; a prova do token do Gmail
-  no Mac depois de 2026-10-03 (primeiro passo da 10c).
+- **Depende do dono:** o teste da 10b no Mac; a prova do token do Gmail no Mac depois de
+  2026-10-03 (primeiro passo da 10c).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -699,7 +700,7 @@ O que estava escrito na abertura:
   - `google-auth`, que já está no lock, para a impersonação no Mac;
   - o modelo de "script de deploy que só lê sem flag", da skill `nuvem-e-deploy` §6.
 
-## Sessão 10b — nuvem 1b: o chat na nuvem (em curso; dividida pelo dono em 2026-09-30)
+## Sessão 10b — nuvem 1b: o chat na nuvem (feita no VPS e no ar em 2026-09-30; falta o Mac)
 
 > **Dividida na abertura (2026-09-30), pela data do Gmail:** a prova de que o token do Gmail não
 > vence em 7 dias só vale depois de 2026-10-03, e no chat só o Gmail aprova com código (o clique
@@ -726,6 +727,12 @@ O que estava escrito na abertura:
   do `config`); o histórico chegou a 7 KB. O token da agenda do VPS, de 2026-09-20, renovou em
   2026-09-30: dez dias depois, o que indica que o app OAuth não está no modo "Testing" (onde vence
   em 7). Não substitui a prova do Gmail.
+- **Feito (2026-09-30, no VPS e no ar):** tudo da entrega acima.
+  - Deploy do `36fcd13` com 12 provas ✅: os segredos só como volume, a chave lê e o token da
+    agenda renova no motor, e as consultas do registro passam na produção.
+  - Um turno real no ar: 4,9 s e ~US$ 0,0015, sem conteúdo no log.
+  - Diário de 2026-09-30.
+  - Falta o teste do dono no Mac.
 
 ## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (separada da 10b em 2026-09-30)
 

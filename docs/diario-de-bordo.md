@@ -1046,6 +1046,68 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-30 — Sessão 10b: o chat na nuvem (feita no VPS e no ar; falta o Mac)
+
+Dividida na abertura pelo dono: o Gmail e o código de aprovação pela rede foram para a 10c, que
+só abre depois de 2026-10-03 (a prova do token do Gmail). Plano e medições no `PROGRESSO.md` até
+o fechamento; decisões na D59.
+
+O que mudou:
+- **O chat roda no motor.** `viking chat --nuvem` (Mac) manda a conversa inteira a cada turno
+  para `POST /chat`; o motor roda o Gemini com as 11 tools da nuvem (7 da agenda, 3 dos
+  lembretes, `acoes_recentes`) e devolve a conversa nova. A nuvem não guarda a conversa. O
+  `viking chat` local continua igual: o texto de sistema dele saiu do núcleo novo igual ao de
+  antes, byte a byte.
+- **Um núcleo do turno** (`assistant/turno.py`) para os dois chats, com o texto de sistema por
+  seção, conforme as tools presentes; `SO_NO_MAC` lista as 12 tools que ficam no Mac, com o
+  motivo, e um teste exige que toda tool esteja numa das duas listas.
+- **O registro de ações no Firestore**, atrás de `registro_interface.Registro`: o mesmo contrato
+  nos dois stores (19 testes em cada), ids crescentes (`time_ns` + `create()`), TTL de 30 dias
+  em `expira_em` e o corte dos 30 dias também na leitura. `banco.conectar` recusa no modo nuvem.
+- **O teto do Gemini**: US$ 10 por mês e US$ 1 por dia, no fuso do dono, conferido antes de cada
+  chamada ao modelo (`gastos/AAAA-MM`, comparar e trocar).
+- **A barreira de aprovação**: na nuvem, uma linha com cara de aprovação nunca vai ao modelo nem
+  entra no histórico; na 10b a resposta é "ainda não há o que aprovar na nuvem".
+- **Os segredos** (a chave do Gemini e o token da agenda) no Secret Manager, montados como volume
+  e lidos só pelo `config`; o token da agenda renova em memória e o login nunca abre na nuvem.
+- **`scripts/nuvem.py`**: os passos `segredos` e `ttl`, os subcomandos `segredo NOME` e
+  `prova-chat`, a prova "segredos só como volume" e as fumaças `/fumaca/registro` e
+  `/fumaca/segredos`. Dois consertos da segunda vida do script: com uma API nova desligada, a
+  lista dizia "criar" para o que existia; e o passo dos índices recriava um índice existente.
+- **Desvio declarado (C3):** as rotas do motor ficaram `async`, com o trabalho que bloqueia em
+  `run_in_threadpool` (uma rota `def` do Starlette não lê o corpo).
+
+Evidência:
+- **C0 (2026-09-30 ~04:10Z, VPS, ok do dono):** 5 turnos reais levaram de 0,9 a 3,0 s, com 2 ou 3
+  chamadas ao Gemini, 13.224 tokens e ~US$ 0,0062 no total; o histórico chegou a 7 KB.
+- **Infraestrutura (05:17Z):** `python scripts/nuvem.py` → 10 ✅ (índices prontos, TTL `ACTIVE`,
+  os dois segredos com 1 versão).
+- **Deploy (05:19:42Z–05:20:59Z, `36fcd13`, ok do dono):** 12 provas ✅. Entre elas, a imagem no
+  ar é a esperada, os segredos estão só como volume, `/fumaca/registro` responde 200 e
+  `/fumaca/segredos` responde `{'gemini': True, 'agenda': True}`. O log não tem erro.
+- **Turno real no ar (05:21Z, `prova-chat`, ok do dono):** "o que tenho amanhã na agenda?" →
+  `HTTP 200 em 4.9 s`, 3.986 tokens, ~US$ 0,0015. O teto gravou o gasto, e a resposta usou o
+  "amanhã" do fuso do dono (30/09; pelo relógio do motor, em UTC, seria 01/10). Nas 28 entradas
+  do log desde o deploy, nada da pergunta, da resposta ou do histórico.
+- **Portões:** suíte `2112 passed`; `ruff`, formatação e `mypy` limpos; mutações 251/251 mortas pelo teste esperado (05:25–05:41Z).
+
+Divergência na retomada depois do compact: o CI do checkpoint `573d553` falhou num teste da
+Sessão 5 que procurava o código falso `7391` dentro dos horários (`…147391`). Não houve
+vazamento; o teste agora olha só os campos de texto.
+
+Decisões: D59.
+
+Erros desta sessão (em `docs/erros.md`):
+- classe 4:
+  - duas mutações não caíram pelo teste que eu dizia (o corte dos 30 dias; o segredo no
+    ambiente);
+  - o teste instável da Sessão 5;
+- classe 5:
+  - a emenda do `registro.py` cortou na docstring;
+  - uma mutação rodou em primeiro plano;
+  - um valor falso com cara de chave foi barrado pelo gitleaks;
+- classe 7: o script da nuvem foi desenhado só para a primeira execução.
+
 ### 2026-09-30 — Sessão 10 fechada no Mac
 
 Saída colada pelo dono: `git pull` até `736fd1a`; o `uv sync` trouxe as 7 versões do C1;

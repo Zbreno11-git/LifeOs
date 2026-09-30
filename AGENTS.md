@@ -43,15 +43,24 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `banco.py` — o `viking.db`: o **único** lugar que abre o SQLite (`conectar()`) e as
     migrations numeradas do arquivo inteiro, com ledger `migracoes` e checksum (Sessão 9, D56);
     lembretes, registro e confirmações só consomem
-  - `custos.py` — contabilidade de uso dos modelos (real para o Jev, estimada para o Gemini)
+  - `custos.py` — contabilidade de uso dos modelos (real para o Jev, estimada para o Gemini) e o
+    teto de gasto do chat da nuvem (`Teto`: `gastos/AAAA-MM` no Firestore, no fuso do dono,
+    conferido antes de cada chamada ao modelo pelo gancho de `instrumentar`; Sessão 10b, D59)
   - `google_auth.py` — login OAuth do Google compartilhado pelo calendário e pelo Gmail (confere o
-    escopo gravado no token; grava com permissão 600)
+    escopo gravado no token; grava com permissão 600). Na nuvem (`VIKING_STORE=firestore`),
+    `credenciais_da_nuvem`: o token do segredo, renovado em memória, nunca gravado, e o login
+    nunca se abre
   - `nao_confiavel.py` — o bloco delimitado de conteúdo de terceiros (página, e-mail) para o modelo
   - `aprovacoes.py` — os tipos de ação que se aprovam com código (só dados: ação, janela do
     desfazer, se aprova no chat ou só em `viking aprovar`); quem executa é o laço do chat ou a CLI
-  - `registro.py` — registro local de ações (30 dias, `viking.db`, tabela `acoes`): todo efeito
-    externo passa por `with registro.acao(...)`, com estados feita/falhou/incerta e a cópia para
-    desfazer; `registro_texto.py` é o texto (tool `acoes_recentes`, aviso depois de um erro)
+  - `registro.py` — registro de ações (30 dias): todo efeito externo passa por `with
+    registro.acao(...)`, com estados feita/falhou/incerta e a cópia para desfazer; a API pública
+    e as regras moram aqui, e o store atrás de `registro_interface.Registro` (Sessão 10b):
+    `registro_sqlite.py` (o `viking.db`, tabela `acoes`) ou `registro_firestore.py` (a nuvem,
+    coleção `acoes`, ids crescentes por `time_ns` + `create()`, TTL em `expira_em`), escolhido
+    por `VIKING_STORE`; `registro_texto.py` é o texto (tool `acoes_recentes`, aviso depois de um
+    erro). `firestore_comum.py` é o cliente e o comparar e trocar dos três usos do Firestore
+    (lembretes, registro, teto)
   - `confirmacao.py` — confirmação mecânica: código curto ligado aos dados exatos de uma ação,
     uma vez só e por 10 min (SQLite em `viking.db`); primeiro uso na limpeza do Gmail, a Sessão 5
     reaproveita
@@ -87,19 +96,29 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     do dono entra aqui, e `VIKING_STORE` escolhe o store) e
     `envio.py` (`viking lembretes --enviar`: um e-mail por lembrete vencido em 24 h, com reserva
     no banco para sair uma vez só)
-  - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima
+  - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima.
+    `turno.py` é o núcleo do turno dos dois chats (o texto de sistema por seção, conforme as
+    tools presentes; o envio com o aviso depois de um erro; o histórico em JSON); `agent.py` é o
+    REPL do Mac e `na_nuvem.py` o turno no motor (a barreira que não deixa uma linha com cara de
+    aprovação chegar ao modelo, o teto, o Gemini com prazo, e só as tools da nuvem: `SO_NO_MAC`
+    diz o que fica no Mac e por quê, e um teste exige que toda tool esteja numa das duas)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
     pelo IAM e, na primeira instrução de toda rota, pela verificação do token (assinatura,
-    audience, e-mail `viking-cli@`); `cliente.py` é o terminal do Mac falando com ele (`viking
-    lembretes --nuvem`), com o token do `viking-cli@` pedido pelo login do Google Cloud do dono
+    audience, e-mail `viking-cli@`), com `POST /chat` (o turno, sem estado: a conversa vai e
+    volta no corpo, até 4 MiB) e fumaças grátis (`/fumaca/vencidos`, `/registro`, `/segredos`);
+    `cliente.py` é o terminal do Mac falando com ele (`viking lembretes --nuvem`), com o token do
+    `viking-cli@` pedido pelo login do Google Cloud do dono; `chat_cliente.py` é o `viking chat
+    --nuvem` (a conversa e a nota ficam na memória do terminal; Sessão 10b, D59)
 - `Dockerfile`, `.dockerignore` — a imagem do motor: base por digest, só `pyproject`/`uv.lock`/
   `src`, o extra `nuvem`, não-root, sem log de acesso (`tests/test_dockerfile.py`).
 - `scripts/nuvem.py` — a infraestrutura e o deploy do GCP: sem flag só lê e roda as provas; com
   `--executar` cria um passo ou publica (só um commit limpo, no GitHub e com CI verde). Todo
   `gcloud` leva o `--project` do Viking (o login do VPS é o do dono e alcança os outros projetos
-  dele). `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
+  dele). `segredo NOME` sobe a chave do Gemini ou o token da agenda para o Secret Manager pela
+  entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
+  quando pedido). `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `tests/` — pytest para `src/lifeos`.
 - `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
@@ -166,6 +185,11 @@ bash scripts/gitleaks.sh git . # segredos no histórico inteiro (o CI roda igual
 bash scripts/instalar_hooks.sh # o mesmo scanner no commit desta cópia (uma vez)
 python scripts/nuvem.py        # a infraestrutura do GCP, medida (nada muda sem --executar)
 python scripts/nuvem.py deploy # o que está no ar, o que mudou desde, e as provas ao vivo
+python scripts/nuvem.py segredo viking-gemini
+                               # quantas versões; com --executar sobe uma nova (do .env ou de
+                               # secrets/), pela entrada padrão
+python scripts/nuvem.py prova-chat
+                               # um turno real no motor (gasta: ~US$ 0,001), o tempo e o gasto
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
                                # acessar, egress e das contas de finanças (à mão; não
                                # editar nada enquanto roda;
@@ -173,6 +197,8 @@ python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
                                # dentro dele: /custos mostra o gasto da sessão
+viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes e registro; o
+                               # navegador, o Gmail e as finanças seguem no `viking chat`)
 viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
 viking browser --doctor         # versão do Jev (ramo/commit/patch) + diagnóstico do Browser
@@ -217,6 +243,9 @@ Resumo curto; detalhe completo em `docs/arquitetura/viking-visao-e-arquitetura.m
 `browser/` (executor Jev por subprocesso, dirigindo uma Chrome real via Browser Harness/CDP — ver
 `docs/arquitetura/browser-automation-stack.md`), e `reminders/` (SQLite). Em paralelo, `mcp_server/`
 expõe calendário + lembretes como um servidor MCP próprio, para outras ferramentas chamarem o Viking.
+Desde a Sessão 10b, `viking chat --nuvem` → `nuvem/chat_cliente.py` → `POST /chat` do motor →
+`assistant/na_nuvem.py` → o mesmo núcleo (`assistant/turno.py`), com a agenda, os lembretes e o
+registro no Firestore; os dois chats convivem até a S11 (D59).
 
 Ações irreversíveis ou sensíveis (deletar eventos, navegar em contas autenticadas do usuário) devem
 pedir confirmação explícita — não rodar silenciosamente. Controlar o Chrome real do usuário é uma
@@ -258,7 +287,9 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   fixo da máquina — não acompanha horário de verão)/`VIKING_NUVEM_PROJETO` e `VIKING_NUVEM_URL` (a
   nuvem, no Mac e no VPS)/`VIKING_NUVEM_FATURAMENTO`, `_ORCAMENTO` e `_FUSO` (só no VPS, para
   `scripts/nuvem.py`; o fuso é o que o motor recebe, e troca quando o dono se mudar)/`VIKING_STORE`
-  (`sqlite` ou `firestore`, este só no motor). Copiar de `.env.example`. Caminhos relativos
+  (`sqlite` ou `firestore`, este só no motor)/`VIKING_TETO_GEMINI_MES` e `_DIA` (o teto do chat
+  da nuvem, US$ 10 e 1)/`VIKING_GEMINI_CHAVE_ARQUIVO` e `VIKING_AGENDA_TOKEN_ARQUIVO` (só no
+  motor, postos pelo deploy: os arquivos do volume do Secret Manager). Copiar de `.env.example`. Caminhos relativos
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
   `viking` foi chamado.
 - Navegador: banco e e-mail são **bloqueados por padrão** (lista em `config._BLOQUEADOS_PADRAO`,
@@ -490,6 +521,16 @@ de nuvem do Viking passa por `scripts/nuvem.py._gcloud`, que põe o `--project` 
 nuvem real: o `conftest` troca o `CLOUDSDK_CONFIG` por uma pasta vazia, e o store do Firestore
 só abre no emulador sob pytest. O `status.url` do Cloud Run é a URL antiga, com hash; a audience
 do motor é a determinística, que está na anotação `run.googleapis.com/urls`.
+
+**Segredo da nuvem é arquivo de volume, lido só pelo `config`.** A chave do Gemini e o token da
+agenda chegam ao motor como arquivos (`--set-secrets=/segredos/...`), nunca como variável de
+ambiente: a variável é lida na partida e o Google manda fixar a versão, e um `describe` do
+serviço a mostraria como referência no ambiente. A prova "segredos só como volume" do `deploy`
+reprova qualquer variável fora da lista ou com `valueFrom`. Cada leitura do volume é um acesso
+cobrado (10 mil grátis por mês, lido em 2026-09-30), por isso `config._segredo` lê uma vez por
+processo. O token da agenda na nuvem renova **em memória**: o volume é só leitura, e
+`google_auth` nunca abre o login lá (penduraria o pedido). Subir um valor novo é `scripts/nuvem.py
+segredo NOME --executar`, pela entrada padrão do `gcloud`.
 
 ## Perguntas em aberto
 

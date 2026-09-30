@@ -5,62 +5,39 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30 ~05:10Z, Sessão 10b: C0–C4 ✅, C5 quase (o Google construindo)
+## ▶️ RETOMAR AQUI — 2026-09-30 ~05:45Z, Sessão 10b: feita no VPS e no ar (C0–C7 ✅); falta o Mac (C8)
 
-**Estado (2026-09-30 05:10Z):** `git status --short` limpo · HEAD `f3b11f0` = remoto · travas:
-nenhuma · background: nenhum. CI verde pelo SHA inteiro em `fbe4acb`, `f896d3f`, `d5468b6` e
-`f3b11f0`. Suíte `2112 passed` (com o emulador e o gitleaks exigidos); `ruff`, formatação,
-`mypy` (22 arquivos) limpos; 251 mutações com a âncora certa (as novas de C1–C5 mortas pelo
-teste esperado, rodadas por grupo; a rodada inteira é do C7).
+**Estado (~05:45Z):**
+- `git status --short` limpo · HEAD = o commit de fechamento da 10b (o seguinte a `36fcd13`) =
+  remoto · travas: nenhuma · background: nenhum.
+- CI pelo SHA inteiro: `success` em `36fcd13`; o do fechamento conferido depois do push.
+- Suíte `2112 passed`; `ruff`, formatação e `mypy` (22 arquivos) limpos; mutações 251/251
+  (05:25–05:41Z, em background).
 
-**Na nuvem (medido às 05:10Z, `python scripts/nuvem.py`):** 8 ✅; `indices` ⬜ (o de
-`acoes (operacao, criada_em)` construindo, criado às ~05:09Z) e `ttl` ⬜ (`acoes.expira_em`:
-CREATING, ~05:10Z). Os segredos `viking-gemini` e `viking-agenda` com 1 versão cada, só o
-`viking-motor@` lendo. O motor no ar ainda é o `b7a0635` (o da 10): **nada da 10b foi publicado.**
+**No ar (medido às 05:21:46Z, `python scripts/nuvem.py deploy`):**
+- o motor `36fcd13`, com 12 provas ✅ e 0 commits desde a imagem nos caminhos dela;
+- a infraestrutura com 10 ✅.
+- Os commits depois de `36fcd13` são só de documentação, fora dos caminhos da imagem.
 
-**Próximo passo exato:**
-1. `python scripts/nuvem.py` → **10 ✅** (esperar o índice READY e a TTL ACTIVE; minutos). Fecha o
-   C5 (✅ no mapa).
-2. C6, **com o ok do dono já dado em 2026-09-30** ("Pode publicar e testar"):
-   `python scripts/nuvem.py deploy --executar` → as provas antigas + "segredos só como volume" +
-   `/fumaca/registro` 200 + `/fumaca/segredos` = `{"gemini": true, "agenda": true}` + log sem erro.
-   Se a agenda der `false`, o token do VPS não renovou no ar: subir o do Mac (a 🐞 do C6).
-3. Depois das provas: `python scripts/nuvem.py prova-chat` (um turno real, "o que tenho amanhã na
-   agenda?", ok dado) → HTTP 200; anotar o tempo, o consumo e o gasto no mapa.
-4. C7 (fechamento), abaixo.
+**Próximo passo exato:** o dono roda o roteiro do Mac (C8, abaixo) e cola a saída.
+- Se passar: C8 ✅; a barra vai a 17 de 30; o diário ganha "Sessão 10b fechada no Mac"; este
+  bloco passa a apontar para a 10c.
+- A 10c só abre depois de 2026-10-03, pela prova do token do Gmail no Mac.
 
-**Para o C7 (fechamento), não esquecer:**
-- mutações inteiras em background (`VIKING_EXIGIR_EMULADOR=1 python scripts/mutacoes.py >
-  arquivo`), sem `timeout`: esperado 251/251;
-- `AGENTS.md`: estrutura (`assistant/turno.py`, `assistant/na_nuvem.py`, `nuvem/chat_cliente.py`,
-  `registro_interface/sqlite/firestore.py`, `firestore_comum.py`), `viking chat --nuvem`,
-  `scripts/nuvem.py segredo`/`prova-chat`, as variáveis (`VIKING_TETO_GEMINI_*`,
-  `VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO`), a armadilha "segredo só como
-  volume"; `.env.example` com as variáveis novas;
-- D59: acrescentar o desvio das rotas (`async` + `run_in_threadpool`) e os dois consertos do
-  script (passo não medido, índices);
-- `docs/fontes/gcp-cloud-run-firestore.md`: Secret Manager (cota, volume × variável), o prazo
-  (300 s padrão, 3600 máx.), a TTL, o turno medido, o `ALREADY_EXISTS` do índice;
-- **erros desta sessão, para `docs/erros.md`:** (classe 5) a emenda do `registro.py` cortou no
-  "`from __future__`" da docstring, não na linha do import; (classe 4) a mutação do corte dos 30
-  dias caiu por outro teste (a consulta já filtrava) e a da prova de segredo no ambiente
-  sobreviveu (o caso "vazado" usava um nome já recusado por outra regra); (classe 7) o
-  `scripts/nuvem.py` da 10 foi desenhado para a primeira execução (nada existe): na segunda, com
-  uma API nova, listou criar o que existe, e o passo dos índices recriou um que existia; (classe
-  5) uma mutação rodada em primeiro plano, contra a regra; o valor falso com forma de chave num
-  teste barrado pelo hook do gitleaks (trocado por um sem forma de chave);
-- diário (com "Erros desta sessão" e o que melhorou em linguagem simples), barra (16 de 30; a 10b
-  conta quando passar no Mac), `sessoes.md` (10b feita no VPS), e o roteiro do Mac (C8), abaixo;
-- duas passadas de revisão; `/security-review` e `/code-review` se estiverem disponíveis.
-
-**Roteiro do Mac (C8), depois do C7:**
-1. `cd ~/LifeOs && git pull && git log --oneline -1`
+**Roteiro do Mac (C8):**
+1. `cd ~/LifeOs && git pull && git log --oneline -1` → o commit de fechamento da 10b.
 2. `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q`
-3. `viking chat --nuvem`: "o que tenho amanhã?"; "cria um lembrete de teste para amanhã às 9h"
-   (a resposta traz o aviso de que não sai por e-mail); `confirma 1234` ("na nuvem ainda não há o
-   que aprovar"); `/custos`; `sair`
-4. `viking lembretes --nuvem` → o lembrete com a marca
-5. `viking chat` (o local) → uma pergunta à agenda, igual a antes
+   → nenhuma falha; os pulados são as peças da nuvem, que o Mac não instala.
+3. `viking chat --nuvem`, uma linha por vez:
+   - "o que tenho amanhã?" → os eventos no fuso dele;
+   - "cria um lembrete de teste para amanhã às 9h" → a resposta traz o aviso de que o e-mail dele
+     ainda não sai;
+   - `confirma 1234` → "Na nuvem ainda não há o que aprovar com código…";
+   - `/custos` → o gasto do dia e do mês, com os tetos;
+   - "conclui o lembrete de teste";
+   - `sair`.
+4. `viking lembretes --nuvem` → a lista da nuvem, com a marca de que o e-mail ainda não sai.
+5. `viking chat` (o local) → "o que tenho amanhã?", igual a antes; `sair`.
 
 **Feito até aqui (2026-09-30):**
 - **C0:** o turno medido (0,9–3,0 s, ~US$ 0,0006–0,0018 por turno); documentos; `c515bbc`.
@@ -91,6 +68,28 @@ CREATING, ~05:10Z). Os segredos `viking-gemini` e `viking-agenda` com 1 versão 
   prazo de 320 s (o do motor + 20). Suíte `2099 passed`; mutações 245 (as do C3 e do C4 mortas).
 - **C5 (2026-09-30 05:17Z, depois do compact):** `python scripts/nuvem.py` → 10 ✅ (`indices`:
   prontos; `ttl`: `acoes.expira_em: ACTIVE`; os dois segredos com 1 versão).
+- **C6 (2026-09-30, ok's do dono de antes do compact):**
+  - **`deploy --executar` de 05:19:42Z a 05:20:59Z** (`36fcd13`), com as provas literais:
+    - ✅ imagem no ar = a esperada: `motor:36fcd13233b6…`;
+    - ✅ segredos só como volume, nada no ambiente: variáveis `VIKING_AGENDA_TOKEN_ARQUIVO`,
+      `VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_NUVEM_PROJETO`, `VIKING_NUVEM_URL` e
+      `VIKING_TIMEZONE`; volumes `viking-agenda` e `viking-gemini`;
+    - ✅ URL = a audience;
+    - ✅ só o `viking-cli@` invoca;
+    - ✅ sem token: `HTTP 403`;
+    - ✅ o dono em pessoa: `HTTP 401 'token recusado'`;
+    - ✅ `/versao`, `/lembretes`, `/fumaca/vencidos` e `/fumaca/registro`: `HTTP 200`;
+    - ✅ `/fumaca/segredos`: `HTTP 200 {'gemini': True, 'agenda': True}`;
+    - ✅ log sem erro (30 min): `0 erro(s)`.
+  - **`prova-chat` às 05:21:15Z:** `HTTP 200 em 4.9 s`, e o `consumo` deu `3986 tokens (3842 in
+    / 144 out) · ~US$ 0,001513`.
+    - O teto gravou o gasto: `{'dia': 0.0015…, 'mes': 0.0015…, 'teto_dia': 1.0, 'teto_mes':
+      10.0, 'estimado': True}`.
+    - A resposta começou por "Não há eventos na sua agenda para amanhã, 30 de setembro de 2026.",
+      o "amanhã" do fuso do dono (em UTC seria 01/10).
+  - **As provas de novo às 05:21:46Z:** 12 ✅, e 0 commits desde a imagem.
+  - **O log do motor desde 05:19Z:** 28 entradas, e nenhuma com a pergunta, a resposta ou o
+    histórico. Os 2 `WARNING` são a prova "sem token" recusada.
 - **Divergência na retomada (05:15Z):** o CI do checkpoint `573d553` deu `failure` em
   `test_codigo_de_aprovacao_nunca_entra_no_registro` (da Sessão 5): o teste procurava o código
   falso `7391` no `repr` inteiro do registro, e os microssegundos de um horário eram `…147391`.
@@ -102,30 +101,37 @@ CREATING, ~05:10Z). Os segredos `viking-gemini` e `viking-agenda` com 1 versão 
   `await _quem(request)`. Motivo: uma rota `def` do Starlette não lê o corpo do pedido; o
   objetivo (não travar o laço de eventos durante um turno) é o mesmo.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `sessoes.md` (10b e
-10c); `docs/decisoes.md` D57, D58 e D59; skills `nuvem-e-deploy`, `seguranca`, `integracoes`,
-`falha-ruidosa`, `dados-e-banco`.
+- **C7 (2026-09-30):**
+  - portões: `2112 passed`; `All checks passed!`; `122 files already formatted`; `Success: no
+    issues found in 22 source files`;
+  - mutações `251 · mortas pelo teste esperado: 251`;
+  - duas passadas de revisão sem defeito novo (o corpo sem `Content-Length` é lido antes de
+    medir, limitado a 32 MiB pelo Cloud Run e só depois de `_quem`);
+  - `/security-review` e `/code-review` não estão disponíveis nesta sessão;
+  - docs: `AGENTS.md`, `.env.example`, D59, fontes, erros (classes 4, 5 e 7), diário, barra e
+    `sessoes.md`.
+
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (10b, 10c); a D59.
 
 **Não pode ser esquecido:**
-- todo `gcloud` do Viking leva `--project` (o login do VPS é o do dono; o projeto padrão é outro);
-- a chave do Gemini e o token da agenda sobem para o Secret Manager pela entrada padrão, sem
-  aparecer em lugar nenhum; nada daqui usa as chaves do `.env` sem pedido (a medição do C0 teve o
-  ok do dono);
-- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail; na 10b a nuvem
-  não aprova nada (10c);
+- todo `gcloud` do Viking leva `--project`;
+- segredo só pela entrada padrão;
+- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail;
 - o VPS tem o cliente OAuth e o token da agenda: nada que envie, apague ou arquive rodado daqui;
-- publicar = `python scripts/nuvem.py deploy --executar`, com o ok do dono; migração publicada
-  não se edita; mutações em background, sem `timeout`.
+- migração publicada não se edita;
+- mutações em background, sem `timeout`;
+- nunca presumir o fuso do dono.
 
-**Depende do dono:** nada para o C5 e o C6 (os ok's foram dados em 2026-09-30: os 5 passos da
-nuvem e "Pode publicar e testar", deploy + um turno real); o teste do Mac (C8); a prova do token
-do Gmail depois de 2026-10-03 (primeiro passo da 10c).
+**Depende do dono:**
+- o teste do Mac (C8);
+- a prova do token do Gmail depois de 2026-10-03, o primeiro passo da 10c.
 
-**Antes de confiar neste bloco:** `git status --short` vazio; HEAD = o checkpoint depois de
-`f3b11f0`; `ls .mutacao.lock` → não existe; `.venv/bin/python -m pytest -q` → `2112 passed`;
-`gh run list --commit $(git rev-parse HEAD)` → `success`; `python scripts/nuvem.py` → 10 ✅ (ou
-só `indices`/`ttl` construindo); `python scripts/nuvem.py deploy` → o motor ainda `b7a0635`.
-
+**Antes de confiar neste bloco:**
+- `git status --short` vazio e HEAD = o commit de fechamento da 10b;
+- `ls .mutacao.lock` → não existe;
+- `.venv/bin/python -m pytest -q` → `2112 passed`;
+- `gh run list --commit $(git rev-parse HEAD)` → `success`;
+- `python scripts/nuvem.py deploy` → o motor `36fcd13`, 12 ✅.
 ## Plano — Sessão 10b: nuvem 1b, o chat na nuvem (o Gmail e o código pela rede vão para a 10c)
 
 ### Context
@@ -239,8 +245,8 @@ Todos os destinos são escritos no C0, antes de qualquer código.
 | C3 | motor: rotas `def`, `POST /chat`, limite de corpo, fumaças novas; `google_auth` modo nuvem; `config` lê segredo de arquivo; imagem constrói | C2 | ✅ |
 | C4 | `viking chat --nuvem` (cliente com histórico e nota, prazo longo, erros em português) e a marca em `viking lembretes --nuvem`; testes offline | C3 | ✅ |
 | C5 | `scripts/nuvem.py`: API `secretmanager`, passos `segredos` e `ttl`, subcomando que sobe uma versão sem mostrar, deploy com volumes e prazo; **ok** → API, segredos, versões, TTL; só-leitura 10 ✅ | C3 | ✅ (10 ✅ às 05:17Z) |
-| C6 | **ok** → deploy; provas antigas + novas ✅; **ok** → um turno real no ar (tempo e custo anotados) | C4, C5 | ⬜ |
-| C7 | portões, duas passadas, `/security-review` se houver, docs, mutações em background, commits, push, CI pelo SHA | C6 | ⬜ |
+| C6 | **ok** → deploy; provas antigas + novas ✅; **ok** → um turno real no ar (tempo e custo anotados) | C4, C5 | ✅ (`36fcd13` no ar às 05:20:59Z; 12 provas ✅; o turno real em 4,9 s) |
+| C7 | portões, duas passadas, `/security-review` se houver, docs, mutações em background, commits, push, CI pelo SHA | C6 | ✅ (251/251; CI pelo SHA depois do push) |
 | C8 | teste do dono no Mac | C7 | ⬜ |
 
 ### Fase 0 — documentos e a medição (C0)

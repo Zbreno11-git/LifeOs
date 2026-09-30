@@ -19,10 +19,10 @@
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 21 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 16 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 10 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 4 | Teste que não separava o certo do errado | 19 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 5 | A ferramenta fez outra coisa do que eu li | 13 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 11 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 10 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
@@ -341,6 +341,24 @@ levou 14 s em vez de 6. O que tem de novo: um teste com threads tem de **recolhe
 afirmar que não houve nenhuma**; e uma corrida se mede em muitas rodadas (5 de 10 caíam antes do
 conserto; 0 de 40 depois), não numa.
 
+**2026-09-30 — duas mutações da 10b não caíram pelo teste que eu dizia (Sessão 10b, C1 e C5).**
+A do corte dos 30 dias no registro do Firestore caiu, mas por outro teste: `recentes` já filtra
+na consulta, e nenhum teste passava pelos caminhos que só filtram em Python (`do_turno`,
+`obter`); ganhou `test_o_que_passou_dos_30_dias_nao_volta_por_nenhum_caminho`. A da prova "segredo
+só como volume" sobreviveu: o caso "vazado" do teste usava um nome de variável que outra regra da
+mesma prova já recusava, e a regra do `valueFrom` nunca decidia nada; ganhou um caso com um nome
+permitido e o `valueFrom` disfarçado. O que tem de novo: numa guarda com duas regras, o caso
+negativo tem de ser pego **só** pela regra que ele diz provar.
+
+**2026-09-30 — um teste da Sessão 5 caiu no CI por acaso (retomada da 10b).**
+`test_codigo_de_aprovacao_nunca_entra_no_registro` procurava o código falso `7391` no `repr`
+inteiro das ações, horários incluídos; os microssegundos de um horário saíram `…147391`, e o CI
+do checkpoint `573d553` reprovou sem vazamento nenhum. Instável havia 5 sessões, com uma chance
+pequena por rodada. O que tem de novo: uma asserção de **ausência** ("isto não aparece") sobre um
+texto com números aleatórios tem falso positivo embutido; ela olha só os campos que poderiam
+carregar o dado (o conserto lê os campos de texto e continua caindo com o código nos
+parâmetros).
+
 ### 5. A ferramenta fez outra coisa do que eu li
 
 **2026-09-26 — `\u202e` pela ferramenta de escrita (Sessão 4).** O parâmetro é JSON: o escape virou
@@ -406,6 +424,15 @@ título ficou errado por dois commits e um compact, até a leitura da abertura d
 novo: o defeito estava **fora** do trecho que eu pretendia mudar, onde revisão nenhuma olha; o
 `git diff --stat` mostrava o número de linhas esperado mais uma. Antídoto: depois de toda troca
 por expressão num documento, `head -3` do arquivo e o `git diff` inteiro dele, não só o trecho.
+
+**2026-09-30 — três escorregões de ferramenta na mesma sessão (Sessão 10b).** (1) Ao separar o
+`registro.py` em interface e stores, cortei o arquivo no primeiro "`from __future__`" do texto,
+que estava **na docstring**, e não na linha do import; os testes pegaram na hora, e a emenda
+passou a usar a linha inteira com as quebras em volta. (2) Rodei uma mutação em primeiro plano,
+contra a regra do `AGENTS.md` (background, sem `timeout`, saída num arquivo); sem dano, porque
+terminou. (3) Um valor falso com cara de chave do Google num teste (`AIza…`) foi barrado pelo
+hook do gitleaks no commit; trocado por um texto sem forma de chave. O que tem de novo: a busca
+por texto num código-fonte casa também o texto que **fala** do código.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 
@@ -559,6 +586,15 @@ reconhecia a ausência de um recurso por `NOT_FOUND`, "not found", "does not exi
 run services describe` diz "Cannot find service [motor]", e o primeiro deploy caiu num
 traceback antes de listar o que faria. O que tem de novo: cada comando do `gcloud` tem o seu
 texto; a lista cresce com o texto real medido, num teste, e qualquer outro erro continua erro.
+
+**2026-09-30 — o `scripts/nuvem.py` desenhado para a primeira execução (Sessão 10b, C5).** Na 10
+tudo era criado do zero. Na segunda vida do script, com a API do Secret Manager nova e ainda
+desligada, os passos que dependiam dela não eram medidos, e a lista dizia "criar" para recursos
+que já existiam; e o passo dos índices, com um índice novo na lista, tentou recriar o antigo e
+parou em `ALREADY_EXISTS`. Consertos: o passo não medido diz "não medido" e mostra `?→`; os
+índices criam só o que falta, com teste. O que tem de novo: um script de infraestrutura tem os
+dois vizinhos, "nada existe" e "quase tudo existe", e o segundo é o de todo dia depois do
+primeiro.
 
 ### 8. Comando que escreve com alcance maior que a mudança
 

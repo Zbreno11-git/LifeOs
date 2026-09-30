@@ -1,16 +1,18 @@
 # GCP: Cloud Run, Firestore e o deploy do Viking
 
-Referência curta do que a Sessão 10 mediu (2026-09-29/30) ao pôr o motor no ar. Cada linha diz
-de onde veio: **medido** (comando nosso, com data) ou **lido** (documentação, com data). As
-decisões estão na D47 (revista) e na D58; o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`
-e `src/lifeos/reminders/store_firestore.py`.
+Referência curta do que a Sessão 10 mediu (2026-09-29/30) ao pôr o motor no ar, e a 10b
+(2026-09-30) ao pôr o chat nele. Cada linha diz de onde veio: **medido** (comando nosso, com
+data) ou **lido** (documentação, com data). As decisões estão na D47 (revista), na D58 e na D59;
+o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_nuvem.py`,
+`src/lifeos/registro_firestore.py` e `src/lifeos/reminders/store_firestore.py`.
 
 ## Onde está
 
 - Um projeto só do Viking (o ID em `VIKING_NUVEM_PROJETO`), região `southamerica-east1` (a casa do dono; o local do Firestore não
   muda depois de criado). O ID e a URL ficam no `.env`, não no repo.
-- `python scripts/nuvem.py` mede os 8 passos da infraestrutura; `python scripts/nuvem.py deploy`
-  mostra o que está no ar e roda as provas. Nada muda sem `--executar`.
+- `python scripts/nuvem.py` mede os 10 passos da infraestrutura (8 da Sessão 10; `segredos` e
+  `ttl` da 10b); `python scripts/nuvem.py deploy` mostra o que está no ar e roda as provas. Nada
+  muda sem `--executar`.
 
 ## Custo e cota
 
@@ -66,6 +68,30 @@ e `src/lifeos/reminders/store_firestore.py`.
   emulador não exige índice; a rota `/fumaca/vencidos` exerce a consulta na produção.
 - **Medido:** o emulador é o jar do firebase-tools (v1.22.0, sha256 fixado em
   `scripts/emulador_firestore.sh`), com Java 21 (no CI, o `JAVA_HOME_21_X64` do runner).
+
+## Segredos, prazo e TTL (Sessão 10b)
+
+- **Lido (2026-09-30):** Secret Manager grátis por mês: 6 versões ativas, 10 mil acessos e 3
+  notificações de rotação. No Cloud Run, um segredo **montado como volume** é buscado ao ler o
+  arquivo e acompanha a versão `latest`; como **variável de ambiente**, é lido na partida da
+  instância e o Google manda fixar a versão. A conta que roda o serviço precisa de
+  `roles/secretmanager.secretAccessor` (dado **em cada segredo**, não no projeto). Cada volume
+  num diretório próprio (`/segredos/gemini/chave`, `/segredos/agenda/token.json`).
+- **Medido (2026-09-30):** os dois segredos com 1 versão cada; no ar, `/fumaca/segredos` →
+  `{'gemini': True, 'agenda': True}` (a chave lê e o token da agenda do VPS, de 2026-09-20,
+  renova no motor, em memória). O `describe` mostra só as variáveis de caminho e os volumes.
+- **Lido (2026-09-30):** o prazo de um pedido no Cloud Run é de 300 s por padrão e até 3600 s.
+  O motor usa 300 s; o cliente do Mac espera 320 s.
+- **Medido (2026-09-30):** a TTL de `acoes.expira_em` levou alguns minutos de `CREATING` a
+  `ACTIVE`; o índice composto novo (`acoes`: `operacao`, `criada_em`) ficou pronto no mesmo
+  intervalo. Criar um índice que já existe devolve `ALREADY_EXISTS`: o script cria só os que
+  faltam.
+- **Medido (2026-09-30 05:21Z, `scripts/nuvem.py prova-chat`):** um turno real no ar ("o que
+  tenho amanhã na agenda?"), logo depois do deploy, levou 4,9 s de ponta a ponta (do VPS), com
+  3.986 tokens (3.842 de entrada, 144 de saída) e ~US$ 0,0015 pela estimativa das tarifas do
+  `config`; o teto gravou o gasto no Firestore. No VPS (C0), os turnos levaram de 0,9 a 3,0 s.
+  O log do motor depois do turno: 28 entradas, nenhuma com a pergunta, a resposta ou o
+  histórico.
 
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 

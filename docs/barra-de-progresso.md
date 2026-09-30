@@ -7,14 +7,43 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-30 (Sessão 10 fechada no seu Mac).**
+**Última atualização: 2026-09-30 (Sessão 10b no ar; falta o seu teste no Mac).**
 
 `███████████░░░░░░░░░ 16 de 30 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9
-e 10; parciais: nenhuma; em curso: 10b (o chat na nuvem); na fila: 10c (o
+e 10; parciais: nenhuma; em curso: 10b (o chat na nuvem: feita e no ar, conta quando passar no
+seu Mac); na fila: 10c (o
 Gmail na nuvem), 11, 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi
 dividida, e para 30 quando a 10b foi dividida (2026-09-30).
+
+## 2026-09-30 — Sessão 10b: o chat foi para a nuvem (falta o seu teste no Mac)
+
+**O que ficou pronto:**
+- **`viking chat --nuvem`:** você conversa com o Viking, mas quem pensa é o motor na nuvem, não
+  o Mac. Ele cuida da agenda e dos lembretes, e sabe o que já fez (o registro de ações). O
+  navegador, o e-mail e as finanças continuam no `viking chat` de sempre, que não mudou.
+- **A conversa não fica guardada na nuvem:** ela mora só no seu terminal e vai junto a cada
+  pergunta. Fechou o terminal, acabou a conversa, como hoje.
+- **Um limite de gasto que para o Viking:** até US$ 1 por dia e US$ 10 por mês com o Gemini, no
+  seu fuso. Bateu, ele não pergunta mais ao modelo e diz quanto já foi gasto. O aviso do Google
+  só avisava; este para.
+- **A chave do Gemini e a permissão da sua agenda estão num cofre do Google** que só o motor
+  abre, como um arquivo. Não aparecem em configuração, em registro nem nesta conversa.
+- **Um código de aprovação nunca chega ao modelo na nuvem**, mesmo antes de a nuvem saber
+  aprovar alguma coisa (isso vem na 10c, com o Gmail).
+- **Um lembrete criado pelo chat da nuvem avisa em voz alta** que o e-mail dele ainda não sai
+  (sai a partir da Sessão 11).
+
+**Como sabemos:**
+- 12 provas no ar às 22:20 de Seattle de 29/09. O cofre abre, a permissão da agenda renova lá, e
+  quem não tem a identidade do seu terminal continua barrado.
+- Uma pergunta de verdade no ar ("o que tenho amanhã na agenda?") foi respondida em 4,9 segundos
+  por ~US$ 0,0015. Com o limite de US$ 1 por dia, dá umas 600 perguntas assim por dia.
+- 2112 testes passando no VPS, e 251 de 251 defeitos plantados de propósito, cada um
+  derrubado pelo teste certo.
+
+**Falta:** o seu teste no Mac (o roteiro está no fim da conversa).
 
 ## 2026-09-30 — Sessão 10: o Viking ganhou uma casa na nuvem (fechada no seu Mac)
 
