@@ -368,20 +368,27 @@ def _campos_do_indice(indice: dict) -> tuple[tuple[str, str], ...]:
     )
 
 
-def _m_indices(ctx: Contexto) -> Estado:
+def _indices(ctx: Contexto) -> dict[tuple[str, tuple[tuple[str, str], ...]], str]:
+    """Os índices compostos que existem, com o estado (READY, CREATING...)."""
     dados = _ler(_gcloud(ctx, "firestore", "indexes", "composite", "list", "--database=(default)"))
-    existentes = {
-        (i.get("name", "").split("/collectionGroups/")[-1].split("/")[0], _campos_do_indice(i))
+    return {
+        (i.get("name", "").split("/collectionGroups/")[-1].split("/")[0], _campos_do_indice(i)): (
+            i.get("state", "")
+        )
         for i in dados or []
-        if i.get("state") == "READY"
     }
-    faltam = [f"{c}: {campos}" for c, campos in INDICES if (c, campos) not in existentes]
+
+
+def _m_indices(ctx: Contexto) -> Estado:
+    existentes = _indices(ctx)
+    faltam = [f"{c}: {campos}" for c, campos in INDICES if existentes.get((c, campos)) != "READY"]
     return Estado(
         not faltam, "prontos" if not faltam else "faltam (ou construindo): " + "; ".join(faltam)
     )
 
 
 def _c_indices(ctx: Contexto) -> list[list[str]]:
+    existentes = _indices(ctx) if "firestore" in ctx.prontos else {}
     return [
         _gcloud(
             ctx,
@@ -398,6 +405,9 @@ def _c_indices(ctx: Contexto) -> list[list[str]]:
             ),
         )
         for colecao, campos in INDICES
+        # Só o que não existe: criar de novo um índice que existe (mesmo construindo) é
+        # ALREADY_EXISTS, e o passo pararia antes do índice novo (medido na 10b, 2026-09-30).
+        if "firestore" not in ctx.prontos or (colecao, campos) not in existentes
     ]
 
 

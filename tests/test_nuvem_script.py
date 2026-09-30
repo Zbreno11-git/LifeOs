@@ -563,3 +563,21 @@ def test_passo_nao_medido_nao_afirma_que_falta(nuvem, ctx, monkeypatch, capsys):
     assert "?→ gcloud firestore databases create" in saida
     assert "→ gcloud firestore databases create" not in saida.replace("?→", "")
     assert "não medido: os comandos abaixo só valem se o recurso não existir" in saida
+
+
+def test_indices_cria_so_o_que_nao_existe(nuvem, ctx, monkeypatch):
+    """Achado ao criar o índice do registro (2026-09-30): o passo recriava o dos lembretes, que
+    existia, levava ALREADY_EXISTS e parava antes do novo. Construindo também conta como existe."""
+    from lifeos.reminders import store_firestore
+
+    ((colecao, campos),) = store_firestore.INDICES
+    existente = {
+        "name": f"projects/p/databases/(default)/collectionGroups/{colecao}/indexes/1",
+        "state": "CREATING",
+        "fields": [{"fieldPath": c, "order": o} for c, o in campos],
+    }
+    monkeypatch.setattr(nuvem, "_ler", lambda _c: [existente])
+    pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
+    (comando,) = nuvem._c_indices(pronto)
+    assert "--collection-group=acoes" in comando
+    assert not nuvem._m_indices(pronto).pronto  # construindo não é pronto
