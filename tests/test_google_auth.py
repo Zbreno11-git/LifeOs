@@ -136,3 +136,99 @@ def test_escopos_em_string_unica_tambem_sao_lidos(google):
     google["token"].write_text(json.dumps({"scopes": " ".join(GMAIL + CALENDARIO)}))
     google_auth.credenciais(GMAIL, google["token"])
     assert google["logins"] == 0
+
+
+# --- na nuvem (Sessão 10b): o token vem do segredo, renova em memória, e o login nunca abre ------
+
+SCOPES_CAL = ["https://www.googleapis.com/auth/calendar"]
+_TOKEN_DA_AGENDA = {
+    "token": "velho",
+    "refresh_token": "r",
+    "client_id": "c",
+    "client_secret": "s",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "scopes": ["https://www.googleapis.com/auth/calendar"],
+    "expiry": "2026-09-19T21:26:07Z",
+}
+
+
+@pytest.fixture
+def na_nuvem(monkeypatch):
+    from lifeos import config
+
+    monkeypatch.setattr(config, "STORE", "firestore")
+    monkeypatch.setattr(google_auth, "_NA_NUVEM", {})
+    monkeypatch.setattr(config, "agenda_token", lambda: json.dumps(_TOKEN_DA_AGENDA))
+    monkeypatch.setattr(google_auth, "InstalledAppFlow", None)  # abrir login quebraria aqui
+    monkeypatch.setattr(google_auth, "_gravar_token", _nunca)
+    renovou = []
+
+    def refresh(self, _request):
+        renovou.append(1)
+        self.token = "novo"
+        self.expiry = None  # sem validade conhecida: `valid` fica verdadeiro
+
+    monkeypatch.setattr(google_auth.Credentials, "refresh", refresh)
+    return renovou
+
+
+def _nunca(*_a, **_k):
+    raise AssertionError("na nuvem nada é gravado nem abre login")
+
+
+def test_na_nuvem_o_servico_usa_o_segredo_e_nunca_o_login(na_nuvem, monkeypatch):
+    from lifeos import config
+
+    usadas = []
+    monkeypatch.setattr(google_auth, "build", lambda *_a, credentials: usadas.append(credentials))
+    google_auth.servico("calendar", "v3", SCOPES_CAL, config.GOOGLE_TOKEN_PATH)
+    google_auth.servico("calendar", "v3", SCOPES_CAL, config.GOOGLE_TOKEN_PATH)
+    assert usadas[0].token == "novo" and usadas[0] is usadas[1]  # um objeto por processo
+    assert na_nuvem == [1]  # renovou uma vez, em memória
+
+
+def test_na_nuvem_so_ha_o_token_da_agenda(na_nuvem):
+    from lifeos import config
+
+    with pytest.raises(RuntimeError, match="10c"):
+        google_auth.credenciais_da_nuvem(["x"], config.GMAIL_TOKEN_PATH)
+
+
+def test_na_nuvem_escopo_que_falta_erra_alto(na_nuvem):
+    from lifeos import config
+
+    with pytest.raises(google_auth.TokenDaNuvemRecusado, match="permissão"):
+        google_auth.credenciais_da_nuvem(
+            ["https://www.googleapis.com/auth/gmail.modify"], config.GOOGLE_TOKEN_PATH
+        )
+
+
+def test_na_nuvem_renovacao_recusada_erra_alto_e_nao_guarda(na_nuvem, monkeypatch):
+    from google.auth.exceptions import RefreshError
+
+    from lifeos import config
+
+    def recusa(self, _request):
+        raise RefreshError("invalid_grant")
+
+    monkeypatch.setattr(google_auth.Credentials, "refresh", recusa)
+    with pytest.raises(google_auth.TokenDaNuvemRecusado, match="suba um novo"):
+        google_auth.credenciais_da_nuvem(SCOPES_CAL, config.GOOGLE_TOKEN_PATH)
+    assert google_auth._NA_NUVEM == {}
+
+
+def test_segredo_e_lido_uma_vez_e_vazio_erra_sem_mostrar(monkeypatch, tmp_path):
+    from lifeos import config
+
+    monkeypatch.setattr(config, "_SEGREDOS", {})
+    chave = tmp_path / "chave"
+    chave.write_text("AIza-de-teste\n")
+    monkeypatch.setattr(config, "GEMINI_CHAVE_ARQUIVO", str(chave))
+    assert config.gemini_chave() == "AIza-de-teste"
+    chave.unlink()  # a segunda leitura não vai ao volume (cada leitura é um acesso cobrado)
+    assert config.gemini_chave() == "AIza-de-teste"
+    vazio = tmp_path / "vazio"
+    vazio.write_text("\n")
+    monkeypatch.setattr(config, "GEMINI_CHAVE_ARQUIVO", str(vazio))
+    with pytest.raises(RuntimeError, match="vazio"):
+        config.gemini_chave()

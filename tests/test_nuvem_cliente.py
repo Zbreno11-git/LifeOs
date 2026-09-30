@@ -39,8 +39,8 @@ class _Sessao:
     def __init__(self, resposta=None, erro=None):
         self.resposta, self.erro, self.pedidos = resposta, erro, []
 
-    def get(self, url, timeout):
-        self.pedidos.append((url, timeout))
+    def request(self, metodo, url, json=None, timeout=None):
+        self.pedidos.append((url, timeout) if metodo == "GET" else (metodo, url, json, timeout))
         if self.erro:
             raise self.erro
         return self.resposta
@@ -183,3 +183,36 @@ def test_nuvem_e_enviar_nao_andam_juntos(monkeypatch):
     with pytest.raises(SystemExit) as saida:
         cli.main()
     assert saida.value.code == 2  # o argparse recusa antes de qualquer coisa
+
+
+# --- o turno de chat (Sessão 10b) ---------------------------------------------------------
+
+
+def test_turno_de_chat_vai_por_post_com_a_conversa_no_corpo_e_o_prazo_longo():
+    sessao = _Sessao(_Resposta(200, {"resposta": "ok", "historico": []}))
+    pedido = {"mensagem": "oi", "historico": [], "nota": "", "sessao": "ab", "numero": 1}
+    assert cliente.turno_de_chat(sessao, pedido)["resposta"] == "ok"
+    ((metodo, url, corpo, prazo),) = sessao.pedidos
+    assert (metodo, url, corpo) == ("POST", f"{URL}/chat", pedido)
+    assert prazo == cliente.PRAZO_CHAT_S > 300  # acima do --timeout do motor
+
+
+def test_erro_do_motor_chega_com_o_motivo():
+    sessao = _Sessao(_Resposta(413, {"erro": "a conversa passou do tamanho que o motor aceita"}))
+    with pytest.raises(cliente.ErroDaNuvem, match="HTTP 413: a conversa passou do tamanho"):
+        cliente.turno_de_chat(sessao, {})
+
+
+def test_prazo_esgotado_avisa_que_o_motor_pode_ter_agido():
+    import requests
+
+    sessao = _Sessao(erro=requests.Timeout("lento"))
+    with pytest.raises(cliente.ErroDaNuvem, match="pode ter agido"):
+        cliente.turno_de_chat(sessao, {})
+
+
+def test_lembretes_da_nuvem_avisam_que_nao_saem_por_email(monkeypatch, capsys):
+    sessao = _Sessao(_Resposta(200, {"lembretes": [_lembrete()]}))
+    monkeypatch.setattr(cliente, "_sessao", lambda: sessao)
+    assert _rodar(monkeypatch) == 0
+    assert "o aviso por e-mail destes ainda não existe na nuvem" in capsys.readouterr().out

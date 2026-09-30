@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from pathlib import Path
 
 from google.auth.exceptions import RefreshError
@@ -24,6 +25,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+from lifeos import config
 from lifeos.config import GOOGLE_CREDENTIALS_PATH
 
 
@@ -103,5 +105,46 @@ def credenciais_sem_login(scopes: list[str], token_path: Path) -> Credentials | 
     return creds if creds.valid else None
 
 
+class TokenDaNuvemRecusado(RuntimeError):
+    """O Google recusou renovar o token que mora no Secret Manager (revogado, ou o app mudou)."""
+
+
+_NA_NUVEM: dict[str, Credentials] = {}
+_TRAVA_DA_NUVEM = threading.Lock()
+
+
+def credenciais_da_nuvem(scopes: list[str], token_path: Path) -> Credentials:
+    """Na nuvem (Sessão 10b, D59): o token vem do segredo (um volume só de leitura), renova **em
+    memória** e nunca é gravado; o login nunca abre (no motor ninguém clicaria, e o pedido ficaria
+    pendurado). Hoje só a agenda mora lá; o Gmail é da 10c.
+
+    Um objeto por processo, com trava: duas threads do motor não renovam juntas."""
+    if token_path != config.GOOGLE_TOKEN_PATH:
+        raise RuntimeError("na nuvem só há o token da agenda (o do Gmail chega na 10c)")
+    with _TRAVA_DA_NUVEM:
+        creds = _NA_NUVEM.get("agenda")
+        if creds is None:
+            info = json.loads(config.agenda_token())
+            gravados = info.get("scopes") or []
+            if isinstance(gravados, str):
+                gravados = gravados.split()
+            if not set(scopes) <= set(gravados):
+                raise TokenDaNuvemRecusado("o token da agenda na nuvem não tem a permissão pedida")
+            creds = Credentials.from_authorized_user_info(info, scopes)
+            _NA_NUVEM["agenda"] = creds
+        if not creds.valid:
+            try:
+                creds.refresh(Request())
+            except RefreshError:
+                _NA_NUVEM.pop("agenda", None)
+                raise TokenDaNuvemRecusado(
+                    "o Google recusou renovar o token da agenda na nuvem: suba um novo "
+                    "(`python scripts/nuvem.py segredo viking-agenda`, no VPS)"
+                ) from None
+    return creds
+
+
 def servico(api: str, versao: str, scopes: list[str], token_path: Path):
+    if config.STORE == "firestore":  # na nuvem: o token do segredo, e nunca o login
+        return build(api, versao, credentials=credenciais_da_nuvem(scopes, token_path))
     return build(api, versao, credentials=credenciais(scopes, token_path))

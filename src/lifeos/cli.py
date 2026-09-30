@@ -379,6 +379,7 @@ def _lembretes(args: argparse.Namespace) -> int:
             print(f"❌ Nuvem: {exc}.", file=sys.stderr)
             return 1
         print("☁️  Lembretes da nuvem:")
+        print("   (o aviso por e-mail destes ainda não existe na nuvem: chega numa próxima etapa)")
     elif not args.enviar:
         pendentes = service.pendentes()
     if not args.enviar:
@@ -402,9 +403,14 @@ def _lembretes(args: argparse.Namespace) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(prog="viking")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser(
+    chat_cli = subparsers.add_parser(
         "chat",
         help="Inicia o assistente de chat (calendário, navegador, lembretes, e-mail, finanças)",
+    )
+    chat_cli.add_argument(
+        "--nuvem",
+        action="store_true",
+        help="Conversa com o chat que roda na nuvem (agenda e lembretes; o resto fica no Mac)",
     )
     subparsers.add_parser(
         "mcp-server", help="Inicia o servidor MCP do Viking (calendário + lembretes)"
@@ -530,7 +536,11 @@ def main() -> None:
     # Quem pede, para o registro de ações: o chat e o MCP marcam a própria origem por cima.
     registro.ORIGEM.set("cli")
 
-    if args.command == "chat":
+    if args.command == "chat" and args.nuvem:
+        from lifeos.nuvem import chat_cliente
+
+        sys.exit(chat_cliente.iniciar())
+    elif args.command == "chat":
         from lifeos.assistant.agent import iniciar_assistente
 
         iniciar_assistente()

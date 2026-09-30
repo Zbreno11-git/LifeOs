@@ -23,6 +23,8 @@ from lifeos import config
 from lifeos.reminders.models import Reminder
 
 PRAZO_S = 30.0
+# O `--timeout` do motor (300 s, `scripts/nuvem.py`) mais 20 s: a resposta dele chega antes.
+PRAZO_CHAT_S = 320.0
 ESCOPO = "https://www.googleapis.com/auth/cloud-platform"
 
 
@@ -64,30 +66,56 @@ def _sessao() -> Any:
     return AuthorizedSession(token)
 
 
-def _pedir(rota: str) -> dict[str, Any]:
+def _chamar(
+    sessao: Any, metodo: str, rota: str, *, corpo: Any = None, prazo: float = PRAZO_S
+) -> dict[str, Any]:
+    """Um pedido ao motor, com o erro dito em português (nunca o token, nunca a conversa)."""
     import requests
     from google.auth.exceptions import RefreshError, TransportError
 
     try:
-        resposta = _sessao().get(f"{config.NUVEM_URL}{rota}", timeout=PRAZO_S)
+        resposta = sessao.request(metodo, f"{config.NUVEM_URL}{rota}", json=corpo, timeout=prazo)
     except RefreshError:
         raise ErroDaNuvem(
             "o Google não deu o token do viking-cli@ (o login do Google Cloud venceu, ou falta a "
             "permissão de se passar por ele: `python scripts/nuvem.py` no VPS mostra)"
         ) from None
-    except (requests.ConnectionError, requests.Timeout, TransportError):
+    except requests.Timeout:
+        raise ErroDaNuvem(
+            f"a nuvem não respondeu em {prazo:.0f} s (o motor pode ter agido: pergunte a ele o que "
+            "fez antes de repetir)"
+        ) from None
+    except (requests.ConnectionError, TransportError):
         raise ErroDaNuvem("a nuvem não respondeu (rede, ou o motor fora do ar)") from None
     if resposta.status_code in (401, 403):
         raise ErroDaNuvem(f"a nuvem recusou a identidade (HTTP {resposta.status_code})")
-    if resposta.status_code != 200:
-        raise ErroDaNuvem(f"a nuvem respondeu HTTP {resposta.status_code}")
     try:
         dados = resposta.json()
     except ValueError:
-        raise ErroDaNuvem("a nuvem respondeu algo que não é JSON") from None
+        dados = None
+    if resposta.status_code != 200:
+        detalhe = dados.get("erro") if isinstance(dados, dict) else None
+        texto = f": {detalhe}" if isinstance(detalhe, str) and detalhe else ""
+        raise ErroDaNuvem(f"a nuvem respondeu HTTP {resposta.status_code}{texto}")
+    if dados is None:
+        raise ErroDaNuvem("a nuvem respondeu algo que não é JSON")
     if not isinstance(dados, dict):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
     return dados
+
+
+def _pedir(rota: str) -> dict[str, Any]:
+    return _chamar(_sessao(), "GET", rota)
+
+
+def sessao_de_chat() -> Any:
+    """Uma sessão HTTP para a conversa inteira (o token renova sozinho quando vence)."""
+    return _sessao()
+
+
+def turno_de_chat(sessao: Any, pedido: dict[str, Any]) -> dict[str, Any]:
+    """Um turno do chat da nuvem (`POST /chat`). O prazo é o do motor mais uma folga."""
+    return _chamar(sessao, "POST", "/chat", corpo=pedido, prazo=PRAZO_CHAT_S)
 
 
 def _instante(texto: Any) -> datetime | None:

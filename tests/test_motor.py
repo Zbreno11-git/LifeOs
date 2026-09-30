@@ -175,12 +175,115 @@ def test_toda_rota_comeca_por_quem(cliente):
     arvore = ast.parse(Path(motor.__file__).read_text())
     funcoes = {n.name: n for n in ast.walk(arvore) if isinstance(n, ast.AsyncFunctionDef)}
     endpoints = [rota.endpoint.__name__ for rota in motor.ROTAS]
-    assert len(endpoints) >= 3
+    assert len(endpoints) >= 6 and "chat" in endpoints
     for nome in endpoints:
-        corpo = funcoes[nome].body
+        corpo = funcoes[nome].body  # todo endpoint é `async` (o trabalho vai para uma thread)
         if isinstance(corpo[0], ast.Expr) and isinstance(corpo[0].value, ast.Constant):
             corpo = corpo[1:]  # a docstring
         primeira = ast.unparse(corpo[0])
-        assert primeira == "_quem(request)", (nome, primeira)
+        assert primeira == "await _quem(request)", (nome, primeira)
     # e nenhuma rota fora da lista (um `app.add_route` escondido)
     assert "add_route" not in Path(motor.__file__).read_text()
+
+
+# --- Sessão 10b: o chat, e as fumaças do registro e dos segredos ----------------------------
+
+
+def _post(cliente, corpo, token=None, **extra):
+    cabecalhos = {"Authorization": f"Bearer {token}"} if token else {}
+    return cliente.post("/chat", content=corpo, headers=cabecalhos | extra)
+
+
+@pytest.fixture
+def turno_falso(monkeypatch):
+    recebidos = []
+
+    def turno(dados):
+        recebidos.append(dados)
+        if dados.get("mensagem") == "torto":
+            raise ValueError("a mensagem tem de ser um texto")
+        if dados.get("mensagem") == "quebra":
+            raise RuntimeError("segredo do dono: Dentista secreto")
+        return {"resposta": "ok", "historico": [], "nota": "", "erro": ""}
+
+    monkeypatch.setattr(motor, "_turno", turno)
+    return recebidos
+
+
+def test_chat_sem_token_e_de_outra_conta_nao_chega_ao_turno(cliente, turno_falso):
+    corpo = b'{"mensagem": "oi"}'
+    assert _post(cliente, corpo).status_code == 401
+    assert _post(cliente, corpo, _token(email="intruso@example.com")).status_code == 403
+    assert turno_falso == []
+
+
+def test_chat_do_terminal_roda_o_turno(cliente, turno_falso):
+    resposta = _post(cliente, b'{"mensagem": "oi"}', _token())
+    assert resposta.status_code == 200 and resposta.json()["resposta"] == "ok"
+    assert turno_falso == [{"mensagem": "oi"}]
+
+
+def test_chat_so_aceita_post(cliente, turno_falso):
+    assert _get(cliente, "/chat", _token()).status_code == 405
+
+
+def test_corpo_grande_demais_e_recusado_sem_ler(cliente, turno_falso, monkeypatch):
+    monkeypatch.setattr(motor, "MAX_CORPO", 100)
+    grande = b'{"mensagem": "' + b"x" * 200 + b'"}'
+    assert _post(cliente, grande, _token()).status_code == 413
+    assert turno_falso == []
+
+
+def test_corpo_que_nao_e_json_e_400(cliente, turno_falso):
+    resposta = _post(cliente, b"isto nao e json", _token())
+    assert resposta.status_code == 400 and "JSON" in resposta.json()["erro"]
+
+
+def test_pedido_torto_e_400_e_falha_e_500_sem_conteudo_no_log(cliente, turno_falso, caplog):
+    caplog.set_level(logging.DEBUG)
+    torto = _post(cliente, b'{"mensagem": "torto"}', _token())
+    assert torto.status_code == 400
+    quebra = _post(cliente, b'{"mensagem": "quebra"}', _token())
+    assert quebra.status_code == 500
+    assert quebra.json() == {"erro": "o motor falhou (RuntimeError)"}
+    assert "Dentista" not in caplog.text and "quebra" not in caplog.text
+
+
+def test_fumaca_do_registro_exerce_cada_consulta(cliente):
+    resposta = _get(cliente, "/fumaca/registro", _token())
+    assert resposta.status_code == 200
+    assert set(resposta.json()) == {
+        "do_turno",
+        "recentes",
+        "contaveis",
+        "ultima_desfazivel",
+        "obter",
+    }
+
+
+def test_fumaca_dos_segredos_so_diz_se_le(cliente, monkeypatch, tmp_path):
+    chave = tmp_path / "chave"
+    chave.write_text("AIza-segredo-de-teste\n")
+    monkeypatch.setattr(config, "GEMINI_CHAVE_ARQUIVO", str(chave))
+    monkeypatch.setattr(config, "AGENDA_TOKEN_ARQUIVO", "")
+    monkeypatch.setattr(config, "_SEGREDOS", {})
+    resposta = _get(cliente, "/fumaca/segredos", _token())
+    assert resposta.status_code == 200
+    assert resposta.json() == {"gemini": True, "agenda": False}
+    assert "AIza" not in resposta.text
+
+
+def test_corpo_em_partes_sem_tamanho_declarado_tambem_tem_teto(cliente, turno_falso, monkeypatch):
+    """Sem `Content-Length` (o corpo chega em partes) só a segunda conferência barra."""
+    monkeypatch.setattr(motor, "MAX_CORPO", 100)
+
+    def partes():
+        yield b'{"mensagem": "'
+        yield b"x" * 200
+        yield b'"}'
+
+    resposta = cliente.post(
+        "/chat", content=partes(), headers={"Authorization": f"Bearer {_token()}"}
+    )
+    assert resposta.status_code == 413
+    assert turno_falso == []
