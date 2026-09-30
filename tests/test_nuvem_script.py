@@ -243,7 +243,10 @@ SHA = "a" * 40
 class _Mundo:
     """O gcloud, o git, o docker e o gh de mentira, com o estado de um deploy."""
 
-    def __init__(self, *, limpo=True, publicado=True, ci="completed success", no_ar=None, mudou=3):
+    def __init__(
+        self, *, limpo=True, publicado=True, ci="completed success", no_ar=None, mudou=3, vazios=()
+    ):
+        self.vazios = set(vazios)  # segredos sem versão no Secret Manager
         self.gcloud: list[list[str]] = []
         self.local: list[tuple[list[str], str | None]] = []
         self.limpo, self.publicado, self.ci, self.no_ar = limpo, publicado, ci, no_ar
@@ -263,6 +266,9 @@ class _Mundo:
             return subprocess.CompletedProcess(comando, 0, json.dumps(servico), "")
         if corpo[:1] == ["auth"]:
             return subprocess.CompletedProcess(comando, 0, "TOKEN-SECRETO-123\n", "")
+        if corpo[:3] == ["secrets", "versions", "list"]:
+            versoes = [] if corpo[3] in self.vazios else [{"name": "v1"}]
+            return subprocess.CompletedProcess(comando, 0, json.dumps(versoes), "")
         return subprocess.CompletedProcess(comando, 0, "", "")
 
     def rodar_local(self, comando, *, entrada=None):
@@ -425,6 +431,20 @@ def test_as_variaveis_dos_segredos_sao_as_que_o_config_le(nuvem):
         assert f'os.getenv("{s.variavel}")' in fonte
 
 
+def test_todo_arquivo_de_segredo_que_o_config_le_tem_um_segredo_no_deploy(nuvem):
+    """Nos dois sentidos, derivado do código: um segredo novo no `config` sem volume no deploy
+    (ou o contrário) quebraria o motor só no ar (Sessão 10c: o token do Gmail)."""
+    import re
+
+    from lifeos import config
+
+    lidas = set(
+        re.findall(r'os\.getenv\("(VIKING_\w+_ARQUIVO)"\)', Path(config.__file__).read_text())
+    )
+    assert len(lidas) >= 3
+    assert lidas == {s.variavel for s in nuvem.SEGREDOS}
+
+
 class _Gcloud:
     def __init__(self, versoes=1, politica=None, existe=True, ttl=None):
         self.chamadas: list[tuple[list[str], str | None]] = []
@@ -514,23 +534,139 @@ def test_a_leitura_do_segredo_e_dada_em_cada_segredo_nao_no_projeto(nuvem, ctx, 
     assert all(c[1:3] == ["secrets", "add-iam-policy-binding"] for c in papeis)
 
 
-@pytest.mark.parametrize(("estado", "pronto"), [("ACTIVE", True), ("CREATING", False)])
-def test_ttl_so_esta_pronta_ativa(nuvem, ctx, monkeypatch, estado, pronto):
-    ttl = [
-        {
-            "name": "projects/p/databases/(default)/collectionGroups/acoes/fields/expira_em",
-            "ttlConfig": {"state": estado},
-        }
-    ]
+def _ttl(colecao, campo, estado):
+    nome = f"projects/p/databases/(default)/collectionGroups/{colecao}/fields/{campo}"
+    return {"name": nome, "ttlConfig": {"state": estado}}
+
+
+@pytest.mark.parametrize(
+    ("estados", "pronto"),
+    [
+        (("ACTIVE", "ACTIVE"), True),
+        (("ACTIVE", "CREATING"), False),
+        (("CREATING", "ACTIVE"), False),
+        (("ACTIVE", None), False),
+    ],
+)
+def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, pronto):
+    ttl = [_ttl(c, f, e) for (c, f), e in zip(nuvem.TTLS, estados, strict=True) if e]
     monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
     assert nuvem._m_ttl(ctx).pronto is pronto
 
 
-def test_o_campo_da_ttl_e_o_do_store(nuvem):
-    from lifeos import registro_firestore
+def test_ttl_liga_so_a_que_falta(nuvem, ctx, monkeypatch):
+    """A das confirmações é nova (10c); a do registro já está ligada e não se pede de novo."""
+    ttl = [_ttl("acoes", "expira_em", "ACTIVE")]
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
+    pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
+    (comando,) = nuvem._c_ttl(pronto)
+    assert "--collection-group=confirmacoes" in comando and "apagar_em" in comando
 
-    assert nuvem.TTL == (registro_firestore.COLECAO, "expira_em")
+
+def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
+    from lifeos import confirmacao_firestore, registro_firestore
+
+    assert nuvem.TTLS == (
+        (registro_firestore.COLECAO, "expira_em"),
+        (confirmacao_firestore.COLECAO, "apagar_em"),
+    )
     assert "expira_em" in registro_firestore._CAMPOS
+    assert "apagar_em" in confirmacao_firestore._CAMPOS
+
+
+# --- o token do Gmail sobe do Mac (Sessão 10c, D60) ----------------------------------------------
+
+
+def test_deploy_nao_publica_com_um_segredo_vazio(nuvem, ctx, mundo, capsys):
+    m = mundo(vazios={"viking-gmail"})
+    assert nuvem.deploy(ctx, executar=True) == 1
+    assert not _publicou(m)
+    assert "viking-gmail" in capsys.readouterr().out
+
+
+def test_o_segredo_do_mac_vazio_nao_reprova_o_passo(nuvem, ctx, monkeypatch):
+    politica = {
+        "bindings": [
+            {"role": nuvem.LER_SEGREDO, "members": [f"serviceAccount:{ctx.conta(nuvem.MOTOR)}"]}
+        ]
+    }
+    monkeypatch.setattr(nuvem, "_rodar", _Gcloud(versoes=0, politica=politica).rodar)
+    estado = nuvem._m_segredos(ctx)
+    assert not estado.pronto  # a chave e o token da agenda vazios reprovam
+    assert "viking-gmail: vazio (sobe do Mac" in estado.detalhe
+
+    feitos = {s.nome for s in nuvem.SEGREDOS if not s.do_mac}
+
+    class _SoOMacVazio(_Gcloud):
+        def rodar(self, comando, *, entrada=None):
+            corpo = [a for a in comando[1:] if not a.startswith("--")]
+            self.versoes = 1 if corpo[3:4] and corpo[3] in feitos else 0
+            return super().rodar(comando, entrada=entrada)
+
+    monkeypatch.setattr(nuvem, "_rodar", _SoOMacVazio(politica=politica).rodar)
+    assert nuvem._m_segredos(ctx).pronto
+
+
+def test_o_segredo_roda_no_mac_so_com_o_projeto(nuvem, monkeypatch):
+    for nome in ("VIKING_NUVEM_FATURAMENTO", "VIKING_NUVEM_ORCAMENTO"):
+        monkeypatch.delenv(nome, raising=False)
+    monkeypatch.setenv("VIKING_NUVEM_PROJETO", "viking-teste")
+    conta = subprocess.CompletedProcess([], 0, "dono@example.com\n", "")
+    monkeypatch.setattr(nuvem.subprocess, "run", lambda *_a, **_k: conta)
+    assert nuvem._contexto(so_projeto=True).dono == "dono@example.com"
+    with pytest.raises(SystemExit, match="FATURAMENTO"):
+        nuvem._contexto()
+
+
+REFRESH_FALSO = "refresh-falso-do-teste"  # sem forma de token: o scanner não confunde
+
+
+def _token_do_gmail(tmp_path, monkeypatch, **mudancas):
+    from lifeos import config
+
+    info = {
+        "refresh_token": REFRESH_FALSO,
+        "client_id": "cliente",
+        "scopes": ["https://www.googleapis.com/auth/gmail.modify"],
+        **mudancas,
+    }
+    arquivo = tmp_path / "google_token_gmail.json"
+    arquivo.write_text(json.dumps(info))
+    monkeypatch.setattr(config, "GMAIL_TOKEN_PATH", arquivo)
+    return arquivo.read_text()
+
+
+def test_o_token_do_gmail_sobe_pela_entrada_padrao_e_nunca_aparece(
+    nuvem, ctx, monkeypatch, capsys, tmp_path
+):
+    texto = _token_do_gmail(tmp_path, monkeypatch)
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    assert nuvem.segredo(ctx, "viking-gmail", executar=True) == 0
+    ((comando, entrada),) = [(c, e) for c, e in g.chamadas if "add" in c]
+    assert "viking-gmail" in comando and "--data-file=-" in comando and entrada == texto
+    assert all(REFRESH_FALSO not in " ".join(c) for c, _ in g.chamadas)
+    assert REFRESH_FALSO not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "mudanca",
+    [
+        {"scopes": ["https://www.googleapis.com/auth/calendar"]},
+        {"refresh_token": ""},
+    ],
+    ids=["sem-o-escopo-do-gmail", "sem-renovacao"],
+)
+def test_token_do_gmail_torto_nao_sobe_nem_aparece(
+    nuvem, ctx, monkeypatch, capsys, tmp_path, mudanca
+):
+    _token_do_gmail(tmp_path, monkeypatch, **mudanca)
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    with pytest.raises(SystemExit, match="nada foi enviado") as erro:
+        nuvem.segredo(ctx, "viking-gmail", executar=True)
+    assert not any("add" in c for c, _ in g.chamadas)
+    assert REFRESH_FALSO not in str(erro.value) + capsys.readouterr().out
 
 
 def _servico(env, volumes):

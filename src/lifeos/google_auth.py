@@ -17,6 +17,8 @@ from __future__ import annotations
 import json
 import os
 import threading
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from google.auth.exceptions import RefreshError
@@ -113,33 +115,68 @@ _NA_NUVEM: dict[str, Credentials] = {}
 _TRAVA_DA_NUVEM = threading.Lock()
 
 
-def credenciais_da_nuvem(scopes: list[str], token_path: Path) -> Credentials:
-    """Na nuvem (Sessão 10b, D59): o token vem do segredo (um volume só de leitura), renova **em
-    memória** e nunca é gravado; o login nunca abre (no motor ninguém clicaria, e o pedido ficaria
-    pendurado). Hoje só a agenda mora lá; o Gmail é da 10c.
+@dataclass(frozen=True)
+class _TokenDaNuvem:
+    nome: str  # como o dono o chama
+    ler: Callable[[], str]  # o JSON do volume (`config`, o único leitor de segredo)
+    subir: str  # o comando que sobe um novo, e de onde
 
-    Um objeto por processo, com trava: duas threads do motor não renovam juntas."""
-    if token_path != config.GOOGLE_TOKEN_PATH:
-        raise RuntimeError("na nuvem só há o token da agenda (o do Gmail chega na 10c)")
+
+def _tokens_da_nuvem() -> dict[Path, tuple[str, _TokenDaNuvem]]:
+    """Os tokens que moram na nuvem, pelo caminho que o código do Mac usa para o mesmo token."""
+    return {
+        config.GOOGLE_TOKEN_PATH: (
+            "agenda",
+            _TokenDaNuvem(
+                "da agenda",
+                config.agenda_token,
+                "`python scripts/nuvem.py segredo viking-agenda --executar`, no VPS",
+            ),
+        ),
+        config.GMAIL_TOKEN_PATH: (
+            "gmail",
+            _TokenDaNuvem(
+                "do Gmail",
+                config.gmail_token,
+                "`viking gmail --login` e `python scripts/nuvem.py segredo viking-gmail "
+                "--executar`, no Mac",
+            ),
+        ),
+    }
+
+
+def credenciais_da_nuvem(scopes: list[str], token_path: Path) -> Credentials:
+    """Na nuvem (Sessões 10b e 10c, D59/D60): o token vem do segredo (um volume só de leitura),
+    renova **em memória** e nunca é gravado; o login nunca abre (no motor ninguém clicaria, e o
+    pedido ficaria pendurado). Moram lá o token da agenda (subido do VPS) e o do Gmail (subido do
+    Mac: o VPS não guarda token do Gmail).
+
+    Um objeto por token e por processo, com trava: duas threads do motor não renovam juntas."""
+    conhecido = _tokens_da_nuvem().get(token_path)
+    if conhecido is None:
+        raise RuntimeError("na nuvem só há os tokens da agenda e do Gmail")
+    chave, token = conhecido
     with _TRAVA_DA_NUVEM:
-        creds = _NA_NUVEM.get("agenda")
+        creds = _NA_NUVEM.get(chave)
         if creds is None:
-            info = json.loads(config.agenda_token())
+            info = json.loads(token.ler())
             gravados = info.get("scopes") or []
             if isinstance(gravados, str):
                 gravados = gravados.split()
             if not set(scopes) <= set(gravados):
-                raise TokenDaNuvemRecusado("o token da agenda na nuvem não tem a permissão pedida")
+                raise TokenDaNuvemRecusado(
+                    f"o token {token.nome} na nuvem não tem a permissão pedida"
+                )
             creds = Credentials.from_authorized_user_info(info, scopes)
-            _NA_NUVEM["agenda"] = creds
+            _NA_NUVEM[chave] = creds
         if not creds.valid:
             try:
                 creds.refresh(Request())
             except RefreshError:
-                _NA_NUVEM.pop("agenda", None)
+                _NA_NUVEM.pop(chave, None)
                 raise TokenDaNuvemRecusado(
-                    "o Google recusou renovar o token da agenda na nuvem: suba um novo "
-                    "(`python scripts/nuvem.py segredo viking-agenda`, no VPS)"
+                    f"o Google recusou renovar o token {token.nome} na nuvem: suba um novo "
+                    f"({token.subir})"
                 ) from None
     return creds
 

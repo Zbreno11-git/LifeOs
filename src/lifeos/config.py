@@ -205,6 +205,7 @@ STORE = _store()
 # vazios e valem o `GEMINI_API_KEY` do `.env` e o token de `secrets/`.
 GEMINI_CHAVE_ARQUIVO = os.getenv("VIKING_GEMINI_CHAVE_ARQUIVO") or ""
 AGENDA_TOKEN_ARQUIVO = os.getenv("VIKING_AGENDA_TOKEN_ARQUIVO") or ""
+GMAIL_TOKEN_ARQUIVO = os.getenv("VIKING_GMAIL_TOKEN_ARQUIVO") or ""  # Sessão 10c, D60
 _SEGREDOS: dict[str, str] = {}
 
 
@@ -234,3 +235,10 @@ def agenda_token() -> str:
     if not AGENDA_TOKEN_ARQUIVO:
         raise RuntimeError("VIKING_AGENDA_TOKEN_ARQUIVO vazio: o token da agenda não está aqui")
     return _segredo(AGENDA_TOKEN_ARQUIVO)
+
+
+def gmail_token() -> str:
+    """O token do Gmail (JSON) do volume da nuvem, subido do Mac (D57, D60). Só existe na nuvem."""
+    if not GMAIL_TOKEN_ARQUIVO:
+        raise RuntimeError("VIKING_GMAIL_TOKEN_ARQUIVO vazio: o token do Gmail não está aqui")
+    return _segredo(GMAIL_TOKEN_ARQUIVO)

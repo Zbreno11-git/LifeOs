@@ -187,11 +187,39 @@ def test_na_nuvem_o_servico_usa_o_segredo_e_nunca_o_login(na_nuvem, monkeypatch)
     assert na_nuvem == [1]  # renovou uma vez, em memória
 
 
-def test_na_nuvem_so_ha_o_token_da_agenda(na_nuvem):
+_TOKEN_DO_GMAIL = {**_TOKEN_DA_AGENDA, "scopes": ["https://www.googleapis.com/auth/gmail.modify"]}
+SCOPES_GMAIL = ["https://www.googleapis.com/auth/gmail.modify"]
+
+
+def test_na_nuvem_o_gmail_usa_o_segredo_dele(na_nuvem, monkeypatch, tmp_path):
+    """Sessão 10c: cada token vem do seu segredo e renova à parte; outro caminho é recusado."""
     from lifeos import config
 
-    with pytest.raises(RuntimeError, match="10c"):
-        google_auth.credenciais_da_nuvem(["x"], config.GMAIL_TOKEN_PATH)
+    monkeypatch.setattr(config, "gmail_token", lambda: json.dumps(_TOKEN_DO_GMAIL))
+    gmail = google_auth.credenciais_da_nuvem(SCOPES_GMAIL, config.GMAIL_TOKEN_PATH)
+    agenda = google_auth.credenciais_da_nuvem(SCOPES_CAL, config.GOOGLE_TOKEN_PATH)
+    assert gmail is not agenda and set(google_auth._NA_NUVEM) == {"gmail", "agenda"}
+    assert google_auth.credenciais_da_nuvem(SCOPES_GMAIL, config.GMAIL_TOKEN_PATH) is gmail
+    with pytest.raises(google_auth.TokenDaNuvemRecusado, match="do Gmail"):
+        google_auth._NA_NUVEM.clear()
+        google_auth.credenciais_da_nuvem(SCOPES_CAL, config.GMAIL_TOKEN_PATH)
+    with pytest.raises(RuntimeError, match="agenda e do Gmail"):
+        google_auth.credenciais_da_nuvem(SCOPES_GMAIL, tmp_path / "outro.json")
+
+
+def test_na_nuvem_gmail_recusado_manda_subir_do_mac(na_nuvem, monkeypatch):
+    from google.auth.exceptions import RefreshError
+
+    from lifeos import config
+
+    def recusa(self, _request):
+        raise RefreshError("invalid_grant")
+
+    monkeypatch.setattr(config, "gmail_token", lambda: json.dumps(_TOKEN_DO_GMAIL))
+    monkeypatch.setattr(google_auth.Credentials, "refresh", recusa)
+    with pytest.raises(google_auth.TokenDaNuvemRecusado) as erro:
+        google_auth.credenciais_da_nuvem(SCOPES_GMAIL, config.GMAIL_TOKEN_PATH)
+    assert "segredo viking-gmail" in str(erro.value) and "no Mac" in str(erro.value)
 
 
 def test_na_nuvem_escopo_que_falta_erra_alto(na_nuvem):

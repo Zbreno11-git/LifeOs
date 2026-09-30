@@ -125,3 +125,36 @@ def test_viking_chat_nuvem_chega_aqui_e_nao_ao_chat_do_mac(monkeypatch):
     with pytest.raises(SystemExit) as saida:
         cli.main()
     assert saida.value.code == 7
+
+
+# --- o que só o dono vê (Sessão 10c, D60) --------------------------------------------------------
+
+
+def _com_terminal(monkeypatch, interativo: bool):
+    from lifeos import ao_dono
+
+    monkeypatch.setattr(ao_dono, "interativo", lambda: interativo)
+
+
+def test_o_pedido_diz_se_o_terminal_e_interativo(monkeypatch, capsys):
+    _com_terminal(monkeypatch, True)
+    _, motor = _rodar(monkeypatch, ["oi", "sair"], _turno("olá", []))
+    assert motor.pedidos[0]["interativo"] is True
+    _com_terminal(monkeypatch, False)
+    _, motor = _rodar(monkeypatch, ["oi", "sair"], _turno("olá", []))
+    assert motor.pedidos[0]["interativo"] is False
+
+
+def test_ao_dono_aparece_so_num_terminal_interativo(monkeypatch, capsys):
+    so_dele = "Para aprovar, digite:  confirma 6284"
+    resposta = _turno(None, [], ao_dono=[so_dele + "\x1b[2J"])
+    _com_terminal(monkeypatch, True)
+    _rodar(monkeypatch, ["confirma 6284", "sair"], resposta)
+    saida = capsys.readouterr().out
+    assert so_dele in saida and "\x1b" not in saida
+    assert "não respondeu" not in saida  # a resposta da barreira vem só em `ao_dono`
+
+    _com_terminal(monkeypatch, False)
+    _rodar(monkeypatch, ["confirma 6284", "sair"], resposta)
+    saida = capsys.readouterr().out
+    assert "6284" not in saida.replace("Você: ", "") and chat_cliente.SEM_TERMINAL in saida

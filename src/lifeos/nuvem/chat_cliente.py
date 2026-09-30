@@ -9,6 +9,11 @@ antes de um erro) também fica aqui até o turno seguinte.
 O texto que chega da rede passa por `limpar_controles` antes de ir ao terminal: um evento da agenda
 com um código de controle de terminal no título não mexe na tela do dono.
 
+Desde a 10c (D60), o que só o dono vê (o código de aprovação, a lista de uma limpeza, o e-mail
+antes de sair) chega no campo `ao_dono`, separado da resposta do modelo, e só é mostrado se este
+terminal é interativo. O pedido diz ao motor se é (`interativo`): sem terminal, o motor nem cria a
+proposta.
+
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
 
@@ -18,11 +23,16 @@ import secrets
 import sys
 from typing import Any
 
+from lifeos import ao_dono
 from lifeos.browser._redacao import limpar_controles
 from lifeos.custos import dinheiro
 from lifeos.nuvem import cliente
 
 SAIR = ("sair", "exit", "quit")
+SEM_TERMINAL = (
+    "(o Viking mandou uma mensagem só para você, com um código ou uma aprovação: ela só aparece "
+    "num terminal interativo)"
+)
 
 
 def _gasto(gasto: Any) -> str:
@@ -49,7 +59,7 @@ def iniciar(entrada: Any = input) -> int:
     except cliente.ErroDaNuvem as exc:
         print(f"❌ Nuvem: {exc}.", file=sys.stderr)
         return 1
-    print("☁️  Viking na nuvem (agenda e lembretes). Navegador, e-mail e finanças: `viking chat`.")
+    print("☁️  Viking na nuvem (agenda, lembretes e Gmail). Navegador e finanças: `viking chat`.")
     print("Digite 'sair' para encerrar.\n")
 
     sessao, numero = secrets.token_hex(4), 0
@@ -78,6 +88,7 @@ def iniciar(entrada: Any = input) -> int:
             "nota": nota,
             "sessao": sessao,
             "numero": numero,
+            "interativo": ao_dono.interativo(),
         }
         try:
             resposta = cliente.turno_de_chat(sessao_http, pedido)
@@ -89,9 +100,15 @@ def iniciar(entrada: Any = input) -> int:
             historico = historico_novo
         nota = _texto(resposta.get("nota"))
         gasto = resposta.get("gasto", gasto)
+        so_seu = [_texto(t) for t in resposta.get("ao_dono") or [] if _texto(t)]
+        if so_seu and ao_dono.interativo():
+            for texto in so_seu:
+                print(f"{texto}\n")
+        elif so_seu:
+            print(f"{SEM_TERMINAL}\n")
         if resposta.get("resposta") is not None:
             print(f"🤖 Viking: {_texto(resposta.get('resposta'))}\n")
-        else:
+        elif _texto(resposta.get("erro")) or not so_seu:
             print(f"❌ {_texto(resposta.get('erro')) or 'a nuvem não respondeu o turno'}\n")
         if _texto(resposta.get("aviso")):
             print(f"{_texto(resposta.get('aviso'))}\n")

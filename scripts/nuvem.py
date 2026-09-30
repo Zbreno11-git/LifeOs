@@ -416,14 +416,21 @@ class Segredo:
     nome: str  # no Secret Manager
     caminho: str  # o arquivo no volume do motor
     variavel: str  # a variável que diz ao `config` onde está o arquivo
+    # O valor sobe do Mac, e só quando o dono decide (o do Gmail, depois da prova: D57, D60):
+    # vazio não reprova o passo, mas o deploy não publica sem ele (um volume vazio derruba a
+    # revisão).
+    do_mac: bool = False
 
 
-# Os segredos do motor (Sessão 10b, D59): entregues como arquivo de um volume, nunca como variável
-# de ambiente (o Google manda fixar a versão nesse caso, e o valor ficaria no ambiente do processo).
-# Um diretório por segredo: o Cloud Run monta cada um no seu.
+# Os segredos do motor (Sessões 10b e 10c, D59/D60): entregues como arquivo de um volume, nunca
+# como variável de ambiente (o Google manda fixar a versão nesse caso, e o valor ficaria no
+# ambiente do processo). Um diretório por segredo: o Cloud Run monta cada um no seu.
 SEGREDOS = (
     Segredo("viking-gemini", "/segredos/gemini/chave", "VIKING_GEMINI_CHAVE_ARQUIVO"),
     Segredo("viking-agenda", "/segredos/agenda/token.json", "VIKING_AGENDA_TOKEN_ARQUIVO"),
+    Segredo(
+        "viking-gmail", "/segredos/gmail/token.json", "VIKING_GMAIL_TOKEN_ARQUIVO", do_mac=True
+    ),
 )
 LER_SEGREDO = "roles/secretmanager.secretAccessor"
 
@@ -446,7 +453,12 @@ def _m_segredos(ctx: Contexto) -> Estado:
             pronto = False
             continue
         versoes = _versoes(ctx, segredo.nome)
-        if not versoes:
+        if not versoes and segredo.do_mac:
+            detalhes.append(
+                f"{segredo.nome}: vazio (sobe do Mac: `python scripts/nuvem.py segredo "
+                f"{segredo.nome} --executar`)"
+            )
+        elif not versoes:
             detalhes.append(
                 f"{segredo.nome}: vazio (suba com `python scripts/nuvem.py segredo "
                 f"{segredo.nome} --executar`)"
@@ -486,21 +498,30 @@ def _c_segredos(ctx: Contexto) -> list[list[str]]:
     return [*criar, *ler]
 
 
-TTL = ("acoes", "expira_em")  # (coleção, campo): o registro de ações vive 30 dias na nuvem
+# (coleção, campo) que a TTL apaga: o registro de ações e as confirmações vivem 30 dias na nuvem
+# (Sessões 10b e 10c; a das confirmações passa das janelas que ainda as leem, 8 e 7 dias).
+TTLS = (("acoes", "expira_em"), ("confirmacoes", "apagar_em"))
+
+
+def _estados_ttl(ctx: Contexto) -> dict[tuple[str, str], str]:
+    dados = _ler(_gcloud(ctx, "firestore", "fields", "ttls", "list", "--database=(default)"))
+    estados: dict[tuple[str, str], str] = {}
+    for item in dados or []:
+        for colecao, campo in TTLS:
+            if item.get("name", "").endswith(f"/collectionGroups/{colecao}/fields/{campo}"):
+                estados[(colecao, campo)] = (item.get("ttlConfig") or {}).get("state", "") or "?"
+    return estados
 
 
 def _m_ttl(ctx: Contexto) -> Estado:
-    colecao, campo = TTL
-    dados = _ler(_gcloud(ctx, "firestore", "fields", "ttls", "list", "--database=(default)"))
-    for item in dados or []:
-        if item.get("name", "").endswith(f"/collectionGroups/{colecao}/fields/{campo}"):
-            estado = (item.get("ttlConfig") or {}).get("state", "")
-            return Estado(estado == "ACTIVE", f"{colecao}.{campo}: {estado or '?'}")
-    return Estado(False, f"{colecao}.{campo}: desligada")
+    estados = _estados_ttl(ctx)
+    detalhes = [f"{c}.{f}: {estados.get((c, f), 'desligada')}" for c, f in TTLS]
+    return Estado(all(estados.get(t) == "ACTIVE" for t in TTLS), "; ".join(detalhes))
 
 
 def _c_ttl(ctx: Contexto) -> list[list[str]]:
-    colecao, campo = TTL
+    """Só as que faltam (ligar de novo uma que está ligada é um pedido à toa)."""
+    estados = _estados_ttl(ctx) if "firestore" in ctx.prontos else {}
     return [
         _gcloud(
             ctx,
@@ -514,6 +535,8 @@ def _c_ttl(ctx: Contexto) -> list[list[str]]:
             "--enable-ttl",
             "--async",  # ligar leva minutos; a medida diz quando fica ACTIVE
         )
+        for colecao, campo in TTLS
+        if estados.get((colecao, campo)) not in ("ACTIVE", "CREATING")
     ]
 
 
@@ -846,8 +869,8 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
     lidos = segredos.json() if segredos.status_code == 200 else {}
     resultado.append(
         Prova(
-            "viking-cli@: /fumaca/segredos (a chave lê, o token da agenda renova)",
-            lidos == {"gemini": True, "agenda": True},
+            "viking-cli@: /fumaca/segredos (a chave lê, os tokens da agenda e do Gmail renovam)",
+            lidos == {"gemini": True, "agenda": True, "gmail": True},
             f"HTTP {segredos.status_code} {lidos}",
         )
     )
@@ -886,6 +909,11 @@ def deploy(ctx: Contexto, executar: bool) -> int:
         if em_dia:
             print("Nada mudou na imagem desde a que está no ar; só as provas.")
         else:
+            vazios = [s.nome for s in SEGREDOS if not _versoes(ctx, s.nome)]
+            if vazios:
+                # Um volume de segredo sem versão derruba a revisão nova: nada é construído.
+                print(f"Não publico: sem valor no Secret Manager: {', '.join(vazios)}.")
+                return 1
             publicar(ctx, agora.head)
     elif not em_dia:
         for comando in comandos_do_deploy(ctx, agora.head):
@@ -931,9 +959,35 @@ def _token_da_agenda() -> str:
     return texto
 
 
+def _token_do_gmail() -> str:
+    """O token do Gmail DESTE computador (o Mac: o VPS não guarda token do Gmail, D57), conferido
+    antes de subir: JSON, renovável e com a permissão do Gmail. Nada dele é mostrado."""
+    try:
+        texto = config.GMAIL_TOKEN_PATH.read_text()
+        info = json.loads(texto)
+    except (OSError, ValueError):
+        raise SystemExit(
+            "nuvem.py: o token do Gmail não abriu como JSON; no Mac, `viking gmail --login` "
+            "(nada foi enviado)"
+        ) from None
+    escopos = info.get("scopes") or []
+    if isinstance(escopos, str):
+        escopos = escopos.split()
+    if (
+        not info.get("refresh_token")
+        or "https://www.googleapis.com/auth/gmail.modify" not in escopos
+    ):
+        raise SystemExit(
+            "nuvem.py: o token do Gmail não renova ou não tem a permissão do Gmail (nada foi "
+            "enviado)"
+        )
+    return texto
+
+
 FONTES: dict[str, tuple[str, Callable[[], str]]] = {
     "viking-gemini": ("o GEMINI_API_KEY do .env", _chave_do_gemini),
     "viking-agenda": ("o token da agenda de secrets/", _token_da_agenda),
+    "viking-gmail": ("o token do Gmail de secrets/ (no Mac)", _token_do_gmail),
 }
 
 
@@ -988,12 +1042,13 @@ def prova_chat(ctx: Contexto, mensagem: str) -> int:
     return 0 if resposta.status_code == 200 and dados.get("resposta") else 2
 
 
-def _contexto() -> Contexto:
-    faltam = [
-        nome
-        for nome in ("VIKING_NUVEM_PROJETO", "VIKING_NUVEM_FATURAMENTO", "VIKING_NUVEM_ORCAMENTO")
-        if not os.getenv(nome)
-    ]
+def _contexto(*, so_projeto: bool = False) -> Contexto:
+    """`so_projeto`: o subcomando `segredo`, que roda também no Mac (o token do Gmail sobe de lá,
+    D60), onde o `.env` só tem o projeto e a URL da nuvem."""
+    exigidas = ("VIKING_NUVEM_PROJETO",) + (
+        () if so_projeto else ("VIKING_NUVEM_FATURAMENTO", "VIKING_NUVEM_ORCAMENTO")
+    )
+    faltam = [nome for nome in exigidas if not os.getenv(nome)]
     if faltam:
         raise SystemExit("nuvem.py: faltam no .env: " + ", ".join(faltam))
     dono = subprocess.run(
@@ -1004,8 +1059,8 @@ def _contexto() -> Contexto:
     return Contexto(
         projeto=config.NUVEM_PROJETO,
         regiao=config.NUVEM_REGIAO,
-        faturamento=os.environ["VIKING_NUVEM_FATURAMENTO"],
-        orcamento=os.environ["VIKING_NUVEM_ORCAMENTO"],
+        faturamento=os.getenv("VIKING_NUVEM_FATURAMENTO", ""),
+        orcamento=os.getenv("VIKING_NUVEM_ORCAMENTO", ""),
         dono=dono,
     )
 
@@ -1047,7 +1102,7 @@ def main(argv: list[str]) -> int:
         leitor.add_argument("nome", choices=sorted(FONTES))
         leitor.add_argument("--executar", action="store_true")
         args = leitor.parse_args(argv[1:])
-        return segredo(_contexto(), args.nome, args.executar)
+        return segredo(_contexto(so_projeto=True), args.nome, args.executar)
     if argv[:1] == ["prova-chat"]:
         leitor = argparse.ArgumentParser(prog="nuvem.py prova-chat")
         leitor.add_argument("mensagem", nargs="?", default="o que tenho amanhã na agenda?")

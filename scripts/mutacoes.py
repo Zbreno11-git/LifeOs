@@ -2001,6 +2001,51 @@ MUTACOES = [
         "    with ao_dono.coletar(interativo=interativo) as so_ao_dono:",
         "tests/test_prazo.py::test_turno_que_agiu_e_ficou_sem_tempo_diz_o_que_fez",
     ),
+    Mutacao(
+        "nuvem.py: o token do Gmail fica fora dos segredos do motor",
+        "scripts/nuvem.py",
+        "    Segredo(\n"
+        '        "viking-gmail", "/segredos/gmail/token.json", "VIKING_GMAIL_TOKEN_ARQUIVO", '
+        "do_mac=True\n"
+        "    ),\n",
+        "",
+        "tests/test_nuvem_script.py::test_todo_arquivo_de_segredo_que_o_config_le_tem_um_segredo_no_deploy",
+    ),
+    Mutacao(
+        "nuvem.py: publica com um segredo vazio (a revisão cairia)",
+        "scripts/nuvem.py",
+        "            if vazios:",
+        "            if False:",
+        "tests/test_nuvem_script.py::test_deploy_nao_publica_com_um_segredo_vazio",
+    ),
+    Mutacao(
+        "nuvem.py: sobe um token do Gmail sem a permissão do Gmail",
+        "scripts/nuvem.py",
+        '        or "https://www.googleapis.com/auth/gmail.modify" not in escopos',
+        "        or False",
+        "tests/test_nuvem_script.py::test_token_do_gmail_torto_nao_sobe_nem_aparece",
+    ),
+    Mutacao(
+        "cliente: mostra o que só o dono vê sem terminal interativo",
+        "src/lifeos/nuvem/chat_cliente.py",
+        "        if so_seu and ao_dono.interativo():",
+        "        if so_seu:",
+        "tests/test_chat_nuvem_cliente.py::test_ao_dono_aparece_so_num_terminal_interativo",
+    ),
+    Mutacao(
+        "google_auth: token da nuvem sem conferir a permissão",
+        "src/lifeos/google_auth.py",
+        "            if not set(scopes) <= set(gravados):",
+        "            if False:",
+        "tests/test_google_auth.py::test_na_nuvem_o_gmail_usa_o_segredo_dele",
+    ),
+    Mutacao(
+        "motor: a fumaça diz que o token do Gmail renova quando ele falhou",
+        "src/lifeos/nuvem/motor.py",
+        '        log.warning("segredo do gmail: %s", type(exc).__name__)',
+        '        resposta["gmail"] = True',
+        "tests/test_motor.py::test_fumaca_dos_segredos_so_diz_se_le",
+    ),
 ]
 
 

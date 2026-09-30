@@ -160,11 +160,13 @@ async def fumaca_registro(request: Request) -> JSONResponse:
 
 
 def _segredos() -> dict[str, bool]:
-    """A chave do Gemini lê e o token da agenda renova. Nenhuma chamada paga; nenhum valor sai."""
+    """A chave do Gemini lê e os tokens da agenda e do Gmail renovam (o Gmail desde a 10c). Nenhuma
+    chamada paga nem à API do Gmail; nenhum valor sai."""
     from lifeos import google_auth
     from lifeos.calendar import oauth
+    from lifeos.gmail import oauth as gmail_oauth
 
-    resposta = {"gemini": False, "agenda": False}
+    resposta = {"gemini": False, "agenda": False, "gmail": False}
     try:
         resposta["gemini"] = bool(config.gemini_chave())
     except RuntimeError:
@@ -174,6 +176,11 @@ def _segredos() -> dict[str, bool]:
         resposta["agenda"] = bool(creds.valid)
     except (RuntimeError, ValueError) as exc:
         log.warning("segredo da agenda: %s", type(exc).__name__)
+    try:
+        creds = google_auth.credenciais_da_nuvem(gmail_oauth.SCOPES, config.GMAIL_TOKEN_PATH)
+        resposta["gmail"] = bool(creds.valid)
+    except (RuntimeError, ValueError) as exc:
+        log.warning("segredo do gmail: %s", type(exc).__name__)
     return resposta
 
 
