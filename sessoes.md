@@ -16,25 +16,25 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10b — nuvem 1b: o chat na nuvem, **feita no VPS e no ar em 2026-09-30**; falta o
-  teste do dono no Mac (o roteiro está no `PROGRESSO.md`). Depois dela, a **10c** (o Gmail na
-  nuvem), que só abre depois de 2026-10-03.
+- **Sessão:** 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede. **Só abre depois de
+  2026-10-03**, pela prova do token do Gmail no Mac (a seção 10c abaixo). A 10b foi fechada no
+  Mac em 2026-09-30.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** o teste da 10b no Mac (roteiro no `PROGRESSO.md`); depois de 2026-10-03, abrir a 10c
-  pela prova do token do Gmail.
+- **Agora:** depois de 2026-10-03, abrir a 10c pela prova do token do Gmail (`viking gmail
+  --login` no Mac, sem abrir o navegador).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D59), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** o teste da 10b no Mac; a prova do token do Gmail no Mac depois de
-  2026-10-03 (primeiro passo da 10c).
+- **Depende do dono:** a prova do token do Gmail no Mac depois de 2026-10-03 (primeiro passo da
+  10c).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -700,7 +700,7 @@ O que estava escrito na abertura:
   - `google-auth`, que já está no lock, para a impersonação no Mac;
   - o modelo de "script de deploy que só lê sem flag", da skill `nuvem-e-deploy` §6.
 
-## Sessão 10b — nuvem 1b: o chat na nuvem (feita no VPS e no ar em 2026-09-30; falta o Mac)
+## Sessão 10b — nuvem 1b: o chat na nuvem (feita e testada no Mac em 2026-09-30)
 
 > **Dividida na abertura (2026-09-30), pela data do Gmail:** a prova de que o token do Gmail não
 > vence em 7 dias só vale depois de 2026-10-03, e no chat só o Gmail aprova com código (o clique
@@ -732,7 +732,13 @@ O que estava escrito na abertura:
     agenda renova no motor, e as consultas do registro passam na produção.
   - Um turno real no ar: 4,9 s e ~US$ 0,0015, sem conteúdo no log.
   - Diário de 2026-09-30.
-  - Falta o teste do dono no Mac.
+  - **No Mac (2026-09-30):**
+    - `2048 passed, 64 skipped`;
+    - `viking chat --nuvem`: a agenda respondida, um lembrete de teste criado com o aviso do
+      e-mail e concluído, o `confirma 1234` barrado sem ir ao modelo, e o `/custos` somando o
+      gasto do VPS e do Mac;
+    - `viking lembretes --nuvem` com a marca;
+    - o `viking chat` local igual.
 
 ## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (separada da 10b em 2026-09-30)
 

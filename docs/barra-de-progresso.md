@@ -7,17 +7,16 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-30 (Sessão 10b no ar; falta o seu teste no Mac).**
+**Última atualização: 2026-09-30 (Sessão 10b fechada no seu Mac).**
 
-`███████████░░░░░░░░░ 16 de 30 sessões fechadas`
+`███████████░░░░░░░░░ 17 de 30 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9
-e 10; parciais: nenhuma; em curso: 10b (o chat na nuvem: feita e no ar, conta quando passar no
-seu Mac); na fila: 10c (o
+10 e 10b; parciais: nenhuma; em curso: nenhuma; na fila: 10c (o
 Gmail na nuvem), 11, 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi
 dividida, e para 30 quando a 10b foi dividida (2026-09-30).
 
-## 2026-09-30 — Sessão 10b: o chat foi para a nuvem (falta o seu teste no Mac)
+## 2026-09-30 — Sessão 10b: o chat foi para a nuvem (fechada no seu Mac)
 
 **O que ficou pronto:**
 - **`viking chat --nuvem`:** você conversa com o Viking, mas quem pensa é o motor na nuvem, não
@@ -43,7 +42,14 @@ dividida, e para 30 quando a 10b foi dividida (2026-09-30).
 - 2112 testes passando no VPS, e 251 de 251 defeitos plantados de propósito, cada um
   derrubado pelo teste certo.
 
-**Falta:** o seu teste no Mac (o roteiro está no fim da conversa).
+- **No seu Mac (2026-09-30):**
+  - os testes passaram: 2048, e os 64 pulados são as peças da nuvem;
+  - o chat da nuvem respondeu a agenda, criou e concluiu um lembrete de teste com o aviso do
+    e-mail, e barrou o `confirma 1234` sem mandar nada ao modelo;
+  - o `/custos` somou certo: US$ 0,0070 no dia, contando a pergunta que eu fiz do VPS;
+  - o `viking chat` de sempre respondeu igual a antes.
+  - Uma pergunta à agenda gastou menos da metade na nuvem (3.982 tokens) do que no chat do Mac
+    (9.019), porque lá o modelo recebe só as ferramentas da agenda e dos lembretes.
 
 ## 2026-09-30 — Sessão 10: o Viking ganhou uma casa na nuvem (fechada no seu Mac)
 

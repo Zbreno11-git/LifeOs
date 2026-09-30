@@ -1046,6 +1046,27 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-09-30 — Sessão 10b fechada no Mac
+
+Saída colada pelo dono:
+- **Instalação e testes:** `git pull` até `3a7ce21`; o `uv sync` só reinstalou o `lifeos`;
+  `2048 passed, 64 skipped` (2112 no total, e os pulados são as peças da nuvem, que o Mac não
+  instala).
+- **`viking chat --nuvem`:**
+  - "tenho algo para amanha" → nenhum evento em 30/09, com 3.982 tokens e ~US$ 0,0015;
+  - o lembrete "teste viking" foi criado com o aviso do e-mail (4.297 tokens);
+  - `confirma 1234` → o texto de "ainda não há o que aprovar", sem linha de consumo: não foi ao
+    modelo;
+  - `/custos` → hoje ~US$ 0,004590. É a soma da `prova-chat` do VPS com os dois turnos do Mac:
+    o teto no Firestore é um só;
+  - o lembrete foi concluído (7.184 tokens);
+  - ao sair, ~US$ 0,007029 no dia.
+- **`viking lembretes --nuvem`:** a marca do e-mail, e "Nenhum lembrete pendente".
+- **`viking chat` local:** a mesma pergunta respondeu igual, com 9.019 tokens. Na nuvem o turno
+  equivalente usou 3.982, porque o modelo recebe só as 11 tools da nuvem.
+
+Barra: 17 de 30, sem parciais.
+
 ### 2026-09-30 — Sessão 10b: o chat na nuvem (feita no VPS e no ar; falta o Mac)
 
 Dividida na abertura pelo dono: o Gmail e o código de aprovação pela rede foram para a 10c, que
