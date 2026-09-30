@@ -20,7 +20,7 @@
 | 2 | Afirmei sem abrir o lugar onde estaria | 21 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 16 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes |
-| 5 | A ferramenta fez outra coisa do que eu li | 9 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 10 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 11 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 10 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
@@ -397,6 +397,15 @@ unchanged" onde esperava uma mudança. No mesmo dia criei um arquivo de teste co
 o antídoto desta classe (sem dano: `ruff` e a varredura passaram). O que tem de novo: um verde
 que vem **depois** de um passo que falhou mede o estado anterior; e o antídoto escrito não
 bastou para o `cat >` — agora a varredura de invisíveis roda também nos arquivos novos.
+
+**2026-09-30 — o título do `PROGRESSO.md` virou lixo (fechamento da Sessão 10, `736fd1a`).**
+Ao marcar os checkpoints da tabela, uma substituição com `\1` na troca (sem grupo que casasse
+onde eu pensava) escreveu `\1| ✅ |1| ✅ |1| ✅ |` no lugar de `# Viking — progresso em curso`.
+As linhas da tabela mudaram certo, e foi para elas que as duas passadas de revisão olharam; o
+título ficou errado por dois commits e um compact, até a leitura da abertura da 10b. O que tem de
+novo: o defeito estava **fora** do trecho que eu pretendia mudar, onde revisão nenhuma olha; o
+`git diff --stat` mostrava o número de linhas esperado mais uma. Antídoto: depois de toda troca
+por expressão num documento, `head -3` do arquivo e o `git diff` inteiro dele, não só o trecho.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 

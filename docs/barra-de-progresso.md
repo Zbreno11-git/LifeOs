@@ -9,11 +9,12 @@
 
 **Última atualização: 2026-09-30 (Sessão 10 fechada no seu Mac).**
 
-`███████████░░░░░░░░░ 16 de 29 sessões fechadas`
+`███████████░░░░░░░░░ 16 de 30 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9
-e 10; parciais: nenhuma; na fila: 10b (o chat na nuvem; a 10 foi
-dividida em duas, por isso o total passou de 28 para 29), 11, 11b (formulários) e 12 a 21.
+e 10; parciais: nenhuma; em curso: 10b (o chat na nuvem); na fila: 10c (o
+Gmail na nuvem), 11, 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi
+dividida, e para 30 quando a 10b foi dividida (2026-09-30).
 
 ## 2026-09-30 — Sessão 10: o Viking ganhou uma casa na nuvem (fechada no seu Mac)
 

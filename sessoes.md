@@ -16,24 +16,24 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10b — nuvem 1b: o chat na nuvem. A 10 fechou no Mac em 2026-09-30.
+- **Sessão:** 10b — nuvem 1b: o chat na nuvem, **em curso** (aberta em 2026-09-30; o plano está
+  em `PROGRESSO.md`). Depois dela, a **10c** (o Gmail na nuvem), que só abre depois de
+  2026-10-03.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** abrir, planejar e executar a 10b pela skill `software-build`. O primeiro passo dela
-  é a prova de que o token do Gmail renova sozinho, que só vale **depois de 2026-10-03** (se a
-  10b abrir antes, esse passo vai para o fim dela).
+- **Agora:** executar a 10b até o fim pelo plano do `PROGRESSO.md`.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D52), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D59), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as perguntas da abertura da 10 (o projeto GCP é criado por ele, com o
-  faturamento dele).
+- **Depende do dono:** os ok's de cada recurso e de cada deploy da 10b; a prova do token do Gmail
+  no Mac depois de 2026-10-03 (primeiro passo da 10c).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -367,7 +367,7 @@ Planejado com o dono em 2026-09-28, depois da Sessão 7. A "versão de sucesso f
 
 As decisões estão na D46–D52 (`docs/decisoes.md`). Cada sessão abre e planeja do jeito de
 sempre (skill `software-build`): a entrega abaixo é o alvo, e o tamanho sai da medição da
-abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 são as candidatas (a 10 foi dividida em 10 e 10b pelo dono em 2026-09-29).
+abertura. Dividir uma sessão em duas é decisão do dono; a 10, a 13 e a 17 são as candidatas (a 10 foi dividida em 10 e 10b pelo dono em 2026-09-29, e a 10b em 10b e 10c em 2026-09-30).
 
 **Regras que valem para todas, decididas agora:**
 - **Nunca código de aprovação por e-mail**, nem por nenhum canal que uma tool leia: o Viking lê o
@@ -699,27 +699,52 @@ O que estava escrito na abertura:
   - `google-auth`, que já está no lock, para a impersonação no Mac;
   - o modelo de "script de deploy que só lê sem flag", da skill `nuvem-e-deploy` §6.
 
-## Sessão 10b — nuvem 1b: o chat na nuvem (separada da 10 pelo dono em 2026-09-29)
+## Sessão 10b — nuvem 1b: o chat na nuvem (em curso; dividida pelo dono em 2026-09-30)
 
-- **Primeiro passo (adiado da 8, depois da 10; tem data):** provar que o login do Google não
-  vence em 7 dias. `viking gmail --login` no Mac **depois de 2026-10-03**, sem abrir o navegador.
-  Se pedir login de novo, a nuvem precisa de outra saída antes de guardar token (a verificação do
-  Google, ou um escopo menor) — e isso decide se os tokens do Google podem subir nesta sessão.
+> **Dividida na abertura (2026-09-30), pela data do Gmail:** a prova de que o token do Gmail não
+> vence em 7 dias só vale depois de 2026-10-03, e no chat só o Gmail aprova com código (o clique
+> do navegador fica no Mac). O Gmail e o código pela rede foram para a **10c**. Plano completo,
+> com as medições da abertura, no `PROGRESSO.md`; decisões na D59.
+
 - **Entrega:**
-  - o laço do chat (Gemini) roda no motor; `viking chat` no Mac vira cliente dele;
-  - a chave do Gemini e os tokens do Google no **Secret Manager**, lidos pela identidade do
-    `motor@` (nunca em variável de ambiente nem na imagem);
-  - o código de aprovação atravessa a rede num **campo próprio do protocolo**, nunca no texto que
-    o modelo escreve; a linha `confirma NNNN` é lida antes do modelo e não entra no histórico;
-    **limite de tentativas erradas por proposta** (hoje o TTY era a barreira);
-  - o registro de ações e a aprovação de uma ação da nuvem moram na nuvem (D57);
-  - o teto de custo (`custos.py`) conferido antes de gastar.
-- **Perguntas para a abertura:** o que o chat na nuvem faz enquanto o navegador (S11) e as
-  finanças (D51) ainda estão só no Mac — recusar com aviso, ou o chat local continuar existindo
-  para essas tools; o que acontece com o `viking chat` local depois dela.
-- **Herdado da 10:** o motor, o `viking-cli@`, `scripts/nuvem.py` (só lê sem flag; `deploy` roda
-  as provas), o store Firestore e o cliente `lifeos/nuvem/cliente.py`. O motor ainda não tem o
-  registro de ações nem a aprovação: a 10 só lê (D57 diz que moram onde a ação roda).
+  - `viking chat --nuvem` no Mac conversa com o motor: o laço do Gemini roda no Cloud Run com a
+    agenda, os lembretes e `acoes_recentes`; o histórico fica só no terminal do Mac e vai a cada
+    turno (a nuvem não grava a conversa); o `viking chat` local continua igual;
+  - a chave do Gemini e o token da agenda no **Secret Manager**, lidos pelo `viking-motor@` como
+    arquivo de um volume (nunca variável de ambiente, imagem, `describe` ou log);
+  - o registro de ações no Firestore quando a ação roda na nuvem (D57), pelo mesmo contrato do
+    SQLite; a retenção de 30 dias pela TTL nativa;
+  - o teto de gasto do Gemini no app, conferido antes de cada chamada: US$ 10/mês, até US$ 1/dia,
+    no fuso do dono;
+  - nenhuma linha com cara de aprovação vai ao Gemini na nuvem (na 10b, "nada a aprovar ainda");
+  - o lembrete criado pelo chat da nuvem diz que o aviso por e-mail dele só vem na S11.
+- **Respostas do dono (2026-09-30):** dividir em 10b e 10c; os dois chats convivem até a S11 (os
+  lembretes ficam em dois lugares até a migração); teto de US$ 10/mês e US$ 1/dia; o histórico só
+  no Mac; o lembrete da nuvem criado e avisado em voz alta; medir o turno com a chave do VPS.
+- **Medido na abertura (2026-09-30):** 5 turnos reais (agenda e lembretes) levaram de 0,9 a 3,0 s,
+  com 2 ou 3 chamadas ao Gemini, 13.224 tokens e ~US$ 0,0062 no total (estimativa pelas tarifas
+  do `config`); o histórico chegou a 7 KB. O token da agenda do VPS, de 2026-09-20, renovou em
+  2026-09-30: dez dias depois, o que indica que o app OAuth não está no modo "Testing" (onde vence
+  em 7). Não substitui a prova do Gmail.
+
+## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (separada da 10b em 2026-09-30)
+
+- **Primeiro passo (adiado da 8, da 10 e da 10b; tem data):** provar que o login do Google não
+  vence em 7 dias. `viking gmail --login` no Mac **depois de 2026-10-03**, sem abrir o navegador
+  (o token do Gmail é de 2026-09-26). Se pedir login de novo, os tokens do Gmail não sobem (a
+  verificação do Google, ou um escopo menor, antes). Indício a favor, medido na abertura da 10b:
+  o token da agenda, do mesmo cliente OAuth, renovou dez dias depois de feito.
+- **Entrega:**
+  - as tools do Gmail no chat da nuvem, com o token do Gmail no Secret Manager (subido do Mac, que
+    é onde ele mora: o VPS não guarda token do Gmail, D57);
+  - `confirmacao.py` atrás de uma interface, com o store no Firestore pelo mesmo contrato do SQLite;
+  - o código de aprovação volta ao terminal num **campo próprio da resposta** (`ao_dono`), nunca
+    no texto do modelo, e só é mostrado num terminal interativo; a linha `confirma NNNN` é lida
+    pelo motor antes do modelo e não entra no histórico;
+  - **limite de tentativas erradas por proposta** (hoje o TTY era a barreira);
+  - o prazo do motor conferido contra o pior caso do Gmail (as esperas de cota somam até 126 s).
+- **Herdado da 10b:** o laço do chat no motor, o teto de gasto, o registro de ações no Firestore,
+  os segredos como volume e `viking chat --nuvem`.
 
 ## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
 

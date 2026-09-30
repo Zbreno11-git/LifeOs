@@ -1,71 +1,392 @@
-\1| ✅ |1| ✅ |1| ✅ |
+# Viking — progresso em curso
 
 > Arquivo de trabalho: descreve a sessão **atual** e é atualizado a cada etapa fechada, não só no
 > fim. É o que sobrevive a um `/compact` ou a uma conversa nova (skill `pre-compact`). Quando a
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10 fechada no Mac; próximo: abrir a 10b
+## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10b em curso (C1)
 
-**Estado (2026-09-30 03:01Z):** `git status --short` limpo · HEAD igual ao remoto · travas:
-nenhuma · background: nenhum. Portões: `1997 passed` no VPS; no Mac `1966 passed, 31 skipped`
-(os 31 = Firestore e gitleaks, que o Mac não instala; o VPS simulando o Mac dá os mesmos);
-`ruff`, formatação, `mypy` (14 arquivos) e gitleaks limpos; mutações 228/228. Barra 16 de 29.
+**Estado:** `git log --oneline -3` e `git status --short` · travas: nenhuma · background: nenhum.
+Base da abertura (2026-09-30): `1997 passed`, CI de `af146ad` verde, `nuvem.py` 8 ✅ e `deploy` 9
+✅ (motor `b7a0635` no ar).
 
-**No ar (medido em 2026-09-30 03:01Z, `python scripts/nuvem.py deploy`):** o motor `b7a0635` em
-`southamerica-east1`, 9 provas ✅, 0 commits nos caminhos da imagem desde ela. O repo é privado.
+**Próximo passo exato:** o primeiro checkpoint ⬜ do mapa do plano abaixo.
 
-**Próximo passo exato:** abrir a 10b pela skill `software-build`: `uv lock --upgrade --dry-run`,
-o CI do HEAD pelo SHA inteiro, `python scripts/nuvem.py` (8 ✅) e `python scripts/nuvem.py
-deploy` (9 ✅) antes de tudo; depois as medições e as perguntas da abertura (abaixo).
-
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (▶️, a 10 inteira, a
-10b e a 11); `docs/decisoes.md` D46, D47 (revista), D52, D53, D57 e D58; o índice de
-`docs/erros.md`; `docs/fontes/gcp-cloud-run-firestore.md`; a memória. Skills: `software-build`
-(e `referencia/plano-de-sessao.md`), `nuvem-e-deploy`, `seguranca`, `integracoes`,
-`falha-ruidosa`. Código: `src/lifeos/nuvem/` (motor e cliente), `scripts/nuvem.py`,
-`src/lifeos/assistant/agent.py` (o laço do chat e `aprovacao_local`), `src/lifeos/confirmacao.py`,
-`src/lifeos/registro.py`, `src/lifeos/custos.py`.
-
-**Para planejar a 10b (anotado em 2026-09-30, conferir na abertura):**
-- **evento com data:** a prova do token do Gmail (`viking gmail --login` no Mac sem navegador)
-  só vale depois de 2026-10-03; o token é de 2026-09-26. Se pedir login de novo, os tokens do
-  Google não sobem (a verificação do Google ou um escopo menor primeiro);
-- o motor hoje **só lê**: não tem registro de ações nem aprovação. `registro.py` e
-  `confirmacao.py` gravam no SQLite (`banco.conectar`); na nuvem precisam de um store no
-  Firestore (D57: moram onde a ação roda), pelo mesmo caminho da 10 (interface + contrato);
-- o Secret Manager ainda não está nas APIs de `scripts/nuvem.py` (entra como passo novo); a
-  chave do Gemini está no `.env` do VPS (o dono decidiu mantê-la para isto) e sobe sem aparecer
-  na conversa (`printf '%s'` para o `gcloud secrets versions add --data-file=-`);
-- o Cloud Run do motor tem `--timeout=60` e `--concurrency=10`: um turno de chat com tools pode
-  passar de 60 s (medir);
-- o código de aprovação atravessa a rede num campo próprio, com limite de tentativas (D52; a
-  seção da 10b em `sessoes.md`);
-- as perguntas ao dono estão na seção da 10b (o que o chat na nuvem faz sem o navegador e as
-  finanças, que continuam no Mac até a S11/D51; o destino do `viking chat` local);
-- critérios do dono, herdados: "precisão, otimização e software resiliente"; nada que custe
-  dinheiro ou publique sem o ok dele naquele passo; a 10b é candidata a ser dividida.
+**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano abaixo; `sessoes.md` (10b e
+10c); `docs/decisoes.md` D57, D58 e D59; skills `nuvem-e-deploy`, `seguranca`, `integracoes`,
+`falha-ruidosa`, `dados-e-banco`.
 
 **Não pode ser esquecido:**
 - todo `gcloud` do Viking leva `--project` (o login do VPS é o do dono; o projeto padrão é outro);
-- o `.env` do VPS tem as chaves do Gemini e da Pluggy e os valores da nuvem (projeto, URL,
-  faturamento, orçamento `105BRL`, fuso `America/Los_Angeles`); nada daqui usa as chaves sem
-  pedido; o fuso troca quando o dono voltar ao Brasil (~fim de outubro);
-- publicar = `python scripts/nuvem.py deploy --executar`, com o ok do dono a cada deploy; a
-  permissão nova no IAM leva <1 min (a prova espera);
-- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail;
-- migração publicada não se edita; mutações em background, sem `timeout`; nada de endereço de
-  terceiros nem `/Users/<nome>` no repo; nem ID de projeto nem URL no repo (ficam no `.env`).
+- a chave do Gemini e o token da agenda sobem para o Secret Manager pela entrada padrão, sem
+  aparecer em lugar nenhum; nada daqui usa as chaves do `.env` sem pedido (a medição do C0 teve o
+  ok do dono);
+- o código de aprovação nunca vai ao Gemini, ao MCP, ao registro nem por e-mail; na 10b a nuvem
+  não aprova nada (10c);
+- o VPS tem o cliente OAuth e o token da agenda: nada que envie, apague ou arquive rodado daqui;
+- publicar = `python scripts/nuvem.py deploy --executar`, com o ok do dono; migração publicada
+  não se edita; mutações em background, sem `timeout`.
 
-**Depende do dono:** as perguntas da abertura da 10b; a prova do token do Gmail depois de
-2026-10-03; o `dbt-project` ficou sem faturamento (o dataset do BigQuery dele está no modo
-sandbox, com tabelas que expiram em 60 dias).
+**Depende do dono:** os ok's do C5 (API, segredos, versões, TTL) e do C6 (deploy, turno real no
+ar); o teste do Mac (C8); a prova do token do Gmail depois de 2026-10-03 (primeiro passo da 10c).
 
-**Antes de confiar neste bloco:** `git status --short` vazio; HEAD = o checkpoint depois de
-`736fd1a`; `ls .mutacao.lock` → não existe; `.venv/bin/python -m pytest -q` → `1997 passed`;
-`gh run list --commit $(git rev-parse HEAD)` → `success`; `python scripts/nuvem.py deploy` → 9 ✅.
+## Plano — Sessão 10b: nuvem 1b, o chat na nuvem (o Gmail e o código pela rede vão para a 10c)
 
-## Plano — Sessão 10: nuvem 1, o motor (a 10b leva o chat para a nuvem)
+### Context
+A 10 pôs no ar o chão da nuvem: o motor fechado por IAM e pelo próprio código, o Firestore com o
+contrato dos lembretes, o deploy por script e `viking lembretes --nuvem`. O próximo passo do
+roteiro (D47) é o **cérebro na nuvem**: o laço do Gemini roda no motor, e o terminal do Mac vira
+cliente dele.
+
+O dono dividiu a 10b em duas (2026-09-30):
+- **10b, esta sessão:** agenda, lembretes e o registro de ações;
+- **10c:** o Gmail e o código de aprovação pela rede. A prova do token do Gmail só vale depois de
+  2026-10-03, e, no chat, só o Gmail usa código (o clique do navegador fica no Mac).
+
+Critério herdado do dono: "precisão, otimização e software resiliente". Com o plano aprovado, o C0
+copia este texto para o topo do `PROGRESSO.md`, e a execução segue até o fim sem pedir confirmação
+a cada fase. Continuam pedidos, **na hora**, os ok's do que custa dinheiro, cria recurso ou publica.
+
+### O que esta sessão entrega (verificável)
+1. **`viking chat --nuvem` no Mac conversa com o motor.**
+   - O laço do Gemini roda no Cloud Run, com as tools da agenda (7), dos lembretes (3) e
+     `acoes_recentes`.
+   - O histórico fica só no terminal do Mac e vai a cada turno; a nuvem não grava a conversa.
+   - O `viking chat` local continua igual a hoje.
+2. **Chave do Gemini e token da agenda no Secret Manager**, lidos pelo `viking-motor@` como
+   arquivo de um volume: nunca em variável de ambiente, na imagem, no `describe` nem no log.
+3. **O registro de ações mora no Firestore quando a ação roda na nuvem** (D57).
+   - O mesmo contrato do SQLite, nos dois stores, no emulador e no CI.
+   - A retenção de 30 dias vira a TTL nativa do Firestore.
+   - O `desfaz` sozinho do calendário funciona no chat da nuvem.
+4. **Teto de gasto do Gemini no app**, conferido **antes** de cada chamada:
+   - US$ 10 por mês e US$ 1 por dia, no fuso do dono;
+   - bateu o teto, o turno é recusado e a resposta diz quanto já foi gasto.
+5. **Nenhuma linha com cara de aprovação vai ao Gemini na nuvem:**
+   - `confirma NNNN`, só o número, ou a palavra sozinha;
+   - na 10b, a resposta é "ainda não há o que aprovar na nuvem" (a aprovação chega na 10c).
+6. **Os lembretes criados pelo chat da nuvem dizem que ainda não saem por e-mail** (até a S11). O
+   `viking lembretes --nuvem` mostra a mesma marca.
+
+### O que ela NÃO faz (e para onde foi)
+Todos os destinos são escritos no C0, antes de qualquer código.
+- **A prova do token do Gmail** (depois de 2026-10-03) → primeiro passo da 10c.
+- **Na nuvem, na 10c:** as tools e os tokens do Gmail; `confirmacao.py` no Firestore; o código no
+  campo `ao_dono` da resposta, só num terminal interativo; o limite de tentativas erradas.
+- **Navegador e finanças** → ficam no `viking chat` local até a S11 (as mãos) e a D51.
+- **Lembretes:**
+  - o envio por e-mail dos lembretes da nuvem, e a migração dos dados do Mac → S11 (já estão
+    lá);
+  - os lembretes ficam em dois lugares até a migração (decisão do dono).
+- **Aposentar o `viking chat` local** → S11.
+
+### Respostas do dono (2026-09-30)
+| Pergunta | Resposta | Consequência no plano |
+|---|---|---|
+| Dividir a 10b pela data do Gmail | 10b agora + 10c depois de 03/10 | Sem Gmail e sem `confirmacao` na nuvem; seção nova da 10c no C0; a barra passa de 29 para 30 sessões |
+| O chat local e as tools só do Mac | os dois convivem até a S11 | `viking chat --nuvem` é um comando novo, e o local não muda. O motor registra só as tools que moram na nuvem, e o texto de sistema só fala delas (teste) |
+| Teto do Gemini | US$ 10/mês, até US$ 1/dia | Valores em `config`, conferidos antes de cada chamada ao modelo; o dia e o mês no fuso do dono |
+| Medir o turno daqui | sim, agora | C0: ~5 turnos reais com a chave do `.env` do VPS, só lendo a agenda, com os lembretes num banco temporário |
+| Onde mora o histórico | só no terminal do Mac | O motor não guarda estado: o histórico vai e volta no corpo do pedido (medido: `Content` → JSON → `Content` igual, com a assinatura de raciocínio) |
+| Lembrete criado na nuvem sem e-mail até a S11 | criar e avisar em voz alta | O texto de `criar_lembrete` na nuvem e o `viking lembretes --nuvem` levam a marca |
+
+### Decisões técnicas minhas (declaradas; o dono pode derrubar)
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **Um núcleo do turno** (`assistant/turno.py`, sem `print` nem `input`), usado pelo REPL local e pelo `/chat` do motor. As tools e o texto de sistema vêm de uma tabela com o lugar de cada tool (`mac` ou `nuvem`), e um teste exige que toda tool esteja nela | duas cópias do laço divergiriam (skill `software-build` §4, estrutura vence disciplina). `aprovacao_local` fica em `agent.py`: os testes do Gmail leem o código de lá | o laço local precisar de algo que a nuvem não pode ter |
+| **O motor sem estado:** `POST /chat` recebe `{historico, mensagem, nota, sessao, numero}` e devolve `{resposta, historico, nota, aviso, gasto}`, com o corpo limitado (413 acima do teto) | a decisão do dono; nada de conteúdo na URL (o log guarda a URL) | a conversa ficar grande demais (medir o corpo nos turnos do C0) |
+| **As rotas do motor viram `def`** (o Starlette as roda numa thread) | hoje são `async` e chamam código que bloqueia; um turno de chat pararia os outros pedidos da instância | — |
+| **O Gemini com prazo:** `HttpOptions(timeout)` por chamada, no máximo N chamadas de tool por turno (`maximum_remote_calls`) e o `--timeout` do Cloud Run acima disso | sem prazo, uma chamada presa segura o pedido até o Cloud Run matar; os números saem da medição do C0 | — |
+| **O prazo do motor:** 300 s (o padrão do Cloud Run), ou 3× o turno mais lento medido, o que for maior. O cliente espera o prazo do motor mais 20 s | as esperas do Gmail somam até 126 s (10c); cobrado só enquanto o pedido roda | a medição mostrar turnos acima de 100 s |
+| **Segredos como volume:** `/segredos/gemini/chave` e `/segredos/agenda/token.json`; o `config` é o único leitor, lê uma vez por instância e guarda | o Google recomenda o volume para usar `latest`; a cota grátis é de 10 mil acessos por mês (lido em 2026-09-30) | — |
+| **O token da agenda na nuvem:** lido do volume, renovado **em memória**, nunca gravado. O login nunca se abre na nuvem (`google_auth.servico` tem o caminho da nuvem). Renovação recusada vira um erro alto com o que fazer | o volume é só leitura; o `InstalledAppFlow` na nuvem penduraria o pedido | — |
+| **O token que sobe é a cópia do VPS** (a mesma conta, copiada do Mac em 2026-09-20; ela guarda `client_id`/`client_secret`), por `scripts/nuvem.py`, entrada padrão, sem aparecer em nada | o VPS já o tem; evita um passo no Mac. A prova no ar diz se ele ainda renova | a renovação falhar → subir o do Mac por um comando no Mac |
+| **`banco.conectar()` recusa no modo nuvem** (`VIKING_STORE=firestore`) | nada no motor pode abrir um SQLite em silêncio; a pasta da imagem nem é gravável pelo usuário 65532 | — |
+| **O registro atrás de uma interface** (`registro_interface.Registro`, como `reminders/interface`); `registro_firestore.py` com ids inteiros crescentes (`time_ns` + `create()`) e a TTL em `expira_em` | a API pública de `registro` e os 13 módulos que o usam não mudam; a ordem por id continua valendo | — |
+| **Consultas do registro no Firestore com um campo só**, filtrando o resto em Python; o único índice composto é `(operacao, criada_em)`, para `contaveis`, em `INDICES`; a prova no ar exerce cada consulta | o emulador não exige índice e a produção exige (armadilha paga na 10) | — |
+| **O `_trocar` (comparar e trocar) sai para um módulo comum** do Firestore, usado pelos lembretes, pelo registro e pelo teto | o terceiro consumidor é o gatilho | — |
+| **Teto:** um documento por mês (`gastos/AAAA-MM`, com o total e os dias), somado depois de cada chamada e conferido antes da próxima. É estimativa pelas tarifas do `config`, e a resposta diz isso | o alerta do GCP só avisa; conferir antes também corta um turno longo no meio (o aviso de ações do turno já existe) | a fatura real divergir da estimativa |
+| **O teto vale para o chat da nuvem;** o local continua só mostrando `/custos` | o dono decidiu os dois chats; o local se aposenta na S11 | o dono querer o teto no local também |
+| **Linha com cara de aprovação na nuvem:** as mesmas regras de `aprovacao_local` (verbo e número, só o número, a palavra sozinha). Na 10b, a resposta é "nada a aprovar na nuvem ainda"; a linha nunca vai ao modelo nem ao histórico devolvido | a regra "nunca ao Gemini" vale antes de a aprovação existir | — |
+| **A prova de chat no ar:** um turno real só com `deploy --executar` (custa, com o ok). As provas de sempre, grátis, conferem que o segredo lê, que o token da agenda renova e as consultas do registro | as provas rodam a cada `deploy`, e não podem gastar | — |
+
+### Medido na abertura (2026-09-30, VPS)
+| O quê | Comando / fonte | Resultado | Consequência |
+|---|---|---|---|
+| Repositório | `git status`, `rev-parse`, `ls-remote`, `ls .mutacao.lock` | limpo; `af146ad` = origin; sem trava | ok |
+| Suíte | `.venv/bin/python -m pytest -q` | `1997 passed in 34.52s` | base |
+| CI do HEAD | `gh run list --commit af146ad5…` | `completed success` | ok |
+| Versões | `uv lock --upgrade --dry-run` (e `--refresh`) | `No lockfile changes detected` | nada a subir |
+| Infraestrutura | `python scripts/nuvem.py` | 8 ✅ | ok |
+| No ar | `python scripts/nuvem.py deploy` | `b7a0635`, 0 commits desde ela, 9 provas ✅ | ok |
+| **Divergência** | `git show 736fd1a:PROGRESSO.md` | a linha 1 virou `\1\| ✅ \|1\| ✅ \|1\| ✅ \|` (título perdido numa substituição) | conserto e classe 5 no C0 |
+| **Divergência** | `sessoes.md` ▶️ | "as perguntas da abertura da 10" | C0 |
+| Quem aprova com código no chat | `aprovacoes.TIPOS` | Gmail (arquivar, enviar) e o clique do navegador; a agenda só pelo MCP | o código pela rede vai para a 10c |
+| Registro e confirmação | `grep` | `registro` em 13 módulos; `confirmacao` com 11 funções usadas; ids `INTEGER` sequenciais | interface + ids crescentes |
+| Prazo | `gmail/service.py`; laço do chat | as esperas de cota somam até 126 s; o Gemini sem prazo; o motor com `--timeout=60` | prazos da tabela acima |
+| Motor | `nuvem/motor.py` | rotas `async` chamando código que bloqueia | viram `def` |
+| Cloud Run | docs `request-timeout` (atualizada em 2026-09-29) | o padrão é 300 s e o máximo 3600 s | — |
+| Secret Manager | docs de segredos no Cloud Run (2026-09-29); cota grátis (2026-09-24) | volume = sempre a mais nova ao ler; variável = lida ao subir (fixar versão); `secretAccessor`; 6 versões ativas, 10 mil acessos e 3 notificações por mês grátis | volume; 2 segredos com 1 versão cada |
+| google-genai 2.25.0 | script | `chats.create(history=)`, `HttpOptions.timeout`, `maximum_remote_calls`; `Content` vai e volta em JSON igual | o motor sem estado dá |
+| Token da agenda no VPS | `ls -l`; o campo `expiry` (sem imprimir segredo) | copiado em 2026-09-20 e nunca renovado aqui (`expiry` 2026-09-19); tem `client_id`/`client_secret` | não prova os 7 dias; a prova no ar diz se renova |
+| `google_auth.credenciais` | leitura | abre o `InstalledAppFlow` se o token falha, e regrava o arquivo sempre | caminho da nuvem próprio |
+| Duração de um turno | diário, fontes | **nunca medida** | C0 mede (ok do dono) |
+| **Turno medido (C0, 2026-09-30 ~04:10Z)** | script na pasta de rascunho: 5 perguntas reais, tools de leitura da agenda + lembretes num banco temporário, `gemini-2.5-flash` | 2,01 · 3,02 · 0,94 · 1,94 · 2,55 s; 2–3 chamadas por turno; 13.224 tokens (12.211 in / 1.013 out), ~US$ 0,0062 no total (0,0007–0,0018 por turno, estimativa pelas tarifas do `config`); histórico de 931 B a 7.068 B | `--timeout=300` (3× o mais lento = 9 s; o piso é o padrão); o prazo por chamada ao Gemini 60 s; `maximum_remote_calls` 10; corpo do `/chat` até 4 MiB; o teto de US$ 1/dia ≈ 600 turnos destes |
+| Token da agenda do VPS (C0) | `credenciais_sem_login` sem imprimir nada | renovou em 2026-09-30, 10 dias depois de feito (2026-09-20); o arquivo não foi regravado | indício de que o app OAuth não está em "Testing"; a prova do Gmail continua na 10c |
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | medição do turno (5 turnos, tempos e custo num arquivo); `PROGRESSO` com a linha 1 consertada e este plano; `sessoes.md` (▶️, 10b, **10c nova**); D59; classe 5 (10); barra 16/30; commit | — | ✅ |
+| C1 | registro atrás da interface, Firestore passando o contrato nos dois stores (emulador, CI); `banco.conectar` recusa na nuvem; `_trocar` comum | C0 | ⬜ |
+| C2 | núcleo do turno + tabela de tools por lugar; teto no Firestore; linha de aprovação barrada; o aviso do lembrete; o REPL local inalterado (os testes do chat de hoje verdes sem edição de asserção) | C1 | ⬜ |
+| C3 | motor: rotas `def`, `POST /chat`, limite de corpo, fumaças novas; `google_auth` modo nuvem; `config` lê segredo de arquivo; imagem constrói | C2 | ⬜ |
+| C4 | `viking chat --nuvem` (cliente com histórico e nota, prazo longo, erros em português) e a marca em `viking lembretes --nuvem`; testes offline | C3 | ⬜ |
+| C5 | `scripts/nuvem.py`: API `secretmanager`, passos `segredos` e `ttl`, subcomando que sobe uma versão sem mostrar, deploy com volumes e prazo; **ok** → API, segredos, versões, TTL; só-leitura 10 ✅ | C3 | ⬜ |
+| C6 | **ok** → deploy; provas antigas + novas ✅; **ok** → um turno real no ar (tempo e custo anotados) | C4, C5 | ⬜ |
+| C7 | portões, duas passadas, `/security-review` se houver, docs, mutações em background, commits, push, CI pelo SHA | C6 | ⬜ |
+| C8 | teste do dono no Mac | C7 | ⬜ |
+
+### Fase 0 — documentos e a medição (C0)
+**Medição (ok do dono, 2026-09-30):**
+- Um script na pasta de rascunho monta o cliente do Gemini com a chave lida do `.env`, sem
+  imprimi-la.
+- Tools: só as de **leitura** da agenda (listar próximos, por data, buscar) e as de lembretes, com
+  `VIKING_DB_PATH` num banco temporário. Nada escreve na agenda.
+- 5 perguntas reais: "o que tenho amanhã?", "e na semana que vem?", "lista meus lembretes", "cria
+  um lembrete de teste para amanhã às 9h", "resume minha semana".
+- Por turno: o tempo de relógio, as chamadas ao Gemini, os tokens, o custo estimado e o tamanho do
+  histórico em JSON. Saída inteira num arquivo; o resumo vai para "Medido" com data.
+- O token da agenda do VPS pode renovar e ser regravado: é o comportamento normal, e só lê a
+  conta.
+
+**Docs:**
+- `PROGRESSO.md`: a linha 1 volta a `# Viking — progresso em curso`; este plano no topo.
+- `sessoes.md`:
+  - o ▶️ aponta para a 10b;
+  - a seção 10b com a entrega acima;
+  - **seção 10c nova**, que começa pela prova do Gmail e leva o que saiu daqui (o Gmail na
+    nuvem, a confirmação no Firestore, o `ao_dono`, o limite de tentativas).
+- `docs/decisoes.md` D59: as respostas e as decisões acima.
+- `docs/erros.md`, classe 5 (10): a substituição com `\1` no fechamento da 10, que as duas passadas
+  não pegaram. O antídoto: `head -3` de cada documento tocado antes do commit.
+- Barra: 16 de **30**.
+
+**✅ Checkpoint:**
+- o arquivo da medição com 5 turnos;
+- `head -1 PROGRESSO.md` → `# Viking — progresso em curso`;
+- `git grep -n '^\\1'` → vazio;
+- a suíte → `1997 passed`.
+
+**🐞 → Depurar:** um turno pedir login (o token do VPS não renova) → é a medida (registrar), não
+um defeito; seguir sem as tools da agenda e anotar para o C6.
+
+### Fase 1 — o registro no Firestore (C1)
+**Faz:**
+- `registro_interface.py`: o `Protocol` com as primitivas `iniciar`, `terminar`, `do_turno`,
+  `recentes`, `contaveis`, `obter`, `ultima_desfazivel`, `reivindicar_desfazer`,
+  `devolver_desfazer` e `purgar`.
+- `registro.py` mantém a API pública (`acao`, `ORIGEM`, `TURNO`, `Acao`…) e delega ao store
+  escolhido por `config.STORE`. O SQLite é o código de hoje.
+- `registro_firestore.py`: coleção `acoes`; id `time_ns` + `create()`; todo campo gravado;
+  `expira_em` = `criada_em` + 30 dias (TTL). A leitura também filtra os 30 dias, porque a TTL apaga
+  com atraso. `reivindicar_desfazer` por comparar e trocar.
+- `_trocar` sai para `lifeos/firestore_comum.py`.
+- `INDICES` ganha `acoes (operacao, criada_em)`.
+- `banco.conectar()` levanta erro no modo nuvem.
+- `ORIGEM` ganha `nuvem`.
+- **Testes:**
+  - `tests/test_registro_contrato.py` roda nas duas implementações (o padrão da
+    `test_reminders_contrato`);
+  - a corrida do `reivindicar_desfazer` com 16 threads, **recolhendo as exceções**;
+  - documento parcial erra alto;
+  - `banco.conectar` recusa na nuvem.
+- **Mutações:** o `desfazer` reivindicado duas vezes; sem o filtro dos 30 dias; sem `create()`
+  (sobrescreve).
+
+**✅ Checkpoint:**
+- `pytest tests/test_registro_contrato.py -q` com `VIKING_EXIGIR_EMULADOR=1` → os dois stores, 0
+  pulados;
+- a suíte inteira verde;
+- `tests/test_registro_ganchos.py` sem mudança de asserção.
+
+**🐞 → Depurar:**
+- classe 4: uma thread que falha em silêncio → a lista de exceções no teste;
+- classe 6: um caminho que ainda chama o SQLite na nuvem → `grep -rn "banco.conectar" src/`.
+
+### Fase 2 — o núcleo do turno, o teto e as barreiras (C2)
+**Faz:**
+- `assistant/turno.py`:
+  - `LUGAR` (tool → `mac`/`nuvem`); `ferramentas(lugar)`; `instrucao(lugar)`, montada por seção;
+  - `executar_turno(chat, mensagem, nota)` devolve o texto, a nota e o aviso de ações depois de
+    um erro;
+  - `historico_para_json` e `historico_de_json`.
+- `agent.py`: o REPL chama o núcleo; `aprovacao_local` fica ali.
+- `assistant/nuvem.py`, o turno da nuvem:
+  - a barreira de aprovação: o `desfaz` sozinho do calendário age; as outras formas respondem "na
+    nuvem ainda não há o que aprovar";
+  - o cliente do Gemini com prazo e `maximum_remote_calls`;
+  - o teto.
+- `custos.py`: o `Teto` com os valores do `config` (US$ 10 por mês, US$ 1 por dia), o documento
+  `gastos/AAAA-MM` e o fuso do dono. `conferir()` roda antes de cada `_generate_content`, pelo
+  gancho que já existe; `somar()` roda depois.
+- `criar_lembrete` na nuvem acrescenta a marca "o aviso por e-mail deste lembrete ainda não existe
+  na nuvem (chega na S11)".
+- **Testes, com um Gemini falso que conta as chamadas:**
+  - uma linha de aprovação → 0 chamadas ao modelo e ausente do histórico devolvido;
+  - teto no dia → 0 chamadas; teto no meio do turno → para, com o aviso;
+  - a virada do dia no fuso do dono (Los Angeles contra UTC);
+  - na nuvem, só as tools da nuvem, e o texto de sistema sem navegador, finanças nem Gmail;
+  - toda tool classificada;
+  - o histórico vai e volta com `thought_signature`;
+  - o REPL local: os testes de `agent` de hoje, sem mudança de asserção.
+- **Mutações:** conferir o teto depois da chamada; a linha de aprovação ir ao modelo; uma tool do
+  Mac na lista da nuvem.
+
+**✅ Checkpoint:**
+- `pytest tests/test_turno*.py tests/test_teto*.py -q` verde;
+- a suíte inteira verde;
+- o `grep` de `from __future__` nos módulos de tool → nenhum novo.
+
+**🐞 → Depurar:**
+- classe 7, a regra de aprovação desenhada pelo caso típico → os vizinhos já testados em
+  `test_gmail_aprovacao`, rodados também na barreira da nuvem;
+- a armadilha do future import → o teste por tool.
+
+### Fase 3 — o motor (C3)
+**Faz:**
+- As rotas viram `def`.
+- `POST /chat`: `_quem` primeiro; o corpo com teto; o `json` validado (erro 400 em português,
+  sem ecoar conteúdo); `ORIGEM=nuvem`, `TURNO=sessao:numero`.
+- `GET /fumaca/segredos`: a chave lê e o token da agenda renova. Só `true`/`false`, e nenhuma
+  chamada paga.
+- `GET /fumaca/registro`: cada consulta do registro com parâmetros vazios. Só leitura.
+- `config`: `VIKING_GEMINI_CHAVE_ARQUIVO` e `VIKING_AGENDA_TOKEN_ARQUIVO` (lidos uma vez); o
+  `GEMINI_API_KEY` do `.env` continua valendo no Mac.
+- `google_auth.servico` na nuvem usa `credenciais_da_nuvem`: renova em memória, nunca grava, nunca
+  abre login.
+- O `Dockerfile` não muda; o `test_dockerfile` confere.
+- **Testes:**
+  - `/chat` sem token → 401; outra conta → 403;
+  - o corpo acima do teto → 413;
+  - a régua AST cobre a rota nova;
+  - o log (`caplog`) sem a mensagem nem o histórico;
+  - o modo nuvem nunca chama `InstalledAppFlow` nem `_gravar_token`;
+  - a chave nunca aparece em `repr`, erro ou log.
+
+**✅ Checkpoint:** `pytest tests/test_motor.py tests/test_google_auth*.py -q` verde; `docker build`
+ok; o tamanho da imagem medido.
+
+**🐞 → Depurar:** classe 6, uma rota nova esquecendo `_quem` → a régua AST; o contextvar não
+chegar à thread da rota → definir dentro da rota (teste que lê `registro.ORIGEM` numa tool falsa).
+
+### Fase 4 — o Mac como cliente do chat (C4)
+**Faz:**
+- `nuvem/cliente.py` ganha `turno_de_chat(historico, mensagem, nota)`, com `POST` e o prazo do
+  motor mais 20 s, e reaproveita `_sessao` (uma por conversa).
+- `viking chat --nuvem`: o REPL guarda o histórico e a nota; `sair`; `/custos` mostra o gasto do
+  dia e do mês que o motor devolve.
+- Os erros em português: sem login do gcloud, teto atingido, o motor fora do ar, o prazo esgotado
+  ("o motor pode ter agido: veja `acoes_recentes`").
+- `viking lembretes --nuvem` marca que o aviso por e-mail ainda não existe na nuvem.
+- **Testes:**
+  - o transporte falso;
+  - o histórico enviado é o devolvido pelo turno anterior;
+  - o token nunca é impresso;
+  - o prazo esgotado dá mensagem, não traceback;
+  - o `--nuvem` é exclusivo com as outras opções do `chat`, se houver.
+
+**✅ Checkpoint:** `pytest tests/test_nuvem_cliente.py tests/test_cli*.py -q` verde.
+
+### Fase 5 — infraestrutura dos segredos (C5)
+**Faz:**
+- `APIS` ganha `secretmanager.googleapis.com`.
+- **Passo `segredos`:** cria `viking-gemini` e `viking-agenda` (replicação automática), e dá
+  `secretAccessor` ao `viking-motor@` **em cada segredo**, não no projeto.
+- **Passo `ttl`:** `firestore fields ttls update expira_em --collection-group=acoes --enable-ttl`.
+- **Subcomando `segredo NOME`:** sobe uma versão com o valor pela entrada padrão do `gcloud`. O
+  valor vem do `.env` (`GEMINI_API_KEY`) ou do arquivo (`secrets/google_token.json`), e nunca é
+  impresso. A medida mostra só o número de versões e a data.
+- **Deploy:**
+  - `--timeout` da medição do C0;
+  - `--update-secrets` com os volumes;
+  - `VIKING_*_ARQUIVO` e `VIKING_STORE=firestore` nas variáveis;
+  - `--set-env-vars` continua trocando todas as variáveis juntas.
+- **Testes:** todo comando com `--project`; o valor do segredo nunca no argv nem na saída; o deploy
+  nunca usa um segredo como variável de ambiente.
+- **Ok do dono, um por vez, com o custo medido:**
+  - a API (grátis);
+  - os segredos (2 versões, dentro das 6 grátis);
+  - subir a chave e o token;
+  - a TTL (apaga o registro de ações com mais de 30 dias: a regra dele de 30 dias).
+
+**✅ Checkpoint:** `python scripts/nuvem.py` → 10 ✅; `gcloud secrets versions list` → 1 versão
+habilitada em cada.
+
+**🐞 → Depurar:**
+- `PERMISSION_DENIED` ao ler o segredo no ar → o papel **no segredo** (`get-iam-policy`), não no
+  projeto;
+- o volume recusado por caminho → um diretório por segredo.
+
+### Fase 6 — deploy e provas (C6)
+**Faz:** **ok** → `python scripts/nuvem.py deploy --executar`.
+
+**Provas:**
+- as 9 de hoje;
+- `/fumaca/segredos` (a chave lê, o token renova);
+- `/fumaca/registro` (sem `FAILED_PRECONDITION`);
+- o `describe` sem valor de segredo, só as referências;
+- o log sem conteúdo.
+
+Depois, **com o ok**, um turno real no ar ("o que tenho amanhã?"), com o tempo e o custo anotados
+no `PROGRESSO`.
+
+**✅ Checkpoint:** as provas literais, com horário, no `PROGRESSO.md`.
+
+**🐞 → Depurar:**
+- o token da agenda recusado (`invalid_grant`) → subir o do Mac (roteiro), sem reabrir o desenho;
+- a partida fria somada ao turno passar do prazo → medir a partida separada (a `/versao` antes).
+
+### Fase 7 — fechamento (C7)
+- **Portões lidos, com a linha citada:** `pytest`, `ruff check .`, `ruff format --check .` (o
+  formatador só nos arquivos editados), `mypy` (os módulos novos entram na lista) e o gitleaks.
+- **Duas passadas de revisão** (`referencia/revisao.md`), mais `/security-review` e `/code-review`
+  se estiverem disponíveis.
+- **Docs:**
+  - `AGENTS.md`: a estrutura (`turno.py`, `registro_firestore.py`, os segredos), o comando `viking
+    chat --nuvem`, as variáveis e as armadilhas novas;
+  - `docs/fontes/gcp-cloud-run-firestore.md`: o Secret Manager, o prazo, a TTL e o turno medido;
+  - o resto: decisões, diário (com "Erros desta sessão"), barra, `sessoes.md` e `PROGRESSO.md`.
+- **Mutações** em background, sem `timeout`, com a saída num arquivo.
+- **Fechar:** commits com o porquê; push; CI pelo SHA inteiro.
+
+### Verificação ponta a ponta (C8, roteiro para o Mac)
+1. `cd ~/LifeOs && git pull && git log --oneline -1`
+2. `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q`
+3. `viking chat --nuvem`:
+   - "o que tenho amanhã?" → os eventos no fuso dele;
+   - "cria um lembrete de teste para amanhã às 9h" → a resposta com a marca de "sem e-mail
+     ainda";
+   - `confirma 1234` → "na nuvem ainda não há o que aprovar";
+   - `/custos` → o gasto do dia e do mês;
+   - `sair`.
+4. `viking lembretes --nuvem` → o lembrete com a marca.
+5. `viking chat` (o local) → uma pergunta à agenda, igual a antes.
+
+### Riscos e o que é irreversível
+- **Custo:**
+  - o C0 (~5 turnos) e o turno real do C6, com ok;
+  - o teto do app corta a US$ 1 por dia;
+  - o Secret Manager fica dentro da cota grátis (2 versões ativas; acessos só na partida das
+    instâncias).
+- **A TTL apaga** o registro de ações com mais de 30 dias: é a regra que o dono já decidiu.
+- **O token da agenda na nuvem** age na conta real (criar, apagar e reagendar eventos). Passa pelo
+  registro de ações e pelo `desfaz`, como no Mac, e o motor só aceita o `viking-cli@`.
+- **Segredo no ar:** um volume, lido por uma conta só. Nada no git, na imagem, no argv nem na
+  conversa.
+
+## Plano — Sessão 10: nuvem 1, o motor (fechada no Mac em 2026-09-30)
 
 ### Context
 É a primeira sessão da nuvem (D47): o Viking ganha um lugar que fica ligado sem o Mac. O dono
