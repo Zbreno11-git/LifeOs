@@ -1891,6 +1891,13 @@ MUTACOES = [
         "    restam = None",
         "tests/test_confirmacao.py::test_a_terceira_errada_cancela_e_a_segunda_nao",
     ),
+    Mutacao(
+        "confirmação sqlite: propor lê os reservados fora da transação",
+        "src/lifeos/confirmacao_sqlite.py",
+        '        conn.execute("BEGIN IMMEDIATE")',
+        "        pass",
+        "tests/test_confirmacao.py::test_varias_propostas_ao_mesmo_tempo_nunca_repetem_o_codigo",
+    ),
 ]
 
 

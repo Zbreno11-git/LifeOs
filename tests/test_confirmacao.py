@@ -9,6 +9,7 @@ Desde a Sessão 10c é o **contrato** do store das confirmações
 """
 
 import threading
+import time
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -324,6 +325,9 @@ def test_varias_propostas_ao_mesmo_tempo_nunca_repetem_o_codigo(monkeypatch):
     def sorteio(_n):
         with trava:
             n = next(chamadas)
+        # A pausa fica entre ler os reservados e gravar: sem ela, a corrida do SQLite sem
+        # `BEGIN IMMEDIATE` caía em ~1 de 10 rodadas (medido em 2026-09-30); com ela, sempre.
+        time.sleep(0.02)
         return 42 if n < JUNTAS else 100 + n
 
     monkeypatch.setattr(confirmacao.secrets, "randbelow", sorteio)

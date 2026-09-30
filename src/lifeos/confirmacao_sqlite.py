@@ -3,8 +3,11 @@ de `confirmacao_interface.Confirmacoes` que o chat do Mac, o MCP e a CLI usam. O
 da Sessão 10c, movido de `confirmacao.py`; a regra continua lá.
 
 A reserva do código não é uma tabela: um número está reservado enquanto alguma linha com ele não
-venceu ou foi usada há menos da janela. Tudo acontece numa conexão só (`banco.conectar`), que é a
-transação: dois processos não sorteiam o mesmo número, e só um gasta a mesma proposta.
+venceu ou foi usada há menos da janela. `propor` lê os reservados e grava a proposta dentro de uma
+transação `BEGIN IMMEDIATE`: sem ela, a leitura roda fora de transação (o `banco.conectar` só abre
+uma antes do primeiro comando que escreve), e dois processos com `substituir=False` sorteavam o
+mesmo número (medido no CI em 2026-09-30, um defeito desde a Sessão 5). Gastar é um `UPDATE ...
+WHERE estado = 'aberta'`: só um leva.
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
@@ -57,6 +60,9 @@ def propor(
     maximo: int,
 ) -> Proposta:
     with banco.conectar() as conn:
+        # A trava de escrita antes de ler os reservados: quem vem depois espera esta proposta
+        # nascer e já a vê (ver o topo).
+        conn.execute("BEGIN IMMEDIATE")
         if substituir:
             conn.execute(
                 "UPDATE confirmacoes SET estado = ? WHERE acao = ? AND estado = ?",
