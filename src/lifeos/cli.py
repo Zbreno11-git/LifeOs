@@ -363,16 +363,28 @@ def _registro(args: argparse.Namespace) -> int:
 
 
 def _lembretes(args: argparse.Namespace) -> int:
-    """Sem opção: os pendentes. `--enviar`: 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial
+    """Sem opção: os pendentes. `--nuvem`: os pendentes que moram no Firestore, pelo motor (1 se a
+    nuvem não respondeu). `--enviar`: 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial
     (limite, "não sei se saiu", recusado); 1 = não rodou (sem login no Gmail, cota)."""
     from lifeos import config
+    from lifeos.browser._redacao import limpar_controles
     from lifeos.reminders import envio, service
 
-    if not args.enviar:
+    if args.nuvem:
+        from lifeos.nuvem import cliente
+
+        try:
+            pendentes = cliente.lembretes_pendentes()
+        except cliente.ErroDaNuvem as exc:
+            print(f"❌ Nuvem: {exc}.", file=sys.stderr)
+            return 1
+        print("☁️  Lembretes da nuvem:")
+    elif not args.enviar:
         pendentes = service.pendentes()
+    if not args.enviar:
         for r in pendentes:
             prazo = f" ({r.due_at.astimezone(config.TIMEZONE):%d/%m/%Y %H:%M})" if r.due_at else ""
-            print(f"- {r.title}{prazo}")
+            print(f"- {limpar_controles(r.title)}{prazo}")  # o título pode vir da rede
         if not pendentes:
             print("Nenhum lembrete pendente.")
         return 0
@@ -483,10 +495,14 @@ def main() -> None:
     lembretes_cli = subparsers.add_parser(
         "lembretes", help="Os lembretes pendentes; --enviar manda os vencidos por e-mail"
     )
-    lembretes_cli.add_argument(
+    modo_lembretes = lembretes_cli.add_mutually_exclusive_group()
+    modo_lembretes.add_argument(
         "--enviar",
         action="store_true",
         help="Manda para o seu e-mail os vencidos nas últimas 24 h (um e-mail cada, uma vez só)",
+    )
+    modo_lembretes.add_argument(
+        "--nuvem", action="store_true", help="Os pendentes que moram na nuvem (o motor no GCP)"
     )
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
