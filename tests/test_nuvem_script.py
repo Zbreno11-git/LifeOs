@@ -618,6 +618,31 @@ def test_o_segredo_roda_no_mac_so_com_o_projeto(nuvem, monkeypatch):
         nuvem._contexto()
 
 
+_SEM_O_EXTRA_NUVEM = """
+import importlib.abc, runpy, sys
+class Bloqueia(importlib.abc.MetaPathFinder):
+    def find_spec(self, nome, caminho, alvo=None):
+        if nome == "google.cloud" or nome.startswith(("google.cloud.", "starlette")):
+            raise ImportError("sem o extra nuvem: " + nome)
+sys.meta_path.insert(0, Bloqueia())
+print(sorted(runpy.run_path(sys.argv[1], run_name="nao_main")["FONTES"]))
+"""
+
+
+def test_o_script_abre_no_mac_sem_o_extra_nuvem():
+    """O Mac instala só `--extra dev` (o Firestore e o Starlette são do extra `nuvem`), e é de lá
+    que o token do Gmail sobe: importar o script não pode exigir o extra."""
+    saida = subprocess.run(
+        [sys.executable, "-c", _SEM_O_EXTRA_NUVEM, str(SCRIPT)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert saida.returncode == 0, saida.stderr[-500:]
+    assert "viking-gmail" in saida.stdout
+
+
 REFRESH_FALSO = "refresh-falso-do-teste"  # sem forma de token: o scanner não confunde
 
 

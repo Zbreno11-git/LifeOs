@@ -45,7 +45,7 @@ APIS = (
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "billingbudgets.googleapis.com",
-    "secretmanager.googleapis.com",  # a chave do Gemini e o token da agenda (Sessão 10b)
+    "secretmanager.googleapis.com",  # a chave do Gemini e os tokens da agenda e do Gmail
 )
 REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
@@ -564,18 +564,21 @@ PASSOS = (
     Passo("indices", "índices compostos do Firestore", _m_indices, _c_indices, ("firestore",)),
     Passo(
         "segredos",
-        "a chave do Gemini e o token da agenda (só o motor@ lê)",
+        "a chave do Gemini e os tokens da agenda e do Gmail (só o motor@ lê)",
         _m_segredos,
         _c_segredos,
         depende=("apis", "contas"),
     ),
     Passo(
         "ttl",
-        "o registro de ações apaga sozinho depois de 30 dias",
+        "o registro de ações e as confirmações apagam sozinhos depois de 30 dias",
         _m_ttl,
         _c_ttl,
         depende=("firestore",),
-        irreversivel="apaga o registro de ações com mais de 30 dias (a regra do dono)",
+        irreversivel=(
+            "apaga o registro de ações (a regra do dono) e as confirmações (D60) com mais de "
+            "30 dias"
+        ),
     ),
 )
 

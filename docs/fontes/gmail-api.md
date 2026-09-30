@@ -127,3 +127,24 @@ cota num relógio falso. O corpo do erro traz o número do projeto OAuth: não s
   o e-mail saiu… confira em Enviados"), sem nova tentativa.
 - **Não medido aqui (VPS):** o envio de verdade (o teste é no Mac); se o Gmail mantém o `From`
   explícito; como a marca `X-Viking` aparece ao ler de volta pela API (esperado: nos `headers`).
+
+## Na nuvem (Sessão 10c, 2026-09-30; no ar só depois da prova de 04/10)
+
+- **O token:** o do Mac (`secrets/google_token_gmail.json`, escopo `gmail.modify`) sobe para o
+  Secret Manager (`viking-gmail`) **do Mac**, por `python scripts/nuvem.py segredo viking-gmail
+  --executar`, pela entrada padrão; o VPS não guarda token do Gmail (D57). O motor o lê como
+  arquivo de volume (`VIKING_GMAIL_TOKEN_ARQUIVO`) e renova o acesso **em memória**
+  (`google_auth.credenciais_da_nuvem`): o login nunca abre lá. Se o Google recusar renovar, a
+  mensagem diz de onde subir de novo.
+- **O prazo:** o `googleapiclient` 2.200.0 espera até 60 s por operação de rede
+  (`DEFAULT_HTTP_TIMEOUT_SEC`, lido em 2026-09-30) e as esperas de cota somam 126 s por chamada.
+  Sem prazo, uma chamada podia passar de 500 s, e o Cloud Run mata o pedido em 300 s. O turno da
+  nuvem tem 220 s (`lifeos/prazo.py`): antes de cada espera e de cada pedido, o serviço confere
+  se ela e um pedido inteiro (`REDE_S` = 60 s) cabem; se não, `LimiteDoGmail("não deu tempo…")`,
+  com certeza de que nada foi feito naquela chamada. No Mac não há prazo.
+- **O aviso de espera** ("⏳ Esperando N s") sai só no terminal do Mac: no motor o stderr é o log.
+- **A cota** é por usuário, não por processo: o Mac e o motor gastam da mesma (6.000/min), e o
+  orçamento de cada um não enxerga o outro. A espera no erro continua sendo a rede de segurança.
+- **O limite de 20 envios em 24 h** conta separado no Mac e na nuvem (o registro mora onde a ação
+  roda, D57); unificar é da S11.
+

@@ -77,7 +77,7 @@ def test_o_codigo_da_limpeza_so_volta_no_campo_ao_dono(nuvem, gemini, capsys, ca
     assert f"confirma {CODIGO}" in so_dele and LOJA in so_dele
     assert not aparece(CODIGO, _sem_ao_dono(saida))  # nem o histórico, nem a nota, nem o texto
     assert not any(aparece(CODIGO, enviado) for enviado in roteiro.enviados)
-    assert capsys.readouterr().out == ""  # no motor, o stdout é o log
+    assert capsys.readouterr() == ("", "")  # no motor, o stdout e o stderr são o log
     assert not aparece(CODIGO, caplog.text)
     assert [p.codigo for p in confirmacao.abertas("gmail.arquivar")] == [CODIGO]
 

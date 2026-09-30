@@ -8,7 +8,7 @@ ficou sem tempo diz o que fez? No Mac (sem prazo), nada disso muda.
 import pytest
 from tests import test_na_nuvem as base
 
-from lifeos import prazo
+from lifeos import config, prazo
 from lifeos.assistant import agent, na_nuvem
 from lifeos.gmail import service
 
@@ -119,3 +119,12 @@ def test_lote_de_leitura_que_nao_cabe_no_prazo_nao_sai(gmail, monkeypatch):
     with prazo.ate(service.REDE_S + 1), pytest.raises(service.LimiteDoGmail, match="não deu tempo"):
         service.buscar("from:a@b.example")
     assert gmail["gets"] == [] and gmail["lotes"] == []
+
+
+def test_aviso_de_espera_so_no_terminal_do_mac(capsys, monkeypatch):
+    """No motor o stderr é o log do Cloud Run, e o dono não o vê: o aviso de espera não sai lá."""
+    service._avisar("⏳ Esperando 30 s: o Gmail limita as consultas por minuto.")
+    assert "Esperando 30 s" in capsys.readouterr().err
+    monkeypatch.setattr(config, "STORE", "firestore")
+    service._avisar("⏳ Esperando 30 s: o Gmail limita as consultas por minuto.")
+    assert capsys.readouterr() == ("", "")

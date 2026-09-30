@@ -32,7 +32,7 @@ from html.parser import HTMLParser
 from googleapiclient.errors import HttpError
 
 # `_redacao` é stdlib pura e a única cópia da regra de caracteres de controle (ver D13).
-from lifeos import prazo, registro
+from lifeos import config, prazo, registro
 from lifeos.browser._redacao import limpar_controles
 from lifeos.config import TIMEZONE
 from lifeos.gmail.oauth import get_gmail_service
@@ -209,7 +209,10 @@ def _esperar(segundos: float) -> None:
 
 
 def _avisar(texto: str) -> None:
-    """Espera longa aparece no terminal: sem isto, a limpeza parecia travada."""
+    """Espera longa aparece no terminal do Mac: sem isto, a limpeza parecia travada. No motor
+    não sai nada: lá o stderr é o log do Cloud Run, que o dono não vê (Sessão 10c)."""
+    if config.STORE == "firestore":
+        return
     print(texto, file=sys.stderr, flush=True)
 
 

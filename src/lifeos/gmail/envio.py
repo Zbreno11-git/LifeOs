@@ -6,9 +6,9 @@ O fluxo, e onde cada trava mora:
    o dono tem de ler exatamente o que sai) e vira um `Rascunho`.
    - Todos os destinatários são a conta do Gmail (`service.perfil`, decisão do dono): envia na
      hora, até `LIMITE_LIVRE` em 24 h.
-   - Qualquer outro endereço: `confirmacao.propor` com o rascunho inteiro. O código aparece só no
-     terminal do dono (`gmail/tools.py`), e só com terminal interativo; nunca no retorno da tool,
-     no registro nem por e-mail (D26, D52).
+   - Qualquer outro endereço: `confirmacao.propor` com o rascunho inteiro. O código vai só ao
+     dono (`gmail/tools.py`, `lifeos/ao_dono.py`), e só com terminal interativo (pela nuvem, o
+     do Mac, D60); nunca ao retorno da tool, ao registro nem por e-mail (D26, D52).
 2. `confirmar(codigo)`: só o laço do chat e a CLI chamam (`tests/test_gmail_aprovacao.py`). Monta
    a mensagem **só** dos dados aprovados e envia por `service.enviar` (a única chamada de envio).
 

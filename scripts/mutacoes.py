@@ -2002,6 +2002,20 @@ MUTACOES = [
         "tests/test_prazo.py::test_turno_que_agiu_e_ficou_sem_tempo_diz_o_que_fez",
     ),
     Mutacao(
+        "nuvem.py: o script exige o extra nuvem (o Mac não o tem)",
+        "scripts/nuvem.py",
+        "import argparse\n",
+        "import argparse\nimport google.cloud.firestore  # noqa: F401\n",
+        "tests/test_nuvem_script.py::test_o_script_abre_no_mac_sem_o_extra_nuvem",
+    ),
+    Mutacao(
+        "prazo: o aviso de espera do Gmail vai ao log da nuvem",
+        "src/lifeos/gmail/service.py",
+        '    if config.STORE == "firestore":\n        return\n    print(texto, file=sys.stderr',
+        "    print(texto, file=sys.stderr",
+        "tests/test_prazo.py::test_aviso_de_espera_so_no_terminal_do_mac",
+    ),
+    Mutacao(
         "nuvem.py: o token do Gmail fica fora dos segredos do motor",
         "scripts/nuvem.py",
         "    Segredo(\n"

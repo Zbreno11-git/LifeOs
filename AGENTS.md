@@ -62,8 +62,19 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     erro). `firestore_comum.py` é o cliente e o comparar e trocar dos três usos do Firestore
     (lembretes, registro, teto)
   - `confirmacao.py` — confirmação mecânica: código curto ligado aos dados exatos de uma ação,
-    uma vez só e por 10 min (SQLite em `viking.db`); primeiro uso na limpeza do Gmail, a Sessão 5
-    reaproveita
+    uma vez só e por 10 min, e **3 códigos errados cancelam** a proposta (D60); primeiro uso na
+    limpeza do Gmail, a Sessão 5 reaproveita. As regras moram aqui, e o store atrás de
+    `confirmacao_interface.Confirmacoes` (Sessão 10c): `confirmacao_sqlite.py` (o `viking.db`,
+    `propor` em `BEGIN IMMEDIATE`) ou `confirmacao_firestore.py` (a nuvem: o código tem dono por
+    um documento `codigos/NNNN` criado por `create()`, gastar por comparar e trocar, TTL em
+    `apagar_em`), escolhido por `VIKING_STORE`; o contrato em `tests/test_confirmacao.py` roda nos
+    dois
+  - `ao_dono.py` — a porta única do que só o dono vê (o código, a lista de uma limpeza, o e-mail
+    antes de sair; Sessão 10c): no Mac, o terminal; no motor, uma lista do turno que volta no campo
+    `ao_dono` da resposta, e sem ela **erra alto** em vez de imprimir no log. `interativo()`: no
+    Mac, o terminal do processo; na nuvem, o que o terminal do Mac declarou no pedido
+  - `prazo.py` — o prazo do turno na nuvem (220 s, Sessão 10c): as esperas do Gmail e cada chamada
+    ao Gemini perguntam antes se cabem; no Mac não há prazo
   - `calendar/` — Google Calendar (OAuth + operações), portado de um protótipo já validado
   - `financas/` — Pluggy (Meu Pluggy, uso pessoal), **só leitura**: `pluggy.py` recusa qualquer
     escrita fora de `/auth` e `/connect_token` antes da rede (a chave alcança PIX); `conectar.py`
@@ -75,11 +86,12 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
     desfazer por 7 dias). Desde a Sessão 8, **enviar** (`envio.py`, D46): para a própria conta
     sai na hora (até 20 em 24 h; `para="eu"` é a conta); para qualquer outro endereço, o e-mail
-    inteiro e o código vão só ao terminal, e sai depois de `confirma NNNN`; responder não tem
-    parâmetro de destinatário (sai do cabeçalho da original). O e-mail sai em duas versões do
+    inteiro e o código vão só ao dono (`ao_dono.py`), e sai depois de `confirma NNNN`;
+    responder não tem parâmetro de destinatário (sai do cabeçalho da original). O e-mail sai em
+    duas versões do
     texto aprovado (`formato.py`, Sessão 8b): texto puro e HTML com negrito, itálico e listas,
-    cada trecho escapado antes de formatar. Só o `viking chat` registra essas
-    tools, o MCP não (decisão do dono)
+    cada trecho escapado antes de formatar. Os dois chats registram essas tools (o da nuvem
+    desde a 10c: o token do Gmail sobe do Mac), o MCP não (decisão do dono)
   - `browser/` — as "mãos" do Viking. `jev_runner.py` gerencia o subprocesso (prazo, kill,
     parsing do JSONL, o ambiente que ele recebe); `_jev_subprocess.py` roda **dentro do ambiente do Jev** (só stdlib +
     `jev_ultrafast`, nunca importa `lifeos`) e traz supervisão do daemon e detecção de loop;
@@ -100,7 +112,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `turno.py` é o núcleo do turno dos dois chats (o texto de sistema por seção, conforme as
     tools presentes; o envio com o aviso depois de um erro; o histórico em JSON); `agent.py` é o
     REPL do Mac e `na_nuvem.py` o turno no motor (a barreira que não deixa uma linha com cara de
-    aprovação chegar ao modelo, o teto, o Gemini com prazo, e só as tools da nuvem: `SO_NO_MAC`
+    aprovação chegar ao modelo e aprova pelo mesmo laço do Mac, o teto, o prazo do turno, o
+    campo `ao_dono` da resposta, e só as tools da nuvem: `SO_NO_MAC`
     diz o que fica no Mac e por quê, e um teste exige que toda tool esteja numa das duas)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
@@ -110,14 +123,16 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     volta no corpo, até 4 MiB) e fumaças grátis (`/fumaca/vencidos`, `/registro`, `/segredos`);
     `cliente.py` é o terminal do Mac falando com ele (`viking lembretes --nuvem`), com o token do
     `viking-cli@` pedido pelo login do Google Cloud do dono; `chat_cliente.py` é o `viking chat
-    --nuvem` (a conversa e a nota ficam na memória do terminal; Sessão 10b, D59)
+    --nuvem` (a conversa e a nota ficam na memória do terminal; Sessão 10b, D59; desde a 10c manda
+    `interativo` e mostra o `ao_dono` só num terminal interativo)
 - `Dockerfile`, `.dockerignore` — a imagem do motor: base por digest, só `pyproject`/`uv.lock`/
   `src`, o extra `nuvem`, não-root, sem log de acesso (`tests/test_dockerfile.py`).
 - `scripts/nuvem.py` — a infraestrutura e o deploy do GCP: sem flag só lê e roda as provas; com
   `--executar` cria um passo ou publica (só um commit limpo, no GitHub e com CI verde). Todo
   `gcloud` leva o `--project` do Viking (o login do VPS é o do dono e alcança os outros projetos
-  dele). `segredo NOME` sobe a chave do Gemini ou o token da agenda para o Secret Manager pela
-  entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
+  dele). `segredo NOME` sobe a chave do Gemini, o token da agenda (no VPS) ou o do Gmail (no
+  Mac, que é onde ele mora; o subcomando exige só `VIKING_NUVEM_PROJETO`) para o Secret Manager
+  pela entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
   quando pedido). `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `tests/` — pytest para `src/lifeos`.
@@ -187,7 +202,8 @@ python scripts/nuvem.py        # a infraestrutura do GCP, medida (nada muda sem 
 python scripts/nuvem.py deploy # o que está no ar, o que mudou desde, e as provas ao vivo
 python scripts/nuvem.py segredo viking-gemini
                                # quantas versões; com --executar sobe uma nova (do .env ou de
-                               # secrets/), pela entrada padrão
+                               # secrets/), pela entrada padrão. O `viking-gmail` roda no Mac
+                               # (o token do Gmail mora lá), depois de `viking gmail --login`
 python scripts/nuvem.py prova-chat
                                # um turno real no motor (gasta: ~US$ 0,001), o tempo e o gasto
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
@@ -197,8 +213,10 @@ python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
                                # dentro dele: /custos mostra o gasto da sessão
-viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes e registro; o
-                               # navegador, o Gmail e as finanças seguem no `viking chat`)
+viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes, registro e, desde
+                               # a 10c, o Gmail; o navegador e as finanças seguem no
+                               # `viking chat`). O código de aprovação só aparece num
+                               # terminal interativo
 viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
 viking browser --doctor         # versão do Jev (ramo/commit/patch) + diagnóstico do Browser
@@ -288,7 +306,8 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   nuvem, no Mac e no VPS)/`VIKING_NUVEM_FATURAMENTO`, `_ORCAMENTO` e `_FUSO` (só no VPS, para
   `scripts/nuvem.py`; o fuso é o que o motor recebe, e troca quando o dono se mudar)/`VIKING_STORE`
   (`sqlite` ou `firestore`, este só no motor)/`VIKING_TETO_GEMINI_MES` e `_DIA` (o teto do chat
-  da nuvem, US$ 10 e 1)/`VIKING_GEMINI_CHAVE_ARQUIVO` e `VIKING_AGENDA_TOKEN_ARQUIVO` (só no
+  da nuvem, US$ 10 e 1)/`VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO` e
+  `VIKING_GMAIL_TOKEN_ARQUIVO` (só no
   motor, postos pelo deploy: os arquivos do volume do Secret Manager). Copiar de `.env.example`. Caminhos relativos
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
   `viking` foi chamado.
@@ -405,19 +424,38 @@ presente** (sem ele os dois testes são pulados).
 
 **A aprovação da limpeza do Gmail não é uma tool, e não pode virar uma.** A linha `confirma
 NNNN`/`desfaz NNNN` — ou só o número, com proposta aberta; ou qualquer frase com um número que
-seja código **vivo** (`confirmacao.vivo`), que com verbo age e sem verbo ganha a instrução — é lida por `assistant/agent.py:aprovacao_local` **antes** do `send_message`, e o código só aparece no terminal (`gmail/tools.py:_ao_dono`), nunca no retorno
-da tool. É isso que impede um e-mail com prompt injection de fazer o Gemini se autoaprovar
-(D26). `tests/test_gmail_aprovacao.py` confere quem chama `confirmar`/`arquivar`/`batchModify`
-lendo o código; uma tool nova que confirme derruba o teste. O escopo `gmail.modify` autoriza
-também enviar e mover para a lixeira: `test_codigo_do_gmail_nunca_chama_lixeira_ou_apagar`, e
-desde a Sessão 8 o envio existe em um lugar só (`test_enviar_existe_em_um_lugar_so`: `.send` só em
-`service.enviar`, dentro de `registro.acao`). O envio a outra pessoa segue a mesma regra da
-limpeza: o código de `gmail.enviar` vai só ao terminal, com terminal interativo, e se aprova no
-laço do chat; um e-mail que o próprio Viking mandou, lido de volta, continua no bloco de não
-confiável (a marca `X-Viking` só vira a etiqueta "[enviado pelo Viking]", D53).
-Vale igual para liberar um clique do navegador (D38): o código sai por `browser/liberacao.ao_dono`
-só com terminal interativo, e `liberacao.clicar_aprovado` só é chamado pelo laço do chat e pela
-CLI (`tests/test_browser_liberacao.py`).
+seja código **vivo** (`confirmacao.vivo`), que com verbo age e sem verbo ganha a instrução — é
+lida por `assistant/agent.py:aprovacao_local` **antes** do `send_message`, e o código só vai ao
+dono (`lifeos/ao_dono.py`), nunca no retorno da tool. É isso que impede um e-mail com prompt
+injection de fazer o Gemini se autoaprovar (D26). Desde a 10c (D60), "verbo + 4 dígitos" que não
+é código vivo **também** não vai ao Gemini, nos dois chats (`agent.NAO_E_CODIGO_AQUI`: pode ser
+um código do outro chat), e 3 códigos errados cancelam a proposta (`confirmacao.TENTATIVAS`). O
+chat da nuvem aprova pelo mesmo laço (`na_nuvem.barreira` chama `aprovacao_local`), com as
+confirmações no Firestore. `tests/test_gmail_aprovacao.py` confere quem chama
+`confirmar`/`arquivar`/`batchModify` lendo o código; uma tool nova que confirme derruba o teste.
+O escopo `gmail.modify` autoriza também enviar e mover para a lixeira:
+`test_codigo_do_gmail_nunca_chama_lixeira_ou_apagar`, e desde a Sessão 8 o envio existe em um
+lugar só (`test_enviar_existe_em_um_lugar_so`: `.send` só em `service.enviar`, dentro de
+`registro.acao`). O envio a outra pessoa segue a mesma regra da limpeza: o código de
+`gmail.enviar` vai só ao dono, com terminal interativo, e se aprova no laço do chat; um e-mail que
+o próprio Viking mandou, lido de volta, continua no bloco de não confiável (a marca `X-Viking` só
+vira a etiqueta "[enviado pelo Viking]", D53). Vale igual para liberar um clique do navegador
+(D38): o código sai por `browser/liberacao.ao_dono` só com terminal interativo, e
+`liberacao.clicar_aprovado` só é chamado pelo laço do chat e pela CLI
+(`tests/test_browser_liberacao.py`).
+
+**No motor, o stdout e o stderr são o log do Cloud Run.** Um `print` do código de aprovação ali
+iria para o log, não ao dono. Por isso o que só o dono vê passa por `ao_dono.mostrar`, que no
+motor põe o texto no campo `ao_dono` da resposta e, sem o coletor do turno, **erra alto**
+(`SemCanal`) em vez de imprimir. O aviso de espera da cota do Gmail (`gmail/service._avisar`) não
+sai no motor. `tests/test_na_nuvem_gmail.py` exige o sentinela do código só no `ao_dono`: nem no
+texto, no histórico, na nota, no `caplog` ou no `capsys` (Sessão 10c).
+
+**O terminal que conta é o do Mac.** No motor, `sys.stdin.isatty()` é sempre falso: quem diz se
+há uma pessoa lendo é o pedido (`interativo`, mandado pelo `viking chat --nuvem`), e
+`ao_dono.interativo()` é a única pergunta. Sem terminal interativo, envio e limpeza pela nuvem
+recusam **antes** de criar o código (D60), e o terminal do Mac só mostra o `ao_dono` se for
+interativo.
 
 **Texto do Gemini vai colado ao `=` no argv do runner do Jev.** `jev_runner.build_command` passa
 `--url=`/`--goal=`, e o argparse do `_jev_subprocess.py` tem `allow_abbrev=False`: separado, um
@@ -454,7 +492,11 @@ banco real a cada `pytest` (132 no VPS). `tests/test_banco.py` proíbe `sqlite3.
 uma publicada (nem o comentário, nem o formatador) faz o banco do dono recusar abrir. Dentro de
 uma migração, um `execute` por comando: o `executescript` **comita sozinho** a transação (medido
 em 2026-09-29), e a falha no meio deixaria meio banco. O backup é por **outra** conexão: pela
-mesma, com a transação aberta, o `backup` trava para sempre.
+mesma, com a transação aberta, o `backup` trava para sempre. E o `conectar` abre a transação
+só no primeiro comando que **escreve** (`DEFERRED`): uma leitura que decide uma escrita (os
+códigos reservados antes de sortear um) roda fora dela, e dois processos leem o mesmo estado.
+Nesse caso, `BEGIN IMMEDIATE` antes de ler (`confirmacao_sqlite.propor`; o CI pegou em
+2026-09-30).
 
 **Todo efeito externo passa pelo registro de ações.** `tests/test_registro_ganchos.py` lê o código:
 toda chamada `events().delete/patch/insert`, `batchModify`, `store.add`/`store.complete` fica dentro
@@ -522,15 +564,18 @@ nuvem real: o `conftest` troca o `CLOUDSDK_CONFIG` por uma pasta vazia, e o stor
 só abre no emulador sob pytest. O `status.url` do Cloud Run é a URL antiga, com hash; a audience
 do motor é a determinística, que está na anotação `run.googleapis.com/urls`.
 
-**Segredo da nuvem é arquivo de volume, lido só pelo `config`.** A chave do Gemini e o token da
-agenda chegam ao motor como arquivos (`--set-secrets=/segredos/...`), nunca como variável de
+**Segredo da nuvem é arquivo de volume, lido só pelo `config`.** A chave do Gemini e os tokens
+da agenda e do Gmail chegam ao motor como arquivos (`--set-secrets=/segredos/...`), nunca como variável de
 ambiente: a variável é lida na partida e o Google manda fixar a versão, e um `describe` do
 serviço a mostraria como referência no ambiente. A prova "segredos só como volume" do `deploy`
 reprova qualquer variável fora da lista ou com `valueFrom`. Cada leitura do volume é um acesso
 cobrado (10 mil grátis por mês, lido em 2026-09-30), por isso `config._segredo` lê uma vez por
-processo. O token da agenda na nuvem renova **em memória**: o volume é só leitura, e
-`google_auth` nunca abre o login lá (penduraria o pedido). Subir um valor novo é `scripts/nuvem.py
-segredo NOME --executar`, pela entrada padrão do `gcloud`.
+processo. Os tokens na nuvem renovam **em memória**: o volume é só leitura, e `google_auth`
+nunca abre o login lá (penduraria o pedido). Subir um valor novo é `scripts/nuvem.py segredo
+NOME --executar`, pela entrada padrão do `gcloud`. O do Gmail sobe **do Mac** (o VPS não
+guarda token do Gmail, D57): o segredo `viking-gmail` pode existir vazio (`do_mac`), e o
+`deploy` não publica enquanto algum segredo não tiver versão. Toda `VIKING_*_ARQUIVO` que o
+`config` lê tem um segredo no deploy, e o contrário (`tests/test_nuvem_script.py`).
 
 ## Perguntas em aberto
 

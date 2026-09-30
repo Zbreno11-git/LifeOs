@@ -3,7 +3,8 @@
 O fluxo, e onde cada trava mora:
 1. `preparar(remetentes)` — o Gemini (ou `viking gmail --arquivar`) pede; a seleção só lê, e a
    proposta com os IDs exatos ganha um código (`lifeos/confirmacao.py`). Quem mostra o código é
-   o Viking, direto no terminal (`gmail/tools.py`); ele nunca volta no texto do Gemini.
+   o Viking, só ao dono (`gmail/tools.py`, `lifeos/ao_dono.py`); ele nunca volta no texto do
+   Gemini. Pela nuvem, só se o terminal do Mac é interativo (D60).
 2. `confirmar(codigo)` — chamado só pelo laço do chat (`assistant/agent.py`, antes do Gemini) ou
    pela CLI. Refaz a seleção restrita aos IDs aprovados, só com buscas (barato na cota do Gmail),
    e arquiva o que ainda vale.

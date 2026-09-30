@@ -1,10 +1,11 @@
 """Ferramentas de Gmail do `viking chat` (function-calling do Gemini).
 
 Ler é livre. Limpar (arquivar) o Gemini só **propõe** (`preparar_limpeza`): a lista e o código de
-aprovação são impressos direto no terminal do dono e nunca voltam no texto do modelo; quem
-aprova é a linha `confirma NNNN`, lida pelo laço do chat antes do Gemini (`assistant/agent.py`).
-Enviar (Sessão 8, D46) segue a mesma regra: para a própria conta sai na hora (até 20 em 24 h);
-para qualquer outro endereço, o texto inteiro e o código vão só ao terminal (`gmail/envio.py`).
+aprovação vão só ao dono (`lifeos/ao_dono.py`: o terminal do Mac; pela nuvem, o campo
+`ao_dono` da resposta, desde a 10c) e nunca voltam no texto do modelo; quem aprova é a linha
+`confirma NNNN`, lida pelo laço do chat antes do Gemini (`assistant/agent.py`). Enviar (Sessão
+8, D46) segue a mesma regra: para a própria conta sai na hora (até 20 em 24 h); para qualquer
+outro endereço, o texto inteiro e o código vão só ao dono (`gmail/envio.py`).
 
 Só o chat as registra (`assistant/agent.py`): o servidor MCP não expõe e-mail, por decisão do dono
 (2026-09-26) — ele ainda não tem autenticação. Tudo que vem do e-mail (remetente, assunto,
@@ -212,7 +213,7 @@ def _linha_do_grupo(g: service.Grupo) -> str:
 
 
 def texto_da_proposta(proposta: limpeza.Proposta) -> str:
-    """O que o DONO lê, direto no terminal: é o único lugar onde o código aparece."""
+    """O que o DONO lê (`_ao_dono`): é o único lugar onde o código aparece."""
     selecao = proposta.selecao
     linhas = ["", "─" * 20 + " Limpeza da caixa de entrada " + "─" * 20]
     total = len(selecao.ids)
@@ -327,7 +328,7 @@ AVISO_DE_FORMATO = "No Gmail, o negrito, o itálico e as listas saem formatados 
 
 
 def texto_do_envio(pedido: envio.Pedido) -> str:
-    """O que o DONO lê, direto no terminal: o e-mail exatamente como sai, e o único lugar do
+    """O que o DONO lê (`_ao_dono`): o e-mail exatamente como sai, e o único lugar do
     código. O texto já foi validado (sem controle nem invisível); o que vem da original, limpo."""
     r = pedido.rascunho
     linhas = ["", "─" * 20 + " E-mail para aprovar " + "─" * 20]
