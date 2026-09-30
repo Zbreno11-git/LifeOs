@@ -136,7 +136,7 @@ class Sessao:
 SESSAO = Sessao()
 
 
-def instrumentar(client, *, sessao: "Sessao | None" = None) -> bool:
+def instrumentar(client, *, sessao: "Sessao | None" = None, antes=None, depois=None) -> bool:
     """Conta cada requisição do function-calling automático (AFC), não só a última.
 
     Em google-genai 2.24.0, `Models.generate_content` roda um laço síncrono de AFC que
@@ -151,7 +151,10 @@ def instrumentar(client, *, sessao: "Sessao | None" = None) -> bool:
     privado do SDK: se ele sumir numa versão futura, `instrumentar` vira no-op (devolve False) em
     vez de quebrar o assistente — e o teste de acoplamento avisa alto quando isso acontecer.
 
-    `sessao` é injetável para teste; em produção usa sempre o `SESSAO` global do módulo.
+    `sessao` é injetável (o motor da nuvem usa uma por pedido; o chat do Mac, o `SESSAO` global).
+    `antes()` roda antes de CADA chamada ao modelo e pode recusá-la levantando (o teto de gasto da
+    nuvem: conferir antes, não depois, é o que impede a chamada que passaria do teto); `depois`
+    recebe o `Consumo` de cada chamada.
 
     Devolve True se instrumentou agora, False se já estava instrumentado ou se o gancho não existe.
     """
@@ -160,12 +163,123 @@ def instrumentar(client, *, sessao: "Sessao | None" = None) -> bool:
     original = getattr(modelos, "_generate_content", None)
     if original is None or getattr(modelos, "_viking_instrumentado", False):
         return False
+    assert modelos is not None  # com `original`, `models` existe
 
     def contabilizado(**kwargs):
+        if antes is not None:
+            antes()
         resposta = original(**kwargs)
-        alvo.registrar_gemini(do_gemini(getattr(resposta, "usage_metadata", None)))
+        consumo = do_gemini(getattr(resposta, "usage_metadata", None))
+        alvo.registrar_gemini(consumo)
+        if depois is not None:
+            depois(consumo)
         return resposta
 
     modelos._generate_content = contabilizado
     modelos._viking_instrumentado = True
     return True
+
+
+# --- o teto de gasto do chat da nuvem (Sessão 10b, D59) ---------------------------------------
+
+
+@dataclass(frozen=True)
+class Gasto:
+    """O gasto estimado do Gemini no dia e no mês do dono, com os tetos."""
+
+    dia: float
+    mes: float
+    teto_dia: float
+    teto_mes: float
+
+    @property
+    def estourou(self) -> bool:
+        return self.dia >= self.teto_dia or self.mes >= self.teto_mes
+
+    def texto(self) -> str:
+        return (
+            f"hoje ~{dinheiro(self.dia)} de {dinheiro(self.teto_dia)} · no mês "
+            f"~{dinheiro(self.mes)} de {dinheiro(self.teto_mes)} (estimativa pelas tarifas)"
+        )
+
+    def como_dict(self) -> dict:
+        return {
+            "dia": self.dia,
+            "mes": self.mes,
+            "teto_dia": self.teto_dia,
+            "teto_mes": self.teto_mes,
+            "estimado": True,
+        }
+
+
+class TetoAtingido(RuntimeError):
+    """O teto do dia ou do mês foi atingido: a chamada ao modelo não sai."""
+
+    def __init__(self, gasto: Gasto):
+        super().__init__(f"teto de gasto do Gemini atingido: {gasto.texto()}")
+        self.gasto = gasto
+
+
+class Teto:
+    """O teto do chat da nuvem, guardado no Firestore (`gastos/AAAA-MM`: o total do mês e um mapa
+    dia → total), porque o motor sobe e desce instâncias: um contador em memória zeraria a cada
+    partida. O dia e o mês são os do dono (o fuso do deploy), não os do UTC da nuvem.
+
+    `conferir` roda antes de cada chamada ao modelo (pelo gancho de `instrumentar`); `somar`,
+    depois. Duas instâncias somando juntas não perdem gasto: a soma é por comparar e trocar."""
+
+    COLECAO = "gastos"
+
+    def __init__(self, *, mes: float, dia: float, fuso):
+        self.teto_mes, self.teto_dia, self.fuso = mes, dia, fuso
+
+    def _chaves(self, agora=None) -> tuple[str, str]:
+        from datetime import UTC, datetime
+
+        local = (agora or datetime.now(UTC)).astimezone(self.fuso)
+        return f"{local:%Y-%m}", f"{local:%Y-%m-%d}"
+
+    def _ref(self, mes: str):
+        from lifeos import firestore_comum
+
+        return firestore_comum.cliente().collection(self.COLECAO).document(mes)
+
+    def gasto(self, agora=None) -> Gasto:
+        mes, dia = self._chaves(agora)
+        snap = self._ref(mes).get()
+        dados = snap.to_dict() if snap.exists else {}
+        dados = dados or {}
+        return Gasto(
+            dia=float(dados.get("dias", {}).get(dia, 0.0)),
+            mes=float(dados.get("total", 0.0)),
+            teto_dia=self.teto_dia,
+            teto_mes=self.teto_mes,
+        )
+
+    def conferir(self, agora=None) -> Gasto:
+        gasto = self.gasto(agora)
+        if gasto.estourou:
+            raise TetoAtingido(gasto)
+        return gasto
+
+    def somar(self, custo: float, agora=None) -> None:
+        from google.api_core.exceptions import AlreadyExists
+
+        from lifeos import firestore_comum
+
+        if custo <= 0:
+            return
+        mes, dia = self._chaves(agora)
+        ref = self._ref(mes)
+        try:
+            ref.create({"total": 0.0, "dias": {}})
+        except AlreadyExists:
+            pass
+
+        def decidir(snap):
+            dados = snap.to_dict() or {}
+            dias = dict(dados.get("dias", {}))
+            dias[dia] = float(dias.get(dia, 0.0)) + custo
+            return {"total": float(dados.get("total", 0.0)) + custo, "dias": dias}, None
+
+        firestore_comum.trocar(ref, decidir)

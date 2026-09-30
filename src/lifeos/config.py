@@ -177,6 +177,11 @@ BROWSER_BLOQUEADOS = _dominios_bloqueados(
 # tarde demais e eram silenciosamente ignorados.
 PRECO_GEMINI_ENTRADA = _float_env("VIKING_PRECO_GEMINI_ENTRADA", "0.30", inclusive=True)
 PRECO_GEMINI_SAIDA = _float_env("VIKING_PRECO_GEMINI_SAIDA", "2.50", inclusive=True)
+# Teto de gasto do Gemini no chat da nuvem (D59, decisão do dono em 2026-09-30): US$ por mês e por
+# dia, no fuso do dono, conferido antes de cada chamada ao modelo (`custos.Teto`). O alerta do GCP
+# só avisa; este para. É estimativa pelas tarifas acima.
+TETO_GEMINI_MES = _float_env("VIKING_TETO_GEMINI_MES", "10")
+TETO_GEMINI_DIA = _float_env("VIKING_TETO_GEMINI_DIA", "1")
 
 # Nuvem (Sessão 10, D58). O ID do projeto, a URL do motor e a conta de faturamento moram só no
 # `.env`, nunca no repo. A região é decisão do dono (a casa dele, 2026-09-29).
@@ -194,3 +199,38 @@ def _store() -> str:
 
 
 STORE = _store()
+
+# Segredos da nuvem (Sessão 10b, D59): o Secret Manager os entrega ao motor como arquivos de um
+# volume, nunca como variável de ambiente. Este módulo é o único leitor. No Mac os caminhos ficam
+# vazios e valem o `GEMINI_API_KEY` do `.env` e o token de `secrets/`.
+GEMINI_CHAVE_ARQUIVO = os.getenv("VIKING_GEMINI_CHAVE_ARQUIVO") or ""
+AGENDA_TOKEN_ARQUIVO = os.getenv("VIKING_AGENDA_TOKEN_ARQUIVO") or ""
+_SEGREDOS: dict[str, str] = {}
+
+
+def _segredo(caminho: str) -> str:
+    """O conteúdo de um arquivo de segredo, lido uma vez por processo (cada leitura do volume é um
+    acesso cobrado no Secret Manager). Arquivo vazio ou ausente erra alto, sem mostrar valor."""
+    if caminho not in _SEGREDOS:
+        try:
+            valor = Path(caminho).read_text().strip()
+        except OSError as exc:
+            raise RuntimeError(f"o segredo em {caminho} não abriu ({type(exc).__name__})") from None
+        if not valor:
+            raise RuntimeError(f"o segredo em {caminho} está vazio")
+        _SEGREDOS[caminho] = valor
+    return _SEGREDOS[caminho]
+
+
+def gemini_chave() -> str:
+    """A chave do Gemini: a do volume na nuvem, a do `.env` no Mac. Vazia = sem chave."""
+    if GEMINI_CHAVE_ARQUIVO:
+        return _segredo(GEMINI_CHAVE_ARQUIVO)
+    return GEMINI_API_KEY or ""
+
+
+def agenda_token() -> str:
+    """O token da agenda (JSON) do volume da nuvem. Só existe na nuvem."""
+    if not AGENDA_TOKEN_ARQUIVO:
+        raise RuntimeError("VIKING_AGENDA_TOKEN_ARQUIVO vazio: o token da agenda não está aqui")
+    return _segredo(AGENDA_TOKEN_ARQUIVO)

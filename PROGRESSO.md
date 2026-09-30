@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10b em curso (C2)
+## ▶️ RETOMAR AQUI — 2026-09-30, Sessão 10b em curso (C3)
 
 **Estado:** `git log --oneline -3` e `git status --short` · travas: nenhuma · background: nenhum.
 Base da abertura (2026-09-30): `1997 passed`, CI de `af146ad` verde, `nuvem.py` 8 ✅ e `deploy` 9
@@ -23,6 +23,15 @@ Base da abertura (2026-09-30): `1997 passed`, CI de `af146ad` verde, `nuvem.py` 
   Suíte `2029 passed`; mutações 232 (as 20 do registro, do Firestore e do banco mortas pelo teste
   esperado, depois de uma que caiu por outro teste: o corte dos 30 dias em `do_turno`/`obter`
   ganhou teste próprio).
+- **C2:** `assistant/turno.py` (o núcleo: o texto de sistema por seção, o envio com o aviso
+  depois de um erro, o histórico em JSON) usado pelo `viking chat` do Mac (o texto dele saiu
+  igual ao de antes, conferido byte a byte) e por `assistant/na_nuvem.py` (a barreira de
+  aprovação, o teto e as 11 tools da nuvem; as 12 do Mac que não vêm, com o motivo, em
+  `SO_NO_MAC`). `custos.Teto` no Firestore (`gastos/AAAA-MM`), conferido antes de cada chamada
+  pelo gancho de `instrumentar`; `config.gemini_chave()`/`agenda_token()` leem o segredo do
+  volume uma vez por processo. `tests/test_na_nuvem.py` usa o cliente de verdade do google-genai
+  com só a chamada de rede trocada. Suíte `2074 passed`; mutações 238 (as 11 do C2 mortas pelo
+  teste esperado; a da soma das notas tinha perdido a âncora na mudança e foi reapontada).
 - **Desvio declarado do plano (C3):** as rotas do motor ficam `async`, com o trabalho que
   bloqueia (a verificação do token e o turno) em `run_in_threadpool`, e a primeira instrução vira
   `await _quem(request)`. Motivo: uma rota `def` do Starlette não lê o corpo do pedido; o
@@ -155,7 +164,7 @@ Todos os destinos são escritos no C0, antes de qualquer código.
 |---|---|---|---|
 | C0 | medição do turno (5 turnos, tempos e custo num arquivo); `PROGRESSO` com a linha 1 consertada e este plano; `sessoes.md` (▶️, 10b, **10c nova**); D59; classe 5 (10); barra 16/30; commit | — | ✅ |
 | C1 | registro atrás da interface, Firestore passando o contrato nos dois stores (emulador, CI); `banco.conectar` recusa na nuvem; `_trocar` comum | C0 | ✅ |
-| C2 | núcleo do turno + tabela de tools por lugar; teto no Firestore; linha de aprovação barrada; o aviso do lembrete; o REPL local inalterado (os testes do chat de hoje verdes sem edição de asserção) | C1 | ⬜ |
+| C2 | núcleo do turno + tabela de tools por lugar; teto no Firestore; linha de aprovação barrada; o aviso do lembrete; o REPL local inalterado (os testes do chat de hoje verdes sem edição de asserção) | C1 | ✅ |
 | C3 | motor: rotas `def`, `POST /chat`, limite de corpo, fumaças novas; `google_auth` modo nuvem; `config` lê segredo de arquivo; imagem constrói | C2 | ⬜ |
 | C4 | `viking chat --nuvem` (cliente com histórico e nota, prazo longo, erros em português) e a marca em `viking lembretes --nuvem`; testes offline | C3 | ⬜ |
 | C5 | `scripts/nuvem.py`: API `secretmanager`, passos `segredos` e `ttl`, subcomando que sobe uma versão sem mostrar, deploy com volumes e prazo; **ok** → API, segredos, versões, TTL; só-leitura 10 ✅ | C3 | ⬜ |

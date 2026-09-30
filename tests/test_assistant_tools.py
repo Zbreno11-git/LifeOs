@@ -5,10 +5,14 @@ import inspect
 import pytest
 from google.genai import types
 
+from lifeos.assistant import na_nuvem
 from lifeos.assistant.agent import FERRAMENTAS
 
+# As do chat do Mac e as do chat da nuvem (Sessão 10b), sem repetir: toda tool passa pelas réguas.
+TODAS = list(dict.fromkeys([*FERRAMENTAS, *na_nuvem.FERRAMENTAS]))
 
-@pytest.mark.parametrize("fn", FERRAMENTAS, ids=lambda f: f.__name__)
+
+@pytest.mark.parametrize("fn", TODAS, ids=lambda f: f"{f.__module__}.{f.__name__}")
 def test_anotacoes_sao_tipos_reais(fn):
     """`from __future__ import annotations` transforma anotações em strings e o google-genai
     valida argumentos com isinstance() — com string vira
@@ -22,7 +26,7 @@ def test_anotacoes_sao_tipos_reais(fn):
         )
 
 
-@pytest.mark.parametrize("fn", FERRAMENTAS, ids=lambda f: f.__name__)
+@pytest.mark.parametrize("fn", TODAS, ids=lambda f: f"{f.__module__}.{f.__name__}")
 def test_schema_aceito_pela_api_do_gemini(fn):
     """O chat fala com a API de desenvolvedor (`genai.Client(api_key=...)`), e o SDK converte cada
     tool por este caminho público com `GEMINI_API`; uma anotação que ele não converte derruba o chat
@@ -36,7 +40,7 @@ def test_schema_aceito_pela_api_do_gemini(fn):
     assert set(propriedades) == set(inspect.signature(fn).parameters)
 
 
-@pytest.mark.parametrize("fn", FERRAMENTAS, ids=lambda f: f.__name__)
+@pytest.mark.parametrize("fn", TODAS, ids=lambda f: f"{f.__module__}.{f.__name__}")
 def test_toda_tool_tem_docstring(fn):
     """A docstring vira a descrição que o modelo lê para decidir se chama a tool."""
     assert (fn.__doc__ or "").strip()
