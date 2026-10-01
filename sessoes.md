@@ -26,8 +26,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora:** a 10c do C1 ao C5 (o `PROGRESSO.md`); a partir de 2026-10-04 (Seattle), a prova do
-  token do Gmail no Mac (`viking gmail --login`, sem abrir o navegador) e o resto.
+- **Agora (2026-10-01):** a 10c está com C0–C5 ✅ e parada no portão (a prova do token do Gmail
+  no Mac a partir de 2026-10-04 em Seattle, `viking gmail --login` sem abrir o navegador). Por
+  decisão do dono, a **Sessão 11** se abre e se implementa antes disso (ver a nota na 11); a
+  10c retoma no C6 quando o dono trouxer a prova.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -772,6 +774,14 @@ O que estava escrito na abertura:
 
 ## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
 
+- **Adiantada (dono, 2026-10-01):** "quero adiantar outras coisas antes do dia 04": a 11 se
+  abre, planeja e implementa **antes** do portão da 10c, que fica parada no C6 (a prova do
+  token do Gmail a partir de 2026-10-04 em Seattle). Dependências que a abertura confere e
+  pergunta ao dono: o lembrete por e-mail com o Mac desligado **envia pelo Gmail da nuvem**
+  (depende do token do Gmail no Secret Manager, portanto do portão); o backup no Drive pede
+  um escopo novo (`drive.file`, outro consentimento no Mac); `viking maos` e a migração dos
+  dados não dependem do Gmail. O deploy do C7 da 10c publica o HEAD daquele momento: o
+  trabalho da 11 tem de estar em commit limpo, com portões e CI verdes, ou o C7 espera.
 - **Entrega:**
   - os dados do Mac migrados;
   - lembrete por e-mail em ±2 min com o Mac desligado;

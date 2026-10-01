@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-01 (UTC): 10c, C0–C5 ✅ (o roteiro do Mac passou); o próximo é o portão de 2026-10-04
+## ▶️ RETOMAR AQUI — 2026-10-01 ~01:35Z (30/09 18:35 em Seattle): 10c parada no portão (C0–C5 ✅); o próximo é abrir e planejar a Sessão 11
 
 **Estado (2026-09-30 ~22:40Z):**
 - `git status --short` limpo · HEAD = o checkpoint depois de `187079c` = remoto · trava de
@@ -77,7 +77,17 @@
   secrets/ (no Mac)." e "Nada foi enviado (sem --executar)." O `gcloud` do Mac lê o Secret
   Manager do Viking: o passo do C6 não depende de login novo.
 
-**Próximo passo exato:**
+**Próximo passo exato (decisão do dono, 2026-10-01: "quero adiantar outras coisas antes do dia
+04"):** abrir, planejar e implementar a **Sessão 11** (`sessoes.md`, a nota "Adiantada" no topo
+da 11) com a skill `software-build`: leitura, medições da abertura (`uv lock --upgrade
+--dry-run`, CI do HEAD, `python scripts/nuvem.py` → 10 ✅, `deploy` → `36fcd13`), rodadas
+pequenas de perguntas (o escopo antes do portão: o lembrete por e-mail com o Mac desligado
+depende do token do Gmail na nuvem; o Drive pede um escopo novo; `viking maos` e a migração
+não dependem), o plano no formato `referencia/plano-de-sessao.md` **abaixo deste bloco e acima
+do plano da 10c**, e, aprovado, a execução até o fim sem pedir confirmação por fase. O C7 da
+10c publica o HEAD do momento: a 11 só deixa o `master` em commit limpo com portões verdes.
+
+**Quando o dono trouxer a prova (a partir de 2026-10-04), a 10c retoma:**
 1. **Portão (dono, a partir de 2026-10-04 em Seattle):** `viking gmail --login` no Mac **sem**
    abrir o navegador; se passou, no Mac, `python scripts/nuvem.py segredo viking-gmail
    --executar`; no VPS, `python scripts/nuvem.py` → `viking-gmail: 1 versão(ões)`.
@@ -93,7 +103,7 @@ python scripts/nuvem.py segredo viking-gmail
 ```
 
 **Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco e o plano da 10c logo abaixo;
-`sessoes.md` (▶️ e 10c); D60 (e D57–D59); o índice de `docs/erros.md` e as ocorrências de
+`sessoes.md` (▶️, 10c e **11**); D60 (e D51, D57–D59); o índice de `docs/erros.md` e as ocorrências de
 2026-09-30 da 10c nas classes 2, 4 e 5; as skills `software-build` (`referencia/revisao.md`),
 `testes-que-provam`, `nuvem-e-deploy`, `seguranca`; o código: `ao_dono.py`, `prazo.py`,
 `confirmacao*.py`, `assistant/na_nuvem.py`, `gmail/service.py`, `nuvem/chat_cliente.py`,
