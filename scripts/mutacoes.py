@@ -1399,8 +1399,8 @@ MUTACOES = [
     Mutacao(
         "segredos: o deploy entrega o segredo como variável de ambiente",
         "scripts/nuvem.py",
-        '            "--set-secrets=" + ",".join(f"{s.caminho}={s.nome}:latest" for s in SEGREDOS),',
-        '            "--set-secrets=" + ",".join(f"{s.variavel}={s.nome}:latest" for s in SEGREDOS),',
+        '            "--set-secrets=" + ",".join(f"{s.caminho}={s.nome}:latest" for s in montados),',
+        '            "--set-secrets=" + ",".join(f"{s.variavel}={s.nome}:latest" for s in montados),',
         "tests/test_nuvem_script.py::test_deploy_entrega_os_segredos_so_como_volume_e_o_prazo_do_turno",
     ),
     Mutacao(
@@ -1796,7 +1796,7 @@ MUTACOES = [
     Mutacao(
         "motor: qualquer conta com token válido entra",
         "src/lifeos/nuvem/motor.py",
-        '    if not dados.get("email_verified") or email not in quem_pode():',
+        '    if not dados.get("email_verified") or email not in quem_pode(request.url.path):',
         '    if not dados.get("email_verified"):',
         "tests/test_motor.py::test_token_valido_de_quem_nao_pode_403",
     ),
@@ -2028,9 +2028,9 @@ MUTACOES = [
     Mutacao(
         "nuvem.py: publica com um segredo vazio (a revisão cairia)",
         "scripts/nuvem.py",
-        "            if vazios:",
+        "            if faltam:",
         "            if False:",
-        "tests/test_nuvem_script.py::test_deploy_nao_publica_com_um_segredo_vazio",
+        "tests/test_nuvem_script.py::test_deploy_nao_publica_com_um_segredo_vazio_que_nao_e_do_mac",
     ),
     Mutacao(
         "nuvem.py: sobe um token do Gmail sem a permissão do Gmail",
@@ -2059,6 +2059,56 @@ MUTACOES = [
         '        log.warning("segredo do gmail: %s", type(exc).__name__)',
         '        resposta["gmail"] = True',
         "tests/test_motor.py::test_fumaca_dos_segredos_so_diz_se_le",
+    ),
+    # --- Sessão 11 (D61), C1: o Gmail opcional na nuvem e a identidade por rota ---------------
+    Mutacao(
+        "nuvem.py: o deploy monta o segredo do Gmail sem versão (a revisão cairia)",
+        "scripts/nuvem.py",
+        "    montados = tuple(s for s in SEGREDOS if _versoes(ctx, s.nome))",
+        "    montados = SEGREDOS",
+        "tests/test_nuvem_script.py::test_deploy_sem_o_token_do_gmail_publica_sem_ele",
+    ),
+    Mutacao(
+        "nuvem.py: o token do Gmail que subiu não pede revisão nova",
+        "scripts/nuvem.py",
+        "        and agora.volumes_no_ar == {s.nome for s in montados}",
+        "        and True",
+        "tests/test_nuvem_script.py::test_o_token_do_gmail_que_subiu_pede_revisao_mesmo_sem_codigo_novo",
+    ),
+    Mutacao(
+        "nuvem.py: a prova dos volumes aceita um segredo a mais montado",
+        "scripts/nuvem.py",
+        "    certos = volumes == {s.nome for s in montados}",
+        "    certos = {s.nome for s in montados} <= volumes",
+        "tests/test_nuvem_script.py::test_a_prova_dos_volumes_compara_com_os_montados",
+    ),
+    Mutacao(
+        "na_nuvem: as tools do Gmail sem o token do Gmail",
+        "src/lifeos/assistant/na_nuvem.py",
+        "    if config.gmail_no_motor():",
+        "    if True:",
+        "tests/test_na_nuvem.py::test_sem_o_token_do_gmail_a_nuvem_nao_tem_as_tools_dele",
+    ),
+    Mutacao(
+        "motor: toda conta do Viking entra em toda rota",
+        "src/lifeos/nuvem/motor.py",
+        "    contas = QUEM_FALA.get(rota, frozenset())",
+        "    contas = frozenset({CLI, MAOS, AGENDADOR})",
+        "tests/test_motor.py::test_as_maos_e_o_agendador_nao_entram_nas_portas_do_terminal",
+    ),
+    Mutacao(
+        "turno: o texto de sistema ignora onde o chat roda",
+        "src/lifeos/assistant/turno.py",
+        '    presentes = {f.__name__ for f in ferramentas} | ({_NUVEM} if onde == "nuvem" else set())',
+        "    presentes = {f.__name__ for f in ferramentas}",
+        "tests/test_na_nuvem.py::test_os_textos_de_antes_nao_mudam_nem_num_byte",
+    ),
+    Mutacao(
+        "chat_cliente: a abertura promete o Gmail que a nuvem não tem",
+        "src/lifeos/nuvem/chat_cliente.py",
+        '    (tem if capacidades.get("gmail") is True else so_no_mac).append("Gmail")',
+        '    tem.append("Gmail")',
+        "tests/test_chat_nuvem_cliente.py::test_a_abertura_nao_promete_o_gmail_que_nao_esta_la",
     ),
 ]
 

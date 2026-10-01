@@ -397,7 +397,7 @@ def iniciar_assistente() -> None:
 
     config = types.GenerateContentConfig(
         tools=FERRAMENTAS,
-        system_instruction=turno_nucleo.instrucao(FERRAMENTAS, _hoje()),
+        system_instruction=turno_nucleo.instrucao(FERRAMENTAS, _hoje(), onde="mac"),
         temperature=turno_nucleo.TEMPERATURA,
     )
 

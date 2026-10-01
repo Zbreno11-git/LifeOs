@@ -113,6 +113,12 @@ def sessao_de_chat() -> Any:
     return _sessao()
 
 
+def capacidades(sessao: Any) -> dict[str, Any]:
+    """O que o motor no ar tem (`/versao`): o terminal diz isso na abertura, sem prometer o que
+    não está lá (o Gmail só com o token dele na nuvem; Sessão 11, D61)."""
+    return _chamar(sessao, "GET", "/versao")
+
+
 def turno_de_chat(sessao: Any, pedido: dict[str, Any]) -> dict[str, Any]:
     """Um turno do chat da nuvem (`POST /chat`). O prazo é o do motor mais uma folga."""
     return _chamar(sessao, "POST", "/chat", corpo=pedido, prazo=PRAZO_CHAT_S)

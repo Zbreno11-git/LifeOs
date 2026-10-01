@@ -48,6 +48,17 @@ def _gasto(gasto: Any) -> str:
         return "Gasto da nuvem: a resposta veio num formato inesperado."
 
 
+def abertura(capacidades: dict[str, Any]) -> str:
+    """A primeira linha: o que a nuvem tem agora e o que continua só no `viking chat` do Mac."""
+    tem = ["agenda", "lembretes"]
+    so_no_mac = ["navegador"]
+    (tem if capacidades.get("gmail") is True else so_no_mac).append("Gmail")
+    so_no_mac.append("finanças")
+    lista = ", ".join(tem[:-1]) + f" e {tem[-1]}"
+    fora = ", ".join(so_no_mac[:-1]) + f" e {so_no_mac[-1]}"
+    return f"☁️  Viking na nuvem ({lista}). {fora[0].upper()}{fora[1:]}: `viking chat`."
+
+
 def _texto(valor: Any) -> str:
     return limpar_controles(valor) if isinstance(valor, str) else ""
 
@@ -56,10 +67,11 @@ def iniciar(entrada: Any = input) -> int:
     """O REPL do chat da nuvem. 0 ao sair; 1 se nem o primeiro contato deu certo."""
     try:
         sessao_http = cliente.sessao_de_chat()
+        capacidades = cliente.capacidades(sessao_http)
     except cliente.ErroDaNuvem as exc:
         print(f"❌ Nuvem: {exc}.", file=sys.stderr)
         return 1
-    print("☁️  Viking na nuvem (agenda, lembretes e Gmail). Navegador e finanças: `viking chat`.")
+    print(abertura(capacidades))
     print("Digite 'sair' para encerrar.\n")
 
     sessao, numero = secrets.token_hex(4), 0

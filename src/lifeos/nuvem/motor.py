@@ -5,8 +5,10 @@ Fechado por duas paredes, e a segunda não confia na primeira:
    um pedido sem token válido nem chega aqui, e não é cobrado;
 2. **este código**, na primeira instrução de toda rota (`_quem`): verifica a assinatura do token
    de identidade (emitido pelo Google, com a audience = a URL deste serviço) e confere o e-mail
-   numa lista (`quem_pode`). Se alguém afrouxasse o IAM, um token forjado ou de outra conta
-   continuaria recusado. `tests/test_motor.py` lê o código e reprova rota sem `_quem` na frente.
+   na lista **daquela rota** (`QUEM_FALA`, `quem_pode`; Sessão 11, D61): o terminal do dono, as
+   mãos do Mac e o agendador têm cada um a sua porta, e rota fora do mapa não tem ninguém. Se
+   alguém afrouxasse o IAM, um token forjado ou de outra conta continuaria recusado.
+   `tests/test_motor.py` lê o código e reprova rota sem `_quem` na frente ou fora do mapa.
 
 O cliente manda o token em `Authorization: Bearer` (o `X-Serverless-Authorization` chega ao
 contêiner **sem** a assinatura, segundo a documentação do Cloud Run lida em 2026-09-29, e aí não
@@ -46,12 +48,15 @@ EMISSORES = ("https://accounts.google.com", "accounts.google.com")
 MAX_CORPO = 4 * 1024 * 1024  # o histórico medido chegou a 7 KB em 5 turnos (2026-09-30)
 
 
-def quem_pode() -> frozenset[str]:
-    """As identidades que falam com o motor. Hoje só o terminal do dono (`viking-cli@`); as mãos
-    do Mac (`viking-maos@`) entram na S11."""
+CLI, MAOS, AGENDADOR = "viking-cli", "viking-maos", "viking-agendador"
+
+
+def quem_pode(rota: str) -> frozenset[str]:
+    """Os e-mails que falam com esta rota (`QUEM_FALA`, no fim do módulo, junto das rotas)."""
     if not config.NUVEM_PROJETO:
         return frozenset()
-    return frozenset({f"viking-cli@{config.NUVEM_PROJETO}.iam.gserviceaccount.com"})
+    contas = QUEM_FALA.get(rota, frozenset())
+    return frozenset(f"{c}@{config.NUVEM_PROJETO}.iam.gserviceaccount.com" for c in contas)
 
 
 _SESSAO: Any = None
@@ -88,7 +93,7 @@ async def _quem(request: Request) -> str:
     except ValueError:
         raise HTTPException(401, "token recusado") from None
     email = dados.get("email", "")
-    if not dados.get("email_verified") or email not in quem_pode():
+    if not dados.get("email_verified") or email not in quem_pode(request.url.path):
         log.warning("identidade recusada")  # sem o e-mail: o log é do projeto, não do dono
         raise HTTPException(403, "identidade sem acesso")
     return email
@@ -114,8 +119,9 @@ def _lembrete(lembrete: Reminder) -> dict[str, Any]:
 
 
 async def versao(request: Request) -> JSONResponse:
+    """O commit no ar e o que este motor tem (o terminal do Mac diz isso na abertura)."""
     await _quem(request)
-    return JSONResponse({"commit": COMMIT})
+    return JSONResponse({"commit": COMMIT, "gmail": config.gmail_no_motor()})
 
 
 async def lembretes(request: Request) -> JSONResponse:
@@ -219,6 +225,16 @@ async def chat(request: Request) -> JSONResponse:
     return JSONResponse(resposta)
 
 
+# Quem fala com cada rota (Sessão 11, D61): uma conta, uma porta. O `viking-maos@` vive num Mac e
+# o `viking-agendador@` é o Cloud Scheduler: nenhum dos dois lê a conversa nem os lembretes.
+QUEM_FALA: dict[str, frozenset[str]] = {
+    "/versao": frozenset({CLI}),
+    "/lembretes": frozenset({CLI}),
+    "/fumaca/vencidos": frozenset({CLI}),
+    "/fumaca/registro": frozenset({CLI}),
+    "/fumaca/segredos": frozenset({CLI}),
+    "/chat": frozenset({CLI}),
+}
 ROTAS = [
     Route("/versao", versao, methods=["GET"]),
     Route("/lembretes", lembretes, methods=["GET"]),

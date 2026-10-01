@@ -11,6 +11,7 @@ passaria, ou só a seguinte? O dia do teto é o do dono ou o do UTC? A nuvem tem
 alguma instrução, do que só existe no Mac?
 """
 
+import hashlib
 import threading
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
@@ -151,7 +152,7 @@ def test_o_gmail_mora_na_nuvem_desde_a_10c():
 
 
 def test_instrucao_da_nuvem_so_fala_do_que_ela_tem():
-    texto = turno.instrucao(na_nuvem.FERRAMENTAS, "HOJE")
+    texto = turno.instrucao(na_nuvem.FERRAMENTAS, "HOJE", onde="nuvem")
     for ausente in ("Browser Harness", "FINANÇAS", "PIX", "e-mail nem finanças"):
         assert ausente not in texto, ausente
     for presente in ("APAGAR", "REAGENDAR", "`desfaz`", "acoes_recentes", "lembrete", "HOJE"):
@@ -163,12 +164,57 @@ def test_instrucao_da_nuvem_so_fala_do_que_ela_tem():
 
 def test_instrucao_da_nuvem_sem_o_gmail_continua_a_da_10b():
     sem_gmail = [f for f in na_nuvem.FERRAMENTAS if f.__name__ in {"listar_lembretes"}]
-    texto = turno.instrucao(sem_gmail, "HOJE")
+    texto = turno.instrucao(sem_gmail, "HOJE", onde="nuvem")
     assert "não tem navegador, e-mail nem finanças" in texto and "Gmail" not in texto
 
 
+# O sha256 dos textos de sistema medidos em 2026-10-01, antes de `onde` (Sessão 11): o do Mac, o
+# da nuvem com o Gmail (10c) e o da nuvem sem ele (10b) não mudam nem num byte.
+_TEXTO_DO_MAC = "42df116199f0be41f7c117fe8f46468090599c2d74118be9d83b8f7552a2f7a4"
+_TEXTO_DA_NUVEM_10C = "b3f8cba76b3b12f2bb9718d9f2d168a166d4587e758cdfdbb0156442c36d8959"
+_TEXTO_DA_NUVEM_10B = "18f98cc384767c5b1f12a33e1e1c3364db9da1d6a4ad1de69685c38f11f3d002"
+
+
+def _sha(texto):
+    return hashlib.sha256(texto.encode()).hexdigest()
+
+
+def test_os_textos_de_antes_nao_mudam_nem_num_byte(monkeypatch):
+    assert _sha(turno.instrucao(agent.FERRAMENTAS, "HOJE", onde="mac")) == _TEXTO_DO_MAC
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
+    com = [f for f in na_nuvem.ferramentas() if f.__name__ != "navegar_e_executar"]
+    assert _sha(turno.instrucao(com, "HOJE", onde="nuvem")) == _TEXTO_DA_NUVEM_10C
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "")
+    sem = [f for f in na_nuvem.ferramentas() if f.__name__ != "navegar_e_executar"]
+    assert _sha(turno.instrucao(sem, "HOJE", onde="nuvem")) == _TEXTO_DA_NUVEM_10B
+
+
+def test_onde_e_dito_por_quem_chama():
+    with pytest.raises(ValueError, match="onde"):
+        turno.instrucao(agent.FERRAMENTAS, "HOJE", onde="")
+
+
+def test_sem_o_token_do_gmail_a_nuvem_nao_tem_as_tools_dele(monkeypatch):
+    """Sessão 11 (D61): o deploy só monta o segredo do Gmail com versão, e só então põe a
+    variável. Sem ela, nenhuma tool do Gmail, e o `/versao` diz o mesmo (`config.gmail_no_motor`)."""
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "")
+    nomes = {f.__name__ for f in na_nuvem.ferramentas()}
+    assert not nomes & set(na_nuvem._DO_GMAIL) and "listar_lembretes" in nomes
+    assert not config.gmail_no_motor()
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
+    assert set(na_nuvem._DO_GMAIL) <= {f.__name__ for f in na_nuvem.ferramentas()}
+    assert config.gmail_no_motor()
+
+
+def test_as_do_gmail_sao_as_do_modulo_do_gmail():
+    from lifeos.gmail import tools as gmail_tools
+
+    nomes = {f.__name__ for f in na_nuvem.FERRAMENTAS if f.__module__ == gmail_tools.__name__}
+    assert nomes == set(na_nuvem._DO_GMAIL)
+
+
 def test_instrucao_do_mac_tem_o_que_o_mac_tem_e_nada_so_da_nuvem():
-    texto = turno.instrucao(agent.FERRAMENTAS, "HOJE")
+    texto = turno.instrucao(agent.FERRAMENTAS, "HOJE", onde="mac")
     for presente in ("Browser Harness", "preparar_limpeza", "enviar_email", "FINANÇAS"):
         assert presente in texto, presente
     assert "não tem navegador, e-mail nem finanças" not in texto

@@ -417,8 +417,9 @@ class Segredo:
     caminho: str  # o arquivo no volume do motor
     variavel: str  # a variável que diz ao `config` onde está o arquivo
     # O valor sobe do Mac, e só quando o dono decide (o do Gmail, depois da prova: D57, D60):
-    # vazio não reprova o passo, mas o deploy não publica sem ele (um volume vazio derruba a
-    # revisão).
+    # vazio não reprova o passo, e o deploy publica **sem** ele (Sessão 11, D61: o Gmail é
+    # opcional na nuvem; um volume de segredo vazio derrubaria a revisão). Um segredo que não é
+    # do Mac vazio continua impedindo o deploy.
     do_mac: bool = False
 
 
@@ -626,6 +627,16 @@ class Situacao:
     ci: str
     no_ar: str | None  # o SHA da imagem no ar (a tag), ou None sem serviço
     mudou_desde: int | None  # commits nos caminhos da imagem desde a do ar
+    volumes_no_ar: frozenset[str] = frozenset()  # os segredos montados na revisão no ar
+
+
+def _volumes(servico: dict) -> frozenset[str]:
+    modelo = servico["spec"]["template"]["spec"]
+    return frozenset(
+        nome
+        for v in modelo.get("volumes", [])
+        if (nome := (v.get("secret") or {}).get("secretName"))
+    )
 
 
 def situacao(ctx: Contexto) -> Situacao:
@@ -648,7 +659,9 @@ def situacao(ctx: Contexto) -> Situacao:
     )
     servico = _ler(_gcloud(ctx, "run", "services", "describe", SERVICO, f"--region={ctx.regiao}"))
     no_ar = mudou = None
+    volumes: frozenset[str] = frozenset()
     if isinstance(servico, dict):
+        volumes = _volumes(servico)
         imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
         no_ar = imagem.rsplit(":", 1)[-1]
         mudou = int(
@@ -661,6 +674,7 @@ def situacao(ctx: Contexto) -> Situacao:
         ci=ci,
         no_ar=no_ar,
         mudou_desde=mudou,
+        volumes_no_ar=volumes,
     )
 
 
@@ -685,7 +699,18 @@ def _fuso() -> str:
     return fuso
 
 
-def comandos_do_deploy(ctx: Contexto, sha: str) -> list[list[str]]:
+def montaveis(ctx: Contexto) -> tuple[tuple[Segredo, ...], list[str]]:
+    """(os segredos que vão ao deploy, os que faltam e impedem o deploy). Vai o que tem versão; um
+    `do_mac` vazio fica de fora (o motor sem ele não tem as tools dele: `config.gmail_no_motor`),
+    e qualquer outro vazio impede."""
+    montados = tuple(s for s in SEGREDOS if _versoes(ctx, s.nome))
+    faltam = [s.nome for s in SEGREDOS if not s.do_mac and s not in montados]
+    return montados, faltam
+
+
+def comandos_do_deploy(
+    ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS
+) -> list[list[str]]:
     return [
         _gcloud(
             ctx,
@@ -705,15 +730,16 @@ def comandos_do_deploy(ctx: Contexto, sha: str) -> list[list[str]]:
             # (10c) somam até 126 s; só é cobrado enquanto o pedido roda.
             "--timeout=300",
             "--labels=app=viking",
-            # Todos os segredos, como volumes, e nenhum outro (o `--set-secrets` troca a lista).
-            "--set-secrets=" + ",".join(f"{s.caminho}={s.nome}:latest" for s in SEGREDOS),
+            # Os segredos com versão, como volumes, e nenhum outro (o `--set-secrets` troca a
+            # lista; o que fica de fora sai da revisão nova).
+            "--set-secrets=" + ",".join(f"{s.caminho}={s.nome}:latest" for s in montados),
             "--set-env-vars="
             + ",".join(
                 [
                     f"VIKING_NUVEM_PROJETO={ctx.projeto}",
                     f"VIKING_NUVEM_URL={_url(ctx)}",
                     f"VIKING_TIMEZONE={_fuso()}",
-                    *(f"{s.variavel}={s.caminho}" for s in SEGREDOS),
+                    *(f"{s.variavel}={s.caminho}" for s in montados),
                 ]
             ),
         ),
@@ -739,7 +765,7 @@ def _token(ctx: Contexto, *args: str) -> str:
     return resultado.stdout.strip()
 
 
-def publicar(ctx: Contexto, sha: str) -> None:
+def publicar(ctx: Contexto, sha: str, montados: tuple[Segredo, ...]) -> None:
     """Constrói, envia e põe no ar. Só roda depois de `situacao` dizer que dá (árvore limpa, HEAD
     no GitHub, CI verde) e do ok do dono."""
     imagem = _imagem(ctx, sha)
@@ -757,7 +783,7 @@ def publicar(ctx: Contexto, sha: str) -> None:
         _saida(["docker", "push", imagem])
     finally:
         _local(["docker", "logout", registro])  # o token de 1 h não fica no ~/.docker
-    for comando in comandos_do_deploy(ctx, sha):
+    for comando in comandos_do_deploy(ctx, sha, montados):
         print(f"$ {_legivel(comando)}")
         resultado = _rodar(comando)
         if resultado.returncode != 0:
@@ -771,24 +797,26 @@ class Prova:
     detalhe: str
 
 
-def _segredos_so_como_volume(servico: dict) -> tuple[bool, str]:
-    """No `describe` do serviço: as variáveis são só as esperadas (nenhuma com `valueFrom`, que
-    seria um segredo no ambiente), e cada segredo está montado como volume."""
+def _segredos_so_como_volume(
+    servico: dict, montados: tuple[Segredo, ...] = SEGREDOS
+) -> tuple[bool, str]:
+    """No `describe` do serviço: as variáveis são só as esperadas para os segredos montados
+    (nenhuma com `valueFrom`, que seria um segredo no ambiente), e os volumes de segredo são
+    exatamente os montados."""
     modelo = servico["spec"]["template"]["spec"]
     variaveis = {v.get("name"): v for v in modelo["containers"][0].get("env", [])}
     esperadas = {"VIKING_NUVEM_PROJETO", "VIKING_NUVEM_URL", "VIKING_TIMEZONE"} | {
-        s.variavel for s in SEGREDOS
+        s.variavel for s in montados
     }
     sem_segredo = set(variaveis) <= esperadas and not any(
         "valueFrom" in v for v in variaveis.values()
     )
-    volumes = {(v.get("secret") or {}).get("secretName") for v in modelo.get("volumes", [])}
-    montados = {s.nome for s in SEGREDOS} <= volumes
-    nomes = sorted(v for v in volumes if v)
-    return sem_segredo and montados, f"variáveis {sorted(variaveis)}; volumes {nomes}"
+    volumes = _volumes(servico)
+    certos = volumes == {s.nome for s in montados}
+    return sem_segredo and certos, f"variáveis {sorted(variaveis)}; volumes {sorted(volumes)}"
 
 
-def provas(ctx: Contexto, sha: str) -> list[Prova]:
+def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) -> list[Prova]:
     """Rodam sempre, com ou sem deploy (skill `nuvem-e-deploy` §6 e §8): a imagem no ar, o IAM do
     serviço, a recusa sem token, a recusa do nosso código, o caminho com a identidade certa, a
     consulta que pede o índice, e os erros no log."""
@@ -801,7 +829,7 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
     imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
     no_ar = imagem.rsplit("/", 1)[-1]
     resultado.append(Prova("imagem no ar = a esperada", imagem == _imagem(ctx, sha), no_ar))
-    certo, detalhe = _segredos_so_como_volume(servico)
+    certo, detalhe = _segredos_so_como_volume(servico, montados)
     resultado.append(Prova("segredos só como volume, nada no ambiente", certo, detalhe))
     # O `status.url` é a URL antiga, com hash; a determinística (com o número do projeto) é a
     # audience que o motor exige, e o Cloud Run a lista nesta anotação (medido em 2026-09-30).
@@ -870,12 +898,18 @@ def provas(ctx: Contexto, sha: str) -> list[Prova]:
 
     segredos = requests.get(f"{url}/fumaca/segredos", headers=cabecalho, timeout=60)
     lidos = segredos.json() if segredos.status_code == 200 else {}
+    com_gmail = any(s.nome == "viking-gmail" for s in montados)
     resultado.append(
         Prova(
-            "viking-cli@: /fumaca/segredos (a chave lê, os tokens da agenda e do Gmail renovam)",
-            lidos == {"gemini": True, "agenda": True, "gmail": True},
+            "viking-cli@: /fumaca/segredos (a chave lê, os tokens renovam; o do Gmail "
+            f"{'montado' if com_gmail else 'ainda não subiu: sem ele'})",
+            lidos == {"gemini": True, "agenda": True, "gmail": com_gmail},
             f"HTTP {segredos.status_code} {lidos}",
         )
+    )
+    no_ar = versao.json().get("gmail") if versao.status_code == 200 else None
+    resultado.append(
+        Prova("viking-cli@: /versao diz se tem o Gmail", no_ar is com_gmail, f"gmail: {no_ar}")
     )
 
     filtro = (
@@ -901,9 +935,15 @@ def deploy(ctx: Contexto, executar: bool) -> int:
             f"({', '.join(caminhos_da_imagem())}): {agora.mudou_desde}"
         )
     pode = agora.limpo and agora.publicado and agora.ci == "completed success"
-    # Nada nos caminhos da imagem desde a que está no ar: ela já é o código de agora, e publicar
-    # de novo só trocaria a etiqueta (skill `nuvem-e-deploy` §4, a segunda pergunta).
-    em_dia = agora.no_ar is not None and agora.mudou_desde == 0
+    montados, faltam = montaveis(ctx)
+    # Nada nos caminhos da imagem desde a que está no ar, e os mesmos segredos montados: ela já é
+    # o código de agora, e publicar de novo só trocaria a etiqueta (skill `nuvem-e-deploy` §4, a
+    # segunda pergunta). Um segredo que ganhou versão (o do Gmail, subido do Mac) pede revisão.
+    em_dia = (
+        agora.no_ar is not None
+        and agora.mudou_desde == 0
+        and agora.volumes_no_ar == {s.nome for s in montados}
+    )
     esperado = agora.no_ar if em_dia and agora.no_ar else agora.head
     if executar:
         if not pode:
@@ -912,18 +952,20 @@ def deploy(ctx: Contexto, executar: bool) -> int:
         if em_dia:
             print("Nada mudou na imagem desde a que está no ar; só as provas.")
         else:
-            vazios = [s.nome for s in SEGREDOS if not _versoes(ctx, s.nome)]
-            if vazios:
+            if faltam:
                 # Um volume de segredo sem versão derruba a revisão nova: nada é construído.
-                print(f"Não publico: sem valor no Secret Manager: {', '.join(vazios)}.")
+                print(f"Não publico: sem valor no Secret Manager: {', '.join(faltam)}.")
                 return 1
-            publicar(ctx, agora.head)
+            publicar(ctx, agora.head, montados)
     elif not em_dia:
-        for comando in comandos_do_deploy(ctx, agora.head):
+        for comando in comandos_do_deploy(ctx, agora.head, montados):
             print(f"  → {_legivel(comando)}")
         print("Nada foi publicado (sem --executar).")
+    fora = [s.nome for s in SEGREDOS if s not in montados]
+    if fora:
+        print(f"Fora desta revisão (sem versão; sobe do Mac): {', '.join(fora)}.")
     print("Provas (rodam sempre):")
-    feitas = provas(ctx, esperado)
+    feitas = provas(ctx, esperado, montados)
     for prova in feitas:
         print(f"  {'✅' if prova.passou else '❌'} {prova.nome}: {prova.detalhe}")
     return 0 if all(p.passou for p in feitas) else 2

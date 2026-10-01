@@ -37,6 +37,8 @@ CODIGO = f"{SENTINELA:04d}"
 def nuvem(teto, gmail, monkeypatch):
     """O motor: tudo no Firestore (o emulador), o Gmail falso, o primeiro código é o sentinela."""
     monkeypatch.setattr(config, "STORE", "firestore")
+    # O motor com o token do Gmail montado (o arquivo nunca é lido: o Gmail é o falso).
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
     monkeypatch.setattr(confirmacao, "_STORE", confirmacao_firestore)
     monkeypatch.setattr(registro, "_STORE", registro_firestore)
     sorteios = itertools.chain([SENTINELA], itertools.count(1000))

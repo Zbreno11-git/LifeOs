@@ -237,6 +237,12 @@ def agenda_token() -> str:
     return _segredo(AGENDA_TOKEN_ARQUIVO)
 
 
+def gmail_no_motor() -> bool:
+    """O motor tem o token do Gmail? O deploy só põe a variável quando o segredo tem versão
+    (`scripts/nuvem.py`; Sessão 11, D61): sem ela, o chat da nuvem não tem as tools do Gmail."""
+    return bool(GMAIL_TOKEN_ARQUIVO)
+
+
 def gmail_token() -> str:
     """O token do Gmail (JSON) do volume da nuvem, subido do Mac (D57, D60). Só existe na nuvem."""
     if not GMAIL_TOKEN_ARQUIVO:

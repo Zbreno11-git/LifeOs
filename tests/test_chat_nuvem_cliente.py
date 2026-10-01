@@ -32,6 +32,7 @@ class _Motor:
 def _rodar(monkeypatch, linhas, *respostas):
     motor = _Motor(*respostas)
     monkeypatch.setattr(cliente, "sessao_de_chat", lambda: object())
+    monkeypatch.setattr(cliente, "capacidades", lambda _s: {"commit": "x", "gmail": True})
     monkeypatch.setattr(cliente, "turno_de_chat", motor)
     fila = iter(linhas)
     codigo = chat_cliente.iniciar(entrada=lambda _p="": next(fila))
@@ -158,3 +159,31 @@ def test_ao_dono_aparece_so_num_terminal_interativo(monkeypatch, capsys):
     _rodar(monkeypatch, ["confirma 6284", "sair"], resposta)
     saida = capsys.readouterr().out
     assert "6284" not in saida.replace("Você: ", "") and chat_cliente.SEM_TERMINAL in saida
+
+
+# --- a abertura diz o que a nuvem tem (Sessão 11, D61) ---------------------------------------
+
+
+def test_a_abertura_nao_promete_o_gmail_que_nao_esta_la():
+    sem = chat_cliente.abertura({"commit": "x", "gmail": False})
+    assert (
+        sem
+        == "☁️  Viking na nuvem (agenda e lembretes). Navegador, Gmail e finanças: `viking chat`."
+    )
+    com = chat_cliente.abertura({"commit": "x", "gmail": True})
+    assert (
+        com
+        == "☁️  Viking na nuvem (agenda, lembretes e Gmail). Navegador e finanças: `viking chat`."
+    )
+    assert chat_cliente.abertura({}) == sem  # um motor velho, sem o campo: não promete
+
+
+def test_sem_o_primeiro_contato_nao_abre(monkeypatch, capsys):
+    monkeypatch.setattr(cliente, "sessao_de_chat", lambda: object())
+
+    def recusa(_s):
+        raise cliente.ErroDaNuvem("a nuvem recusou a identidade (HTTP 403)")
+
+    monkeypatch.setattr(cliente, "capacidades", recusa)
+    assert chat_cliente.iniciar(entrada=lambda _p="": "sair") == 1
+    assert "❌ Nuvem: a nuvem recusou a identidade (HTTP 403)." in capsys.readouterr().err

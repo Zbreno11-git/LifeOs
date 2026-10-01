@@ -244,9 +244,21 @@ class _Mundo:
     """O gcloud, o git, o docker e o gh de mentira, com o estado de um deploy."""
 
     def __init__(
-        self, *, limpo=True, publicado=True, ci="completed success", no_ar=None, mudou=3, vazios=()
+        self,
+        nuvem,
+        *,
+        limpo=True,
+        publicado=True,
+        ci="completed success",
+        no_ar=None,
+        mudou=3,
+        vazios=(),
+        vazios_no_ar=None,
     ):
+        self.nuvem = nuvem
         self.vazios = set(vazios)  # segredos sem versão no Secret Manager
+        # os que a revisão no ar não monta (por padrão, os mesmos que estão sem versão)
+        self.vazios_no_ar = self.vazios if vazios_no_ar is None else set(vazios_no_ar)
         self.gcloud: list[list[str]] = []
         self.local: list[tuple[list[str], str | None]] = []
         self.limpo, self.publicado, self.ci, self.no_ar = limpo, publicado, ci, no_ar
@@ -260,8 +272,17 @@ class _Mundo:
         if corpo[:3] == ["run", "services", "describe"]:
             if self.no_ar is None:
                 return subprocess.CompletedProcess(comando, 1, "", "ERROR: NOT_FOUND")
+            volumes = [
+                {"name": s.nome, "secret": {"secretName": s.nome}}
+                for s in self.nuvem.SEGREDOS
+                if s.nome not in self.vazios_no_ar
+            ]
             servico = {
-                "spec": {"template": {"spec": {"containers": [{"image": f"x:{self.no_ar}"}]}}}
+                "spec": {
+                    "template": {
+                        "spec": {"containers": [{"image": f"x:{self.no_ar}"}], "volumes": volumes}
+                    }
+                }
             }
             return subprocess.CompletedProcess(comando, 0, json.dumps(servico), "")
         if corpo[:1] == ["auth"]:
@@ -286,10 +307,10 @@ class _Mundo:
 @pytest.fixture
 def mundo(nuvem, monkeypatch):
     def montar(**estado):
-        m = _Mundo(**estado)
+        m = _Mundo(nuvem, **estado)
         monkeypatch.setattr(nuvem, "_rodar", m.rodar)
         monkeypatch.setattr(nuvem, "_local", m.rodar_local)
-        monkeypatch.setattr(nuvem, "provas", lambda _ctx, _sha: [])
+        monkeypatch.setattr(nuvem, "provas", lambda _ctx, _sha, _montados=(): [])
         monkeypatch.setenv("VIKING_NUVEM_FUSO", "America/Los_Angeles")
         return m
 
@@ -364,7 +385,7 @@ def test_commit_que_nao_mexe_na_imagem_nao_publica_de_novo(nuvem, ctx, mundo, mo
     agora, e as provas comparam com ela (não com o HEAD)."""
     m = mundo(no_ar="b" * 40, mudou=0)
     esperados = []
-    monkeypatch.setattr(nuvem, "provas", lambda _ctx, sha: esperados.append(sha) or [])
+    monkeypatch.setattr(nuvem, "provas", lambda _ctx, sha, _m=(): esperados.append(sha) or [])
     assert nuvem.deploy(ctx, executar=True) == 0
     assert not _publicou(m)
     assert esperados == ["b" * 40]
@@ -577,11 +598,54 @@ def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
 # --- o token do Gmail sobe do Mac (Sessão 10c, D60) ----------------------------------------------
 
 
-def test_deploy_nao_publica_com_um_segredo_vazio(nuvem, ctx, mundo, capsys):
-    m = mundo(vazios={"viking-gmail"})
+def test_deploy_nao_publica_com_um_segredo_vazio_que_nao_e_do_mac(nuvem, ctx, mundo, capsys):
+    m = mundo(vazios={"viking-agenda"})
     assert nuvem.deploy(ctx, executar=True) == 1
     assert not _publicou(m)
-    assert "viking-gmail" in capsys.readouterr().out
+    assert "sem valor no Secret Manager: viking-agenda" in capsys.readouterr().out
+
+
+def _implantado(m):
+    (implantar,) = [c for c in m.gcloud if c[1:3] == ["run", "deploy"]]
+    (segredos,) = [a for a in implantar if a.startswith("--set-secrets=")]
+    (variaveis,) = [a for a in implantar if a.startswith("--set-env-vars=")]
+    return segredos, variaveis
+
+
+def test_deploy_sem_o_token_do_gmail_publica_sem_ele(nuvem, ctx, mundo, capsys):
+    """Sessão 11 (D61): o Gmail é opcional na nuvem. Sem versão do `viking-gmail`, a revisão nova
+    não monta o volume nem põe a variável (o motor fica sem as tools do Gmail)."""
+    m = mundo(vazios={"viking-gmail"})
+    assert nuvem.deploy(ctx, executar=True) == 0
+    segredos, variaveis = _implantado(m)
+    assert "viking-gmail" not in segredos and "viking-agenda" in segredos
+    assert "VIKING_GMAIL_TOKEN_ARQUIVO" not in variaveis
+    assert "VIKING_AGENDA_TOKEN_ARQUIVO" in variaveis
+    assert "Fora desta revisão (sem versão; sobe do Mac): viking-gmail" in capsys.readouterr().out
+
+
+def test_com_o_token_do_gmail_publica_com_ele(nuvem, ctx, mundo):
+    m = mundo()
+    assert nuvem.deploy(ctx, executar=True) == 0
+    segredos, variaveis = _implantado(m)
+    assert "/segredos/gmail/token.json=viking-gmail:latest" in segredos
+    assert "VIKING_GMAIL_TOKEN_ARQUIVO=/segredos/gmail/token.json" in variaveis
+
+
+def test_o_token_do_gmail_que_subiu_pede_revisao_mesmo_sem_codigo_novo(nuvem, ctx, mundo):
+    """A segunda vida do script: o motor no ar sem o Gmail, o código igual, e o token subiu do Mac.
+    "Nada mudou na imagem" não basta: a revisão no ar não monta o segredo que agora tem versão."""
+    m = mundo(no_ar=SHA, vazios_no_ar={"viking-gmail"})
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert _publicou(m)
+    segredos, _variaveis = _implantado(m)
+    assert "viking-gmail" in segredos
+
+
+def test_o_head_no_ar_com_os_mesmos_segredos_nao_publica(nuvem, ctx, mundo):
+    m = mundo(no_ar=SHA, vazios={"viking-gmail"})
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert not _publicou(m)
 
 
 def test_o_segredo_do_mac_vazio_nao_reprova_o_passo(nuvem, ctx, monkeypatch):
@@ -711,6 +775,19 @@ def test_a_prova_recusa_segredo_no_ambiente(nuvem):
         for s in nuvem.SEGREDOS
     ]
     assert not nuvem._segredos_so_como_volume(_servico(disfarcado, volumes))[0]
+
+
+def test_a_prova_dos_volumes_compara_com_os_montados(nuvem):
+    sem_gmail = tuple(s for s in nuvem.SEGREDOS if s.nome != "viking-gmail")
+    volumes = [{"name": s.nome, "secret": {"secretName": s.nome}} for s in sem_gmail]
+    certo = [{"name": s.variavel, "value": s.caminho} for s in sem_gmail]
+    assert nuvem._segredos_so_como_volume(_servico(certo, volumes), sem_gmail)[0]
+    # o que a revisão não devia montar, montado; ou a variável dele sem o volume
+    todos = [{"name": s.nome, "secret": {"secretName": s.nome}} for s in nuvem.SEGREDOS]
+    assert not nuvem._segredos_so_como_volume(_servico(certo, todos), sem_gmail)[0]
+    gmail = next(s for s in nuvem.SEGREDOS if s.nome == "viking-gmail")
+    com_variavel = [*certo, {"name": gmail.variavel, "value": gmail.caminho}]
+    assert not nuvem._segredos_so_como_volume(_servico(com_variavel, volumes), sem_gmail)[0]
 
 
 def test_passo_nao_medido_nao_afirma_que_falta(nuvem, ctx, monkeypatch, capsys):

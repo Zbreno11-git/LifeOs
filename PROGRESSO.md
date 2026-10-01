@@ -83,7 +83,14 @@ D61). Medido na abertura: `2216 passed`, CI `success` em `687068d`, 10 ✅, o mo
 4 versões novas no lock.
 - C0: o lock em `5b0df87` (`2216 passed` antes e depois; `DEFAULT_HTTP_TIMEOUT_SEC` continua 60 na
   2.201.0); o plano aqui; `sessoes.md` (a 11, a 11c nova); D61.
-- **Próximo passo:** o C1 do plano (o Gmail opcional na nuvem e a identidade por rota no motor).
+- C1 (2026-10-01, ~03:10Z): o Gmail opcional na nuvem (o deploy monta só o segredo com versão;
+  um `do_mac` vazio fica de fora e qualquer outro vazio recusa; o token que sobe pede revisão
+  mesmo sem código novo; as provas comparam com os montados; `/versao` diz `gmail`;
+  `na_nuvem.ferramentas()` e `config.gmail_no_motor()`); a identidade por rota no motor
+  (`QUEM_FALA`); `turno.instrucao(..., onde=)` com os textos de antes iguais (sha256 de
+  2026-10-01 do Mac, da nuvem 10b e da 10c); a abertura do `viking chat --nuvem` pelo `/versao`.
+  Portões: `2234 passed`, ruff, format, mypy, gitleaks. Mutações do C1 e vizinhas: 25/25.
+- **Próximo passo:** o C2 do plano (a fila das mãos no Firestore e o navegador no chat da nuvem).
 
 **Quando o dono trouxer a prova (a partir de 2026-10-04), a 10c retoma:**
 1. **Portão (dono, a partir de 2026-10-04 em Seattle):** `viking gmail --login` no Mac **sem**

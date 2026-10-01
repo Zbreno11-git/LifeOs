@@ -11,7 +11,9 @@ volta a conversa nova: o motor não guarda a conversa (decisão do dono, 2026-09
 2. **o teto de gasto** (`custos.Teto`), conferido antes do turno e antes de cada chamada ao modelo;
 3. **o turno**, pelo mesmo núcleo do chat do Mac (`turno.py`), só com as tools que moram na nuvem
    (`FERRAMENTAS`; o que fica no Mac está em `SO_NO_MAC`, com o motivo). O Gemini tem prazo por
-   chamada e um limite de chamadas de tool por turno.
+   chamada e um limite de chamadas de tool por turno. Das tools da nuvem, as do Gmail só entram
+   com o token dele no motor (`ferramentas()`; Sessão 11, D61): sem o segredo, o deploy não monta
+   o volume, e o chat da nuvem não tem e-mail.
 
 Tudo que só o dono vê (o código, a lista de uma limpeza, o e-mail antes de sair, e as respostas
 da barreira) volta no campo `ao_dono` da resposta (`lifeos/ao_dono.py`): nunca no texto do
@@ -61,6 +63,7 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
 
 criar_lembrete.__doc__ = agent.criar_lembrete.__doc__
 
+# Todas as que podem morar na nuvem; as que valem neste motor saem de `ferramentas()`.
 FERRAMENTAS: list[Callable[..., Any]] = [
     agent.listar_proximos_eventos,
     agent.listar_eventos_por_data,
@@ -81,6 +84,17 @@ FERRAMENTAS: list[Callable[..., Any]] = [
     agent.enviar_email,
     agent.responder_email,
 ]
+_DO_GMAIL = frozenset(
+    {
+        "buscar_emails",
+        "emails_nao_lidos_de_hoje",
+        "ler_email",
+        "raio_x_da_caixa",
+        "preparar_limpeza",
+        "enviar_email",
+        "responder_email",
+    }
+)
 # As tools do chat do Mac que não vêm para a nuvem, e por quê. `tests/test_na_nuvem.py` exige que
 # toda tool do Mac esteja numa das duas listas: uma tool nova tem de decidir onde mora.
 SO_NO_MAC = {
@@ -90,6 +104,14 @@ SO_NO_MAC = {
     "buscar_transacoes": "as finanças seguem a D51",
     "fatura_do_cartao": "as finanças seguem a D51",
 }
+
+
+def ferramentas() -> list[Callable[..., Any]]:
+    """As tools deste motor: as da nuvem, sem as do Gmail quando o token dele não está aqui
+    (`config.gmail_no_motor`, a mesma pergunta que o `/versao` responde)."""
+    if config.gmail_no_motor():
+        return list(FERRAMENTAS)
+    return [f for f in FERRAMENTAS if f.__name__ not in _DO_GMAIL]
 
 
 def barreira(linha: str) -> tuple[str, str] | None:
@@ -149,9 +171,10 @@ def _cliente() -> Any:
 
 
 def _config() -> types.GenerateContentConfig:
+    presentes = ferramentas()
     return types.GenerateContentConfig(
-        tools=[*FERRAMENTAS],
-        system_instruction=turno_nucleo.instrucao(FERRAMENTAS, agent._hoje()),
+        tools=[*presentes],
+        system_instruction=turno_nucleo.instrucao(presentes, agent._hoje(), onde="nuvem"),
         temperature=turno_nucleo.TEMPERATURA,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(
             maximum_remote_calls=MAX_CHAMADAS_DE_TOOL

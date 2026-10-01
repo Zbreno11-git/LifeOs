@@ -83,10 +83,13 @@ def _get(cliente, rota, token=None, cabecalho=None):
     return cliente.get(rota, headers=cabecalhos)
 
 
-def test_o_terminal_do_dono_entra(cliente):
+def test_o_terminal_do_dono_entra(cliente, monkeypatch):
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "")
     resposta = _get(cliente, "/versao", _token())
     assert resposta.status_code == 200
-    assert resposta.json() == {"commit": "abc123"}
+    assert resposta.json() == {"commit": "abc123", "gmail": False}
+    monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
+    assert _get(cliente, "/versao", _token()).json()["gmail"] is True
 
 
 @pytest.mark.parametrize(
@@ -129,6 +132,8 @@ def test_token_que_nao_vale_401(cliente, caso, token):
             {"email": f"viking-motor@{PROJETO}.iam.gserviceaccount.com"},
         ),
         ("o cli@ de outro projeto", {"email": "viking-cli@outro.iam.gserviceaccount.com"}),
+        ("as mãos do Mac", {"email": f"viking-maos@{PROJETO}.iam.gserviceaccount.com"}),
+        ("o agendador", {"email": f"viking-agendador@{PROJETO}.iam.gserviceaccount.com"}),
         ("e-mail não verificado", {"email_verified": False}),
         ("sem e-mail", {"email": None}),
     ],
@@ -186,6 +191,30 @@ def test_toda_rota_comeca_por_quem(cliente):
     assert "add_route" not in Path(motor.__file__).read_text()
 
 
+def test_toda_rota_tem_quem_fala_e_so_ela():
+    """Sessão 11 (D61): cada rota diz quem fala com ela, e o mapa não tem rota que não existe."""
+    caminhos = {rota.path for rota in motor.ROTAS}
+    assert set(motor.QUEM_FALA) == caminhos
+    assert all(motor.QUEM_FALA[c] for c in caminhos)
+    assert all(
+        conta in {motor.CLI, motor.MAOS, motor.AGENDADOR}
+        for c in caminhos
+        for conta in motor.QUEM_FALA[c]
+    )
+
+
+def test_rota_fora_do_mapa_nao_tem_ninguem(monkeypatch):
+    assert motor.quem_pode("/nao-existe") == frozenset()
+    assert motor.quem_pode("/versao/") == frozenset()  # a barra a mais não é a mesma porta
+
+
+@pytest.mark.parametrize("rota", ["/versao", "/lembretes", "/fumaca/segredos"])
+def test_as_maos_e_o_agendador_nao_entram_nas_portas_do_terminal(cliente, rota):
+    for conta in ("viking-maos", "viking-agendador"):
+        token = _token(email=f"{conta}@{PROJETO}.iam.gserviceaccount.com")
+        assert _get(cliente, rota, token).status_code == 403, (conta, rota)
+
+
 # --- Sessão 10b: o chat, e as fumaças do registro e dos segredos ----------------------------
 
 
@@ -214,6 +243,8 @@ def test_chat_sem_token_e_de_outra_conta_nao_chega_ao_turno(cliente, turno_falso
     corpo = b'{"mensagem": "oi"}'
     assert _post(cliente, corpo).status_code == 401
     assert _post(cliente, corpo, _token(email="intruso@example.com")).status_code == 403
+    maos = _token(email=f"viking-maos@{PROJETO}.iam.gserviceaccount.com")
+    assert _post(cliente, corpo, maos).status_code == 403  # as mãos não leem a conversa
     assert turno_falso == []
 
 
