@@ -231,7 +231,7 @@ def test_ids_das_contas_de_servico_cabem_na_regra_do_google(nuvem):
     caracteres, minúsculas, dígitos e hífen, começando por letra."""
     import re
 
-    for nome in (nuvem.MOTOR, nuvem.CLI):
+    for nome in (nuvem.MOTOR, nuvem.CLI, nuvem.MAOS, nuvem.AGENDADOR):
         assert re.fullmatch(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", nome), nome
 
 
@@ -399,16 +399,23 @@ def test_commit_que_mexe_na_imagem_publica(nuvem, ctx, mundo):
 
 def test_o_servico_nasce_fechado(nuvem, ctx, mundo):
     mundo()
-    implantar, permitir = nuvem.comandos_do_deploy(ctx, SHA)
+    implantar, *permitir = nuvem.comandos_do_deploy(ctx, SHA)
     assert "--no-allow-unauthenticated" in implantar and "--min-instances=0" in implantar
     assert "--max-instances=2" in implantar
     assert f"--service-account=viking-motor@{ctx.projeto}.iam.gserviceaccount.com" in implantar
     (variaveis,) = [a for a in implantar if a.startswith("--set-env-vars=")]
     assert "VIKING_TIMEZONE=America/Los_Angeles" in variaveis
     assert "VIKING_NUVEM_URL=https://motor-42.southamerica-east1.run.app" in variaveis
-    assert f"--member=serviceAccount:viking-cli@{ctx.projeto}.iam.gserviceaccount.com" in permitir
-    assert "--role=roles/run.invoker" in permitir
-    assert not any("allUsers" in a or "allAuthenticatedUsers" in a for a in implantar + permitir)
+    # o terminal e as mãos (Sessão 11), cada um num comando; o agendador@ só no passo dele
+    membros = [a for c in permitir for a in c if a.startswith("--member=")]
+    assert membros == [
+        f"--member=serviceAccount:viking-{nome}@{ctx.projeto}.iam.gserviceaccount.com"
+        for nome in ("cli", "maos")
+    ]
+    assert all("--role=roles/run.invoker" in c for c in permitir)
+    tudo = [a for c in (implantar, *permitir) for a in c]
+    assert not any("allUsers" in a or "allAuthenticatedUsers" in a for a in tudo)
+    assert not any("agendador" in a for a in tudo)
 
 
 def test_sem_fuso_nao_publica(nuvem, ctx, mundo, monkeypatch):
@@ -430,7 +437,7 @@ def test_servico_inexistente_e_ausencia_nao_erro(nuvem, ctx, monkeypatch):
 
 def test_deploy_entrega_os_segredos_so_como_volume_e_o_prazo_do_turno(nuvem, ctx, mundo):
     mundo()
-    implantar, _permitir = nuvem.comandos_do_deploy(ctx, SHA)
+    implantar, *_permitir = nuvem.comandos_do_deploy(ctx, SHA)
     (segredos,) = [a for a in implantar if a.startswith("--set-secrets=")]
     pares = segredos.removeprefix("--set-secrets=").split(",")
     assert pares == [f"{s.caminho}={s.nome}:latest" for s in nuvem.SEGREDOS]
@@ -823,3 +830,150 @@ def test_indices_cria_so_o_que_nao_existe(nuvem, ctx, monkeypatch):
     (comando,) = nuvem._c_indices(pronto)
     assert "--collection-group=acoes" in comando
     assert not nuvem._m_indices(pronto).pronto  # construindo não é pronto
+
+
+# --- as mãos e o agendador (Sessão 11, D61) -----------------------------------------------------
+
+
+def test_contas_cria_as_maos_e_o_dono_pede_o_token_das_duas(nuvem, ctx, monkeypatch):
+    monkeypatch.setattr(nuvem, "_ler", lambda _c: None)  # nada existe
+    comandos = nuvem._c_contas(ctx)
+    criadas = [c[4] for c in comandos if c[1:4] == ["iam", "service-accounts", "create"]]
+    assert criadas == ["viking-motor", "viking-cli", "viking-maos"]
+    papeis = [c for c in comandos if "--role=roles/iam.serviceAccountTokenCreator" in c]
+    assert [(c[4], c[5]) for c in papeis] == [
+        (f"viking-{nome}@viking-teste.iam.gserviceaccount.com", "--member=user:dono@example.com")
+        for nome in ("cli", "maos")
+    ]
+    assert not any("agendador" in a for c in comandos for a in c)  # só no passo dele
+
+
+def test_contas_sem_o_dono_no_token_das_maos_nao_esta_pronta(nuvem, ctx, monkeypatch):
+    def politica(papel, membro):
+        return {"bindings": [{"role": papel, "members": [membro]}]}
+
+    gravador = _Gravador(
+        {
+            "iam service-accounts describe": {"email": "x"},
+            "projects get-iam-policy": politica(
+                "roles/datastore.user",
+                "serviceAccount:viking-motor@viking-teste.iam.gserviceaccount.com",
+            ),
+            "iam service-accounts get-iam-policy viking-cli": politica(
+                "roles/iam.serviceAccountTokenCreator", "user:dono@example.com"
+            ),
+            "iam service-accounts get-iam-policy viking-maos": {"bindings": []},
+        }
+    )
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    estado = nuvem._m_contas(ctx)
+    assert (
+        not estado.pronto and estado.detalhe == "o dono ainda não pode pedir token do viking-maos@"
+    )
+
+
+@pytest.mark.parametrize(
+    ("quem", "certo"),
+    [
+        ({"cli", "maos"}, True),
+        ({"cli", "maos", "agendador"}, True),
+        ({"cli"}, False),
+        ({"maos", "agendador"}, False),
+        ({"cli", "maos", "motor"}, False),
+        ({"cli", "maos", "allUsers"}, False),
+    ],
+)
+def test_so_o_terminal_as_maos_e_o_agendador_invocam(nuvem, ctx, quem, certo):
+    membros = {
+        "allUsers" if nome == "allUsers" else f"serviceAccount:{ctx.conta(f'viking-{nome}')}"
+        for nome in quem
+    }
+    assert nuvem._invocadores_certos(ctx, membros) is certo
+
+
+URL_DO_MOTOR = "https://motor-42.southamerica-east1.run.app"
+
+
+def _tarefa(**mudancas):
+    tarefa = {
+        "schedule": "* * * * *",
+        "state": "ENABLED",
+        "httpTarget": {
+            "uri": f"{URL_DO_MOTOR}/tarefas/lembretes",
+            "httpMethod": "POST",
+            "oidcToken": {
+                "serviceAccountEmail": "viking-agendador@viking-teste.iam.gserviceaccount.com",
+                "audience": URL_DO_MOTOR,
+            },
+        },
+    }
+    tarefa.update(mudancas)
+    return tarefa
+
+
+def _agendador(api=True, conta=True, invoca=True, tarefa=None):
+    respostas = {
+        "projects describe": {"projectNumber": "42"},
+        "services list": [{"config": {"name": "cloudscheduler.googleapis.com"}}] if api else [],
+    }
+    if conta:
+        respostas["iam service-accounts describe viking-agendador"] = {"email": "x"}
+    membro = "serviceAccount:viking-agendador@viking-teste.iam.gserviceaccount.com"
+    respostas["run services get-iam-policy motor"] = {
+        "bindings": [{"role": "roles/run.invoker", "members": [membro] if invoca else []}]
+    }
+    if tarefa is not None:
+        respostas["scheduler jobs describe viking-lembretes"] = tarefa
+    return _Gravador(respostas)
+
+
+@pytest.mark.parametrize(
+    ("estado", "pronto", "trecho"),
+    [
+        ({"api": False}, False, "API do Cloud Scheduler desligada"),
+        ({"conta": False}, False, "falta o agendador@"),
+        ({"invoca": False}, False, "ainda não invoca"),
+        ({}, False, "falta a tarefa"),
+        ({"tarefa": _tarefa(schedule="*/5 * * * *")}, False, "a cada minuto"),
+        ({"tarefa": _tarefa(state="PAUSED")}, False, "ligada"),
+        (
+            {"tarefa": _tarefa(httpTarget={**_tarefa()["httpTarget"], "oidcToken": {}})},
+            False,
+            "como o agendador@, com a audience do motor",
+        ),
+        ({"tarefa": _tarefa()}, True, "a cada minuto, como agendador@"),
+    ],
+)
+def test_o_agendador_so_esta_pronto_com_tudo_certo(nuvem, ctx, monkeypatch, estado, pronto, trecho):
+    monkeypatch.setattr(nuvem, "_rodar", _agendador(**estado))
+    medido = nuvem._m_agendador(ctx)
+    assert medido.pronto is pronto and trecho in medido.detalhe
+
+
+def test_a_tarefa_do_agendador_chama_so_a_rota_do_envio_com_oidc(nuvem, ctx, monkeypatch):
+    gravador = _agendador(conta=False)
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    pronto = nuvem.Contexto(**{**ctx.__dict__, "prontos": frozenset({"apis", "contas"})})
+    ligar, criar, invocar, tarefa = nuvem._c_agendador(pronto)
+    assert ligar[1:4] == ["services", "enable", "cloudscheduler.googleapis.com"]
+    assert criar[1:5] == ["iam", "service-accounts", "create", "viking-agendador"]
+    conta = "viking-agendador@viking-teste.iam.gserviceaccount.com"
+    assert f"--member=serviceAccount:{conta}" in invocar and "--role=roles/run.invoker" in invocar
+    assert tarefa[1:6] == ["scheduler", "jobs", "create", "http", "viking-lembretes"]
+    for opcao in (
+        "--schedule=* * * * *",
+        f"--uri={URL_DO_MOTOR}/tarefas/lembretes",
+        "--http-method=POST",
+        f"--oidc-service-account-email={conta}",
+        f"--oidc-token-audience={URL_DO_MOTOR}",
+        "--location=southamerica-east1",
+    ):
+        assert opcao in tarefa, opcao
+    assert not any(a.startswith(("--headers", "--message-body", "--oauth")) for a in tarefa)
+    assert not any(_verbo(c) in _ESCRITAS for c in gravador.comandos)  # montar não escreve
+
+
+def test_o_agendador_e_o_ultimo_passo_e_sem_flag_nada_e_criado(nuvem):
+    (passo,) = [p for p in nuvem.PASSOS if p.nome == "agendador"]
+    assert nuvem.PASSOS[-1] is passo and "contas" in passo.depende
+    assert "só para a conta do dono" in passo.irreversivel and "US$" in passo.irreversivel

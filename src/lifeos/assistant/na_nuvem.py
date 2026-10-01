@@ -46,8 +46,8 @@ MAX_NOTA = 20_000
 _SESSAO = re.compile(r"[A-Za-z0-9-]{1,40}")
 
 AVISO_SEM_EMAIL = (
-    "Aviso: este lembrete mora na nuvem, e o aviso por e-mail dele ainda não existe (chega numa "
-    "próxima etapa); o `viking lembretes --enviar` do Mac só envia os lembretes do Mac."
+    "Aviso: este lembrete mora na nuvem, e o envio por e-mail da nuvem ainda não está ligado: o "
+    "e-mail dele só sai depois que ligar."
 )
 NADA_A_DESFAZER = (
     "Não achei nesta conversa uma exclusão ou um reagendamento na agenda para desfazer. Nada mudou."

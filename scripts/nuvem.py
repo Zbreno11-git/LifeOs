@@ -51,7 +51,10 @@ REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
 ORCAMENTO_NOME = "viking"
 ALERTAS = (0.5, 0.9, 1.0)
-MOTOR, CLI = "viking-motor", "viking-cli"  # contas de serviço (o ID pede de 6 a 30 letras)
+# Contas de serviço (o ID pede de 6 a 30 letras). O dono pede o token do `cli@` (o terminal) e do
+# `maos@` (o `viking maos`, Sessão 11, D61); o do `agendador@` é o Cloud Scheduler que pede.
+MOTOR, CLI, MAOS, AGENDADOR = "viking-motor", "viking-cli", "viking-maos", "viking-agendador"
+DO_DONO = (CLI, MAOS)
 # Os índices compostos que as consultas pedem, declarados por cada store (uma fonte só).
 INDICES = store_firestore.INDICES + registro_firestore.INDICES
 
@@ -313,7 +316,7 @@ def _membros(politica: object, papel: str) -> set[str]:
 
 def _m_contas(ctx: Contexto) -> Estado:
     faltam = []
-    for nome in (MOTOR, CLI):
+    for nome in (MOTOR, *DO_DONO):
         if _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(nome))) is None:
             faltam.append(f"{nome}@")
     if faltam:
@@ -321,16 +324,21 @@ def _m_contas(ctx: Contexto) -> Estado:
     projeto = _ler(_gcloud(ctx, "projects", "get-iam-policy", ctx.projeto))
     if f"serviceAccount:{ctx.conta(MOTOR)}" not in _membros(projeto, "roles/datastore.user"):
         return Estado(False, "motor@ sem roles/datastore.user")
-    cli = _ler(_gcloud(ctx, "iam", "service-accounts", "get-iam-policy", ctx.conta(CLI)))
-    if f"user:{ctx.dono}" not in _membros(cli, "roles/iam.serviceAccountTokenCreator"):
-        return Estado(False, "o dono ainda não pode pedir token do cli@")
-    return Estado(True, "motor@ (Firestore), cli@ (o dono pede o token)")
+    for nome in DO_DONO:
+        conta = _ler(_gcloud(ctx, "iam", "service-accounts", "get-iam-policy", ctx.conta(nome)))
+        if f"user:{ctx.dono}" not in _membros(conta, "roles/iam.serviceAccountTokenCreator"):
+            return Estado(False, f"o dono ainda não pode pedir token do {nome}@")
+    return Estado(True, "motor@ (Firestore), cli@ e maos@ (o dono pede o token)")
 
 
 def _c_contas(ctx: Contexto) -> list[list[str]]:
     """Só cria a conta que falta (repetir o passo não esbarra no "já existe"); os papéis são
     idempotentes no próprio IAM."""
-    nomes = {MOTOR: "Viking: identidade do motor", CLI: "Viking: o terminal do dono"}
+    nomes = {
+        MOTOR: "Viking: identidade do motor",
+        CLI: "Viking: o terminal do dono",
+        MAOS: "Viking: as mãos (o navegador do Mac)",
+    }
     criar = [
         _gcloud(ctx, "iam", "service-accounts", "create", nome, f"--display-name={titulo}")
         for nome, titulo in nomes.items()
@@ -348,14 +356,17 @@ def _c_contas(ctx: Contexto) -> list[list[str]]:
             "--role=roles/datastore.user",
             "--condition=None",
         ),
-        _gcloud(
-            ctx,
-            "iam",
-            "service-accounts",
-            "add-iam-policy-binding",
-            ctx.conta(CLI),
-            f"--member=user:{ctx.dono}",
-            "--role=roles/iam.serviceAccountTokenCreator",
+        *(
+            _gcloud(
+                ctx,
+                "iam",
+                "service-accounts",
+                "add-iam-policy-binding",
+                ctx.conta(nome),
+                f"--member=user:{ctx.dono}",
+                "--role=roles/iam.serviceAccountTokenCreator",
+            )
+            for nome in DO_DONO
         ),
     ]
 
@@ -542,6 +553,113 @@ def _c_ttl(ctx: Contexto) -> list[list[str]]:
     ]
 
 
+# --- o envio de lembretes pela nuvem (Sessão 11, D61): roda depois do portão da 10c ------------
+
+API_DO_AGENDADOR = "cloudscheduler.googleapis.com"
+TAREFA_DO_AGENDADOR = "viking-lembretes"
+# A rodada tem 200 s de prazo (`reminders/agendador.PRAZO_DA_RODADA_S`); o Scheduler espera um
+# pouco mais e não repete: a próxima rodada vem no minuto seguinte.
+ESPERA_DA_RODADA = "250s"
+
+
+def _tarefa_certa(ctx: Contexto, tarefa: dict) -> list[str]:
+    """O que difere do esperado na tarefa do Scheduler (vazio = certa)."""
+    url = _url(ctx)
+    alvo = tarefa.get("httpTarget", {})
+    oidc = alvo.get("oidcToken", {})
+    esperado = {
+        "a cada minuto": tarefa.get("schedule") == "* * * * *",
+        "ligada": tarefa.get("state") == "ENABLED",
+        "POST na rota do envio": alvo.get("uri") == f"{url}/tarefas/lembretes"
+        and alvo.get("httpMethod") == "POST",
+        "como o agendador@": oidc.get("serviceAccountEmail") == ctx.conta(AGENDADOR),
+        "com a audience do motor": oidc.get("audience") == url,
+    }
+    return [nome for nome, certo in esperado.items() if not certo]
+
+
+def _m_agendador(ctx: Contexto) -> Estado:
+    dados = _ler(_gcloud(ctx, "services", "list", "--enabled"))
+    if API_DO_AGENDADOR not in {s["config"]["name"] for s in dados or []}:
+        return Estado(False, "a API do Cloud Scheduler desligada (liga depois do portão da 10c)")
+    if _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(AGENDADOR))) is None:
+        return Estado(False, "falta o agendador@")
+    politica = _ler(
+        _gcloud(ctx, "run", "services", "get-iam-policy", SERVICO, f"--region={ctx.regiao}")
+    )
+    if f"serviceAccount:{ctx.conta(AGENDADOR)}" not in _membros(politica, "roles/run.invoker"):
+        return Estado(False, "o agendador@ ainda não invoca o motor")
+    tarefa = _ler(
+        _gcloud(
+            ctx, "scheduler", "jobs", "describe", TAREFA_DO_AGENDADOR, f"--location={ctx.regiao}"
+        )
+    )
+    if not isinstance(tarefa, dict):
+        return Estado(False, "falta a tarefa do Scheduler")
+    errado = _tarefa_certa(ctx, tarefa)
+    if errado:
+        return Estado(False, "a tarefa existe, mas não está: " + ", ".join(errado))
+    return Estado(True, "a cada minuto, como agendador@, só na rota do envio")
+
+
+def _c_agendador(ctx: Contexto) -> list[list[str]]:
+    """Liga a API, cria o agendador@ (se falta), dá a ele o `run.invoker` no motor e cria a
+    tarefa (se falta). O token é OIDC, com a audience do motor: nenhuma chave em disco (D47)."""
+    pronta = "apis" in ctx.prontos
+    criar_conta = (
+        not pronta
+        or _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(AGENDADOR))) is None
+    )
+    # A URL sai do número do projeto; antes das APIs (na listagem de um projeto que ainda não
+    # existe), um marcador, sem ler nada.
+    url = _url(ctx) if pronta else f"https://{SERVICO}-<número do projeto>.{ctx.regiao}.run.app"
+    comandos = [_gcloud(ctx, "services", "enable", API_DO_AGENDADOR)]
+    if criar_conta:
+        comandos.append(
+            _gcloud(
+                ctx,
+                "iam",
+                "service-accounts",
+                "create",
+                AGENDADOR,
+                "--display-name=Viking: o agendador do envio de lembretes",
+            )
+        )
+    comandos.append(
+        _gcloud(
+            ctx,
+            "run",
+            "services",
+            "add-iam-policy-binding",
+            SERVICO,
+            f"--region={ctx.regiao}",
+            f"--member=serviceAccount:{ctx.conta(AGENDADOR)}",
+            "--role=roles/run.invoker",
+        )
+    )
+    comandos.append(
+        _gcloud(
+            ctx,
+            "scheduler",
+            "jobs",
+            "create",
+            "http",
+            TAREFA_DO_AGENDADOR,
+            f"--location={ctx.regiao}",
+            "--schedule=* * * * *",
+            "--time-zone=Etc/UTC",
+            f"--uri={url}/tarefas/lembretes",
+            "--http-method=POST",
+            f"--oidc-service-account-email={ctx.conta(AGENDADOR)}",
+            f"--oidc-token-audience={url}",
+            f"--attempt-deadline={ESPERA_DA_RODADA}",
+            "--max-retry-attempts=0",
+            "--description=Viking: envia por e-mail os lembretes vencidos",
+        )
+    )
+    return comandos
+
+
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
     Passo(
@@ -581,6 +699,18 @@ PASSOS = (
         irreversivel=(
             "apaga o registro de ações (a regra do dono) e as confirmações (D60) com mais de "
             "30 dias, e as tarefas das mãos (D61) com mais de 1"
+        ),
+    ),
+    Passo(
+        "agendador",
+        "o envio de lembretes por e-mail a cada minuto, com o Mac desligado (depois do portão "
+        "da 10c)",
+        _m_agendador,
+        _c_agendador,
+        depende=("contas",),
+        irreversivel=(
+            "o motor passa a enviar sozinho, a cada minuto, o e-mail dos lembretes vencidos, só "
+            "para a conta do dono e no limite de 20 em 24 h; custa de US$ 0 a 0,10 por mês"
         ),
     ),
 )
@@ -745,15 +875,20 @@ def comandos_do_deploy(
                 ]
             ),
         ),
-        _gcloud(
-            ctx,
-            "run",
-            "services",
-            "add-iam-policy-binding",
-            SERVICO,
-            f"--region={ctx.regiao}",
-            f"--member=serviceAccount:{ctx.conta(CLI)}",
-            "--role=roles/run.invoker",
+        # O terminal e as mãos invocam (cada um só com as rotas dele: `motor.QUEM_FALA`); o
+        # agendador@ ganha o dele no passo `agendador`.
+        *(
+            _gcloud(
+                ctx,
+                "run",
+                "services",
+                "add-iam-policy-binding",
+                SERVICO,
+                f"--region={ctx.regiao}",
+                f"--member=serviceAccount:{ctx.conta(nome)}",
+                "--role=roles/run.invoker",
+            )
+            for nome in DO_DONO
         ),
     ]
 
@@ -818,6 +953,14 @@ def _segredos_so_como_volume(
     return sem_segredo and certos, f"variáveis {sorted(variaveis)}; volumes {sorted(volumes)}"
 
 
+def _invocadores_certos(ctx: Contexto, quem: set[str]) -> bool:
+    """O terminal e as mãos sempre; o agendador@ depois do passo `agendador`; ninguém mais (nem
+    `allUsers`, nem o dono em pessoa, nem o motor@)."""
+    precisam = {f"serviceAccount:{ctx.conta(nome)}" for nome in DO_DONO}
+    podem = precisam | {f"serviceAccount:{ctx.conta(AGENDADOR)}"}
+    return precisam <= quem <= podem
+
+
 def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) -> list[Prova]:
     """Rodam sempre, com ou sem deploy (skill `nuvem-e-deploy` §6 e §8): a imagem no ar, o IAM do
     serviço, a recusa sem token, a recusa do nosso código, o caminho com a identidade certa, a
@@ -844,8 +987,13 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
         _gcloud(ctx, "run", "services", "get-iam-policy", SERVICO, f"--region={ctx.regiao}")
     )
     quem = _membros(politica, "roles/run.invoker")
-    certo = quem == {f"serviceAccount:{ctx.conta(CLI)}"}
-    resultado.append(Prova("só o viking-cli@ invoca", certo, ", ".join(sorted(quem)) or "ninguém"))
+    resultado.append(
+        Prova(
+            "só o viking-cli@, o viking-maos@ (e o viking-agendador@) invocam",
+            _invocadores_certos(ctx, quem),
+            ", ".join(sorted(quem)) or "ninguém",
+        )
+    )
 
     sem = requests.get(f"{url}/versao", timeout=30)
     nosso = sem.text.strip() in ("sem token", "token recusado", "identidade sem acesso")
@@ -913,6 +1061,18 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     resultado.append(
         Prova("viking-cli@: /versao diz se tem o Gmail", no_ar is com_gmail, f"gmail: {no_ar}")
     )
+    # O envio de lembretes só está ligado com o agendador pronto e o Gmail montado
+    # (`reminders/agendador.ligado`); a primeira rodada vem até 1 min depois do passo.
+    envio = versao.json().get("envio_de_lembretes") if versao.status_code == 200 else None
+    esperado = com_gmail and _m_agendador(ctx).pronto
+    resultado.append(
+        Prova(
+            "viking-cli@: /versao diz se o envio de lembretes está ligado",
+            envio is esperado,
+            f"envio_de_lembretes: {envio} (esperado {esperado})",
+        )
+    )
+    resultado.extend(_provas_das_portas(ctx, url, cabecalho))
 
     filtro = (
         f'resource.type="cloud_run_revision" AND resource.labels.service_name="{SERVICO}" '
@@ -921,6 +1081,48 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     erros = _ler(_gcloud(ctx, "logging", "read", filtro, "--freshness=30m", "--limit=20"))
     resultado.append(Prova("log sem erro (30 min)", not erros, f"{len(erros or [])} erro(s)"))
     return resultado
+
+
+def _provas_das_portas(ctx: Contexto, url: str, cabecalho_do_cli: dict) -> list[Prova]:
+    """Cada conta só na porta dela (`motor.QUEM_FALA`, Sessão 11): o terminal não entra nas mãos,
+    as mãos não leem o resto. O pedido das mãos é torto de propósito (`por` que não é hex): passa
+    pela identidade e o motor responde 400, sem pegar nenhuma tarefa de verdade."""
+    import requests
+
+    recusa = ("identidade sem acesso",)
+    maos = {
+        "Authorization": "Bearer "
+        + _token(
+            ctx,
+            "print-identity-token",
+            f"--impersonate-service-account={ctx.conta(MAOS)}",
+            f"--audiences={url}",
+            "--include-email",
+        )
+    }
+    pedidos = [
+        ("viking-cli@: /maos/pegar recusado pelo motor", cabecalho_do_cli, "/maos/pegar", 403),
+        ("viking-maos@: /versao recusado pelo motor", maos, "/versao", 403),
+        (
+            "viking-maos@: /maos/pegar entra (pedido torto: 400, nada pego)",
+            maos,
+            "/maos/pegar",
+            400,
+        ),
+    ]
+    provas_ = []
+    for nome, cabecalho, rota, status in pedidos:
+        if rota == "/versao":
+            resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
+        else:
+            resposta = requests.post(
+                f"{url}{rota}", headers=cabecalho, json={"por": "prova"}, timeout=60
+            )
+        certo = resposta.status_code == status and (
+            status != 403 or resposta.text.strip() in recusa
+        )
+        provas_.append(Prova(nome, certo, f"HTTP {resposta.status_code}"))
+    return provas_
 
 
 def deploy(ctx: Contexto, executar: bool) -> int:

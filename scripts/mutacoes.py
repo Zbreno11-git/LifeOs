@@ -2399,6 +2399,55 @@ MUTACOES = [
         '    if config.STORE != "firestore":\n',
         "tests/test_lembretes_nuvem.py::test_sem_o_gmail_no_motor_o_envio_nunca_esta_ligado",
     ),
+    Mutacao(
+        "nuvem: as mãos fora das contas do dono e do deploy",
+        "scripts/nuvem.py",
+        "DO_DONO = (CLI, MAOS)\n",
+        "DO_DONO = (CLI,)\n",
+        "tests/test_nuvem_script.py::test_o_servico_nasce_fechado",
+    ),
+    Mutacao(
+        "nuvem: contas pronta sem o dono no token das mãos",
+        "scripts/nuvem.py",
+        "    for nome in DO_DONO:\n        conta = _ler(",
+        "    for nome in (CLI,):\n        conta = _ler(",
+        "tests/test_nuvem_script.py::test_contas_sem_o_dono_no_token_das_maos_nao_esta_pronta",
+    ),
+    Mutacao(
+        "nuvem: quem invoca aceita qualquer um a mais",
+        "scripts/nuvem.py",
+        "    return precisam <= quem <= podem\n",
+        "    return precisam <= quem\n",
+        "tests/test_nuvem_script.py::test_so_o_terminal_as_maos_e_o_agendador_invocam",
+    ),
+    Mutacao(
+        "nuvem: a tarefa do agendador com qualquer frequência",
+        "scripts/nuvem.py",
+        '        "a cada minuto": tarefa.get("schedule") == "* * * * *",\n',
+        '        "a cada minuto": True,\n',
+        "tests/test_nuvem_script.py::test_o_agendador_so_esta_pronto_com_tudo_certo",
+    ),
+    Mutacao(
+        "nuvem: a tarefa do agendador com qualquer audience",
+        "scripts/nuvem.py",
+        '        "com a audience do motor": oidc.get("audience") == url,\n',
+        '        "com a audience do motor": True,\n',
+        "tests/test_nuvem_script.py::test_o_agendador_so_esta_pronto_com_tudo_certo",
+    ),
+    Mutacao(
+        "nuvem: a tarefa do agendador criada sem audience",
+        "scripts/nuvem.py",
+        '            f"--oidc-token-audience={url}",\n',
+        '            "--oidc-token-audience=",\n',
+        "tests/test_nuvem_script.py::test_a_tarefa_do_agendador_chama_so_a_rota_do_envio_com_oidc",
+    ),
+    Mutacao(
+        "migração: o script de limpeza apaga na cópia de antes",
+        "scripts/limpar_lembretes_de_teste.py",
+        "    if onde.estado() is not None:\n",
+        "    if False:\n",
+        "tests/test_script_limpar_lembretes.py::test_depois_da_migracao_aplicar_recusa_e_nada_some",
+    ),
 ]
 
 

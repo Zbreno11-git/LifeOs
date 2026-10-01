@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-01 ~05:00Z (30/09 22:00 em Seattle): Sessão 11 com C0–C4 ✅, no C5; a 10c parada no portão de 04/10
+## ▶️ RETOMAR AQUI — 2026-10-01 ~05:40Z (30/09 22:40 em Seattle): Sessão 11 com C0–C4 ✅ e o código do C5 pronto; esperando o ok do dono para `contas`, `ttl` e o deploy; a 10c parada no portão de 04/10
 
 **Estado (2026-10-01 ~05:00Z, medido):**
 - `git status --short` limpo depois do commit "C4 da 11" · HEAD = esse commit = remoto · trava
@@ -56,13 +56,42 @@ mais o que os testes acharam:
   format "146 files already formatted"; mypy "Success: no issues found in 34 source files";
   gitleaks "no leaks found"; `uv lock --check` ok.
 
-**Próximo passo exato: o C5.** Primeiro, em `scripts/nuvem.py` (o esboço está no plano, fase 5):
-o `viking-maos@` no passo `contas` (o dono com `serviceAccountTokenCreator` nele), o
-`run.invoker` dele no `comandos_do_deploy`, a prova "quem invoca" (cli@, maos@ e, depois do
-passo `agendador`, o agendador@) e as provas novas (maos@ recusado em `/versao`, cli@ recusado em
-`/maos/pegar`, maos@ entra em `/maos/pegar` com um pedido torto: 400, nada pego; `/versao` diz o
-envio); e o passo `agendador` (a API do Scheduler, o `viking-agendador@`, o `run.invoker`, a
-tarefa `* * * * *` com OIDC), **escrito agora e executado só depois do portão**.
+**O C5, código (2026-10-01, ~05:40Z; commit "C5 da 11: o código"):**
+- `scripts/nuvem.py`: o `viking-maos@` no passo `contas` (`DO_DONO = (CLI, MAOS)`: criada, e o
+  dono com `serviceAccountTokenCreator` nas duas); o `run.invoker` das duas no deploy; a prova
+  "quem invoca" (`_invocadores_certos`: cli@ e maos@ sempre, agendador@ permitido, ninguém mais);
+  as provas das portas (`_provas_das_portas`: cli@ recusado em `/maos/pegar`, maos@ recusado em
+  `/versao`, maos@ entra em `/maos/pegar` com um pedido torto → 400, nada pego) e a do
+  `envio_de_lembretes` (esperado = o Gmail montado e o passo `agendador` pronto); o passo
+  **`agendador`** (a API do Scheduler, o `viking-agendador@`, o `run.invoker`, a tarefa
+  `viking-lembretes` `* * * * *` POST em `/tarefas/lembretes` com OIDC e a audience do motor,
+  `--attempt-deadline=250s`, sem retentativa), **escrito, não executado** (depois do portão).
+- `scripts/limpar_lembretes_de_teste.py`: `--aplicar` recusa com a marca da migração.
+- O aviso do lembrete na nuvem e a docstring do cliente, que ficaram falsos com a 11.
+- Docs parciais: `AGENTS.md` (estrutura `reminders/` e `maos/`, o motor por rota, `viking maos`,
+  `--migrar`, o passo `agendador`, duas armadilhas) e `docs/fontes/gcp-cloud-run-firestore.md`.
+- Portões: `2380 passed`; ruff, format (146), mypy (34) limpos. **A rodada inteira de mutações:
+  `mutações: 337 · mortas pelo teste esperado: 337`** · recusadas 0 · sobreviventes 0.
+- Duas passadas de revisão: (1) por onde mais se grava lembrete (achou o script de limpeza); (2)
+  o que ficou falso (o aviso "chega numa próxima etapa", a docstring do cliente). As provas das
+  portas falam com a rede e não têm teste de unidade (rodam no `deploy`).
+
+**Próximo passo exato:** com o ok do dono (pedido no chat em 2026-10-01 ~05:40Z, custo zero):
+`python scripts/nuvem.py --executar contas` e `--executar ttl`; medir (`python scripts/nuvem.py`
+→ 10 ✅ e o ⬜ do `agendador`, que só roda depois do portão). Com o segundo ok (centavos):
+`python scripts/nuvem.py deploy --executar` (sem o Gmail) e as provas ✅ (`envio_de_lembretes:
+False`, as portas); então o roteiro do Mac (logo abaixo).
+
+**O roteiro do Mac (depois do deploy):**
+1. `cd ~/LifeOs && git pull && git log --oneline -1`
+2. `uv sync --locked --extra dev`
+3. `source .venv/bin/activate && which python && python -m pytest -q`
+4. num terminal: `viking maos`
+5. noutro: `viking chat --nuvem` → "abre example.com e me diz o título" (esperado: o título,
+   pelas mãos; o terminal do `viking maos` mostra a tarefa); depois Ctrl-C no `viking maos` e
+   "abre example.com de novo" (esperado, em ~15 s: o `viking maos` não está ligado)
+6. `viking lembretes --migrar` (o ensaio: as contagens, "Envio por e-mail da nuvem: ainda não
+   ligado", "Ensaio: nada foi copiado")
 
 **C5 (depois do C4; o plano tem os detalhes):**
 - portões; a rodada **inteira** de mutações em background, sem `timeout` (esperado 282 + todas

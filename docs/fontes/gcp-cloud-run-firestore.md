@@ -93,6 +93,20 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
   O log do motor depois do turno: 28 entradas, nenhuma com a pergunta, a resposta ou o
   histórico.
 
+## As mãos e o envio de lembretes (Sessão 11, D61)
+
+- **Lido (2026-10-01, a página de preços do Cloud Scheduler):** US$ 0,10 por tarefa por mês, e 3
+  tarefas grátis por conta de faturamento. O Viking usa uma (`viking-lembretes`, `* * * * *`):
+  de US$ 0 a 0,10 por mês. O token da chamada é OIDC do `viking-agendador@`, com a audience = a
+  URL do motor; o motor só deixa essa conta em `/tarefas/lembretes`.
+- **Conta, não medição (2026-10-01):** o `viking maos` ligado 8 h por dia pergunta a cada 5 s:
+  ≈ 5,8 mil pedidos e ≈ 5,8 mil leituras do Firestore por dia, dentro do grátis do Cloud Run (2
+  milhões de pedidos por mês) e do Firestore (50 mil leituras por dia). A rodada do envio por
+  minuto não relê os atrasados: ≈ 1,5 mil leituras por dia com poucos lembretes; relendo 20
+  atrasados seriam ≈ 29 mil. Medir no ar depois de 24 h com o agendador ligado.
+- **A conferir quando o passo rodar:** se o Cloud Scheduler aceita `southamerica-east1` como
+  local da tarefa (o passo usa a região do Viking).
+
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find

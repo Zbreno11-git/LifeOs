@@ -104,3 +104,15 @@ def test_um_lembrete_de_verdade_concluido_em_menos_de_1s_pelo_mcp_fica(capsys):
     store.complete(r.id)
     _script().main(["--aplicar"])
     assert _ids() == {r.id}
+
+
+@pytest.mark.parametrize("marca", ["migrando", "migrado"])
+def test_depois_da_migracao_aplicar_recusa_e_nada_some(banco_com_lixo, capsys, marca):
+    """Sessão 11: o `viking.db` virou a cópia de antes; apagar nela não tiraria nada da nuvem."""
+    from lifeos.reminders import onde
+
+    onde.marcar(marca)
+    antes = _ids()
+    assert _script().main(["--aplicar"]) == 1
+    assert _ids() == antes
+    assert "migraram para a nuvem" in capsys.readouterr().out

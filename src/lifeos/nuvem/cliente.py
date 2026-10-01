@@ -1,9 +1,10 @@
 """O terminal do Mac falando com o motor da nuvem (Sessão 10, D58).
 
 Sem chave em disco: o Mac usa o login do Google Cloud do dono (`gcloud auth application-default
-login`, uma vez) só para pedir ao Google um token de identidade **do `viking-cli@`**, com a
-audience = a URL do motor e o e-mail dentro. O dono tem permissão de se passar só por essa conta
-(`scripts/nuvem.py`, passo "contas"), e o motor só aceita essa conta (`motor.quem_pode`). O token
+login`, uma vez) só para pedir ao Google um token de identidade **do `viking-cli@`** (o
+terminal) ou do `viking-maos@` (o `viking maos`, Sessão 11), com a audience = a URL do motor e o
+e-mail dentro. O dono tem permissão de se passar só por essas duas contas (`scripts/nuvem.py`,
+passo "contas"), e o motor confere qual delas fala com cada rota (`motor.quem_pode`). O token
 de usuário do gcloud não serviria: não tem audience (a documentação o chama de "susceptible to
 replay").
 

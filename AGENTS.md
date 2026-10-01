@@ -107,7 +107,21 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     em vez de transação, todo documento inteiro, só UUID como id), `service.py` (a borda: o fuso
     do dono entra aqui, e `VIKING_STORE` escolhe o store) e
     `envio.py` (`viking lembretes --enviar`: um e-mail por lembrete vencido em 24 h, com reserva
-    no banco para sair uma vez só)
+    no banco para sair uma vez só). Desde a Sessão 11 (D61): `onde.py` (a marca da migração 7 do
+    `viking.db`: "migrando" trava as gravações, "migrado" manda criar, listar e concluir ao motor
+    pelo `service`; `Indisponivel` é o erro que chat, MCP e CLI mostram), `transporte.py` (o
+    formato fechado de um lembrete pela rede e a impressão sha256 que confere a cópia),
+    `migrar.py` (`viking lembretes --migrar`: ensaio; com `--executar`, só com o envio da nuvem
+    ligado, copia tudo em lotes, idempotente, confere relendo e só então marca) e `agendador.py`
+    (a rodada do envio na nuvem, a cada minuto, sem reler os atrasados; "envio ligado" = uma
+    rodada sem parar nos últimos 10 min, com o token do Gmail no motor)
+  - `maos/` — as mãos (Sessão 11, D61): o navegador do Mac atendendo o chat da nuvem.
+    `fila.py` (regras puras e o formato fechado da tarefa: um `liberar` vindo da nuvem é
+    recusado), `fila_firestore.py` (a coleção `tarefas`, comparar e trocar, o resultado apagado
+    ao ser lido, TTL de 1 dia), `pedir.py` (a tool da nuvem: espera no mesmo turno, 15 s para o
+    Mac pegar, o limite da tarefa tirado do prazo do turno) e `mac.py` (`viking maos`: só com
+    TTY, pergunta a cada 5 s com o token do `viking-maos@`, roda pelo caminho do chat do Mac e
+    devolve só o texto; a liberação de um clique se aprova no próprio terminal)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima.
     `turno.py` é o núcleo do turno dos dois chats (o texto de sistema por seção, conforme as
     tools presentes; o envio com o aviso depois de um erro; o histórico em JSON); `agent.py` é o
@@ -119,8 +133,12 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
     pelo IAM e, na primeira instrução de toda rota, pela verificação do token (assinatura,
-    audience, e-mail `viking-cli@`), com `POST /chat` (o turno, sem estado: a conversa vai e
-    volta no corpo, até 4 MiB) e fumaças grátis (`/fumaca/vencidos`, `/registro`, `/segredos`);
+    audience, e o e-mail na lista **daquela rota**, `QUEM_FALA`: o `viking-cli@` no chat e nos
+    lembretes, o `viking-maos@` só em `/maos/*`, o `viking-agendador@` só em
+    `/tarefas/lembretes`; Sessão 11), com `POST /chat` (o turno, sem estado: a conversa vai e
+    volta no corpo, até 4 MiB), as rotas dos lembretes do Mac migrado (`/lembretes/criar`,
+    `/concluir`, `/importar`, `/impressoes`), as das mãos e a do envio, e fumaças grátis
+    (`/fumaca/vencidos`, `/registro`, `/segredos`);
     `cliente.py` é o terminal do Mac falando com ele (`viking lembretes --nuvem`), com o token do
     `viking-cli@` pedido pelo login do Google Cloud do dono; `chat_cliente.py` é o `viking chat
     --nuvem` (a conversa e a nota ficam na memória do terminal; Sessão 10b, D59; desde a 10c manda
@@ -133,7 +151,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   dele). `segredo NOME` sobe a chave do Gemini, o token da agenda (no VPS) ou o do Gmail (no
   Mac, que é onde ele mora; o subcomando exige só `VIKING_NUVEM_PROJETO`) para o Secret Manager
   pela entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
-  quando pedido). `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
+  quando pedido). O passo `agendador` (Sessão 11) liga o Cloud Scheduler que dispara o envio de
+  lembretes a cada minuto, só depois do portão da 10c. `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `tests/` — pytest para `src/lifeos`.
 - `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
@@ -213,10 +232,14 @@ python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras
 
 viking chat                    # assistente de chat (calendário + navegador + lembretes)
                                # dentro dele: /custos mostra o gasto da sessão
-viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes, registro e, desde
-                               # a 10c, o Gmail; o navegador e as finanças seguem no
+viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes, registro, o
+                               # Gmail quando o token dele está na nuvem, e o navegador do Mac
+                               # quando o `viking maos` está ligado; as finanças seguem no
                                # `viking chat`). O código de aprovação só aparece num
                                # terminal interativo
+viking maos                    # o navegador deste Mac atende o chat da nuvem (num terminal,
+                               # em primeiro plano; Ctrl-C desliga; a liberação de um clique
+                               # se aprova aqui)
 viking mcp-server               # servidor MCP do Viking
 viking browser --url U --goal G # executa um objetivo no navegador, sem passar pelo Gemini
 viking browser --doctor         # versão do Jev (ramo/commit/patch) + diagnóstico do Browser
@@ -236,7 +259,10 @@ viking registro                 # o que o Viking fez (7 dias; --dias N, --ids, -
 viking aprovar                  # aprova com código os pedidos que outros apps fizeram pelo MCP
 viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
                                # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
-                               # (só num terminal interativo); --nuvem lista os da nuvem
+                               # (só num terminal interativo); --nuvem lista os da nuvem;
+                               # --migrar conta e confere (ensaio), e com --executar copia
+                               # para a nuvem (só com o envio da nuvem ligado); depois disso
+                               # os lembretes do Mac moram na nuvem e o --enviar recusa
 viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
                                # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
 ```
@@ -483,6 +509,17 @@ trechos e passa cada um por `html.escape`, e só as tags dele ficam sem escape. 
 markdown (deixam HTML cru passar). `tests/test_gmail_formato.py` confere, com a lista das nossas
 tags escrita à mão, que sem elas não sobra `<` no HTML e que as palavras batem com a parte
 texto. O código de aprovação liga o texto fonte; as duas partes saem dele na hora de montar.
+
+**`reminders/envio.py` liga o store no import.** Ele faz `from lifeos.reminders.service import
+store`: o motor importa com `VIKING_STORE=firestore` e está certo, mas um teste que troca só o
+`service.store` para simular a nuvem deixa o envio no SQLite do Mac. `tests/test_lembretes_nuvem.py`
+troca os dois (e `config.STORE`, o token do Gmail e `registro._STORE`) só durante cada pedido ao
+motor em processo, e devolve os do Mac depois (Sessão 11).
+
+**Depois de migrado, o `viking.db` é a cópia de antes.** A marca (migração 7) manda criar,
+listar e concluir ao motor; o `--enviar` do Mac recusa (quem envia é a nuvem) e o script de
+limpeza também. Código novo que grava lembrete passa pelo `service`, nunca pelo store direto, e
+trata `service.Indisponivel` (a cópia em curso ou a nuvem fora) no formato dele (Sessão 11).
 
 **O `viking.db` abre só por `banco.conectar()`, e migração publicada não se edita.** Antes da 9
 cada módulo abria o arquivo, e o `conftest` isolava dois dos três: a suíte gravou um lembrete no

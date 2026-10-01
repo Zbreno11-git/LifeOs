@@ -11,7 +11,9 @@ depois do backup. O critério é o do lixo, exato:
     python scripts/limpar_lembretes_de_teste.py --aplicar    (apaga, numa transação)
 
 Abre o banco pelo `lifeos.banco` (o que também migra, com o backup automático). Não mostra
-título nem id de nenhum outro lembrete: a saída é colada em conversa.
+título nem id de nenhum outro lembrete: a saída é colada em conversa. Depois que os lembretes do
+Mac migraram para a nuvem (Sessão 11, D61), o `--aplicar` recusa: o `viking.db` é a cópia de
+antes, e apagar nela não tiraria nada da nuvem.
 """
 
 import argparse
@@ -19,6 +21,7 @@ import sys
 from datetime import datetime, timedelta
 
 from lifeos import banco
+from lifeos.reminders import onde
 
 LIMITE = timedelta(seconds=1)
 
@@ -52,6 +55,14 @@ def main(argv: list[str]) -> int:
                 "Nada apagado. Para apagar: python scripts/limpar_lembretes_de_teste.py --aplicar"
             )
             return 0
+    if onde.estado() is not None:
+        print(
+            "Nada apagado: os lembretes deste Mac migraram para a nuvem, e o viking.db é a cópia "
+            "de antes (apagar aqui não tiraria nada de lá)."
+        )
+        return 1
+    with banco.conectar() as conn:
+        lixo = _lixo(conn)
         conn.executemany("DELETE FROM reminders WHERE id = ?", [(i,) for i in lixo])
         (depois,) = conn.execute("SELECT count(*) FROM reminders").fetchone()
     print(f"Apaguei {len(lixo)}. Lembretes no banco: {total} antes, {depois} depois.")
