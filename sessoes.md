@@ -17,7 +17,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** 11 — as mãos e os lembretes com uma fonte só, **em curso desde 2026-10-01**
-  (adiantada pelo dono; D61). A 10c (o Gmail na nuvem) está parada no portão: a prova no Mac, **a
+  (adiantada pelo dono; D61). C0–C5 feitos: o motor `1480027` no ar sem o Gmail, `viking maos`
+  testado no Mac (o título do example.com veio pelas mãos), o ensaio da migração sem copiar nada.
+  O resto (o agendador, a migração de verdade, o fechamento) espera o portão da 10c. A 10c (o Gmail na nuvem) está parada no portão: a prova no Mac, **a
   partir de 2026-10-04 (Seattle)**, vem antes de subir o token do Gmail. Planos e estado no
   `PROGRESSO.md`; decisões na D60 e na D61.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).

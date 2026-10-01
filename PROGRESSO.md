@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-01 ~06:10Z (30/09 23:10 em Seattle): Sessão 11 no ar (C0–C4 ✅, o C5 publicado), esperando o roteiro do Mac; a 10c parada no portão de 04/10
+## ▶️ RETOMAR AQUI — 2026-10-01 ~06:30Z: Sessão 11 com C0–C5 ✅ (no ar e testada no Mac), esperando o portão da 10c (a prova do Gmail a partir de 2026-10-04 em Seattle)
 
 **Estado (2026-10-01 ~05:00Z, medido):**
 - `git status --short` limpo depois do commit "C4 da 11" · HEAD = esse commit = remoto · trava
@@ -88,9 +88,29 @@ mais o que os testes acharam:
   desligada (liga depois do portão da 10c)").
 - `deploy` só-leitura → **17 ✅**, `envio_de_lembretes: False (esperado False)`, `gmail: False`.
 
-**Próximo passo exato:** o dono roda o roteiro do Mac abaixo e cola a saída. Se as mãos
-responderem e o ensaio não copiar nada, o C5 fecha; a 11 então espera o portão da 10c (a seção
-"Depois do portão" do plano).
+**O roteiro do Mac passou (colado pelo dono em 2026-10-01; "outputs me parecem válidos e
+corretos"):**
+- `git pull` → `f0f9cfc`; `uv sync` trocou as 4 versões do lock da 11 (cyclopts 5.1.1,
+  google-api-python-client 2.201.0, google-auth 2.59.1, google-genai 2.26.0);
+- `python -m pytest -q` → `2207 passed, 173 skipped in 51.43s` (2380 no total, o mesmo do VPS;
+  os pulados são os do extra `nuvem`, que o Mac não instala);
+- `viking maos` → "🧭 Tarefa da nuvem: «abrir example.com e me dizer o título» em
+  https://example.com", `0 ações · 0.8s · done`, 1392 tokens do navegador (~US$ 0,000056), "✅
+  Resultado devolvido à nuvem."; Ctrl-C → "Viking maos desligado.";
+- `viking chat --nuvem` → a abertura com o navegador do Mac e sem Gmail; "O título da página é
+  "Example Domain"." (5891 tokens, ~US$ 0,0022); com o `viking maos` desligado: "O `viking maos`
+  não está ligado no Mac: a tarefa não rodou, e nada foi feito no navegador." (6407 tokens);
+- `viking lembretes --migrar` → "5 lembrete(s) (3 aberto(s), 2 concluído(s), 1 já enviado(s)
+  por e-mail)", "Na nuvem já iguais: 0.", "Envio por e-mail da nuvem: ainda não ligado.",
+  "Ensaio: nada foi copiado".
+
+**Próximo passo exato:** nada da 11 até o portão. Quando o dono trouxer a prova do Gmail (a
+partir de 2026-10-04 em Seattle): o C6 e o C7 da 10c (logo abaixo, "a 10c retoma"), depois a
+seção "Depois do portão" do plano da 11: ok → `python scripts/nuvem.py --executar agendador`
+(o passo já existe; conferir se o Scheduler aceita `southamerica-east1`), a prova do lembrete
+com o Mac desligado, `viking lembretes --migrar --executar` no Mac (esperado: "Migrado: 5
+copiado(s)" se nada mudar até lá), e o fechamento (diário, barra, `sessoes.md`, D61 fechada, a
+cota do Firestore medida depois de 24 h).
 
 **O roteiro do Mac (depois do deploy):**
 1. `cd ~/LifeOs && git pull && git log --oneline -1`
@@ -424,12 +444,12 @@ O C2 e o C4 são independentes entre si: um mexe na fila e nas mãos, o outro no
 ### Mapa de checkpoints
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
-| C0 | o lock num commit próprio (`2216 passed` antes e depois, CI pelo SHA); o plano no `PROGRESSO.md`; `sessoes.md` (a 11 com as respostas, a 11c nova, o ▶️); D61; D60 anotada | — | ⬜ |
-| C1 | o deploy monta só os segredos com versão; as tools do Gmail dependem do token; a identidade por rota; `onde` no texto de sistema (o do Mac igual byte a byte) | C0 | ⬜ |
-| C2 | a fila (contrato no emulador, corrida de 16 threads no `pegar`); `/maos/pegar` e `/maos/entregar`; `navegar_e_executar` na nuvem com prazo e vencimento | C1 | ⬜ |
-| C3 | `viking maos`: TTY, a espera, o formato fechado, a liberação no terminal, Ctrl-C; contra o motor em processo e um Jev falso | C2 | ⬜ |
-| C4 | as rotas dos lembretes e `importar`; o serviço do Mac pela nuvem com a marca (migração 7); `--migrar` (ensaio e `--executar` com a recusa); `--enviar` recusa depois de migrado; `/tarefas/lembretes` e "envio ligado"; o aviso do lembrete condicional | C1 | ⬜ |
-| C5 | portões; mutações em background (282 + as novas); duas passadas; docs parciais; push; CI; **ok** → `--executar contas` (`maos@`) e `ttl` (`tarefas`); **ok** → deploy; provas; roteiro do Mac | C2, C3, C4 | ⬜ |
+| C0 | o lock num commit próprio (`2216 passed` antes e depois, CI pelo SHA); o plano no `PROGRESSO.md`; `sessoes.md` (a 11 com as respostas, a 11c nova, o ▶️); D61; D60 anotada | — | ✅ |
+| C1 | o deploy monta só os segredos com versão; as tools do Gmail dependem do token; a identidade por rota; `onde` no texto de sistema (o do Mac igual byte a byte) | C0 | ✅ |
+| C2 | a fila (contrato no emulador, corrida de 16 threads no `pegar`); `/maos/pegar` e `/maos/entregar`; `navegar_e_executar` na nuvem com prazo e vencimento | C1 | ✅ |
+| C3 | `viking maos`: TTY, a espera, o formato fechado, a liberação no terminal, Ctrl-C; contra o motor em processo e um Jev falso | C2 | ✅ |
+| C4 | as rotas dos lembretes e `importar`; o serviço do Mac pela nuvem com a marca (migração 7); `--migrar` (ensaio e `--executar` com a recusa); `--enviar` recusa depois de migrado; `/tarefas/lembretes` e "envio ligado"; o aviso do lembrete condicional | C1 | ✅ |
+| C5 | portões; mutações em background (282 + as novas); duas passadas; docs parciais; push; CI; **ok** → `--executar contas` (`maos@`) e `ttl` (`tarefas`); **ok** → deploy; provas; roteiro do Mac | C2, C3, C4 | ✅ |
 | Pós-portão | 10c C6 e C7; **ok** → `agendador`; prova com o Mac desligado; a migração de verdade no Mac; fechamento | C5 e o portão | ⬜ |
 
 ### Fase 0 — C0: o lock e os documentos
