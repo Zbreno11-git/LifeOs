@@ -21,7 +21,7 @@
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 21 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 15 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 12 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 13 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
@@ -578,6 +578,14 @@ só aquele teste. O vizinho que conferi (`test_gmail_envio`) lia colunas sem hor
 estrutura: `tests/sentinela.aparece` procura o código como número isolado, testado dos dois lados
 (`tests/test_sentinela.py`), e as 25 passaram a usá-lo; as 251 mutações seguiram mortas. O que tem
 de novo: conferir **um** vizinho não é varrer; o `grep` da forma inteira da asserção era o passo.
+
+**2026-10-01 — a espera do IAM cobria só o `viking-cli@` (Sessão 11, C5).** As provas do
+deploy esperam enquanto o 403 é a página do Google (a permissão recém-dada propagando), mas só no
+pedido do `cli@`, cuja permissão existia desde a Sessão 10. As provas novas do `viking-maos@`,
+autorizado no mesmo deploy, caíram com 403 do Google; a resposta crua (o HTML, e o token com o
+e-mail e a audience certos) mostrou a propagação, que levou mais uns minutos. A espera agora vale
+para todo pedido das portas. O que tem de novo: a regra estava escrita para o primeiro deploy, e
+uma conta nova num deploy seguinte é outro "primeiro".
 
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 

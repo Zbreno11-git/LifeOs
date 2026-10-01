@@ -1112,16 +1112,26 @@ def _provas_das_portas(ctx: Contexto, url: str, cabecalho_do_cli: dict) -> list[
     ]
     provas_ = []
     for nome, cabecalho, rota, status in pedidos:
-        if rota == "/versao":
-            resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
-        else:
-            resposta = requests.post(
-                f"{url}{rota}", headers=cabecalho, json={"por": "prova"}, timeout=60
-            )
+        # O run.invoker recém-dado (o maos@ no primeiro deploy da 11) leva minutos para valer:
+        # enquanto o 403 é a página do Google, espera, como a do cli@ acima.
+        esperou = 0
+        while True:
+            if rota == "/versao":
+                resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
+            else:
+                resposta = requests.post(
+                    f"{url}{rota}", headers=cabecalho, json={"por": "prova"}, timeout=60
+                )
+            do_google = resposta.status_code == 403 and resposta.text.lstrip().startswith("<")
+            if not do_google or esperou >= ESPERA_DO_IAM_S:
+                break
+            time.sleep(15)
+            esperou += 15
         certo = resposta.status_code == status and (
             status != 403 or resposta.text.strip() in recusa
         )
-        provas_.append(Prova(nome, certo, f"HTTP {resposta.status_code}"))
+        quanto = f", depois de {esperou} s" if esperou else ""
+        provas_.append(Prova(nome, certo, f"HTTP {resposta.status_code}{quanto}"))
     return provas_
 
 

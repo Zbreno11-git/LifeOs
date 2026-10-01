@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-01 ~05:40Z (30/09 22:40 em Seattle): Sessão 11 com C0–C4 ✅ e o código do C5 pronto; esperando o ok do dono para `contas`, `ttl` e o deploy; a 10c parada no portão de 04/10
+## ▶️ RETOMAR AQUI — 2026-10-01 ~06:10Z (30/09 23:10 em Seattle): Sessão 11 no ar (C0–C4 ✅, o C5 publicado), esperando o roteiro do Mac; a 10c parada no portão de 04/10
 
 **Estado (2026-10-01 ~05:00Z, medido):**
 - `git status --short` limpo depois do commit "C4 da 11" · HEAD = esse commit = remoto · trava
@@ -76,11 +76,21 @@ mais o que os testes acharam:
   o que ficou falso (o aviso "chega numa próxima etapa", a docstring do cliente). As provas das
   portas falam com a rede e não têm teste de unidade (rodam no `deploy`).
 
-**Próximo passo exato:** com o ok do dono (pedido no chat em 2026-10-01 ~05:40Z, custo zero):
-`python scripts/nuvem.py --executar contas` e `--executar ttl`; medir (`python scripts/nuvem.py`
-→ 10 ✅ e o ⬜ do `agendador`, que só roda depois do portão). Com o segundo ok (centavos):
-`python scripts/nuvem.py deploy --executar` (sem o Gmail) e as provas ✅ (`envio_de_lembretes:
-False`, as portas); então o roteiro do Mac (logo abaixo).
+**No ar (2026-10-01 ~06:00Z), com o ok do dono ("Os dois", pedido no chat às ~05:40Z):**
+- `--executar contas` → `✅ contas: motor@ (Firestore), cli@ e maos@ (o dono pede o token)`;
+- `--executar ttl` → `tarefas.apagar_em: CREATING`, depois `ACTIVE`;
+- `deploy --executar` → o motor **`1480027`** no ar, sem o Gmail (`viking-gmail` fora da
+  revisão). As provas: 15 ✅ na hora e 2 ❌ nas do `viking-maos@` (403 da **página do Google**: o
+  `run.invoker` dado no mesmo deploy ainda propagando; o token tinha e-mail, audience e emissor
+  certos). Depois de ~5 min, as duas ✅ (`403 'identidade sem acesso'` e `400`). A espera pela
+  propagação agora vale para todo pedido das portas (commit seguinte; erros, classe 6).
+- `python scripts/nuvem.py` → **10 ✅** e o ⬜ do `agendador` ("a API do Cloud Scheduler
+  desligada (liga depois do portão da 10c)").
+- `deploy` só-leitura → **17 ✅**, `envio_de_lembretes: False (esperado False)`, `gmail: False`.
+
+**Próximo passo exato:** o dono roda o roteiro do Mac abaixo e cola a saída. Se as mãos
+responderem e o ensaio não copiar nada, o C5 fecha; a 11 então espera o portão da 10c (a seção
+"Depois do portão" do plano).
 
 **O roteiro do Mac (depois do deploy):**
 1. `cd ~/LifeOs && git pull && git log --oneline -1`
