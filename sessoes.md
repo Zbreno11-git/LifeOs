@@ -16,10 +16,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede. **Em curso desde
-  2026-09-30:** a parte que não depende da prova do Gmail se constrói agora (decisão do dono); a
-  prova no Mac, **a partir de 2026-10-04 (Seattle)**, é o portão antes de subir o token do Gmail e
-  de publicar. Plano e estado no `PROGRESSO.md`; decisões na D60.
+- **Sessão:** 11 — as mãos e os lembretes com uma fonte só, **em curso desde 2026-10-01**
+  (adiantada pelo dono; D61). A 10c (o Gmail na nuvem) está parada no portão: a prova no Mac, **a
+  partir de 2026-10-04 (Seattle)**, vem antes de subir o token do Gmail. Planos e estado no
+  `PROGRESSO.md`; decisões na D60 e na D61.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
@@ -28,8 +28,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
 - **Agora (2026-10-01):** a 10c está com C0–C5 ✅ e parada no portão (a prova do token do Gmail
   no Mac a partir de 2026-10-04 em Seattle, `viking gmail --login` sem abrir o navegador). Por
-  decisão do dono, a **Sessão 11** se abre e se implementa antes disso (ver a nota na 11); a
-  10c retoma no C6 quando o dono trouxer a prova.
+  decisão do dono, a **Sessão 11** foi aberta e planejada antes disso (as mãos, os lembretes com
+  uma fonte só, a migração e o código do envio pela nuvem; D61) e está em curso; o backup no
+  Drive e a medição das finanças foram para a **11c**, depois de 04/10. A 10c retoma no C6
+  quando o dono trouxer a prova.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
@@ -772,7 +774,25 @@ O que estava escrito na abertura:
 - **Herdado da 10b:** o laço do chat no motor, o teto de gasto, o registro de ações no Firestore,
   os segredos como volume e `viking chat --nuvem`.
 
-## Sessão 11 — nuvem 2: vida própria (planejada em 2026-09-28)
+## Sessão 11 — nuvem 2: as mãos e os lembretes com uma fonte só (em curso desde 2026-10-01)
+
+- **Respostas do dono na abertura (2026-10-01, D61):**
+  - esta sessão = as mãos e a migração; o Drive e as finanças vão para a 11c, depois de 04/10;
+  - depois da migração, o Mac lê e grava lembretes **na nuvem, pelo motor** (uma fonte só);
+  - o chat da nuvem usa o navegador **esperando no mesmo turno**, e a liberação de um clique fica
+    no terminal do `viking maos`;
+  - **publicar antes de 04/10 com o Gmail opcional** na nuvem (revê o "nenhum deploy antes da
+    prova" da D60);
+  - a migração de verdade **só com o e-mail da nuvem ligado** (antes, só o ensaio);
+  - o limite de 20 e-mails em 24 h fica **separado** no Mac e na nuvem;
+  - migra **tudo** (abertos, concluídos, o estado do envio).
+
+  Plano, medições e checkpoints no `PROGRESSO.md`.
+- **Entrega desta sessão:** `viking maos` e o navegador no `viking chat --nuvem`; a identidade
+  conferida por rota no motor; o Gmail opcional na nuvem; os lembretes do Mac pela nuvem com a
+  marca da migração 7; `viking lembretes --migrar`; a rota do envio pela nuvem (o agendador liga
+  depois do portão da 10c).
+- O texto abaixo é a proposta de partida de 2026-09-28, mantida como registro.
 
 - **Adiantada (dono, 2026-10-01):** "quero adiantar outras coisas antes do dia 04": a 11 se
   abre, planeja e implementa **antes** do portão da 10c, que fica parada no C6 (a prova do
@@ -827,6 +847,20 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:**
   - só o `googleapiclient`, para o Drive, que já está no lock;
   - o scanner de segredos, escolhido na abertura.
+
+## Sessão 11c — backup no Drive e a medição das finanças (separada da 11 em 2026-10-01)
+
+- **Separada pelo dono na abertura da 11 (2026-10-01, D61):** a 11 ficou com as mãos e a
+  migração; estas duas entregas vêm **depois de 2026-10-04**.
+- **Primeiro passo:** o consentimento do Drive (`drive.file`, outro login no Mac) só **depois**
+  da prova do token do Gmail (o portão da 10c), para não misturar logins no dia da prova.
+- **Entrega:**
+  - backup no Drive (`drive.file`) que restaura num banco novo, vazio (a proposta de arquitetura
+    está na Sessão 11, "Backup");
+  - a medição da D51, só lendo: o produto de pagamentos está desligado na aplicação Pluggy do
+    dono? A documentação oficial diz que o PIX exige autorização no banco? A chave da Pluggy está
+    no `.env` do VPS, e nada a usa sem o pedido do dono: a medição é um GET, pedido na abertura.
+- **Libs:** só o `googleapiclient` (já no lock).
 
 ## Sessão 11b — formulários: o Viking preenche, o dono envia (pedida em 2026-09-29)
 
