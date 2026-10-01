@@ -133,6 +133,16 @@ def list_open(type: str | None = None) -> list[Reminder]:
         return [_lembrete(linha) for linha in conn.execute(query, params)]
 
 
+def todos() -> list[Reminder]:
+    """Todos, abertos e concluídos, pela criação: o que a migração para a nuvem copia (Sessão 11,
+    D61). Fora do `Protocol`: só o SQLite do Mac é origem de cópia."""
+    with _session() as conn:
+        return [
+            _lembrete(linha)
+            for linha in conn.execute(f"SELECT {_COLUNAS} FROM reminders ORDER BY created_at, id")
+        ]
+
+
 def complete(reminder_id: str) -> Reminder | None:
     """`None` se o id não existe. Concluir de novo não muda a hora da primeira vez."""
     agora = _agora()

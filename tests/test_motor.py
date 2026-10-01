@@ -87,7 +87,12 @@ def test_o_terminal_do_dono_entra(cliente, monkeypatch):
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "")
     resposta = _get(cliente, "/versao", _token())
     assert resposta.status_code == 200
-    assert resposta.json() == {"commit": "abc123", "gmail": False, "maos": True}
+    assert resposta.json() == {
+        "commit": "abc123",
+        "gmail": False,
+        "maos": True,
+        "envio_de_lembretes": False,
+    }
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
     assert _get(cliente, "/versao", _token()).json()["gmail"] is True
 

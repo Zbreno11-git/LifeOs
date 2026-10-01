@@ -106,7 +106,10 @@ def _enviar_um(lembrete: Reminder, execucao: str, agora: datetime, resultado: Re
     return True
 
 
-def enviar_vencidos(agora: datetime | None = None) -> Resultado:
+def enviar_vencidos(agora: datetime | None = None, *, listar_atrasados: bool = True) -> Resultado:
+    """Uma rodada. `listar_atrasados=False` na nuvem (Sessão 11): o agendador roda a cada minuto, e
+    reler os vencidos há mais de 24 h custaria uma leitura do Firestore por lembrete por minuto;
+    a lista só serve ao dono na CLI."""
     agora = (agora or datetime.now(UTC)).astimezone(UTC)
     execucao = uuid.uuid4().hex
     resultado = Resultado()
@@ -121,7 +124,8 @@ def enviar_vencidos(agora: datetime | None = None) -> Resultado:
         if not _enviar_um(lembrete, execucao, agora, resultado):
             resultado.ficaram = len(vencidos) - posicao
             break
-    resultado.atrasados = [r.title for r in store.atrasados(agora - JANELA)]
+    if listar_atrasados:
+        resultado.atrasados = [r.title for r in store.atrasados(agora - JANELA)]
     return resultado
 
 

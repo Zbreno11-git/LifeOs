@@ -164,23 +164,69 @@ def _instante(texto: Any) -> datetime | None:
     return momento
 
 
+def _lembrete(item: Any) -> Reminder:
+    try:
+        return Reminder(
+            id=item["id"],
+            type=item["type"],
+            title=item["title"],
+            body=item["body"],
+            tags=list(item["tags"]),
+            due_at=_instante(item["due_at"]),
+            completed_at=_instante(item.get("completed_at")),
+            created_at=_instante(item["created_at"]),
+            enviado_em=_instante(item["enviado_em"]),
+            envio_estado=item["envio_estado"],
+        )
+    except (KeyError, TypeError, ValueError):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado") from None
+
+
 def lembretes_pendentes() -> list[Reminder]:
     """Os pendentes que moram no Firestore, pela ordem que o motor manda."""
     dados = _pedir("/lembretes")
-    try:
-        return [
-            Reminder(
-                id=item["id"],
-                type=item["type"],
-                title=item["title"],
-                body=item["body"],
-                tags=list(item["tags"]),
-                due_at=_instante(item["due_at"]),
-                created_at=_instante(item["created_at"]),
-                enviado_em=_instante(item["enviado_em"]),
-                envio_estado=item["envio_estado"],
-            )
-            for item in dados["lembretes"]
-        ]
-    except (KeyError, TypeError, ValueError):
-        raise ErroDaNuvem("a nuvem respondeu num formato inesperado") from None
+    itens = dados.get("lembretes")
+    if not isinstance(itens, list):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return [_lembrete(item) for item in itens]
+
+
+# --- os lembretes do Mac depois da migração (Sessão 11, D61) ------------------------------------
+
+
+def criar_lembrete(titulo: str, corpo: str, tags: str, quando: str, source: str) -> Reminder:
+    """Cria na nuvem; `quando` é um instante ISO 8601 com fuso, ou vazio (o fuso do dono foi
+    decidido no Mac, na borda)."""
+    corpo_do_pedido = {
+        "titulo": titulo,
+        "corpo": corpo,
+        "tags": tags,
+        "quando": quando,
+        "source": source,
+    }
+    dados = _chamar(_sessao(), "POST", "/lembretes/criar", corpo=corpo_do_pedido)
+    return _lembrete(dados.get("lembrete"))
+
+
+def concluir_lembrete(reminder_id: str) -> Reminder | None:
+    dados = _chamar(_sessao(), "POST", "/lembretes/concluir", corpo={"id": reminder_id})
+    item = dados.get("lembrete")
+    return None if item is None else _lembrete(item)
+
+
+def importar_lembretes(sessao: Any, lote: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """Copia um lote (até `transporte.MAX_LOTE`) para a nuvem: {criados, iguais, diferentes}."""
+    dados = _chamar(sessao, "POST", "/lembretes/importar", corpo={"lembretes": lote})
+    resposta = {c: dados.get(c) for c in ("criados", "iguais", "diferentes")}
+    if not all(isinstance(v, list) for v in resposta.values()):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return {c: [str(i) for i in v or []] for c, v in resposta.items()}
+
+
+def impressoes_dos_lembretes(sessao: Any) -> dict[str, str]:
+    """{id: impressão} de todos os lembretes da nuvem (`reminders/transporte.impressao`)."""
+    dados = _chamar(sessao, "GET", "/lembretes/impressoes")
+    impressoes = dados.get("impressoes")
+    if not isinstance(impressoes, dict):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return {str(k): str(v) for k, v in impressoes.items()}

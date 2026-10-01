@@ -20,7 +20,7 @@ from tests import banco_antigo
 
 from lifeos import banco
 
-TABELAS = ("reminders", "acoes", "confirmacoes")
+TABELAS = ("reminders", "acoes", "confirmacoes", "lembretes_na_nuvem")
 IGUAIS = ("acoes", "confirmacoes")  # a migração 5 reconstrói `reminders` (id novo): ver abaixo
 _CONTEUDO = (
     "type, title, body, tags, due_at, completed_at, source, external_id, metadata, created_at, "
@@ -252,6 +252,7 @@ PUBLICADAS = {
     4: "1684c0620d7745e7e85c8956b7a61d3da67af915068580aabc9b8408b0e8cbe5",
     5: "674966561ed3b66c5e6307acc97edb3bdaf1a2bc8182804a8db75e5fba0fdc76",
     6: "d5342cd47e86be7612b88a44da0c92ab40af2a195a46bab6096637716f20141d",
+    7: "4d04ef2b0f83d3dd04166b087fda20a17613c00e6633984fbd1a31ba40ce9173",
 }
 
 

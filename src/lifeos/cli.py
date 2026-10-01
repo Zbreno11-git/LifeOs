@@ -362,14 +362,44 @@ def _registro(args: argparse.Namespace) -> int:
     return 0
 
 
+def _migrar(*, executar: bool) -> int:
+    """`viking lembretes --migrar [--executar]` (Sessão 11, D61): 0 = ensaio feito ou migrado;
+    1 = não migrou (o texto diz por quê)."""
+    from lifeos.nuvem import cliente
+    from lifeos.reminders import migrar
+
+    try:
+        relatorio = migrar.executar() if executar else migrar.ensaio()
+    except cliente.ErroDaNuvem as exc:
+        print(f"❌ Nuvem: {exc}. Nada foi marcado como migrado.", file=sys.stderr)
+        return 1
+    except migrar.NaoMigrou as exc:
+        print(f"❌ Não migrei: {exc}.", file=sys.stderr)
+        return 1
+    print(migrar.texto(relatorio, executou=executar))
+    return 0
+
+
 def _lembretes(args: argparse.Namespace) -> int:
     """Sem opção: os pendentes. `--nuvem`: os pendentes que moram no Firestore, pelo motor (1 se a
     nuvem não respondeu). `--enviar`: 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial
     (limite, "não sei se saiu", recusado); 1 = não rodou (sem login no Gmail, cota)."""
     from lifeos import config
     from lifeos.browser._redacao import limpar_controles
-    from lifeos.reminders import envio, service
+    from lifeos.reminders import envio, onde, service
 
+    if args.executar and not args.migrar:
+        print("❌ --executar só vale com --migrar.", file=sys.stderr)
+        return 1
+    if args.migrar:
+        return _migrar(executar=args.executar)
+    if args.enviar and onde.estado() is not None:
+        print(
+            "❌ Os lembretes deste Mac migraram para a nuvem: quem os envia por e-mail é a nuvem "
+            "(a cada minuto). Nada foi enviado daqui.",
+            file=sys.stderr,
+        )
+        return 1
     if args.nuvem:
         from lifeos.nuvem import cliente
 
@@ -513,6 +543,14 @@ def main() -> None:
     )
     modo_lembretes.add_argument(
         "--nuvem", action="store_true", help="Os pendentes que moram na nuvem (o motor no GCP)"
+    )
+    modo_lembretes.add_argument(
+        "--migrar",
+        action="store_true",
+        help="Ensaio da cópia dos lembretes deste Mac para a nuvem (com --executar, copia)",
+    )
+    lembretes_cli.add_argument(
+        "--executar", action="store_true", help="Com --migrar: copia de verdade e confere"
     )
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"

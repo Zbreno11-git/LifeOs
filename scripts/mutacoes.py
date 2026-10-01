@@ -1761,8 +1761,8 @@ MUTACOES = [
     Mutacao(
         "firestore: add repetido sobrescreve o que existe",
         "src/lifeos/reminders/store_firestore.py",
-        "        ref.create(",
-        "        ref.set(",
+        "        ref.create(\n            _documento(",
+        "        ref.set(\n            _documento(",
         "tests/test_reminders_contrato.py::test_add_repetido_com_o_mesmo_id_nao_duplica",
     ),
     Mutacao(

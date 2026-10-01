@@ -250,6 +250,19 @@ CREATE TABLE lembretes_v5 (
 # Sessão 10c (D60): quantos códigos errados a proposta já recebeu; no limite, ela é cancelada.
 _M6_TENTATIVAS = ("ALTER TABLE confirmacoes ADD COLUMN erros INTEGER NOT NULL DEFAULT 0",)
 
+# Sessão 11 (D61): onde moram os lembretes deste Mac. Uma linha só (`id = 1`): sem ela, aqui;
+# "migrando", as gravações daqui param (a cópia para a nuvem está em curso); "migrado", o Mac lê e
+# grava na nuvem, pelo motor, e a tabela `reminders` vira a cópia congelada de antes.
+_M7_LEMBRETES_NA_NUVEM = (
+    """
+CREATE TABLE lembretes_na_nuvem (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    estado TEXT NOT NULL CHECK (estado IN ('migrando', 'migrado')),
+    em TEXT NOT NULL
+)
+""",
+)
+
 
 MIGRACOES: tuple[Migracao, ...] = (
     Migracao(1, "lembretes: tabela e índice de prazo", _M1_LEMBRETES),
@@ -258,6 +271,7 @@ MIGRACOES: tuple[Migracao, ...] = (
     Migracao(4, "confirmações: tabela", _M4_CONFIRMACOES),
     Migracao(5, "lembretes: id UUID e reserva de envio", _m5_lembretes_com_uuid_e_envio),
     Migracao(6, "confirmações: tentativas erradas", _M6_TENTATIVAS),
+    Migracao(7, "lembretes: a marca de que moram na nuvem", _M7_LEMBRETES_NA_NUVEM),
 )
 
 

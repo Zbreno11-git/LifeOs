@@ -55,8 +55,11 @@ NADA_A_DESFAZER = (
 
 
 def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "") -> str:
+    from lifeos.reminders import agendador
+
     texto = agent.criar_lembrete(titulo, corpo, tags, quando)
-    if texto.startswith("✅"):
+    # O aviso some sozinho quando o envio pela nuvem liga (Sessão 11): o agendador rodando.
+    if texto.startswith("✅") and not agendador.ligado():
         texto = f"{texto} {AVISO_SEM_EMAIL}"
     return texto
 

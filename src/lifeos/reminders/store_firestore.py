@@ -150,6 +150,57 @@ def add(
     return _lembrete(snap)
 
 
+IGUAL, DIFERENTE, CRIADO = "igual", "diferente", "criado"
+
+
+def importar(lembrete: Reminder) -> str:
+    """Grava um lembrete que veio do Mac (Sessão 11, D61), com o id e todo campo de lá, inclusive o
+    estado do envio. Idempotente: se o id já existe, nada muda, e a resposta diz se o que está na
+    nuvem é `igual` ao que veio ou `diferente` (nunca sobrescreve). Fora do `Protocol`: só a
+    nuvem recebe cópia."""
+    from google.api_core.exceptions import AlreadyExists
+
+    from lifeos.reminders import transporte
+
+    ref = _ref(lembrete.id or "")
+    if ref is None:
+        raise ValueError("id de lembrete tem de ser um UUID")
+    documento = _documento(
+        type=lembrete.type,
+        title=lembrete.title,
+        body=lembrete.body,
+        tags=list(lembrete.tags),
+        due_at=_instante(lembrete.due_at) if lembrete.due_at else None,
+        completed_at=_instante(lembrete.completed_at) if lembrete.completed_at else None,
+        source=lembrete.source,
+        external_id=lembrete.external_id,
+        metadata=dict(lembrete.metadata),
+        created_at=_instante(lembrete.created_at) if lembrete.created_at else None,
+        updated_at=_instante(lembrete.updated_at) if lembrete.updated_at else None,
+        enviado_em=_instante(lembrete.enviado_em) if lembrete.enviado_em else None,
+        envio_estado=lembrete.envio_estado,
+    )
+    try:
+        ref.create(documento)
+    except AlreadyExists:
+        atual = ref.get()
+        mesmo = atual.exists and transporte.impressao(_lembrete(atual)) == transporte.impressao(
+            lembrete
+        )
+        return IGUAL if mesmo else DIFERENTE
+    return CRIADO
+
+
+def impressoes() -> dict[str, str]:
+    """{id: impressão} de todos os lembretes da nuvem: a conferência da cópia."""
+    from lifeos.reminders import transporte
+
+    return {
+        snap.id: transporte.impressao(_lembrete(snap))
+        for snap in _cliente().collection(COLECAO).stream()
+    }
+
+
 def get(reminder_id: str) -> Reminder | None:
     ref = _ref(reminder_id)
     if ref is None:

@@ -113,6 +113,7 @@ def _lembrete(lembrete: Reminder) -> dict[str, Any]:
         "body": lembrete.body,
         "tags": lembrete.tags,
         "due_at": _instante(lembrete.due_at),
+        "completed_at": _instante(lembrete.completed_at),
         "created_at": _instante(lembrete.created_at),
         "enviado_em": _instante(lembrete.enviado_em),
         "envio_estado": lembrete.envio_estado,
@@ -122,7 +123,17 @@ def _lembrete(lembrete: Reminder) -> dict[str, Any]:
 async def versao(request: Request) -> JSONResponse:
     """O commit no ar e o que este motor tem (o terminal do Mac diz isso na abertura)."""
     await _quem(request)
-    return JSONResponse({"commit": COMMIT, "gmail": config.gmail_no_motor(), "maos": True})
+    from lifeos.reminders import agendador
+
+    ligado = await run_in_threadpool(agendador.ligado)
+    return JSONResponse(
+        {
+            "commit": COMMIT,
+            "gmail": config.gmail_no_motor(),
+            "maos": True,
+            "envio_de_lembretes": ligado,
+        }
+    )
 
 
 async def lembretes(request: Request) -> JSONResponse:
@@ -237,7 +248,130 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/chat": frozenset({CLI}),
     "/maos/pegar": frozenset({MAOS}),
     "/maos/entregar": frozenset({MAOS}),
+    "/lembretes/criar": frozenset({CLI}),
+    "/lembretes/concluir": frozenset({CLI}),
+    "/lembretes/importar": frozenset({CLI}),
+    "/lembretes/impressoes": frozenset({CLI}),
+    "/tarefas/lembretes": frozenset({AGENDADOR}),
 }
+
+
+# --- os lembretes do Mac depois da migração e o envio pela nuvem (Sessão 11, D61) -------------
+
+MAX_CORPO_DA_COPIA = 1024 * 1024  # um lote de 100 lembretes com folga
+
+
+def _texto_do_pedido(dados: dict[str, Any], campo: str) -> str:
+    valor = dados.get(campo, "")
+    if not isinstance(valor, str):
+        raise ValueError(f"{campo} tem de ser texto")  # noqa: TRY004 - o motor: 400
+    return valor
+
+
+def _criar(dados: Any) -> dict[str, Any]:
+    if not isinstance(dados, dict):
+        raise ValueError("o pedido tem de ser um objeto JSON")  # noqa: TRY004 - o motor: 400
+    quando = _texto_do_pedido(dados, "quando")
+    if quando and datetime.fromisoformat(quando).tzinfo is None:
+        raise ValueError("quando tem de ser um instante com fuso (o Mac decide o fuso)")
+    titulo = _texto_do_pedido(dados, "titulo")
+    if not titulo.strip():
+        raise ValueError("o lembrete precisa de um título")
+    registro.ORIGEM.set("mac")
+    lembrete = service.criar_lembrete(
+        titulo,
+        _texto_do_pedido(dados, "corpo"),
+        _texto_do_pedido(dados, "tags"),
+        quando,
+        source=_texto_do_pedido(dados, "source") or "mac",
+    )
+    return {"lembrete": _lembrete(lembrete)}
+
+
+def _concluir(dados: Any) -> dict[str, Any]:
+    if not isinstance(dados, dict) or not isinstance(dados.get("id"), str):
+        raise ValueError("o pedido tem de ter o id do lembrete")  # noqa: TRY004 - o motor: 400
+    registro.ORIGEM.set("mac")
+    lembrete = service.concluir(dados["id"])
+    return {"lembrete": _lembrete(lembrete) if lembrete else None}
+
+
+def _importar(dados: Any) -> dict[str, Any]:
+    from lifeos.reminders import store_firestore, transporte
+
+    lista = dados.get("lembretes") if isinstance(dados, dict) else None
+    if not isinstance(lista, list) or not 1 <= len(lista) <= transporte.MAX_LOTE:
+        raise ValueError(f"o lote tem de ter de 1 a {transporte.MAX_LOTE} lembretes")
+    lembretes = [transporte.de_dict(item) for item in lista]  # tudo conferido antes de gravar
+    registro.ORIGEM.set("mac")
+    resposta: dict[str, list[str]] = {"criados": [], "iguais": [], "diferentes": []}
+    chave = {
+        store_firestore.CRIADO: "criados",
+        store_firestore.IGUAL: "iguais",
+        store_firestore.DIFERENTE: "diferentes",
+    }
+    with registro.acao("lembrete.importar", {"quantos": len(lembretes)}) as marca:
+        for lembrete in lembretes:
+            resposta[chave[store_firestore.importar(lembrete)]].append(str(lembrete.id))
+        marca.feito({c: len(v) for c, v in resposta.items()})
+    return resposta
+
+
+def _impressoes() -> dict[str, Any]:
+    from lifeos.reminders import store_firestore
+
+    return {"impressoes": store_firestore.impressoes()}
+
+
+async def _lembretes_post(request: Request, fazer: Any, teto: int) -> JSONResponse:
+    dados = await _corpo_pequeno(request, teto)
+    if dados is None:
+        return JSONResponse({"erro": "o pedido passou do tamanho ou não é JSON"}, 400)
+    try:
+        return JSONResponse(await run_in_threadpool(fazer, dados))
+    except ValueError as exc:  # o pedido veio torto: a mensagem não ecoa conteúdo
+        return JSONResponse({"erro": str(exc)}, 400)
+
+
+async def lembretes_criar(request: Request) -> JSONResponse:
+    """O Mac cria um lembrete (depois da migração): a ação e o registro moram aqui (D57)."""
+    await _quem(request)
+    return await _lembretes_post(request, _criar, MAX_CORPO_DAS_MAOS)
+
+
+async def lembretes_concluir(request: Request) -> JSONResponse:
+    await _quem(request)
+    return await _lembretes_post(request, _concluir, MAX_CORPO_DAS_MAOS)
+
+
+async def lembretes_importar(request: Request) -> JSONResponse:
+    """Um lote da migração do Mac: idempotente pelo id, nunca sobrescreve."""
+    await _quem(request)
+    return await _lembretes_post(request, _importar, MAX_CORPO_DA_COPIA)
+
+
+async def lembretes_impressoes(request: Request) -> JSONResponse:
+    """A conferência da cópia: a impressão de cada lembrete da nuvem (nenhum título sai)."""
+    await _quem(request)
+    return JSONResponse(await run_in_threadpool(_impressoes))
+
+
+def _rodada() -> dict[str, Any]:
+    from lifeos.reminders import agendador
+
+    registro.ORIGEM.set("agendador")
+    return agendador.rodar()
+
+
+async def tarefas_lembretes(request: Request) -> JSONResponse:
+    """A rodada do envio, disparada pelo Cloud Scheduler a cada minuto (só o
+    `viking-agendador@`). A resposta tem só contagens; um erro diz só o tipo."""
+    await _quem(request)
+    try:
+        return JSONResponse(await run_in_threadpool(_rodada))
+    except Exception as exc:  # noqa: BLE001 - o log leva só o tipo, nunca um título
+        log.error("rodada dos lembretes falhou: %s", type(exc).__name__)
+        return JSONResponse({"erro": f"a rodada falhou ({type(exc).__name__})"}, 500)
 
 
 async def _corpo_pequeno(request: Request, teto: int) -> Any:
@@ -302,5 +436,10 @@ ROTAS = [
     Route("/chat", chat, methods=["POST"]),
     Route("/maos/pegar", maos_pegar, methods=["POST"]),
     Route("/maos/entregar", maos_entregar, methods=["POST"]),
+    Route("/lembretes/criar", lembretes_criar, methods=["POST"]),
+    Route("/lembretes/concluir", lembretes_concluir, methods=["POST"]),
+    Route("/lembretes/importar", lembretes_importar, methods=["POST"]),
+    Route("/lembretes/impressoes", lembretes_impressoes, methods=["GET"]),
+    Route("/tarefas/lembretes", tarefas_lembretes, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)
