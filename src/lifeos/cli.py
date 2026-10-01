@@ -415,6 +415,10 @@ def main() -> None:
     subparsers.add_parser(
         "mcp-server", help="Inicia o servidor MCP do Viking (calendário + lembretes)"
     )
+    subparsers.add_parser(
+        "maos",
+        help="Liga o navegador deste Mac ao chat da nuvem (num terminal; Ctrl-C desliga)",
+    )
     navegador = subparsers.add_parser(
         "browser", help="Executa um objetivo num navegador real (executor Jev)"
     )
@@ -544,6 +548,11 @@ def main() -> None:
         from lifeos.assistant.agent import iniciar_assistente
 
         iniciar_assistente()
+    elif args.command == "maos":
+        from lifeos.maos import mac
+
+        registro.ORIGEM.set("maos")  # as tarefas do navegador, no registro do Mac (D57)
+        sys.exit(mac.iniciar())
     elif args.command == "mcp-server":
         from lifeos.mcp_server.server import main as run_server
 

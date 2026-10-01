@@ -313,10 +313,13 @@ def _chamadas(predicado) -> set[str]:
 
 
 def test_so_o_laco_do_chat_e_a_cli_executam_aprovacoes():
-    """Uma tool do Gemini que chamasse `clicar_aprovado` desfaria a D26/D38 em silêncio."""
+    """Uma tool do Gemini que chamasse `clicar_aprovado` desfaria a D26/D38 em silêncio. O
+    `viking maos` (Sessão 11, D61) é o terceiro: um terminal do Mac, com o dono digitando o
+    código ali; a nuvem nunca chama (o formato da tarefa nem tem esse campo)."""
     assert _chamadas(lambda no: getattr(no.func, "attr", None) == "clicar_aprovado") == {
         "assistant/agent.py",
         "cli.py",
+        "maos/mac.py",
     }
 
 

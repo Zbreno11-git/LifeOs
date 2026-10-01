@@ -49,6 +49,22 @@ def executar_no_navegador(
     Um clique de sair ou de mexer na conta recusado pelo freio vira proposta de liberação, com o
     código mostrado só no terminal (`liberacao`); o texto devolvido — o que o Gemini lê — nunca
     leva o código."""
+    texto, _resultado, _proposta = executar_e_contar(
+        url, objetivo, timeout_s=timeout_s, manter_aberta=manter_aberta, silencioso=silencioso
+    )
+    return texto
+
+
+def executar_e_contar(
+    url: str,
+    objetivo: str | Sequence[str],
+    *,
+    timeout_s: float | None = None,
+    manter_aberta: bool = True,
+    silencioso: bool = False,
+) -> tuple[str, BrowserResult, object | None]:
+    """O mesmo, devolvendo também o resultado e a proposta de liberação (ou `None`): o `viking
+    maos` (Sessão 11) entrega o texto à nuvem e, se houve proposta, pede o código no terminal."""
     objetivos = [objetivo] if isinstance(objetivo, str) else list(objetivo)
     if not silencioso:
         versao_jev.avisar()
@@ -71,7 +87,14 @@ def executar_no_navegador(
     if proposta is not None:
         liberacao.ao_dono(liberacao.texto_da_proposta(proposta))
         texto = f"{texto}\n{liberacao.AVISO_AO_GEMINI}"
-    return texto
+    return texto, resultado, proposta
 
 
-__all__ = ["BrowserResult", "executar_no_navegador", "formatar", "imprimir_progresso", "run_jev"]
+__all__ = [
+    "BrowserResult",
+    "executar_e_contar",
+    "executar_no_navegador",
+    "formatar",
+    "imprimir_progresso",
+    "run_jev",
+]

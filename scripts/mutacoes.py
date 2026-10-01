@@ -2181,6 +2181,49 @@ MUTACOES = [
         "    if False:",
         "tests/test_chat_nuvem_cliente.py::test_a_abertura_nao_promete_o_gmail_que_nao_esta_la",
     ),
+    # --- Sessão 11 (D61), C3: `viking maos` no Mac ---------------------------------------------
+    Mutacao(
+        "maos no Mac: roda a tarefa sem conferir o formato (um liberar passaria)",
+        "src/lifeos/maos/mac.py",
+        "        tarefa = fila.validar_tarefa(bruta)",
+        "        tarefa = fila.Tarefa(**{c: bruta[c] for c in fila.CAMPOS})",
+        "tests/test_maos_mac.py::test_tarefa_com_liberar_nao_roda",
+    ),
+    Mutacao(
+        "maos no Mac: o código da liberação vai junto na entrega à nuvem",
+        "src/lifeos/maos/mac.py",
+        "    if _entregar(sessao, tarefa.id, por, texto):",
+        '    if _entregar(sessao, tarefa.id, por, texto + str(getattr(proposta, "codigo", ""))):',
+        "tests/test_maos_mac.py::test_o_codigo_da_liberacao_fica_neste_terminal",
+    ),
+    Mutacao(
+        "maos no Mac: começa sem terminal",
+        "src/lifeos/maos/mac.py",
+        "    if not _terminal():",
+        "    if False:",
+        "tests/test_maos_mac.py::test_sem_terminal_nao_comeca",
+    ),
+    Mutacao(
+        "maos no Mac: rede caída martela a nuvem sem esperar mais",
+        "src/lifeos/maos/mac.py",
+        "                espera = min(espera * 2, ESPERA_MAX_S)",
+        "                espera = espera",
+        "tests/test_maos_mac.py::test_rede_caida_espera_mais_a_cada_volta_e_nao_desiste",
+    ),
+    Mutacao(
+        "maos no Mac: Ctrl-C no meio da tarefa não desliga",
+        "src/lifeos/maos/mac.py",
+        '    if resultado.error_code == "timeout_terminated":  # Ctrl-C no meio da tarefa',
+        "    if False:",
+        "tests/test_maos_mac.py::test_ctrl_c_no_meio_da_tarefa_entrega_e_desliga",
+    ),
+    Mutacao(
+        "maos no Mac: continua pedindo o código depois do cancelamento",
+        "src/lifeos/maos/mac.py",
+        "    while confirmacao.aberta(liberacao.ACAO):",
+        "    for _ in range(4):",
+        "tests/test_maos_mac.py::test_tres_codigos_errados_cancelam_a_liberacao",
+    ),
 ]
 
 

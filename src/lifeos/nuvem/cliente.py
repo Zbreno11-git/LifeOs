@@ -32,12 +32,17 @@ class ErroDaNuvem(RuntimeError):
     """A nuvem não respondeu o que devia; a mensagem é para o dono ler."""
 
 
-def conta_do_terminal() -> str:
-    return f"viking-cli@{config.NUVEM_PROJETO}.iam.gserviceaccount.com"
+CLI, MAOS = "viking-cli", "viking-maos"
 
 
-def _sessao() -> Any:
-    """Uma sessão HTTP que põe o token de identidade do `viking-cli@` em cada pedido."""
+def conta_do_terminal(nome: str = CLI) -> str:
+    return f"{nome}@{config.NUVEM_PROJETO}.iam.gserviceaccount.com"
+
+
+def _sessao(conta: str = CLI) -> Any:
+    """Uma sessão HTTP que põe em cada pedido o token de identidade de `conta`: o `viking-cli@`
+    (o terminal do dono) ou o `viking-maos@` (as mãos; Sessão 11, D61). O motor confere qual
+    conta fala com qual rota."""
     if not config.NUVEM_URL or not config.NUVEM_PROJETO:
         raise ErroDaNuvem("falta VIKING_NUVEM_URL ou VIKING_NUVEM_PROJETO no .env")
     import google.auth
@@ -56,7 +61,7 @@ def _sessao() -> Any:
         dono = dono.with_quota_project(config.NUVEM_PROJETO)
     terminal = impersonated_credentials.Credentials(
         source_credentials=dono,
-        target_principal=conta_do_terminal(),
+        target_principal=conta_do_terminal(conta),
         target_scopes=[ESCOPO],
         lifetime=300,
     )
@@ -77,8 +82,8 @@ def _chamar(
         resposta = sessao.request(metodo, f"{config.NUVEM_URL}{rota}", json=corpo, timeout=prazo)
     except RefreshError:
         raise ErroDaNuvem(
-            "o Google não deu o token do viking-cli@ (o login do Google Cloud venceu, ou falta a "
-            "permissão de se passar por ele: `python scripts/nuvem.py` no VPS mostra)"
+            "o Google não deu o token da conta do Viking (o login do Google Cloud venceu, ou falta "
+            "a permissão de se passar por ela: `python scripts/nuvem.py` no VPS mostra)"
         ) from None
     except requests.Timeout:
         raise ErroDaNuvem(
@@ -122,6 +127,32 @@ def capacidades(sessao: Any) -> dict[str, Any]:
 def turno_de_chat(sessao: Any, pedido: dict[str, Any]) -> dict[str, Any]:
     """Um turno do chat da nuvem (`POST /chat`). O prazo é o do motor mais uma folga."""
     return _chamar(sessao, "POST", "/chat", corpo=pedido, prazo=PRAZO_CHAT_S)
+
+
+def sessao_das_maos() -> Any:
+    """A sessão do `viking maos`: o token do `viking-maos@`, que só fala com `/maos/*`."""
+    return _sessao(MAOS)
+
+
+def pegar_tarefa(sessao: Any, por: str) -> dict[str, Any] | None:
+    """A próxima tarefa de navegador da nuvem, crua (o Mac a valida), ou `None`."""
+    dados = _chamar(sessao, "POST", "/maos/pegar", corpo={"por": por})
+    tarefa = dados.get("tarefa")
+    if tarefa is not None and not isinstance(tarefa, dict):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return tarefa
+
+
+def entregar_tarefa(sessao: Any, tarefa_id: str, por: str, resultado: str) -> bool:
+    """Devolve o texto (já redigido) da tarefa; `False` se a nuvem não a aceitou (não era mais
+    nossa, ou o turno desistiu)."""
+    dados = _chamar(
+        sessao,
+        "POST",
+        "/maos/entregar",
+        corpo={"id": tarefa_id, "por": por, "resultado": resultado},
+    )
+    return dados.get("aceita") is True
 
 
 def _instante(texto: Any) -> datetime | None:

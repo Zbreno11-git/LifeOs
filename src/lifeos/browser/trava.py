@@ -41,6 +41,7 @@ _ORIGENS = {
     "chat": "pelo viking chat",
     "cli": "pelo terminal (viking browser)",
     "mcp": "pelo servidor MCP",
+    "maos": "pelo viking maos (um pedido do chat da nuvem)",
 }
 
 

@@ -99,7 +99,16 @@ D61). Medido na abertura: `2216 passed`, CI `success` em `687068d`, 10 ✅, o mo
   abertura e o texto de sistema com o navegador do Mac. A corrida das 16 mãos cai 5 de 5 sem o
   comparar e trocar (medido antes de confiar). Suíte `2281 passed` (emulador exigido); mutações do
   C2 e vizinhas 34/34, e as duas reancoradas 2/2.
-- **Próximo passo:** o C3 do plano (`viking maos` no Mac: `maos/mac.py`, a liberação no terminal).
+- C3 (2026-10-01, ~03:26Z): `viking maos` (`maos/mac.py`): só com TTY; pergunta a cada 5 s com
+  o token do `viking-maos@` (`cliente.sessao_das_maos`); confere o formato antes de rodar (um
+  `liberar` vindo da nuvem é recusado e nada roda); roda por `browser.executar_e_contar` (o mesmo
+  caminho do chat do Mac: bloqueio, freio, trava, redação) e entrega o texto; a liberação de um
+  clique aparece e se aprova no próprio terminal (3 erradas cancelam); rede caída espera 5→60 s
+  sem desistir; Ctrl-C no meio entrega e desliga. `maos/mac.py` é o terceiro chamador de
+  `clicar_aprovado` (o teste que lê o código foi atualizado). Suíte `2293 passed`; mutações do C3
+  e da liberação 29/29.
+- **Próximo passo:** o C4 do plano (os lembretes do Mac pela nuvem, a migração 7, `--migrar` e a
+  rota do envio pela nuvem).
 
 **Quando o dono trouxer a prova (a partir de 2026-10-04), a 10c retoma:**
 1. **Portão (dono, a partir de 2026-10-04 em Seattle):** `viking gmail --login` no Mac **sem**
