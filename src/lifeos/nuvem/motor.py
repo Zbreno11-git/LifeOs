@@ -46,6 +46,7 @@ log = logging.getLogger("viking.motor")
 COMMIT = os.getenv("VIKING_COMMIT", "")
 EMISSORES = ("https://accounts.google.com", "accounts.google.com")
 MAX_CORPO = 4 * 1024 * 1024  # o histórico medido chegou a 7 KB em 5 turnos (2026-09-30)
+MAX_CORPO_DAS_MAOS = 64 * 1024  # o resultado de uma tarefa tem até 20 mil caracteres
 
 
 CLI, MAOS, AGENDADOR = "viking-cli", "viking-maos", "viking-agendador"
@@ -121,7 +122,7 @@ def _lembrete(lembrete: Reminder) -> dict[str, Any]:
 async def versao(request: Request) -> JSONResponse:
     """O commit no ar e o que este motor tem (o terminal do Mac diz isso na abertura)."""
     await _quem(request)
-    return JSONResponse({"commit": COMMIT, "gmail": config.gmail_no_motor()})
+    return JSONResponse({"commit": COMMIT, "gmail": config.gmail_no_motor(), "maos": True})
 
 
 async def lembretes(request: Request) -> JSONResponse:
@@ -234,7 +235,64 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/fumaca/registro": frozenset({CLI}),
     "/fumaca/segredos": frozenset({CLI}),
     "/chat": frozenset({CLI}),
+    "/maos/pegar": frozenset({MAOS}),
+    "/maos/entregar": frozenset({MAOS}),
 }
+
+
+async def _corpo_pequeno(request: Request, teto: int) -> Any:
+    """O JSON de um pedido pequeno, ou `None` se passou do teto ou não é JSON."""
+    declarado = request.headers.get("content-length", "")
+    if declarado.isdigit() and int(declarado) > teto:
+        return None
+    corpo = await request.body()
+    if len(corpo) > teto:
+        return None
+    try:
+        return json.loads(corpo)
+    except ValueError:
+        return None
+
+
+def _pegar(dados: Any) -> dict[str, Any]:
+    from lifeos.maos import fila_firestore
+
+    por = dados.get("por") if isinstance(dados, dict) else None
+    tarefa = fila_firestore.pegar(por, agora=datetime.now(UTC))
+    return {"tarefa": tarefa.como_dict() if tarefa else None}
+
+
+async def maos_pegar(request: Request) -> JSONResponse:
+    """As mãos do Mac perguntam se há tarefa de navegador (Sessão 11, D61). Só o `viking-maos@`."""
+    await _quem(request)
+    dados = await _corpo_pequeno(request, MAX_CORPO_DAS_MAOS)
+    try:
+        return JSONResponse(await run_in_threadpool(_pegar, dados))
+    except ValueError as exc:  # `TarefaInvalida` e afins: o pedido veio torto
+        return JSONResponse({"erro": str(exc)}, 400)
+
+
+def _entregar(dados: Any) -> dict[str, Any]:
+    from lifeos.maos import fila_firestore
+
+    if not isinstance(dados, dict) or not isinstance(dados.get("resultado"), str):
+        raise ValueError("a entrega tem de ter id, por e resultado (texto)")  # noqa: TRY004 - 400
+    aceita = fila_firestore.entregar(str(dados.get("id")), dados.get("por"), dados["resultado"])
+    return {"aceita": aceita}
+
+
+async def maos_entregar(request: Request) -> JSONResponse:
+    """O resultado de uma tarefa, já redigido no Mac. O texto da página nunca vai ao log."""
+    await _quem(request)
+    dados = await _corpo_pequeno(request, MAX_CORPO_DAS_MAOS)
+    if dados is None:
+        return JSONResponse({"erro": "a entrega passou do tamanho ou não é JSON"}, 400)
+    try:
+        return JSONResponse(await run_in_threadpool(_entregar, dados))
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, 400)
+
+
 ROTAS = [
     Route("/versao", versao, methods=["GET"]),
     Route("/lembretes", lembretes, methods=["GET"]),
@@ -242,5 +300,7 @@ ROTAS = [
     Route("/fumaca/registro", fumaca_registro, methods=["GET"]),
     Route("/fumaca/segredos", fumaca_segredos, methods=["GET"]),
     Route("/chat", chat, methods=["POST"]),
+    Route("/maos/pegar", maos_pegar, methods=["POST"]),
+    Route("/maos/entregar", maos_entregar, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)

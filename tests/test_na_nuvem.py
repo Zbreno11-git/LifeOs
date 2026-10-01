@@ -127,7 +127,9 @@ def test_toda_tool_do_mac_decide_onde_mora():
 
 def test_a_nuvem_nao_tem_tool_do_mac():
     nomes = {f.__name__ for f in na_nuvem.FERRAMENTAS}
-    assert not {"navegar_e_executar", "saldos_das_contas", "fatura_do_cartao"} & nomes
+    assert not {"saldos_das_contas", "fatura_do_cartao"} & nomes
+    # o navegador é o do Mac, pelas mãos (Sessão 11): a tool da nuvem não é a do Mac
+    assert na_nuvem.navegar_e_executar is not agent.navegar_e_executar
 
 
 def test_o_gmail_mora_na_nuvem_desde_a_10c():
@@ -143,7 +145,6 @@ def test_o_gmail_mora_na_nuvem_desde_a_10c():
     }
     assert gmail <= nomes
     assert set(na_nuvem.SO_NO_MAC) == {
-        "navegar_e_executar",
         "saldos_das_contas",
         "gastos_do_periodo",
         "buscar_transacoes",
@@ -159,7 +160,10 @@ def test_instrucao_da_nuvem_so_fala_do_que_ela_tem():
         assert presente in texto, presente
     for presente in ("preparar_limpeza", "enviar_email", "lê o Gmail"):
         assert presente in texto, presente
-    assert "não tem navegador nem finanças" in texto
+    # o navegador é o do Mac, pelas mãos (Sessão 11): a liberação, no terminal do `viking maos`
+    for presente in ("navegador do Mac", "`viking maos`", "não tem finanças", "não confiável"):
+        assert presente in texto, presente
+    assert "não tem navegador" not in texto
 
 
 def test_instrucao_da_nuvem_sem_o_gmail_continua_a_da_10b():

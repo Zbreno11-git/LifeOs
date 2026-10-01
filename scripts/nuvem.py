@@ -500,8 +500,9 @@ def _c_segredos(ctx: Contexto) -> list[list[str]]:
 
 
 # (coleção, campo) que a TTL apaga: o registro de ações e as confirmações vivem 30 dias na nuvem
-# (Sessões 10b e 10c; a das confirmações passa das janelas que ainda as leem, 8 e 7 dias).
-TTLS = (("acoes", "expira_em"), ("confirmacoes", "apagar_em"))
+# (Sessões 10b e 10c; a das confirmações passa das janelas que ainda as leem, 8 e 7 dias); as
+# tarefas das mãos, 1 dia (Sessão 11: o turno já as apaga; isto leva o que sobrar).
+TTLS = (("acoes", "expira_em"), ("confirmacoes", "apagar_em"), ("tarefas", "apagar_em"))
 
 
 def _estados_ttl(ctx: Contexto) -> dict[tuple[str, str], str]:
@@ -572,13 +573,14 @@ PASSOS = (
     ),
     Passo(
         "ttl",
-        "o registro de ações e as confirmações apagam sozinhos depois de 30 dias",
+        "o registro de ações e as confirmações apagam sozinhos depois de 30 dias, as tarefas das "
+        "mãos depois de 1",
         _m_ttl,
         _c_ttl,
         depende=("firestore",),
         irreversivel=(
             "apaga o registro de ações (a regra do dono) e as confirmações (D60) com mais de "
-            "30 dias"
+            "30 dias, e as tarefas das mãos (D61) com mais de 1"
         ),
     ),
 )

@@ -82,4 +82,5 @@ files = [
     "src/lifeos/confirmacao_firestore.py",
     "src/lifeos/cli.py",
     "src/lifeos/nuvem",
+    "src/lifeos/maos",
 ]

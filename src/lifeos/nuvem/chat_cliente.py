@@ -51,8 +51,12 @@ def _gasto(gasto: Any) -> str:
 def abertura(capacidades: dict[str, Any]) -> str:
     """A primeira linha: o que a nuvem tem agora e o que continua só no `viking chat` do Mac."""
     tem = ["agenda", "lembretes"]
-    so_no_mac = ["navegador"]
+    so_no_mac: list[str] = []
     (tem if capacidades.get("gmail") is True else so_no_mac).append("Gmail")
+    if capacidades.get("maos") is True:  # Sessão 11: o navegador do Mac, pelas mãos
+        tem.append("o navegador do Mac, com o `viking maos` ligado lá")
+    else:
+        so_no_mac.insert(0, "navegador")
     so_no_mac.append("finanças")
     lista = ", ".join(tem[:-1]) + f" e {tem[-1]}"
     fora = ", ".join(so_no_mac[:-1]) + f" e {so_no_mac[-1]}"

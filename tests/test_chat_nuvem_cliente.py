@@ -176,6 +176,11 @@ def test_a_abertura_nao_promete_o_gmail_que_nao_esta_la():
         == "☁️  Viking na nuvem (agenda, lembretes e Gmail). Navegador e finanças: `viking chat`."
     )
     assert chat_cliente.abertura({}) == sem  # um motor velho, sem o campo: não promete
+    maos = chat_cliente.abertura({"commit": "x", "gmail": False, "maos": True})
+    assert maos == (
+        "☁️  Viking na nuvem (agenda, lembretes e o navegador do Mac, com o `viking maos` ligado "
+        "lá). Gmail e finanças: `viking chat`."
+    )
 
 
 def test_sem_o_primeiro_contato_nao_abre(monkeypatch, capsys):

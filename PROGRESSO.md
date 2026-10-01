@@ -90,7 +90,16 @@ D61). Medido na abertura: `2216 passed`, CI `success` em `687068d`, 10 ✅, o mo
   (`QUEM_FALA`); `turno.instrucao(..., onde=)` com os textos de antes iguais (sha256 de
   2026-10-01 do Mac, da nuvem 10b e da 10c); a abertura do `viking chat --nuvem` pelo `/versao`.
   Portões: `2234 passed`, ruff, format, mypy, gitleaks. Mutações do C1 e vizinhas: 25/25.
-- **Próximo passo:** o C2 do plano (a fila das mãos no Firestore e o navegador no chat da nuvem).
+- C2 (2026-10-01, ~03:20Z): a fila das mãos (`maos/fila.py`, o formato fechado, sem rede, que o
+  Mac também usa; `maos/fila_firestore.py`, a coleção `tarefas` por comparar e trocar, o resultado
+  apagado ao ser lido, TTL de 1 dia em `TTLS`); `maos/pedir.py` (a tool da nuvem espera no mesmo
+  turno: 15 s para ser pega, senão vence; o limite da tarefa = o restante do turno menos 95 s, no
+  máximo os 180 do navegador; "não sei" quando o Mac pegou e sumiu); `navegar_e_executar` no chat
+  da nuvem com o texto do Mac; as rotas `/maos/pegar` e `/maos/entregar`, só do `viking-maos@`; a
+  abertura e o texto de sistema com o navegador do Mac. A corrida das 16 mãos cai 5 de 5 sem o
+  comparar e trocar (medido antes de confiar). Suíte `2281 passed` (emulador exigido); mutações do
+  C2 e vizinhas 34/34, e as duas reancoradas 2/2.
+- **Próximo passo:** o C3 do plano (`viking maos` no Mac: `maos/mac.py`, a liberação no terminal).
 
 **Quando o dono trouxer a prova (a partir de 2026-10-04), a 10c retoma:**
 1. **Portão (dono, a partir de 2026-10-04 em Seattle):** `viking gmail --login` no Mac **sem**

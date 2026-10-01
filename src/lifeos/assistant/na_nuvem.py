@@ -63,6 +63,16 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
 
 criar_lembrete.__doc__ = agent.criar_lembrete.__doc__
 
+
+def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> str:
+    from lifeos.maos import pedir  # a fila no Firestore: só para quem usa o navegador
+
+    return pedir.pedir(url, objetivo, manter_aberta)
+
+
+# A mesma tool do Mac, com o mesmo texto: o navegador é o do Mac, pelas mãos (Sessão 11, D61).
+navegar_e_executar.__doc__ = agent.navegar_e_executar.__doc__
+
 # Todas as que podem morar na nuvem; as que valem neste motor saem de `ferramentas()`.
 FERRAMENTAS: list[Callable[..., Any]] = [
     agent.listar_proximos_eventos,
@@ -83,6 +93,7 @@ FERRAMENTAS: list[Callable[..., Any]] = [
     agent.preparar_limpeza,
     agent.enviar_email,
     agent.responder_email,
+    navegar_e_executar,
 ]
 _DO_GMAIL = frozenset(
     {
@@ -98,7 +109,6 @@ _DO_GMAIL = frozenset(
 # As tools do chat do Mac que não vêm para a nuvem, e por quê. `tests/test_na_nuvem.py` exige que
 # toda tool do Mac esteja numa das duas listas: uma tool nova tem de decidir onde mora.
 SO_NO_MAC = {
-    "navegar_e_executar": "o navegador é o do Mac até a S11 (as mãos)",
     "saldos_das_contas": "as finanças seguem a D51",
     "gastos_do_periodo": "as finanças seguem a D51",
     "buscar_transacoes": "as finanças seguem a D51",

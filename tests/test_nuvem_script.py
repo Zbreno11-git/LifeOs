@@ -563,10 +563,10 @@ def _ttl(colecao, campo, estado):
 @pytest.mark.parametrize(
     ("estados", "pronto"),
     [
-        (("ACTIVE", "ACTIVE"), True),
-        (("ACTIVE", "CREATING"), False),
-        (("CREATING", "ACTIVE"), False),
-        (("ACTIVE", None), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE"), True),
+        (("ACTIVE", "CREATING", "ACTIVE"), False),
+        (("CREATING", "ACTIVE", "ACTIVE"), False),
+        (("ACTIVE", "ACTIVE", None), False),
     ],
 )
 def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, pronto):
@@ -576,23 +576,27 @@ def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, p
 
 
 def test_ttl_liga_so_a_que_falta(nuvem, ctx, monkeypatch):
-    """A das confirmações é nova (10c); a do registro já está ligada e não se pede de novo."""
-    ttl = [_ttl("acoes", "expira_em", "ACTIVE")]
+    """A das tarefas das mãos é nova (11); a do registro e a das confirmações já estão ligadas e
+    não se pedem de novo."""
+    ttl = [_ttl("acoes", "expira_em", "ACTIVE"), _ttl("confirmacoes", "apagar_em", "ACTIVE")]
     monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
     pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
     (comando,) = nuvem._c_ttl(pronto)
-    assert "--collection-group=confirmacoes" in comando and "apagar_em" in comando
+    assert "--collection-group=tarefas" in comando and "apagar_em" in comando
 
 
 def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
     from lifeos import confirmacao_firestore, registro_firestore
+    from lifeos.maos import fila_firestore
 
     assert nuvem.TTLS == (
         (registro_firestore.COLECAO, "expira_em"),
         (confirmacao_firestore.COLECAO, "apagar_em"),
+        (fila_firestore.COLECAO, "apagar_em"),
     )
     assert "expira_em" in registro_firestore._CAMPOS
     assert "apagar_em" in confirmacao_firestore._CAMPOS
+    assert "apagar_em" in fila_firestore._CAMPOS
 
 
 # --- o token do Gmail sobe do Mac (Sessão 10c, D60) ----------------------------------------------
