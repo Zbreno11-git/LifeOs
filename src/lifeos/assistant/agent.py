@@ -96,7 +96,14 @@ def criar_lembrete(titulo: str, corpo: str = "", tags: str = "", quando: str = "
         )
     except reminders_service.QuandoInvalido:
         return f"Não entendi a data '{quando}'. Use ISO 8601, ex.: 2026-09-25 ou 2026-09-25T14:00."
+    except reminders_service.Indisponivel as exc:
+        return _indisponivel(exc)
     return f"✅ Lembrete criado: '{titulo}'{_prazo_do_dono(reminder)} [id: {reminder.id}]."
+
+
+def _indisponivel(exc: Exception) -> str:
+    """Os lembretes na nuvem fora de alcance (Sessão 11): a mensagem diz se o motor pode ter agido."""
+    return f"⚠️ Lembretes fora de alcance agora: {exc}."
 
 
 def _prazo_do_dono(reminder) -> str:
@@ -109,7 +116,10 @@ def _prazo_do_dono(reminder) -> str:
 def listar_lembretes() -> str:
     """Lista os lembretes não concluídos, prazo mais próximo primeiro. O `[id: …]` de cada linha é
     só para você chamar `concluir_lembrete`: ao dono, mostre título e prazo, nunca o id."""
-    reminders = reminders_service.pendentes()
+    try:
+        reminders = reminders_service.pendentes()
+    except reminders_service.Indisponivel as exc:
+        return _indisponivel(exc)
     if not reminders:
         return "Nenhum lembrete pendente."
     return "\n".join(f"- {r.title}{_prazo_do_dono(r)} [id: {r.id}]" for r in reminders)
@@ -118,7 +128,10 @@ def listar_lembretes() -> str:
 def concluir_lembrete(reminder_id: str) -> str:
     """Marca um lembrete como concluído. `reminder_id` é o `[id: …]` da listagem, copiado inteiro;
     se o dono disser qual pelo título, liste antes para achar o id."""
-    reminder = reminders_service.concluir(reminder_id.strip())
+    try:
+        reminder = reminders_service.concluir(reminder_id.strip())
+    except reminders_service.Indisponivel as exc:
+        return _indisponivel(exc)
     if not reminder:
         return "Não encontrei esse lembrete: liste de novo e use o id que aparece lá."
     return f"✅ Lembrete concluído: '{reminder.title}'."

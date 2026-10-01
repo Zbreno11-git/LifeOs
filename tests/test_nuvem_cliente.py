@@ -36,13 +36,19 @@ class _Resposta:
 
 
 class _Sessao:
-    def __init__(self, resposta=None, erro=None):
+    """Uma resposta para tudo, menos o `/versao` (o que o motor tem: `versao`), que o `--nuvem`
+    pergunta antes da lista (Sessão 11) e não entra em `pedidos`."""
+
+    def __init__(self, resposta=None, erro=None, versao=None):
         self.resposta, self.erro, self.pedidos = resposta, erro, []
+        self.versao = {"envio_de_lembretes": False} if versao is None else versao
 
     def request(self, metodo, url, json=None, timeout=None):
-        self.pedidos.append((url, timeout) if metodo == "GET" else (metodo, url, json, timeout))
         if self.erro:
             raise self.erro
+        if url == f"{URL}/versao":
+            return _Resposta(200, self.versao)
+        self.pedidos.append((url, timeout) if metodo == "GET" else (metodo, url, json, timeout))
         return self.resposta
 
 
@@ -211,8 +217,13 @@ def test_prazo_esgotado_avisa_que_o_motor_pode_ter_agido():
         cliente.turno_de_chat(sessao, {})
 
 
-def test_lembretes_da_nuvem_avisam_que_nao_saem_por_email(monkeypatch, capsys):
-    sessao = _Sessao(_Resposta(200, {"lembretes": [_lembrete()]}))
+@pytest.mark.parametrize("ligado", [False, True])
+def test_o_aviso_do_email_segue_o_envio_da_nuvem(monkeypatch, capsys, ligado):
+    """Sem o agendador, a lista avisa que o e-mail não sai; com ele ligado, o aviso some (Sessão
+    11): o texto não promete o que o mecanismo não faz, nem nega o que ele faz."""
+    versao = {"envio_de_lembretes": ligado}
+    sessao = _Sessao(_Resposta(200, {"lembretes": [_lembrete()]}), versao=versao)
     monkeypatch.setattr(cliente, "_sessao", lambda: sessao)
     assert _rodar(monkeypatch) == 0
-    assert "o aviso por e-mail destes ainda não existe na nuvem" in capsys.readouterr().out
+    aviso = "o aviso por e-mail destes ainda não está ligado na nuvem"
+    assert (aviso in capsys.readouterr().out) is not ligado

@@ -366,12 +366,18 @@ def _migrar(*, executar: bool) -> int:
     """`viking lembretes --migrar [--executar]` (Sessão 11, D61): 0 = ensaio feito ou migrado;
     1 = não migrou (o texto diz por quê)."""
     from lifeos.nuvem import cliente
-    from lifeos.reminders import migrar
+    from lifeos.reminders import migrar, onde
 
     try:
         relatorio = migrar.executar() if executar else migrar.ensaio()
     except cliente.ErroDaNuvem as exc:
         print(f"❌ Nuvem: {exc}. Nada foi marcado como migrado.", file=sys.stderr)
+        if onde.estado() == onde.MIGRANDO:  # caiu no meio da cópia
+            print(
+                "   A cópia ficou pela metade: rode de novo `viking lembretes --migrar --executar` "
+                "(ela retoma de onde parou, sem duplicar); até lá, nada se grava aqui.",
+                file=sys.stderr,
+            )
         return 1
     except migrar.NaoMigrou as exc:
         print(f"❌ Não migrei: {exc}.", file=sys.stderr)
@@ -404,14 +410,21 @@ def _lembretes(args: argparse.Namespace) -> int:
         from lifeos.nuvem import cliente
 
         try:
-            pendentes = cliente.lembretes_pendentes()
+            sessao = cliente.sessao_de_chat()
+            envio_ligado = cliente.capacidades(sessao).get("envio_de_lembretes") is True
+            pendentes = cliente.lembretes_pendentes(sessao)
         except cliente.ErroDaNuvem as exc:
             print(f"❌ Nuvem: {exc}.", file=sys.stderr)
             return 1
         print("☁️  Lembretes da nuvem:")
-        print("   (o aviso por e-mail destes ainda não existe na nuvem: chega numa próxima etapa)")
+        if not envio_ligado:  # o agendador da nuvem desligado (Sessão 11)
+            print("   (o aviso por e-mail destes ainda não está ligado na nuvem)")
     elif not args.enviar:
-        pendentes = service.pendentes()
+        try:
+            pendentes = service.pendentes()
+        except service.Indisponivel as exc:
+            print(f"❌ Lembretes: {exc}.", file=sys.stderr)
+            return 1
     if not args.enviar:
         for r in pendentes:
             prazo = f" ({r.due_at.astimezone(config.TIMEZONE):%d/%m/%Y %H:%M})" if r.due_at else ""

@@ -148,6 +148,15 @@ def _lembrete_para_dict(reminder: Reminder) -> dict[str, Any]:
     }
 
 
+def _indisponivel(exc: Exception) -> ToolResult:
+    """Os lembretes na nuvem fora de alcance (Sessão 11): erro do protocolo, nunca um `print`."""
+    return ToolResult(
+        content=f"Lembretes fora de alcance agora: {exc}.",
+        structured_content={"erro": "indisponivel"},
+        is_error=True,
+    )
+
+
 @mcp.tool()
 def viking_criar_lembrete(
     titulo: str, corpo: str = "", tags: str = "", quando: str = ""
@@ -166,6 +175,8 @@ def viking_criar_lembrete(
             structured_content={"erro": "quando_invalido", "quando": quando},
             is_error=True,
         )
+    except reminders_service.Indisponivel as exc:
+        return _indisponivel(exc)
     return ToolResult(
         content=f"Lembrete criado: '{reminder.title}' (id {reminder.id}).",
         structured_content=_lembrete_para_dict(reminder),
@@ -175,7 +186,10 @@ def viking_criar_lembrete(
 @mcp.tool()
 def viking_listar_lembretes() -> ToolResult:
     """Lista lembretes/notas pendentes do Viking."""
-    reminders = reminders_service.pendentes()
+    try:
+        reminders = reminders_service.pendentes()
+    except reminders_service.Indisponivel as exc:
+        return _indisponivel(exc)
     if reminders:
         texto = "\n".join(f"{r.title} (id {r.id})" for r in reminders)
     else:
@@ -190,7 +204,10 @@ def viking_listar_lembretes() -> ToolResult:
 def viking_concluir_lembrete(reminder_id: str) -> ToolResult:
     """Marca um lembrete do Viking como concluído. `reminder_id` é o `id` da listagem (UUID)."""
     _pelo_mcp()
-    reminder = reminders_service.concluir(reminder_id)
+    try:
+        reminder = reminders_service.concluir(reminder_id)
+    except reminders_service.Indisponivel as exc:
+        return _indisponivel(exc)
     if not reminder:
         return ToolResult(
             content=f"Lembrete {reminder_id} não encontrado.",

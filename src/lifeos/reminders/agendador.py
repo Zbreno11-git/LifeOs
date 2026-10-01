@@ -51,8 +51,10 @@ def rodar(agora: datetime | None = None) -> dict[str, Any]:
 
 
 def ligado(agora: datetime | None = None) -> bool:
-    """Uma rodada terminou sem parar há menos de `LIGADO_POR`? Fora da nuvem, nunca."""
-    if config.STORE != "firestore":
+    """Uma rodada terminou sem parar há menos de `LIGADO_POR`? Fora da nuvem, nunca; e sem o token
+    do Gmail no motor, nunca: uma rodada sem nada vencido termina sem parar, e o primeiro vencido
+    pararia (a migração do Mac confia nesta resposta)."""
+    if config.STORE != "firestore" or not config.gmail_no_motor():
         return False
     snap = _ref().get()
     ultima = firestore_comum.lido(snap.get("ultima")) if snap.exists else None

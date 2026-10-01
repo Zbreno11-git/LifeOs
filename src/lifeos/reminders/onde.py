@@ -21,7 +21,13 @@ from lifeos import banco, config
 MIGRANDO, MIGRADO = "migrando", "migrado"
 
 
-class MigracaoEmCurso(RuntimeError):
+class Indisponivel(RuntimeError):
+    """Os lembretes deste Mac não estão ao alcance agora (a cópia em curso, ou a nuvem não
+    respondeu). A mensagem é para o dono ler, e cada adaptador (chat, MCP, CLI) a mostra no seu
+    formato, em vez de deixar a exceção subir crua."""
+
+
+class MigracaoEmCurso(Indisponivel):
     """A cópia para a nuvem não terminou: nada se grava aqui até ela terminar."""
 
 

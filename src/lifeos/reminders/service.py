@@ -12,7 +12,9 @@ borda, e vai como instante.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 from lifeos import config, registro
 from lifeos.reminders import interface, onde
@@ -31,6 +33,22 @@ if config.STORE == "firestore":
 
 class QuandoInvalido(ValueError):
     """`quando` não é uma data/hora ISO 8601 válida."""
+
+
+# A cópia em curso ou a nuvem que não respondeu: chat, MCP e CLI mostram a mensagem, cada um no seu
+# formato (Sessão 11, D61).
+Indisponivel = onde.Indisponivel
+
+
+def _pela_nuvem(fazer: Callable[..., Any], *args: Any) -> Any:
+    """Uma chamada ao motor; o erro da rede vira `Indisponivel`, com o texto do cliente (que diz
+    quando o motor pode ter agido)."""
+    from lifeos.nuvem import cliente
+
+    try:
+        return fazer(*args)
+    except cliente.ErroDaNuvem as exc:
+        raise Indisponivel(f"a nuvem: {exc}") from None
 
 
 def _interpretar_quando(quando: str) -> datetime | None:
@@ -53,14 +71,19 @@ def criar_lembrete(
     quando: str = "",
     source: str = "manual",
 ) -> Reminder:
-    """Levanta `QuandoInvalido` se `quando` não for vazio nem ISO 8601 válido. Cada adaptador
-    (CLI/Gemini, MCP) decide como comunicar esse erro no seu próprio formato."""
+    """Levanta `QuandoInvalido` se `quando` não for vazio nem ISO 8601 válido, e `Indisponivel`
+    depois da migração se a cópia está em curso ou a nuvem não respondeu (como `pendentes` e
+    `concluir`). Cada adaptador (CLI/Gemini, MCP) decide como comunicar esses erros no seu próprio
+    formato."""
     due_at = _interpretar_quando(quando)
     if onde.na_nuvem():  # `MigracaoEmCurso` no meio da cópia: nada se grava aqui
         from lifeos.nuvem import cliente
 
         instante = due_at.isoformat() if due_at else ""
-        return cliente.criar_lembrete(titulo, corpo, tags, instante, source)
+        lembrete: Reminder = _pela_nuvem(
+            cliente.criar_lembrete, titulo, corpo, tags, instante, source
+        )
+        return lembrete
     parametros = {"titulo": titulo, "quando": quando}
     with registro.acao("lembrete.criar", parametros) as marca:
         lembrete = store.add(
@@ -79,7 +102,7 @@ def pendentes(type: str | None = None) -> list[Reminder]:
     if onde.estado() == onde.MIGRADO:
         from lifeos.nuvem import cliente
 
-        abertos = cliente.lembretes_pendentes()
+        abertos: list[Reminder] = _pela_nuvem(cliente.lembretes_pendentes)
         return [r for r in abertos if not type or r.type == type]
     return store.list_open(type)
 
@@ -90,7 +113,8 @@ def concluir(reminder_id: str) -> Reminder | None:
     if onde.na_nuvem():
         from lifeos.nuvem import cliente
 
-        return cliente.concluir_lembrete(reminder_id)
+        concluido: Reminder | None = _pela_nuvem(cliente.concluir_lembrete, reminder_id)
+        return concluido
     with registro.acao("lembrete.concluir", {"id": reminder_id}) as marca:
         lembrete = store.complete(reminder_id)
         marca.feito({"id": reminder_id, "achado": lembrete is not None})

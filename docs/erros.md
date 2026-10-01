@@ -17,10 +17,10 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 22 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 23 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 20 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
-| 5 | A ferramenta fez outra coisa do que eu li | 14 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 4 | Teste que não separava o certo do errado | 21 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 5 | A ferramenta fez outra coisa do que eu li | 15 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 12 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
@@ -215,6 +215,12 @@ frente serializava). Consertado com `BEGIN IMMEDIATE` (`52570bc`). O que tem de 
 afirmação sobre concorrência num comentário é uma afirmação sobre o código de outro módulo, e
 precisa do mesmo `grep` que um número.
 
+**2026-10-01 — "10 ✅" no bloco de retomada, sem medir (Sessão 11, pré-compact).** O bloco
+mandava conferir `python scripts/nuvem.py` → 10 ✅, copiado do bloco anterior. Desde o C2 a TTL
+de `tarefas` faz parte do passo `ttl`, que fica ⬜ até o ok do C5: a medida da retomada deu 9 ✅ e
+1 ⬜. O que tem de novo: um passo de infraestrutura que **eu mesmo** mudei no código mudou o
+número esperado, e o bloco foi escrito sem rodar o comando que ele manda rodar.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -377,6 +383,14 @@ sorteio, entre ler os reservados e gravar, fez o teste cair 10 de 10 sem o conse
 com ele. O que tem de novo: um teste de corrida se mede também sem o conserto, em muitas rodadas,
 antes de ser a régua.
 
+**2026-10-01 — um `monkeypatch` dentro de um contexto que se desfaz sozinho (Sessão 11, C4).** O
+teste "sem o Gmail no motor o envio nunca está ligado" trocava o token do Gmail com
+`monkeypatch.setattr` **dentro** do contexto que simula o motor. Ao sair, o contexto devolvia o
+valor do Mac; no fim do teste, o `monkeypatch` devolvia o valor que viu ao trocar, o falso do
+motor, e os testes seguintes rodariam com um "token do Gmail" posto. Pego na releitura, antes de
+rodar a suíte. O que tem de novo: duas restaurações em camadas desfazem na ordem errada; dentro
+de um contexto que restaura, a troca é atribuição direta.
+
 ### 5. A ferramenta fez outra coisa do que eu li
 
 **2026-09-26 — `\u202e` pela ferramenta de escrita (Sessão 4).** O parâmetro é JSON: o escape virou
@@ -465,6 +479,13 @@ a âncora continuou casando como pedaço da linha, e a troca virou erro de sinta
 acusou "caiu outro"). O que tem de novo: dois dos quatro são repetições da sessão anterior. A
 regra escrita não bastou; antes de emendar um arquivo ou rodar mutação, reler a entrada da
 classe 5 da 10b.
+
+**2026-10-01 — de novo uma mutação em primeiro plano (Sessão 11, C4).** Depois da rodada do C4
+em background (24/24), a mutação nova do Gmail no `agendador.ligado` rodou no mesmo comando que a
+conferência das âncoras, em primeiro plano. Terceira sessão seguida (10b, 10c, 11). Sem dano:
+terminou (1/1). O que tem de novo: a regra estava relida no começo desta retomada; uma mutação
+"só uma" pareceu exceção. Não é: toda chamada a `scripts/mutacoes.py` vai com
+`run_in_background`.
 
 > **A ferramenta interpreta o que eu escrevo antes de o arquivo receber.**
 

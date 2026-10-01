@@ -109,10 +109,6 @@ def _chamar(
     return dados
 
 
-def _pedir(rota: str) -> dict[str, Any]:
-    return _chamar(_sessao(), "GET", rota)
-
-
 def sessao_de_chat() -> Any:
     """Uma sessão HTTP para a conversa inteira (o token renova sozinho quando vence)."""
     return _sessao()
@@ -182,9 +178,9 @@ def _lembrete(item: Any) -> Reminder:
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado") from None
 
 
-def lembretes_pendentes() -> list[Reminder]:
+def lembretes_pendentes(sessao: Any = None) -> list[Reminder]:
     """Os pendentes que moram no Firestore, pela ordem que o motor manda."""
-    dados = _pedir("/lembretes")
+    dados = _chamar(sessao or _sessao(), "GET", "/lembretes")
     itens = dados.get("lembretes")
     if not isinstance(itens, list):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")

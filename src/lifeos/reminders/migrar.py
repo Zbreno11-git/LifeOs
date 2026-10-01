@@ -41,6 +41,7 @@ class Relatorio:
     copiados: int = 0
     envio_ligado: bool = False
     estado: str | None = None  # a marca do `viking.db` no fim
+    migrou_agora: bool = False  # esta rodada marcou "migrado" (e não uma anterior)
 
 
 def _medir() -> tuple[Relatorio, list, object, dict[str, str]]:
@@ -102,6 +103,7 @@ def executar() -> Relatorio:
         )
     onde.marcar(onde.MIGRADO)
     relatorio.estado = onde.MIGRADO
+    relatorio.migrou_agora = True
     return relatorio
 
 
@@ -116,7 +118,7 @@ def texto(relatorio: Relatorio, *, executou: bool) -> str:
         "✉️  Envio por e-mail da nuvem: "
         + ("ligado." if relatorio.envio_ligado else "ainda não ligado."),
     ]
-    if relatorio.estado == onde.MIGRADO and executou:
+    if relatorio.migrou_agora:
         linhas.append(
             f"✅ Migrado: {relatorio.copiados} copiado(s), todos conferidos. Daqui em diante os "
             "lembretes deste Mac moram na nuvem (o `viking.db` guarda a cópia de antes)."
