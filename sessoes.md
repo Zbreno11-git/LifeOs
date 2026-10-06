@@ -1214,6 +1214,13 @@ O que estava escrito na abertura:
     faz), e essa porta chama o motor pela conta de serviço dela;
   - decidir quando a trilha voltar: o que o pulso pode pedir (só lembrete? chat por voz?), e se a
     porta é a mesma do app da S17 ou uma só dele.
+  - **De novo em 2026-10-06 (depois da 11), sem decisão:** a resposta acima vale (as contas da
+    lista agora são três: `cli@`, `maos@`, `agendador@`). Dois fatos novos: um aparelho sem tela
+    já é tratado pelo `interativo: false` do `/chat` (o que pede código recusa antes de o código
+    nascer; agenda, lembretes e leitura do e-mail funcionam), e dá para testar **hoje** por uma
+    **ponte pelo Mac** (ESP32 → serial/Bluetooth → um programa no Mac que usa o cliente do
+    `viking chat --nuvem`), sem chave no aparelho, com o Mac ligado: o padrão do
+    `archive/wristband-fail-test/`. Turno de ~5–6 s, mais a partida a frio do Cloud Run; só texto.
 
 ## Backlog sem sessão marcada
 

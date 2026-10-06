@@ -7,9 +7,14 @@
 
 ## ▶️ RETOMAR AQUI — 2026-10-06 ~17:40Z: Sessões 10c e 11 fechadas no Mac; a próxima é a 11c (o dono pediu uma pausa antes)
 
-**Estado (2026-10-06 ~17:40Z, medido):**
-- HEAD = o commit de fechamento depois de `bbcba1a` = remoto; trava `.mutacao.lock`: nenhuma;
-  background: nenhum. CI `success` pelo SHA em `bbcba1a`.
+**Estado (2026-10-06 21:31Z, medido no checkpoint antes do compact):**
+- HEAD = este checkpoint (depois de `a047237`, o fechamento, CI `success` pelo SHA) = remoto;
+  trava `.mutacao.lock`: nenhuma; background: nenhum.
+- O agendador rodando: `ENABLED`, última execução 21:31:02Z sem erro.
+- `uv lock --upgrade --dry-run` → 1 versão nova (opentelemetry-api 1.45.0 → 1.45.1): o commit
+  próprio do lock na abertura da 11c, com a suíte antes e depois.
+- O dono perguntou de novo (2026-10-06) se um microcontrolador chama o Viking: resposta em
+  `sessoes.md`, "Só se o Bosgame voltar" (sem decisão; a ponte pelo Mac é possível hoje).
 - **No ar:** o motor **`bbcba1a`** (com o Gmail, as mãos e o envio de lembretes); `python
   scripts/nuvem.py deploy` → 17 ✅ (`gmail: True`, `envio_de_lembretes: True (esperado True)`,
   os três invocam, 0 erro no log). `python scripts/nuvem.py` → **11 ✅** (o `agendador` pronto).
