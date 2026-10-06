@@ -123,15 +123,19 @@ def _lembrete(lembrete: Reminder) -> dict[str, Any]:
 async def versao(request: Request) -> JSONResponse:
     """O commit no ar e o que este motor tem (o terminal do Mac diz isso na abertura)."""
     await _quem(request)
+    from lifeos.backup import rodada
     from lifeos.reminders import agendador
 
     ligado = await run_in_threadpool(agendador.ligado)
+    backup_em = await run_in_threadpool(rodada.ultimo) if config.drive_no_motor() else None
     return JSONResponse(
         {
             "commit": COMMIT,
             "gmail": config.gmail_no_motor(),
             "maos": True,
             "envio_de_lembretes": ligado,
+            "backup": config.drive_no_motor(),
+            "backup_em": _instante(backup_em),
         }
     )
 
@@ -253,6 +257,7 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/lembretes/importar": frozenset({CLI}),
     "/lembretes/impressoes": frozenset({CLI}),
     "/tarefas/lembretes": frozenset({AGENDADOR}),
+    "/tarefas/backup": frozenset({AGENDADOR}),
 }
 
 
@@ -374,6 +379,24 @@ async def tarefas_lembretes(request: Request) -> JSONResponse:
         return JSONResponse({"erro": f"a rodada falhou ({type(exc).__name__})"}, 500)
 
 
+def _backup() -> dict[str, Any]:
+    from lifeos.backup import rodada
+
+    registro.ORIGEM.set("agendador")
+    return rodada.rodar(commit=COMMIT)
+
+
+async def tarefas_backup(request: Request) -> JSONResponse:
+    """O backup do dia no Drive (Sessão 11c, D63), disparado pelo Cloud Scheduler (só o
+    `viking-agendador@`). A resposta tem só contagens e o nome do arquivo; um erro diz só o tipo."""
+    await _quem(request)
+    try:
+        return JSONResponse(await run_in_threadpool(_backup))
+    except Exception as exc:  # noqa: BLE001 - o log leva só o tipo, nunca um título
+        log.error("o backup falhou: %s", type(exc).__name__)
+        return JSONResponse({"erro": f"o backup falhou ({type(exc).__name__})"}, 500)
+
+
 async def _corpo_pequeno(request: Request, teto: int) -> Any:
     """O JSON de um pedido pequeno, ou `None` se passou do teto ou não é JSON."""
     declarado = request.headers.get("content-length", "")
@@ -441,5 +464,6 @@ ROTAS = [
     Route("/lembretes/importar", lembretes_importar, methods=["POST"]),
     Route("/lembretes/impressoes", lembretes_impressoes, methods=["GET"]),
     Route("/tarefas/lembretes", tarefas_lembretes, methods=["POST"]),
+    Route("/tarefas/backup", tarefas_backup, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)

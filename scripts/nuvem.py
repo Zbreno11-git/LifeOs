@@ -443,6 +443,10 @@ SEGREDOS = (
     Segredo(
         "viking-gmail", "/segredos/gmail/token.json", "VIKING_GMAIL_TOKEN_ARQUIVO", do_mac=True
     ),
+    # O backup no Drive (Sessão 11c, D63): o token `drive.file` sobe do Mac, como o do Gmail.
+    Segredo(
+        "viking-drive", "/segredos/drive/token.json", "VIKING_DRIVE_TOKEN_ARQUIVO", do_mac=True
+    ),
 )
 LER_SEGREDO = "roles/secretmanager.secretAccessor"
 
@@ -1218,35 +1222,50 @@ def _token_da_agenda() -> str:
     return texto
 
 
-def _token_do_gmail() -> str:
-    """O token do Gmail DESTE computador (o Mac: o VPS não guarda token do Gmail, D57), conferido
-    antes de subir: JSON, renovável e com a permissão do Gmail. Nada dele é mostrado."""
+def _token_do_mac(caminho: Path, escopo: str, nome: str, login: str) -> str:
+    """Um token do Google que mora DESTE computador (o Mac: o VPS não guarda os do Gmail nem do
+    Drive, D57, D63), conferido antes de subir: JSON, renovável e com a permissão `escopo`. Nada
+    dele é mostrado."""
     try:
-        texto = config.GMAIL_TOKEN_PATH.read_text()
+        texto = caminho.read_text()
         info = json.loads(texto)
     except (OSError, ValueError):
         raise SystemExit(
-            "nuvem.py: o token do Gmail não abriu como JSON; no Mac, `viking gmail --login` "
-            "(nada foi enviado)"
+            f"nuvem.py: o token {nome} não abriu como JSON; no Mac, `{login}` (nada foi enviado)"
         ) from None
     escopos = info.get("scopes") or []
     if isinstance(escopos, str):
         escopos = escopos.split()
-    if (
-        not info.get("refresh_token")
-        or "https://www.googleapis.com/auth/gmail.modify" not in escopos
-    ):
+    if not info.get("refresh_token") or escopo not in escopos:
         raise SystemExit(
-            "nuvem.py: o token do Gmail não renova ou não tem a permissão do Gmail (nada foi "
-            "enviado)"
+            f"nuvem.py: o token {nome} não renova ou não tem a permissão certa (nada foi enviado)"
         )
     return texto
+
+
+def _token_do_gmail() -> str:
+    return _token_do_mac(
+        config.GMAIL_TOKEN_PATH,
+        "https://www.googleapis.com/auth/gmail.modify",
+        "do Gmail",
+        "viking gmail --login",
+    )
+
+
+def _token_do_drive() -> str:
+    return _token_do_mac(
+        config.DRIVE_TOKEN_PATH,
+        "https://www.googleapis.com/auth/drive.file",
+        "do Drive",
+        "viking backup --login",
+    )
 
 
 FONTES: dict[str, tuple[str, Callable[[], str]]] = {
     "viking-gemini": ("o GEMINI_API_KEY do .env", _chave_do_gemini),
     "viking-agenda": ("o token da agenda de secrets/", _token_da_agenda),
     "viking-gmail": ("o token do Gmail de secrets/ (no Mac)", _token_do_gmail),
+    "viking-drive": ("o token do Drive de secrets/ (no Mac)", _token_do_drive),
 }
 
 

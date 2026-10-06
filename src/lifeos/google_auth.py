@@ -142,19 +142,28 @@ def _tokens_da_nuvem() -> dict[Path, tuple[str, _TokenDaNuvem]]:
                 "--executar`, no Mac",
             ),
         ),
+        config.DRIVE_TOKEN_PATH: (
+            "drive",
+            _TokenDaNuvem(
+                "do Drive",
+                config.drive_token,
+                "`viking backup --login` e `python scripts/nuvem.py segredo viking-drive "
+                "--executar`, no Mac",
+            ),
+        ),
     }
 
 
 def credenciais_da_nuvem(scopes: list[str], token_path: Path) -> Credentials:
     """Na nuvem (Sessões 10b e 10c, D59/D60): o token vem do segredo (um volume só de leitura),
     renova **em memória** e nunca é gravado; o login nunca abre (no motor ninguém clicaria, e o
-    pedido ficaria pendurado). Moram lá o token da agenda (subido do VPS) e o do Gmail (subido do
-    Mac: o VPS não guarda token do Gmail).
+    pedido ficaria pendurado). Moram lá o token da agenda (subido do VPS) e os do Gmail e do Drive
+    (subidos do Mac: o VPS não guarda nenhum dos dois).
 
     Um objeto por token e por processo, com trava: duas threads do motor não renovam juntas."""
     conhecido = _tokens_da_nuvem().get(token_path)
     if conhecido is None:
-        raise RuntimeError("na nuvem só há os tokens da agenda e do Gmail")
+        raise RuntimeError("na nuvem só há os tokens da agenda, do Gmail e do Drive")
     chave, token = conhecido
     with _TRAVA_DA_NUVEM:
         creds = _NA_NUVEM.get(chave)

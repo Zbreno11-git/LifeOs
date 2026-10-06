@@ -36,12 +36,28 @@
   - `custos.exportar_gastos`/`importar_gasto`.
   - Medido: `2437 passed`; ruff, format e mypy limpos; mutações `10 · mortas pelo teste esperado:
     10` (8 novas e a reancorada do `store: add`, que passou a casar duas vezes).
-- C2, C3, C4 e C5 ⬜.
+- C2 ✅ (2026-10-07, ~00:30Z):
+  - o token do Drive (`config.DRIVE_TOKEN_PATH`/`_ARQUIVO`, `drive_no_motor`, o `google_auth` na
+    nuvem);
+  - `backup/drive.py` (só cria, lista e baixa; o envio dentro de `registro.acao("backup.drive")`;
+    5xx = `incerta`);
+  - `backup/rodada.py` (`estado/backup` só depois do Drive);
+  - `POST /tarefas/backup` (só o `agendador@`);
+  - `/versao` com `backup`/`backup_em`;
+  - `viking backup` e `--login`;
+  - o segredo `viking-drive` no script (opcional, como o do Gmail; `_token_do_mac` generaliza a
+    conferência);
+  - a régua dos efeitos enxerga `files().create`;
+  - `backup/` no mypy.
+  - Medido: `2458 passed`, ruff, format e mypy (38) limpos; mutações `9 · mortas pelo teste
+    esperado: 9` (7 novas e 2 reancoradas pela generalização do token).
+- C3, C4 e C5 ⬜. O C4 encolheu: o segredo e as conferências do token já entraram no C2. Falta o
+  passo `backup` (a tarefa do Scheduler), as provas do deploy e os textos do Gmail.
 
-**Próximo passo exato:** o C2. O rascunho de `backup/drive.py` e de `backup/rodada.py` está no
-scratchpad da sessão. Falta o `config` (`DRIVE_TOKEN_PATH`, `DRIVE_TOKEN_ARQUIVO`), o
-`google_auth`, o segredo `viking-drive` no `scripts/nuvem.py` (a régua "todo `_ARQUIVO` tem
-segredo" exige junto), a rota `/tarefas/backup`, o `/versao` e os testes.
+**Próximo passo exato:** o C3. O rascunho de `backup/conferir.py` está no scratchpad. A rota
+`/lembretes/impressoes` ganha os instantes (`criado`, `mudou`), para separar "mudou depois do
+backup" de "divergente"; depois `backup/restaurar.py`, `/backup/importar`, a CLI e o aviso na
+abertura do chat.
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;

@@ -386,6 +386,37 @@ def _migrar(*, executar: bool) -> int:
     return 0
 
 
+def _backup(args: argparse.Namespace) -> int:
+    """`viking backup` (Sessão 11c, D63): sem opção, o último backup da nuvem (pelo `/versao`);
+    `--login`, o login do Drive deste Mac (`drive.file`), conferido lendo a pasta. 1 = falhou."""
+    if args.login:
+        from lifeos import google_auth
+        from lifeos.backup import drive
+
+        try:
+            ultimo = drive.ultimo()
+        except (drive.FalhaDoDrive, google_auth.PermissaoNaoConcedida, FileNotFoundError) as exc:
+            print(f"❌ Drive: {exc}", file=sys.stderr)
+            return 1
+        quando = f"o último é {ultimo.nome}" if ultimo else "nenhum backup na pasta ainda"
+        print(f"✅ Login do Drive ok (só os arquivos que o Viking cria): {quando}.")
+        return 0
+    from lifeos.nuvem import cliente
+
+    try:
+        versao = cliente.capacidades(cliente.sessao_de_chat())
+    except cliente.ErroDaNuvem as exc:
+        print(f"❌ Nuvem: {exc}.", file=sys.stderr)
+        return 1
+    if not versao.get("backup"):
+        print("☁️  O backup ainda não está ligado na nuvem (o token do Drive não subiu).")
+    elif versao.get("backup_em"):
+        print(f"☁️  Último backup no Drive: {versao['backup_em']} (UTC).")
+    else:
+        print("☁️  Backup ligado, mas nenhum ainda.")
+    return 0
+
+
 def _lembretes(args: argparse.Namespace) -> int:
     """Sem opção: os pendentes. `--nuvem`: os pendentes que moram no Firestore, pelo motor (1 se a
     nuvem não respondeu). `--enviar`: 0 = tudo que venceu saiu (ou nada venceu); 2 = parcial
@@ -565,6 +596,12 @@ def main() -> None:
     lembretes_cli.add_argument(
         "--executar", action="store_true", help="Com --migrar: copia de verdade e confere"
     )
+    backup_cli = subparsers.add_parser(
+        "backup", help="O backup diário no Drive (padrão: quando foi o último)"
+    )
+    backup_cli.add_argument(
+        "--login", action="store_true", help="Faz/confere o login do Drive deste Mac e sai"
+    )
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
     )
@@ -620,6 +657,8 @@ def main() -> None:
         sys.exit(_aprovar())
     elif args.command == "lembretes":
         sys.exit(_lembretes(args))
+    elif args.command == "backup":
+        sys.exit(_backup(args))
 
 
 if __name__ == "__main__":

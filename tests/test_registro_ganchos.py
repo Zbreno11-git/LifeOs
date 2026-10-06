@@ -179,6 +179,7 @@ def _mutacoes_sem_registro() -> list[str]:
                     or nome == "batchModify"
                     or (nome == "send" and dono.endswith("messages()"))
                     or (nome in {"add", "complete"} and dono == "store")
+                    or (nome == "create" and dono.endswith("files()"))  # o Drive (D63)
                 )
                 if externo and not _chama_registro(funcao):
                     faltando.append(f"{arquivo.relative_to(raiz)}:{no.lineno} {dono}.{nome}")
@@ -199,6 +200,7 @@ def test_a_regua_enxerga_as_mutacoes():
         "events().insert",
         "batchModify",
         "messages().send",
+        "files().create",
     ):
         assert nome in fonte
     assert "store.add(" in fonte and "store.complete(" in fonte

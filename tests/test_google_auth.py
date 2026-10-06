@@ -203,7 +203,7 @@ def test_na_nuvem_o_gmail_usa_o_segredo_dele(na_nuvem, monkeypatch, tmp_path):
     with pytest.raises(google_auth.TokenDaNuvemRecusado, match="do Gmail"):
         google_auth._NA_NUVEM.clear()
         google_auth.credenciais_da_nuvem(SCOPES_CAL, config.GMAIL_TOKEN_PATH)
-    with pytest.raises(RuntimeError, match="agenda e do Gmail"):
+    with pytest.raises(RuntimeError, match="agenda, do Gmail e do Drive"):
         google_auth.credenciais_da_nuvem(SCOPES_GMAIL, tmp_path / "outro.json")
 
 

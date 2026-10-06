@@ -977,3 +977,67 @@ def test_o_agendador_e_o_ultimo_passo_e_sem_flag_nada_e_criado(nuvem):
     (passo,) = [p for p in nuvem.PASSOS if p.nome == "agendador"]
     assert nuvem.PASSOS[-1] is passo and "contas" in passo.depende
     assert "só para a conta do dono" in passo.irreversivel and "US$" in passo.irreversivel
+
+
+# --- o token do Drive sobe do Mac, como o do Gmail (Sessão 11c, D63) ----------------------------
+
+
+def test_deploy_sem_o_token_do_drive_publica_sem_ele(nuvem, ctx, mundo, capsys):
+    m = mundo(vazios={"viking-drive"})
+    assert nuvem.deploy(ctx, executar=True) == 0
+    segredos, variaveis = _implantado(m)
+    assert "viking-drive" not in segredos and "viking-gmail" in segredos
+    assert "VIKING_DRIVE_TOKEN_ARQUIVO" not in variaveis
+    assert "Fora desta revisão (sem versão; sobe do Mac): viking-drive" in capsys.readouterr().out
+
+
+def test_com_o_token_do_drive_publica_com_ele(nuvem, ctx, mundo):
+    m = mundo()
+    assert nuvem.deploy(ctx, executar=True) == 0
+    segredos, variaveis = _implantado(m)
+    assert "/segredos/drive/token.json=viking-drive:latest" in segredos
+    assert "VIKING_DRIVE_TOKEN_ARQUIVO=/segredos/drive/token.json" in variaveis
+
+
+def _token_do_drive(tmp_path, monkeypatch, **mudancas):
+    from lifeos import config
+
+    info = {
+        "refresh_token": REFRESH_FALSO,
+        "client_id": "cliente",
+        "scopes": ["https://www.googleapis.com/auth/drive.file"],
+        **mudancas,
+    }
+    arquivo = tmp_path / "google_token_drive.json"
+    arquivo.write_text(json.dumps(info))
+    monkeypatch.setattr(config, "DRIVE_TOKEN_PATH", arquivo)
+    return arquivo.read_text()
+
+
+def test_o_token_do_drive_sobe_pela_entrada_padrao_e_nunca_aparece(
+    nuvem, ctx, monkeypatch, capsys, tmp_path
+):
+    texto = _token_do_drive(tmp_path, monkeypatch)
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    assert nuvem.segredo(ctx, "viking-drive", executar=True) == 0
+    ((comando, entrada),) = [(c, e) for c, e in g.chamadas if "add" in c]
+    assert "viking-drive" in comando and "--data-file=-" in comando and entrada == texto
+    assert REFRESH_FALSO not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "mudanca",
+    [{"scopes": ["https://www.googleapis.com/auth/gmail.modify"]}, {"refresh_token": ""}],
+    ids=["sem-o-escopo-do-drive", "sem-renovacao"],
+)
+def test_token_do_drive_torto_nao_sobe_nem_aparece(
+    nuvem, ctx, monkeypatch, capsys, tmp_path, mudanca
+):
+    _token_do_drive(tmp_path, monkeypatch, **mudanca)
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    with pytest.raises(SystemExit, match="nada foi enviado") as erro:
+        nuvem.segredo(ctx, "viking-drive", executar=True)
+    assert not any("add" in c for c, _ in g.chamadas)
+    assert REFRESH_FALSO not in str(erro.value) + capsys.readouterr().out

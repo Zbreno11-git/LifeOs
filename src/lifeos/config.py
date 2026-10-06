@@ -150,6 +150,8 @@ GOOGLE_CREDENTIALS_PATH = _path_env(
 GOOGLE_TOKEN_PATH = _path_env("VIKING_GOOGLE_TOKEN_PATH", SECRETS_DIR / "google_token.json")
 # Token próprio do Gmail: um login do Gmail que falhe ou seja revogado não derruba o calendário.
 GMAIL_TOKEN_PATH = _path_env("VIKING_GMAIL_TOKEN_PATH", SECRETS_DIR / "google_token_gmail.json")
+# O token do Drive do backup (Sessão 11c, D63): `drive.file`, outro login, outro arquivo.
+DRIVE_TOKEN_PATH = _path_env("VIKING_DRIVE_TOKEN_PATH", SECRETS_DIR / "google_token_drive.json")
 REMINDERS_DB_PATH = _path_env("VIKING_DB_PATH", DATA_DIR / "viking.db")
 
 # Pluggy (finanças pelo Meu Pluggy, uso pessoal). Os IDs são os das conexões "espelho" criadas
@@ -206,6 +208,7 @@ STORE = _store()
 GEMINI_CHAVE_ARQUIVO = os.getenv("VIKING_GEMINI_CHAVE_ARQUIVO") or ""
 AGENDA_TOKEN_ARQUIVO = os.getenv("VIKING_AGENDA_TOKEN_ARQUIVO") or ""
 GMAIL_TOKEN_ARQUIVO = os.getenv("VIKING_GMAIL_TOKEN_ARQUIVO") or ""  # Sessão 10c, D60
+DRIVE_TOKEN_ARQUIVO = os.getenv("VIKING_DRIVE_TOKEN_ARQUIVO") or ""  # Sessão 11c, D63
 _SEGREDOS: dict[str, str] = {}
 
 
@@ -248,3 +251,16 @@ def gmail_token() -> str:
     if not GMAIL_TOKEN_ARQUIVO:
         raise RuntimeError("VIKING_GMAIL_TOKEN_ARQUIVO vazio: o token do Gmail não está aqui")
     return _segredo(GMAIL_TOKEN_ARQUIVO)
+
+
+def drive_no_motor() -> bool:
+    """O motor tem o token do Drive (o backup, Sessão 11c, D63)? Como o do Gmail: o deploy só põe a
+    variável quando o segredo `viking-drive` tem versão."""
+    return bool(DRIVE_TOKEN_ARQUIVO)
+
+
+def drive_token() -> str:
+    """O token do Drive (JSON) do volume da nuvem, subido do Mac (D63). Só existe na nuvem."""
+    if not DRIVE_TOKEN_ARQUIVO:
+        raise RuntimeError("VIKING_DRIVE_TOKEN_ARQUIVO vazio: o token do Drive não está aqui")
+    return _segredo(DRIVE_TOKEN_ARQUIVO)

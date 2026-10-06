@@ -1420,8 +1420,8 @@ MUTACOES = [
     Mutacao(
         "segredos: sobe um token da agenda que não renova",
         "scripts/nuvem.py",
-        '    if not info.get("refresh_token") or',
-        "    if False and",
+        '    if not info.get("refresh_token") or "https://www.googleapis.com/auth/calendar" not in escopos:',
+        "    if False:",
         "tests/test_nuvem_script.py::test_token_da_agenda_que_nao_renova_nao_sobe",
     ),
     Mutacao(
@@ -2035,10 +2035,10 @@ MUTACOES = [
         "tests/test_nuvem_script.py::test_deploy_nao_publica_com_um_segredo_vazio_que_nao_e_do_mac",
     ),
     Mutacao(
-        "nuvem.py: sobe um token do Gmail sem a permissão do Gmail",
+        "nuvem.py: sobe um token do Gmail (ou do Drive) sem a permissão certa",
         "scripts/nuvem.py",
-        '        or "https://www.googleapis.com/auth/gmail.modify" not in escopos',
-        "        or False",
+        '    if not info.get("refresh_token") or escopo not in escopos:',
+        '    if not info.get("refresh_token"):',
         "tests/test_nuvem_script.py::test_token_do_gmail_torto_nao_sobe_nem_aparece",
     ),
     Mutacao(
@@ -2528,6 +2528,55 @@ MUTACOES = [
         '        ref.create({"total": float(copia["total"]), "dias": dict(copia["dias"])})\n',
         '        ref.set({"total": float(copia["total"]), "dias": dict(copia["dias"])})\n',
         "tests/test_backup_formato.py::test_gasto_existente_nunca_e_sobrescrito",
+    ),
+    Mutacao(
+        "backup: o último backup marcado antes de o Drive confirmar",
+        "src/lifeos/backup/rodada.py",
+        "    arquivo = drive.subir(\n",
+        '    _ref().set({"ultimo": agora})\n    arquivo = drive.subir(\n',
+        "tests/test_backup_rodada.py::test_drive_que_falha_nao_marca_o_backup",
+    ),
+    Mutacao(
+        "backup: a resposta da rota leva os lembretes",
+        "src/lifeos/backup/rodada.py",
+        '    return {"arquivo": arquivo.nome, **dados["contagens"]}\n',
+        '    return {"arquivo": arquivo.nome, **dados["contagens"], "l": dados["lembretes"]}\n',
+        "tests/test_backup_rodada.py::test_o_backup_sobe_um_arquivo_que_se_le_de_volta",
+    ),
+    Mutacao(
+        "motor: o terminal do dono dispara o backup",
+        "src/lifeos/nuvem/motor.py",
+        '    "/tarefas/backup": frozenset({AGENDADOR}),\n',
+        '    "/tarefas/backup": frozenset({AGENDADOR, CLI}),\n',
+        "tests/test_backup_rodada.py::test_so_o_agendador_dispara_o_backup",
+    ),
+    Mutacao(
+        "drive: a pasta nasce de novo a cada backup",
+        "src/lifeos/backup/drive.py",
+        "        if pasta is None:\n",
+        "        if True:\n",
+        "tests/test_backup_drive.py::test_a_pasta_nasce_uma_vez_e_os_arquivos_se_acumulam",
+    ),
+    Mutacao(
+        "drive: um 5xx no envio vira falhou (e não incerta)",
+        "src/lifeos/backup/drive.py",
+        "        raise FalhaDoDrive(_descrever(exc), incerta=escreve and not certa) from None\n",
+        "        raise FalhaDoDrive(_descrever(exc), incerta=False) from None\n",
+        "tests/test_backup_drive.py::test_falha_do_drive_e_incerta_so_quando_pode_ter_criado",
+    ),
+    Mutacao(
+        "drive: o último backup sem a ordem pela criação",
+        "src/lifeos/backup/drive.py",
+        '            orderBy="createdTime desc",\n',
+        '            orderBy="createdTime",\n',
+        "tests/test_backup_drive.py::test_ultimo_e_o_mais_novo_e_nada_sem_pasta",
+    ),
+    Mutacao(
+        "versao: o backup ligado sem o token do Drive",
+        "src/lifeos/nuvem/motor.py",
+        '            "backup": config.drive_no_motor(),\n',
+        '            "backup": True,\n',
+        "tests/test_backup_rodada.py::test_sem_o_token_do_drive_o_versao_diz_que_nao_ha_backup",
     ),
 ]
 

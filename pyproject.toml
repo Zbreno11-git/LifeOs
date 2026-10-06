@@ -83,4 +83,5 @@ files = [
     "src/lifeos/cli.py",
     "src/lifeos/nuvem",
     "src/lifeos/maos",
+    "src/lifeos/backup",
 ]
