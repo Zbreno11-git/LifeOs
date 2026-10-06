@@ -16,28 +16,25 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 11c — backup no Drive e a medição das finanças (D51), **a abrir**. A 10c e a 11
-  fecharam no Mac em 2026-10-06 (o Gmail na nuvem, o agendador ligado, o lembrete por e-mail com
-  o Mac fechado, a migração dos lembretes; o motor `bbcba1a`). O dono pediu uma pausa antes de
-  atacar a 11c. Estado no `PROGRESSO.md`; decisões D60–D62.
+- **Sessão:** 11c — backup no Drive e a medição das finanças (D51), **em curso** desde
+  2026-10-06. A abertura respondeu as perguntas e o plano foi aprovado; a D51 deu "pode", e a
+  mudança das finanças virou a **11d**. Estado no `PROGRESSO.md`; decisões D60–D63.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-06, ~17:40Z):** 19 de 31 sessões fechadas. Primeiro passo da 11c: medir as
-  leituras do Firestore e os pedidos do Cloud Run com 24 h de agendador ligado (a partir de
-  2026-10-07 ~17:00Z) contra a conta da D61; depois, as perguntas da abertura (o consentimento do
-  Drive, `drive.file`, é outro login no Mac, agora liberado: a prova do Gmail passou).
+- **Agora (2026-10-06, ~23:30Z):** 19 de 32 sessões fechadas (a 11d entrou no roteiro). A 11c
+  está em curso; a medição de 24 h do agendador (C0b) dá a partir de 2026-10-07 ~17:00Z.
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D62), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D63), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** abrir a 11c (ele pediu uma pausa antes), o login do Drive no Mac, o pedido
-  da medição da Pluggy (um GET), e os ok's do que custa ou publica.
+- **Depende do dono:** os oks do deploy e do passo `backup`; no Mac, o login do Drive (`viking
+  backup --login`), o `segredo viking-drive --executar` e a saída do `viking backup --conferir`.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -846,19 +843,56 @@ O que estava escrito na abertura:
   - só o `googleapiclient`, para o Drive, que já está no lock;
   - o scanner de segredos, escolhido na abertura.
 
-## Sessão 11c — backup no Drive e a medição das finanças (separada da 11 em 2026-10-01)
+## Sessão 11c — backup no Drive e a medição das finanças (aberta em 2026-10-06)
 
 - **Separada pelo dono na abertura da 11 (2026-10-01, D61):** a 11 ficou com as mãos e a
-  migração; estas duas entregas vêm **depois de 2026-10-04**.
-- **Primeiro passo:** o consentimento do Drive (`drive.file`, outro login no Mac) só **depois**
-  da prova do token do Gmail (o portão da 10c), para não misturar logins no dia da prova.
+  migração; o backup e a medição das finanças vieram para cá, depois da prova do Gmail.
+- **Respostas do dono na abertura (2026-10-06, D63):**
+  - o backup roda **na nuvem, todo dia**: uma 2ª tarefa do Cloud Scheduler, com o token do Drive
+    (`drive.file`) no Secret Manager, subido do Mac como o do Gmail;
+  - **entram** os lembretes e as notas, o registro de ações da nuvem (30 dias) e os gastos do
+    teto. Ficam fora as confirmações, as tarefas das mãos e o `viking.db` do Mac;
+  - **todas as cópias ficam**: o Viking nunca apaga nada no Drive;
+  - a prova real é **no Mac, num banco vazio** (`viking backup --conferir`: um `viking.db`
+    temporário, comparado lembrete por lembrete com a nuvem);
+  - o aviso de falha sai **na abertura do `viking chat --nuvem`** (backup com mais de 48 h);
+  - a medição da D51 foi feita (dois GETs, com o ok do dono) e deu "pode"; a mudança das finanças
+    é a **Sessão 11d**.
+
+  Plano, medições e checkpoints no `PROGRESSO.md`.
 - **Entrega:**
-  - backup no Drive (`drive.file`) que restaura num banco novo, vazio (a proposta de arquitetura
-    está na Sessão 11, "Backup");
-  - a medição da D51, só lendo: o produto de pagamentos está desligado na aplicação Pluggy do
-    dono? A documentação oficial diz que o PIX exige autorização no banco? A chave da Pluggy está
-    no `.env` do VPS, e nada a usa sem o pedido do dono: a medição é um GET, pedido na abertura.
+  - o backup diário no Drive, que restaura num banco vazio (provado no emulador e, uma vez, no Mac
+    com o arquivo real);
+  - `viking backup --restaurar` para um desastre (nunca sobrescreve);
+  - a D51 medida e escrita.
+- **Junto, no mesmo deploy:** as recusas sem terminal do Gmail falam com o dono e citam `viking
+  chat --nuvem` (achado no teste do Mac de 2026-10-06).
 - **Libs:** só o `googleapiclient` (já no lock).
+
+## Sessão 11d — finanças na nuvem, só leitura (criada em 2026-10-06)
+
+- **Por quê:** a medição da D51 (2026-10-06 22:27Z, na abertura da 11c) deu "pode":
+  - `GET /smart-transfers/preauthorizations` → **403 `PAYMENT_INITIATION_NOT_ALLOWED`**. É o único
+    caminho que paga "without user interaction" (docs da Pluggy), e a aplicação do dono não o
+    alcança;
+  - a documentação oficial diz que "Payments must be enabled specifically for your client" e que o
+    produto é "exclusivo para clientes com assinatura" (Q&A verificado);
+  - todo PIX avulso nasce `CONSENT_AWAITING_AUTHORIZATION` ("the user needs to authorize it in the
+    institution"), com o link do banco vencendo em 5 min.
+
+  O dono decidiu fazer a mudança numa sessão própria (2026-10-06).
+- **A nuance que a abertura mede de novo:** `GET /payments/requests` → **200**, 0 pedidos. A
+  listagem abre; se **criar** um pedido seria recusado não se mede sem escrever (proibido). Mesmo
+  criado, um pedido só move dinheiro com a autorização do dono no banco.
+- **Entrega prevista:**
+  - as finanças no `viking chat --nuvem` por um **serviço isolado só de leitura**: um 2º serviço
+    do Cloud Run, com conta e segredo próprios (`viking-pluggy`), chamado pelo motor só nos `GET`
+    da lista fechada de `financas/pluggy.py`;
+  - o motor nunca vê a chave da Pluggy.
+- **Perguntas para a abertura:**
+  - o serviço isolado ou a chave no motor (a D51 diz isolado);
+  - o que o chat da nuvem pode perguntar (saldo, gastos, busca, fatura: as mesmas tools do Mac);
+  - se o `viking chat` do Mac continua com as finanças locais.
 
 ## Sessão 11b — formulários: o Viking preenche, o dono envia (pedida em 2026-09-29)
 

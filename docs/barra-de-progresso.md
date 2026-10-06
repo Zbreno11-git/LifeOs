@@ -9,12 +9,13 @@
 
 **Última atualização: 2026-10-06 (Sessões 10c e 11 fechadas no seu Mac).**
 
-`████████████░░░░░░░░ 19 de 31 sessões fechadas`
+`████████████░░░░░░░░ 19 de 32 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c e 11; parciais: nenhuma; em curso: nenhuma; na fila: 11c (backup no Drive e as
-finanças), 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi dividida,
-para 30 quando a 10b foi dividida (2026-09-30), e para 31 quando a 11c saiu da 11 (2026-10-01).
+10, 10b, 10c e 11; parciais: nenhuma; em curso: 11c (backup no Drive; aberta em
+2026-10-06); na fila: 11d (finanças na nuvem), 11b (formulários) e 12 a 21. O total passou de 28
+para 29 quando a 10 foi dividida, para 30 quando a 10b foi dividida (2026-09-30), para 31 quando a
+11c saiu da 11 (2026-10-01), e para 32 quando a medição das finanças abriu a 11d (2026-10-06).
 
 ## 2026-10-06 — Sessões 10c e 11: o Gmail na nuvem, e o Viking trabalha com o Mac fechado (fechadas no seu Mac)
 

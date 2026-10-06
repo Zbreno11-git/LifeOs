@@ -5,70 +5,76 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-06 ~17:40Z: Sessões 10c e 11 fechadas no Mac; a próxima é a 11c (o dono pediu uma pausa antes)
+## ▶️ RETOMAR AQUI — 2026-10-06 ~23:30Z: Sessão 11c aberta e planejada (backup no Drive); C0 em curso
 
-**Estado (2026-10-06 21:31Z, medido no checkpoint antes do compact):**
-- HEAD = este checkpoint (depois de `a047237`, o fechamento, CI `success` pelo SHA) = remoto;
-  trava `.mutacao.lock`: nenhuma; background: nenhum.
-- O agendador rodando: `ENABLED`, última execução 21:31:02Z sem erro.
-- `uv lock --upgrade --dry-run` → 1 versão nova (opentelemetry-api 1.45.0 → 1.45.1): o commit
-  próprio do lock na abertura da 11c, com a suíte antes e depois.
-- O dono perguntou de novo (2026-10-06) se um microcontrolador chama o Viking: resposta em
-  `sessoes.md`, "Só se o Bosgame voltar" (sem decisão; a ponte pelo Mac é possível hoje).
-- **No ar:** o motor **`bbcba1a`** (com o Gmail, as mãos e o envio de lembretes); `python
-  scripts/nuvem.py deploy` → 17 ✅ (`gmail: True`, `envio_de_lembretes: True (esperado True)`,
-  os três invocam, 0 erro no log). `python scripts/nuvem.py` → **11 ✅** (o `agendador` pronto).
-- Suíte: `2386 passed` no VPS (`VIKING_EXIGIR_EMULADOR=1`); no Mac `2207 passed, 173 skipped`
-  (antes do `bbcba1a`).
-- **Os lembretes do Mac moram na nuvem** desde 2026-10-06 (`viking.db` com a marca "migrado").
-- Barra: **19 de 31** sessões fechadas.
+**Estado (2026-10-06 ~23:30Z):**
+- A 11c foi aberta depois de um compact. As conferências bateram com o bloco anterior:
+  - `2386 passed`;
+  - CI `success` em `12e775e`;
+  - a infraestrutura com 11 ✅;
+  - o motor `bbcba1a` com 17 ✅;
+  - o Scheduler `ENABLED`.
+- **As duas rodadas de perguntas foram respondidas**, e o plano foi aprovado (logo abaixo deste
+  bloco, "Plano — Sessão 11c"; as respostas na tabela dele; D63).
+- **O lock** (opentelemetry-api 1.45.1) está em `d4f5127`, com `2386 passed` antes e depois.
+- **A D51 foi medida (2026-10-06 22:27Z, com o ok do dono): pode.**
+  - `GET /smart-transfers/preauthorizations` → 403 `PAYMENT_INITIATION_NOT_ALLOWED`;
+  - `GET /payments/requests` → 200, 0 pedidos;
+  - as docs dizem que todo PIX avulso exige a autorização no banco.
+  - A mudança das finanças vai para a **11d nova** (resposta do dono).
+- **No ar:** o motor `bbcba1a`, sem mudança.
 
-**Próximo passo exato:**
-1. **Esperar o dono** abrir a 11c (ele pediu uma pausa antes de atacá-la, 2026-10-06).
-2. Ao abrir: a rotina da abertura (`uv lock --upgrade --dry-run`, CI pelo SHA, `python
-   scripts/nuvem.py` → 11 ✅, `deploy` → 17 ✅) e **a medição de 24 h do agendador** (a partir de
-   2026-10-07 ~17:00Z): leituras do Firestore e pedidos do Cloud Run do dia, pelo console de
-   métricas ou `gcloud monitoring`, contra a conta da D61 (~1,5 mil leituras/dia; gatilho: mais
-   de 25 mil, metade das 50 mil grátis).
-3. As perguntas da 11c em rodadas (software-build): o backup (o quê, para onde, de quanto em
-   quanto tempo, como se restaura), o login do Drive (`drive.file`) no Mac, e a medição da D51 (um
-   GET na Pluggy, pedido ao dono na hora). Plano no formato `plano-de-sessao.md`, aqui, acima do
-   plano da 11.
-4. Item pequeno para o próximo deploy: o texto da recusa sem terminal (`gmail/tools.py:60`, "peça ao
-   usuário para abrir o `viking chat`") fala com o modelo e o modelo o repete ao dono; deve falar
-   com o dono e citar `viking chat --nuvem`.
+**Checkpoints da 11c:**
+- C0 ⬜ (o lock ✅, os docs em curso);
+- C0b ⬜ (a medição de 24 h: só depois de 2026-10-07 ~17:00Z);
+- C1, C2, C3, C4 e C5 ⬜.
 
-**Reler, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (o ▶️, a 11c, a 11b,
-a 12); `docs/decisoes.md` (D51, D56–D62); o índice de `docs/erros.md` e as classes 1, 2, 4, 5 e 6;
-a memória; as skills `software-build`, `testes-que-provam`, `nuvem-e-deploy`, `seguranca`,
-`integracoes` e `dados-e-banco`.
+**Próximo passo exato:** fechar o C0 (o commit dos docs, o push e o CI pelo SHA) e seguir para o
+C1 (`src/lifeos/backup/formato.py` e os `importar`), conforme o plano.
+
+**Reler, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md`;
+- este bloco e o plano da 11c logo abaixo;
+- `sessoes.md` (a 11c e a 11d);
+- `docs/decisoes.md` (D51, D56–D63);
+- o índice de `docs/erros.md` e as classes 2, 4, 5 e 6;
+- as skills `software-build`, `testes-que-provam`, `dados-e-banco`, `nuvem-e-deploy`,
+  `seguranca` e `integracoes`.
 
 **Não pode ser esquecido:**
-- O navegador, a trava, o freio e a liberação moram no Mac (D57, D62); a tarefa da nuvem nunca
-  carrega `liberar`; o Browser Use Cloud foi recusado (D62).
-- O código de aprovação nunca vai ao Gemini, ao MCP, ao registro, ao log nem por e-mail; na
-  nuvem, só no `ao_dono`. No motor, o stdout e o stderr são o log.
-- O VPS não guarda token do Gmail; nada que envie, apague ou arquive roda daqui. Todo `gcloud`
-  leva `--project`; segredo só pela entrada padrão.
-- **O motor agora envia e-mail sozinho** (os lembretes vencidos, a cada minuto, só para a conta
-  do dono, até 20 em 24 h): um lembrete de teste criado na nuvem vira e-mail de verdade.
-- Depois da migração, o `viking.db` do Mac é a cópia de antes: código que grava lembrete passa
-  pelo `service` e trata `service.Indisponivel`.
-- Mutações em background, sem `timeout`, saída num arquivo, nada editado enquanto rodam; nenhuma
-  checagem antes de commit com `| tail`; migração publicada não se edita; nenhum marcador `<…>`
-  dentro de um comando para o dono colar.
-- O fuso do dono: Seattle até ~fim de outubro, depois o Brasil (perguntar a cidade).
+- **O backup nunca apaga nada no Drive** (resposta do dono: todas as cópias ficam). O módulo do
+  Drive só cria, lista e baixa.
+- **O token do Drive** (`drive.file`) faz o login no Mac e sobe ao Secret Manager como o do Gmail;
+  o VPS não o guarda.
+- **O `--conferir` restaura num `viking.db` temporário;** o real não muda.
+- **O cliente OAuth do Google mora noutro projeto do dono.** A API do Drive já está ligada lá
+  (medido em 2026-10-06).
+- **O motor envia e-mail sozinho**, a cada minuto, só para a conta do dono: um lembrete de teste
+  na nuvem vira e-mail de verdade.
+- **O código de aprovação** nunca vai ao Gemini, ao MCP, ao registro, ao log nem por e-mail. Na
+  nuvem, vai só no `ao_dono`, e no motor o stdout e o stderr são o log.
+- **O VPS:** nada que envie, apague ou arquive roda daqui; todo `gcloud` leva `--project`; segredo
+  só pela entrada padrão.
+- **A chave da Pluggy alcança PIX:** nada a usa sem o pedido do dono, e nunca uma escrita.
+- **Rotina:**
+  - mutações em background, sem `timeout`, com a saída num arquivo, e nada editado enquanto
+    rodam;
+  - nenhuma checagem antes de commit com `| tail`;
+  - migração publicada não se edita;
+  - nenhum `<…>` dentro de um comando para o dono colar.
+- **O fuso do dono:** Seattle até ~fim de outubro, depois o Brasil (perguntar a cidade).
 
-**Depende do dono:** abrir a 11c; o login do Drive no Mac; o pedido da medição da Pluggy; os oks
-do que custa, cria recurso ou publica.
+**Depende do dono:**
+- os oks do deploy e do passo `backup`;
+- no Mac: o login do Drive (`viking backup --login`) e o `segredo viking-drive --executar`;
+- a saída do `viking backup --conferir`.
 
 **Antes de confiar neste bloco:**
 - `git status --short` vazio, HEAD = remoto, `ls .mutacao.lock` → não existe;
-- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2386 passed`;
+- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2386 passed` (antes do C1);
 - `gh run list --commit $(git rev-parse HEAD)` → `success`;
-- `python scripts/nuvem.py` → 11 ✅; `python scripts/nuvem.py deploy` → o motor `bbcba1a`, 17 ✅
-  (e 0 commit nos caminhos da imagem desde ela);
-- `uv lock --upgrade --dry-run` → o número de versões novas do dia.
+- `python scripts/nuvem.py` → 11 ✅; `python scripts/nuvem.py deploy` → o motor `bbcba1a`,
+  17 ✅.
 
 ### 2026-10-06 — o fechamento da 10c e da 11 (o registro)
 
@@ -290,6 +296,413 @@ D61). Medido na abertura: `2216 passed`, CI `success` em `687068d`, 10 ✅, o mo
   viking-gmail` → "viking-gmail: 0 versão(ões) habilitada(s); a fonte é o token do Gmail de
   secrets/ (no Mac)." e "Nada foi enviado (sem --executar)." O `gcloud` do Mac lê o Secret
   Manager do Viking: o passo do C6 não depende de login novo.
+
+## Plano — Sessão 11c: backup diário no Drive que restaura num banco vazio, e a D51 medida (aprovado em 2026-10-06)
+
+### Context
+As Sessões 10c e 11 fecharam no Mac em 2026-10-06:
+- os lembretes do dono moram **só** na nuvem (Firestore);
+- o motor `bbcba1a` envia os e-mails sozinho.
+
+Hoje não existe cópia nenhuma desses dados fora do projeto do GCP. A 11c, separada da 11 em
+2026-10-01 (D61), entrega um backup automático no Drive do dono que se prova restaurável num banco
+vazio. Ela também fecha a medição da D51 (finanças), que foi feita nesta abertura.
+
+Aprovado este plano, o C0 o copia para o `PROGRESSO.md`, acima do plano da 11. A execução segue até
+o fim sem pedir confirmação por fase. Os oks do que custa, cria recurso ou publica são pedidos **na
+hora**.
+
+### O que esta sessão entrega (verificável)
+1. **Uma vez por dia, com o Mac desligado:**
+   - o Cloud Scheduler (uma 2ª tarefa, `viking-backup`, 09:00 UTC) chama `POST /tarefas/backup`,
+     só do `viking-agendador@`;
+   - o motor lê lembretes e notas (todos), o registro de ações da nuvem (30 dias) e os gastos do
+     teto;
+   - monta um arquivo JSON versionado, com contagens e a impressão sha256 de cada lembrete;
+   - sobe o arquivo à pasta "Viking — backups" do Drive do dono (escopo `drive.file`);
+   - o envio passa por `registro.acao("backup.drive")`;
+   - a resposta da rota e o log levam só contagens e o tipo do erro.
+2. **Nada apaga no Drive:** as cópias se acumulam (KB por dia). Um teste que lê o código proíbe
+   `delete`, `update`, `trash`, `emptyTrash` e `permissions` no módulo do Drive.
+3. **`viking backup --conferir` (Mac) é a prova real:**
+   - baixa o último arquivo e restaura num `viking.db` **novo, vazio e temporário** (o `viking.db`
+     real não muda: conferido por sha256);
+   - compara cada lembrete (impressão) com a nuvem (`/lembretes/impressoes`) e diz o que mudou
+     depois do backup;
+   - não toca a nuvem nem o Drive além de ler.
+4. **`viking backup --restaurar ARQUIVO [--executar]`** é o caminho do desastre: um ensaio e
+   depois a cópia de verdade para a nuvem, em lotes:
+   - lembretes por `/lembretes/importar`, que já existe;
+   - ações e gastos por `/backup/importar`, nova;
+   - idempotente, nunca sobrescreve e confere relendo;
+   - provado no emulador num Firestore vazio.
+5. **Aviso:** `/versao` passa a dizer `backup` (o token montado) e `backup_em`. A abertura do
+   `viking chat --nuvem` avisa quando não há backup há mais de 48 h, e a prova do deploy confere.
+6. **O token do Drive:**
+   - `viking backup --login` no Mac (`drive.file`, outro consentimento), gravado em
+     `secrets/google_token_drive.json` (600);
+   - sobe pela entrada padrão (`python scripts/nuvem.py segredo viking-drive --executar`, no Mac)
+     como o segredo opcional `viking-drive` (`do_mac=True`);
+   - o VPS não o guarda.
+7. **Junto, no mesmo deploy:** as duas recusas sem terminal de `gmail/tools.py` (a limpeza, linha
+   60, e o envio, linha 353) falam **com o dono** e citam `viking chat --nuvem` na nuvem (ou
+   `viking chat` no Mac).
+
+### O que ela NÃO faz (e para onde foi)
+- **As finanças na nuvem** (a D51 deu "pode") → **Sessão 11d** nova, escrita no C0: um serviço
+  isolado só de leitura, com conta e segredo próprios.
+- **O `viking.db` do Mac** fica fora do backup, por resposta do dono. Os backups
+  `antes-da-migracao` continuam no Mac.
+- **Confirmações e tarefas das mãos** ficam fora: duram 10 min e 1 dia.
+- **Podar cópias no Drive** fica fora, por resposta do dono: todas ficam.
+- **A medição de 24 h do agendador** vem no C0b, a partir de 2026-10-07 ~17:00Z. Ela não depende
+  do resto.
+
+### Respostas do dono (2026-10-06, ~22:30Z)
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| Onde e quando | na nuvem, todo dia | 2ª tarefa do Scheduler; o token do Drive no Secret Manager (sobe do Mac) |
+| O que entra | lembretes e notas, registro de ações da nuvem, gastos do teto | três coleções no arquivo; confirmações e tarefas fora |
+| Quantas cópias | todas, sem apagar | nenhum caminho de exclusão; um teste o proíbe |
+| A medição da D51 | sim, os dois GETs | feita em 2026-10-06 22:27Z (abaixo) |
+| As finanças depois do "pode" | sessão própria, 11d | a 11c só registra a medição e atualiza a D51 |
+| A prova real | no Mac, num banco vazio | `viking backup --conferir` com um `viking.db` temporário |
+| O aviso de falha | na abertura do chat | `/versao` com `backup_em`; nada novo por e-mail |
+
+### Decisões técnicas minhas (declaradas; o dono pode derrubar)
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **Formato:** `src/lifeos/backup/formato.py`, puro, sem rede. `{"formato": "viking-backup", "versao": 1, "criado_em", "commit", "contagens", "lembretes": [transporte.para_dict], "acoes": [...], "gastos": [...]}`. A leitura recusa versão desconhecida, campo a mais e contagem que não bate, sem ecoar conteúdo | reaproveita o formato fechado e a impressão da migração (`reminders/transporte.py`); a mesma régua confere a cópia | — |
+| **As ações** num formato fechado próprio (`id`, `turno`, `origem`, `operacao`, `parametros`, `estado`, `resultado`, `erro`, `desfazer`, `desfeita_em`, `criada_em`, `terminada_em`); `expira_em` é recalculada na volta | a TTL apaga com atraso: restaurar uma ação velha a faz sumir de novo, o que é o certo | — |
+| **Restaurar nunca sobrescreve:** lembretes por `store_firestore.importar` (já idempotente); ações por `create()` com o mesmo id; gastos só se o mês não existe; o que já existe diferente é **listado**, não trocado | o desastre pode ser parcial; sobrescrever apagaria o que é mais novo | — |
+| **O módulo do Drive** (`backup/drive.py`) só usa `files().create` (a pasta e o arquivo), `files().list` (com `pageToken`) e `files().get_media` | `drive.file` só enxerga o que o Viking criou; o raio fica menor ainda sem exclusão | — |
+| **`registro.acao("backup.drive")`** em volta do `files().create` do arquivo; a régua de `tests/test_registro_ganchos.py` passa a enxergar `files().create` | todo efeito externo passa pelo registro | — |
+| **`estado/backup`** (`ultimo`, `arquivo`, `contagens`) é gravado só depois de o Drive confirmar; uma rodada que falha não mexe nele | a falha aparece como "backup velho", nunca como sucesso | — |
+| **O `viking.db` temporário do `--conferir`:** `banco.CAMINHO` é trocado só dentro de um contexto, num `tempfile.TemporaryDirectory`, com a migração inteira; os lembretes entram por `store.importar` novo (SQLite) e as ações por `registro_sqlite.importar` novo (o mesmo id); os gastos só se validam (não há tabela de gastos no SQLite) | a prova restaura de verdade num banco vazio, sem tocar o real nem a nuvem | — |
+| **O horário:** 09:00 UTC (2h de Seattle e 6h do Brasil), com `--time-zone=Etc/UTC` | não depende do fuso do dono, que vai mudar | — |
+| **O passo `backup` em `scripts/nuvem.py`**, separado do `agendador`: mede a tarefa e o segredo com versão; com `--executar`, cria a tarefa e a roda uma vez (`jobs run`) para o primeiro backup existir já | o deploy publica o código; o passo liga o relógio | — |
+| **Prazo da rodada:** 200 s (`prazo.ate`), como a rodada dos lembretes | abaixo dos 300 s do Cloud Run | — |
+
+### Medido na abertura (2026-10-06, VPS, ~22:20–22:30Z)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repositório | `git status`, `rev-parse`, `ls-remote`, `ls .mutacao.lock` | limpo; `12e775e` = origin; sem trava | ok |
+| Suíte | `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` | `2386 passed in 59.86s` | a base |
+| CI | `gh run list --commit 12e775e…` | `completed success` | ok |
+| Infraestrutura | `python scripts/nuvem.py` | 11 ✅ | ok |
+| No ar | `python scripts/nuvem.py deploy` | o motor `bbcba1a`, 0 commits desde ela, 17 ✅, `gmail: True`, `envio_de_lembretes: True`, log com 0 erro | ok |
+| Scheduler | `gcloud scheduler jobs describe viking-lembretes … --project` | `ENABLED`, última 22:23:02Z, sem `status` de erro | ok |
+| Versões | `uv lock --upgrade --dry-run` | opentelemetry-api 1.45.0 → 1.45.1 | **já aplicado na árvore** (`uv lock --upgrade`, `uv sync`): `2386 passed in 50.74s`, ruff "All checks passed!", format "146 files already formatted", mypy "Success… 34 source files", `uv lock --check` ok. Falta o commit (C0) |
+| A medição de 24 h | — | o agendador ligou em 2026-10-06 16:53Z | **ainda não dá**: C0b depois de 2026-10-07 ~17:00Z |
+| **D51, pagamento sem o dono** | `GET /smart-transfers/preauthorizations` (cliente só leitura; código e contagem) | **403 `PAYMENT_INITIATION_NOT_ALLOWED`** | o caminho que paga "without user interaction" (docs) está fechado para a aplicação |
+| **D51, pedidos de pagamento** | `GET /payments/requests` | **200**, 0 pedidos | a listagem abre; se **criar** é recusado não se mede sem escrever (proibido) |
+| **D51, documentação** | MCP pluggy-docs (`payments/overview`, `search_qa`) | "Payments must be enabled specifically for your client"; "O produto de pagamentos é exclusivo para clientes com assinatura" (Q&A verificado); todo PIX avulso nasce `CONSENT_AWAITING_AUTHORIZATION`, "the user needs to authorize it in the institution", com o `consentUrl` vencendo em 5 min | as duas condições da D51 se cumprem → a 11d |
+| O cliente OAuth | o `client_id` do `secrets/google_credentials.json` contra o número do projeto | é **outro** projeto do dono | a API do Drive tem de estar ligada **lá** |
+| A API do Drive | `gcloud services list --enabled --project=<o do cliente OAuth>` (só leitura) | `drive.googleapis.com` ligada (com calendar e gmail) | o login do Drive não precisa de passo no console |
+| O modo do app OAuth | o token da agenda, de 2026-09-20, renova no motor em 2026-10-06 (`/fumaca/segredos`) | não venceu em 7 dias | o app não está no modo "teste": o token do Drive não morre em uma semana |
+| Os textos sem terminal | `grep -rn "SemTerminal" src/lifeos` | dois: `gmail/tools.py:57-60` (limpeza) e `:353` (envio) | os dois mudam juntos |
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | o lock num commit próprio, com o CI pelo SHA; o plano no `PROGRESSO.md`; `sessoes.md` (a 11c com as respostas, a **11d nova**, o ▶️); D63 e a D51 com a medição; `docs/fontes/pluggy-open-finance.md` (a medição) | — | ⬜ |
+| C0b | a medição de 24 h do agendador, com data, comando e número (a partir de 2026-10-07 ~17:00Z) | o relógio | ⬜ |
+| C1 | `backup/formato.py`; os `importar` das ações (Firestore e SQLite) e o `todos` das coleções; os testes de ida e volta | C0 | ⬜ |
+| C2 | o token do Drive (`config`, `google_auth`, `viking backup --login`); `backup/drive.py`; a rodada `backup/rodada.py`; a rota `/tarefas/backup`; `estado/backup`; `/versao` | C1 | ⬜ |
+| C3 | `viking backup --conferir` e `--restaurar` (com a rota `/backup/importar`); o aviso na abertura do chat | C2 | ⬜ |
+| C4 | `scripts/nuvem.py`: o segredo `viking-drive`, o passo `backup`, as provas; os textos do Gmail | C2 | ⬜ |
+| C5 | portões, mutações, duas passadas, docs, commit, push, CI; **ok** → deploy; roteiro do Mac (o login, o segredo); **ok** → `--executar backup`; o `--conferir` no Mac; fechamento | C3, C4 | ⬜ |
+
+### Fase 0 — C0: o lock e os documentos
+**Faz:**
+- **O commit do lock** (`uv.lock`, já na árvore, portões já verdes): push e `gh run list --commit
+  <sha>`.
+- **`PROGRESSO.md`:** este plano acima do plano da 11; o bloco RETOMAR aponta para o C1.
+- **`sessoes.md`:**
+  - a 11c com as respostas;
+  - a **11d nova**: as finanças na nuvem num serviço isolado só de leitura (D51 satisfeita, com a
+    nuance do `GET /payments/requests` 200 e o que mede a abertura dela);
+  - o ▶️.
+- **`docs/decisoes.md`:**
+  - **D63** (as 7 respostas e as decisões técnicas acima);
+  - a D51 ganha "medida em 2026-10-06: pode; a mudança é a 11d".
+- **`docs/fontes/pluggy-open-finance.md`:** a seção "Pagamentos (medido em 2026-10-06)".
+
+**✅ Checkpoint:**
+- `git log --oneline -2` mostra o lock e os docs;
+- `gh run list --commit <sha>` → `success`;
+- `uv lock --upgrade --dry-run` → "No lockfile changes"... ou só versões novas do dia;
+- o diff inteiro dos `.md` relido (classe 5).
+
+**🐞 → Depurar:** o CI cair no lock → `uv lock --upgrade-package opentelemetry-api==1.45.0` e
+perguntar (classe 3).
+
+### Fase 0b — C0b: a medição de 24 h do agendador (quando der)
+**Faz:** pela API do Cloud Monitoring, só leitura: `curl` com `gcloud auth print-access-token`, em
+`projects/<projeto>/timeSeries`, de 2026-10-06 17:00Z a 2026-10-07 17:00Z:
+- `firestore.googleapis.com/document/read_count`;
+- `firestore.googleapis.com/document/write_count`;
+- `run.googleapis.com/request_count`, separado por `response_code_class`.
+
+Agregação: `ALIGN_SUM` com `alignmentPeriod=86400s`. O projeto sai do `.env`, nunca no repo.
+
+**✅ Checkpoint:** os três números com data no `PROGRESSO.md` e em
+`docs/fontes/gcp-cloud-run-firestore.md`, contra os ~1,5 mil por dia da D61. O gatilho é passar de
+25 mil leituras.
+
+**🐞 → Depurar:** a série vir vazia → conferir o nome da métrica com
+`metricDescriptors?filter=metric.type=starts_with("firestore")` (classe 2: abrir antes de afirmar).
+
+### Fase 1 — C1: o formato e os importadores
+**Faz:**
+- `src/lifeos/backup/__init__.py` e `formato.py`:
+  - `montar(lembretes, acoes, gastos, *, agora, commit) -> dict`;
+  - `ler(dados) -> Backup` (conferido);
+  - `acao_para_dict` e `acao_de_dict` (formato fechado);
+  - `gasto_para_dict` e `gasto_de_dict`.
+- `reminders/store_firestore.todos()`.
+- `registro_firestore.todas(desde)` e `registro_firestore.importar(acao) -> "criada"|"igual"|"diferente"`.
+- `registro_sqlite.importar(acao)`.
+- `reminders/store.importar(lembrete)` no SQLite (o mesmo contrato do Firestore).
+- `custos.Teto.todos()` e `custos.Teto.importar(mes, dados)`.
+- `registro_interface`: `importar` e `todas` entram no `Protocol`, e o contrato roda nos dois
+  stores.
+
+**Testes:**
+- ida e volta de cada formato;
+- recusas (campo a mais, versão 2, contagem errada, id que não é UUID ou inteiro) sem ecoar
+  conteúdo;
+- `importar` duas vezes dá "igual";
+- conteúdo diferente dá "diferente" e o documento continua o de antes (nos dois stores, no
+  emulador);
+- `todas` corta pelos 30 dias.
+
+**✅ Checkpoint:** `VIKING_EXIGIR_EMULADOR=1 pytest tests/test_backup_formato.py
+tests/test_registro.py tests/test_reminders_contrato.py -q` verde, 0 pulados; a suíte verde.
+
+**Mutações** (cada uma derruba o teste nomeado):
+
+| Mutação | O teste que tem de cair |
+|---|---|
+| `ler` aceita campo a mais | "campo a mais recusado" |
+| `importar` das ações com `set` | "diferente não é sobrescrito" |
+| contagem não conferida | "contagem errada recusada" |
+
+**🐞 → Depurar:** classe 4 (o teste de "não sobrescreve" passar porque o conteúdo era igual) →
+o caso negativo muda **um** campo.
+
+### Fase 2 — C2: o token do Drive, a rodada e a rota
+**Faz:**
+- **`config`:** `DRIVE_TOKEN_PATH` (`secrets/google_token_drive.json`, env
+  `VIKING_DRIVE_TOKEN_PATH`), `VIKING_DRIVE_TOKEN_ARQUIVO`, `drive_token()` e `drive_no_motor()`.
+- **`google_auth._tokens_da_nuvem`** ganha o Drive.
+- **`backup/drive.py`:**
+  - `SCOPES = ["https://www.googleapis.com/auth/drive.file"]`;
+  - `pasta()` acha ou cria "Viking — backups";
+  - `subir(nome, conteudo)`;
+  - `ultimo()`: lista com `orderBy=createdTime desc` e `pageToken`;
+  - `baixar(id)`;
+  - a cota e o erro cru passam por uma descrição sem o número do projeto (como `gmail/_descrever`).
+- **`backup/rodada.py`:**
+  - `rodar(agora)` lê as três coleções, `formato.montar`, depois `with registro.acao("backup.drive",
+    {...contagens, nome})` em volta de `drive.subir`, e só então `estado/backup`;
+  - corre sob `prazo.ate(200)`;
+  - `ultimo_backup()` lê o estado.
+- **`motor.py`:**
+  - `POST /tarefas/backup` em `QUEM_FALA` (`AGENDADOR`), com a resposta só com contagens e o
+    erro só com o tipo;
+  - `/versao` ganha `backup` (`drive_no_motor()`) e `backup_em`.
+- **`cli.py`:** `viking backup --login`.
+- **`tests/test_registro_ganchos.py`:** `files().create` entra como efeito externo, e a régua
+  confere que o enxerga.
+
+**Testes:**
+- com o Drive dublê e o emulador: a rodada sobe um arquivo que `formato.ler` aceita, com as
+  contagens certas;
+- o Drive falha → `estado/backup` não muda, o registro diz `falhou` ou `incerta` (5xx) e a rota
+  dá 500 com o tipo só;
+- a resposta da rota não tem título (sentinela);
+- só o `agendador@` entra na rota (`cli@` → 403);
+- `/versao` com e sem o token;
+- o módulo do Drive não chama `delete`, `update`, `trash`, `emptyTrash` nem `permissions` (lido
+  pelo AST);
+- a pasta existente é reaproveitada, sem criar outra.
+
+**✅ Checkpoint:** `VIKING_EXIGIR_EMULADOR=1 pytest tests/test_backup_rodada.py
+tests/test_backup_drive.py tests/test_motor*.py tests/test_registro_ganchos.py -q` verde; a suíte
+verde.
+
+**Mutações** (cada uma derruba o teste nomeado):
+
+| Mutação | O teste que tem de cair |
+|---|---|
+| `estado/backup` gravado antes de subir | "o Drive falha → o estado não muda" |
+| a rota sem `QUEM_FALA` | "`cli@` → 403" |
+| `subir` fora do `registro.acao` | a régua dos ganchos |
+| a pasta criada a cada rodada | "pasta reaproveitada" |
+| o título na resposta | o sentinela |
+
+**🐞 → Depurar:**
+- classe 6, outro caminho que sobe ao Drive sem registro → `grep -rn "files()" src/lifeos`;
+- classe 2, o formato do `files().list` (o campo `nextPageToken`) → a doc da API antes de
+  escrever o dublê.
+
+### Fase 3 — C3: conferir, restaurar e o aviso
+**Faz:**
+- **`backup/conferir.py`** (Mac):
+  - `drive.ultimo()` e `baixar`, depois `formato.ler`;
+  - dentro de `banco_temporario()` (troca `banco.CAMINHO` por um arquivo num `TemporaryDirectory`
+    e devolve depois), `store.importar` e `registro_sqlite.importar`;
+  - relê do banco temporário e compara as impressões com `cliente.impressoes_dos_lembretes`;
+  - relatório: iguais, mudaram depois do backup (`updated_at` > `criado_em`), novos depois, e
+    divergentes **sem explicação**; este último é o erro alto.
+- **`backup/restaurar.py`:**
+  - o ensaio (contagens, o que já existe igual ou diferente) e `--executar` (lotes de 100);
+  - lembretes por `cliente.importar_lembretes`, que já existe;
+  - ações e gastos por `POST /backup/importar` (`cli@`, até 4 MiB), nova no motor;
+  - confere relendo.
+- **`cli.py`:** `viking backup` (o último backup pelo `/versao`), `--conferir` e `--restaurar
+  ARQUIVO [--executar]`. A saída só tem contagens (ela é colada em conversa).
+- **`chat_cliente.py`:** a abertura avisa "o último backup é de há N dias" ou "nenhum backup
+  ainda" quando `backup: true` e `backup_em` passa de 48 h.
+
+**Testes:**
+- `--conferir` com o Drive dublê e o motor em processo: o banco temporário nasce vazio, recebe
+  tudo, e o sha256 do `viking.db` real não muda;
+- um lembrete que mudou depois vira "mudou depois", não erro;
+- um divergente sem explicação vira saída 1;
+- `--restaurar --executar` num emulador vazio deixa as três coleções iguais às de antes (as
+  impressões, e as ações campo a campo);
+- de novo dá tudo "igual";
+- o aviso nos 47 h e nos 49 h (relógio falso).
+
+**✅ Checkpoint:** `VIKING_EXIGIR_EMULADOR=1 pytest tests/test_backup_conferir.py
+tests/test_backup_restaurar.py tests/test_chat_cliente*.py -q` verde; a suíte verde.
+
+**Mutações** (cada uma derruba o teste nomeado):
+
+| Mutação | O teste que tem de cair |
+|---|---|
+| `--conferir` sem trocar o `banco.CAMINHO` | "o `viking.db` real não muda" |
+| o divergente contado como igual | "saída 1" |
+| o aviso com `>=` 24 h | "47 h e 49 h" |
+| `/backup/importar` sem `QUEM_FALA` | o 403 |
+
+**🐞 → Depurar:**
+- classe 4, o banco temporário herdando a marca "migrado" → `onde.estado()` dentro do contexto
+  (tem de ser `None`);
+- classe 6, outro lugar que lê `banco.CAMINHO` cedo (no import) → `grep -rn "CAMINHO"
+  src/lifeos`.
+
+### Fase 4 — C4: o script da nuvem e os textos do Gmail
+**Faz:**
+- **`scripts/nuvem.py`:**
+  - `Segredo("viking-drive", "/segredos/drive/token.json", "VIKING_DRIVE_TOKEN_ARQUIVO",
+    do_mac=True)`;
+  - `segredo viking-drive` lê `secrets/google_token_drive.json` (o JSON, o `refresh_token`, o
+    escopo `drive.file`; nada mostrado), generalizando o `_token_do_gmail`;
+  - o passo **`backup`** (depois do `agendador`): mede a tarefa `viking-backup` (`0 9 * * *`,
+    `Etc/UTC`, POST `/tarefas/backup`, OIDC do `agendador@`, a audience do motor, sem
+    retentativa) e o segredo com versão; `--executar` cria a tarefa e roda uma vez
+    (`scheduler jobs run`);
+  - as provas: `/fumaca/segredos` com `drive`, `/versao` `backup` coerente com o montado, `cli@`
+    recusado em `/tarefas/backup`, e `backup_em` com menos de 48 h quando o passo está pronto.
+- **`gmail/tools.py`:** as duas recusas sem terminal falam com o dono ("Diga ao dono: …") e citam
+  `viking chat --nuvem` quando `config.STORE == "firestore"`, `viking chat` no Mac.
+
+**Testes:**
+- o deploy sem e com o `viking-drive`;
+- a régua "todo `VIKING_*_ARQUIVO` tem segredo" já cobre;
+- os comandos do passo `backup`, com as flags certas;
+- `_tarefa_certa` para a tarefa nova;
+- os dois textos do Gmail nos dois lugares (Mac e nuvem).
+
+**✅ Checkpoint:** `pytest tests/test_nuvem_script.py tests/test_gmail*.py -q` verde; a suíte
+verde.
+
+**Mutações** (cada uma derruba o teste nomeado):
+
+| Mutação | O teste que tem de cair |
+|---|---|
+| montar o `viking-drive` sem versão | "deploy sem o Drive" |
+| a tarefa a cada minuto | `_tarefa_certa` |
+| o texto da nuvem citando `viking chat` | o teste do texto da nuvem |
+
+**🐞 → Depurar:** classe 7, a segunda vida do script (o segredo existe sem versão e depois com) →
+os dois estados testados.
+
+### Fase 5 — C5: fechar, publicar e testar no Mac
+**Faz:**
+- **Portões lidos:** pytest (o emulador exigido), ruff, `ruff format --check` (o formatador só nos
+  arquivos editados), mypy (`backup/` entra na lista do `pyproject`), gitleaks, `uv lock --check` e
+  o `docker build` em background.
+- **Mutações:** as novas em `scripts/mutacoes.py`, depois a rodada inteira em background, sem
+  `timeout`, com a saída num arquivo. Antes, reler a classe 5. Esperado: 337 mais as novas, mortas
+  pelo teste nomeado.
+- **Duas passadas** (`referencia/revisao.md`). A 2ª pergunta: quem mais escreve no Drive, e o que
+  a segunda rodada do mesmo dia encontra (dois arquivos com nome igual? o nome leva a hora e o
+  minuto).
+- **Docs:**
+  - `AGENTS.md` (estrutura `backup/`, comandos, variáveis, uma armadilha se aparecer);
+  - `docs/fontes/gcp-cloud-run-firestore.md`;
+  - `docs/fontes/google-calendar-api.md` (o token do Drive);
+  - `.env.example`.
+- **Commit, push e o CI pelo SHA.**
+- **Ok → `deploy --executar`** (centavos): o motor novo, sem o `viking-drive` ainda; `backup:
+  false`; os textos do Gmail no ar.
+- **Roteiro do Mac** (comandos sem `<…>`, sem `#`, com `&&`):
+  1. `cd ~/LifeOs && git pull && git log --oneline -1`
+  2. `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q`
+  3. `viking backup --login` (a tela do Google pede "ver, editar, criar e excluir só os arquivos
+     do Google Drive que você usa com este app")
+  4. `python scripts/nuvem.py segredo viking-drive` (o ensaio), depois o mesmo com `--executar`
+- **No VPS:**
+  - `python scripts/nuvem.py` mostra o ⬜ do `backup`;
+  - **ok → `deploy --executar`**, porque o segredo novo pede revisão (centavos);
+  - **ok → `--executar backup`**: a tarefa e a primeira rodada. Custo: de US$ 0 a 0,10 por mês. As
+    3 tarefas grátis são por conta de faturamento, e se os outros projetos do dono já usam alguma,
+    isso não está medido.
+- **No Mac:** `viking backup` (a data), `viking backup --conferir` (as contagens), e
+  `viking chat --nuvem` (a abertura sem aviso).
+- **Fechamento:**
+  - o diário (com "Erros desta sessão"), a barra (20 de 32, com a 11d nova), `sessoes.md` (a 11c
+    feita, o ▶️ na 11d) e a D63;
+  - commit, push e CI.
+
+**✅ Checkpoint:**
+- `python scripts/nuvem.py` → 12 ✅;
+- `deploy` → todas as provas ✅, com `backup: True` e `backup_em` de hoje;
+- no Drive, a pasta com 1 arquivo;
+- a saída do Mac colada: o `--conferir` diz "N iguais, 0 divergentes".
+
+**🐞 → Depurar:**
+- `403 insufficientPermissions` no Drive → o escopo do token gravado (`_escopos_do_arquivo`);
+- `accessNotConfigured` → a API no projeto do cliente OAuth (medida ligada hoje);
+- o job não roda → `scheduler jobs describe viking-backup` (o `status`).
+
+### Riscos e o que é irreversível
+| Passo | Custo | Irreversível? | O ok |
+|---|---|---|---|
+| Deploy (duas vezes) | centavos | a revisão anterior fica | pedido na hora |
+| A tarefa `viking-backup` | US$ 0 a 0,10/mês | não: `jobs delete` a desfaz | pedido na hora |
+| O segredo `viking-drive` (1 versão) | grátis (4 de 6 versões ativas) | não | o dono roda no Mac |
+| Arquivos no Drive | a cota do dono, KB por dia | o Viking nunca apaga; o dono apaga à mão se quiser | coberto pela resposta "todas" |
+| `--restaurar --executar` | — | escreve na nuvem, mas nunca sobrescreve | só num desastre, pelo dono |
+
+Nada do VPS usa o token do Drive. O `--conferir` e o login rodam no Mac, e os testes usam o
+dublê do Drive e o emulador.
+
+### Regra de conserto
+Todo defeito começa pela classe dele em `docs/erros.md`, e o conserto não para no ponto: o `grep`
+da forma inteira antes de dar por pronto. Os já previstos:
+- `files()` fora de `backup/drive.py`;
+- `banco.CAMINHO` lido no import;
+- `QUEM_FALA` nas rotas novas;
+- `print(` no motor;
+- "peça ao usuário" nos textos de tool.
+
+Nenhuma checagem antes de um commit leva `| tail`. Emenda por script ancora na linha inteira.
+Mutações vão com `run_in_background`.
 
 ## Plano — Sessão 11: nuvem 2, as mãos e os lembretes com uma fonte só (adiantada antes do portão da 10c) (aprovado em 2026-10-01)
 

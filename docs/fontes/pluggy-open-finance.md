@@ -80,6 +80,33 @@ dizia nessa data.
   (`CREDIT/CREDIT_CARD`). O `lastUpdatedAt` era o da hora da conexão (19:44 e 19:51 UTC de
   2026-09-26). IDs e nomes das contas ficam só no `.env` do dono.
 
+## Pagamentos: o que a chave alcança (medido em 2026-10-06, a D51)
+
+Medido na abertura da Sessão 11c, no VPS, com o ok do dono naquele passo. Foram só dois `GET`
+pelo cliente de `lifeos/financas/pluggy.py` (que recusa escrita antes da rede), mostrando o
+código HTTP e a contagem, nunca o conteúdo:
+- `GET /smart-transfers/preauthorizations` → **403 `PAYMENT_INITIATION_NOT_ALLOWED`**. Segundo a
+  documentação ("Creating a preauthorization"), as Smart Transfers servem "to do payments without
+  user interaction" depois de um consentimento único. É o único caminho em que um pagamento
+  sairia sem o dono, e a aplicação dele não o alcança.
+- `GET /payments/requests` → **200**, `{page, results, total, totalPages}` com 0 pedidos. A
+  listagem abre. Se **criar** um pedido seria recusado não foi medido: só se mede escrevendo, e
+  escrever é proibido.
+
+Lido na mesma data (o MCP de documentação; `payments/overview` e o Q&A verificado):
+- "Payments must be enabled specifically for your client. If you're interested in using it,
+  please get in touch with our Sales team!"
+- "O produto de pagamentos é exclusivo para clientes com assinatura" (Q&A); os planos de
+  pagamentos começam em R$ 500/mês, separados dos de dados.
+- **Todo PIX avulso exige o pagador no banco:** criar um pedido devolve um link
+  (`pay.pluggy.ai`), e a tentativa nasce `CONSENT_AWAITING_AUTHORIZATION` ("the user needs to
+  authorize it in the institution"), com um `consentUrl` do banco que vence em 5 minutos.
+- A resposta gerada pela ferramenta `query` do MCP ("sim, exige autorização") é texto de modelo e
+  não conta como fonte; as frases acima vêm do guia e do Q&A.
+
+Consequência (D51): as duas condições se cumprem, e as finanças podem ir à nuvem num serviço
+isolado só de leitura. A mudança é a Sessão 11d.
+
 ## MCP de documentação
 
 `claude mcp add --transport http pluggy-docs https://mcp.pluggy.ai/mcp` (adicionado no Claude Code
