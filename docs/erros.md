@@ -16,8 +16,8 @@
 
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
-| 1 | Comando para o Mac que não roda como escrito | 7 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 23 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
+| 2 | Afirmei sem abrir o lugar onde estaria | 24 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 21 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 15 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
@@ -55,6 +55,13 @@ estava aqui; não estava — registrado só no commit 2, quando a divergência a
 do daemon entre o `cd` e o `git pull`, contra o antídoto desta classe. A medida não depende do
 código, mas a regra existe para o dono não ter de julgar isso: o pull vem primeiro, e a medida
 "antes" vem logo depois dele (o `pull` não reinicia o daemon). Pego ao reler o plano no C6.
+
+**2026-10-06 — um marcador `<…>` dentro de um comando para colar (o C9 da 10c).** O roteiro
+trazia `echo "prepara a limpeza de <o mesmo remetente>" | viking chat --nuvem`; o dono colou como
+estava, o Gemini perguntou "de qual remetente?" e o teste que importava (a limpeza sem terminal
+recusa antes de criar o código) não rodou. O que tem de novo: o marcador estava **dentro** do
+comando, não no texto em volta; o antídoto é escrever o valor de verdade (o remetente que o dono
+acabou de usar), ou tirar a linha do bloco de comando.
 
 > **Um comando para o dono é código que roda numa máquina que eu não vejo.** Ele tem de funcionar
 > colado sem edição, no zsh com conda ativo.
@@ -214,6 +221,11 @@ código, um defeito desde a Sessão 5 que o chat nunca via (com `substituir=True
 frente serializava). Consertado com `BEGIN IMMEDIATE` (`52570bc`). O que tem de novo: uma
 afirmação sobre concorrência num comentário é uma afirmação sobre o código de outro módulo, e
 precisa do mesmo `grep` que um número.
+
+**2026-10-06 — `prova-chat --mensagem` no plano da 10c (escrito em 2026-09-30).** O
+argumento é posicional; o comando do plano deu `unrecognized arguments: --mensagem` no C7 e rodou
+na segunda. Sem custo (o `argparse` recusa antes da rede), mas o plano foi escrito sem abrir o
+`argparse` do subcomando que ele mandava rodar.
 
 **2026-10-01 — "10 ✅" no bloco de retomada, sem medir (Sessão 11, pré-compact).** O bloco
 mandava conferir `python scripts/nuvem.py` → 10 ✅, copiado do bloco anterior. Desde o C2 a TTL

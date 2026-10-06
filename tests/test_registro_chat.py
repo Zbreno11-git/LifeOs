@@ -18,8 +18,9 @@ class _Resposta:
 
 
 class _ChatRoteiro:
-    def __init__(self, turnos):
+    def __init__(self, turnos, respostas=()):
         self.turnos = list(turnos)
+        self.respostas = list(respostas)
         self.enviados = []
 
     def send_message(self, prompt):
@@ -27,11 +28,11 @@ class _ChatRoteiro:
         passo = self.turnos.pop(0) if self.turnos else None
         if passo is not None:
             passo()
-        return _Resposta()
+        return self.respostas.pop(0) if self.respostas else _Resposta()
 
 
-def _rodar(monkeypatch, linhas, turnos):
-    chat = _ChatRoteiro(turnos)
+def _rodar(monkeypatch, linhas, turnos, respostas=()):
+    chat = _ChatRoteiro(turnos, respostas)
 
     class _Cliente:
         class chats:
@@ -65,6 +66,27 @@ def test_erro_depois_de_agir_diz_o_que_ja_foi_feito(calendario, monkeypatch, cap
     assert "Não repita nenhuma sem perguntar" in chat.enviados[1]
     assert chat.enviados[1].endswith("e agora?")
     assert calendario["enviados"] and len(calendario["enviados"]) == 1
+
+
+def test_resposta_vazia_do_gemini_no_mac_e_erro_e_nao_silencio(calendario, monkeypatch, capsys):
+    """O mesmo núcleo do chat da nuvem (visto lá em 2026-10-06): sem texto, o Mac imprimia
+    "🤖 Viking: " e nada mais, e o que a tool já tinha feito ficava sem aviso."""
+
+    class _Vazia:
+        text = None
+        candidates = ()
+
+    def cria():
+        calendario_tools.criar_evento("Dentista", "2026-10-01T10:00:00", "2026-10-01T11:00:00")
+
+    chat = _rodar(
+        monkeypatch, ["marca dentista", "e agora?", "sair"], [cria, None], [_Vazia(), _Resposta()]
+    )
+    saida = capsys.readouterr().out
+    assert "❌ Erro ao processar a resposta: O Gemini voltou sem resposta" in saida
+    assert "🤖 Viking: \n" not in saida
+    assert "criou o evento «Dentista»" in saida  # o aviso do que já foi feito
+    assert "Não repita nenhuma sem perguntar" in chat.enviados[1]
 
 
 def test_erro_sem_ter_agido_nao_avisa(calendario, monkeypatch, capsys):

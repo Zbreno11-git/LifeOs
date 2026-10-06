@@ -316,6 +316,49 @@ def test_erro_no_meio_mantem_a_nota_e_o_historico(teto, gemini):
     assert saida["historico"] == [] and saida["nota"] == "nota pendente"
 
 
+def _vazia(tokens: int = 3884, **candidato) -> types.GenerateContentResponse:
+    """O Gemini sem texto e sem tool: visto no Mac em 2026-10-06 (`echo … | viking chat --nuvem`,
+    3884 tokens de entrada e 0 de saída), e o turno saía como "🤖 Viking: " calado."""
+    candidatos = [types.Candidate(**candidato)] if candidato else []
+    return types.GenerateContentResponse(candidates=candidatos, usage_metadata=_uso(tokens))
+
+
+@pytest.mark.parametrize(
+    ("resposta", "motivo"),
+    [
+        (_vazia(content=types.Content(role="model", parts=[]), finish_reason="STOP"), "STOP"),
+        (_vazia(content=None, finish_reason="MALFORMED_FUNCTION_CALL"), "MALFORMED_FUNCTION_CALL"),
+        (_vazia(), "nenhuma resposta"),
+    ],
+)
+def test_resposta_vazia_do_gemini_e_erro_com_o_motivo(teto, gemini, resposta, motivo):
+    gemini(resposta)
+    saida = na_nuvem.turno(_pedido("o que chegou hoje no meu e-mail?", nota="nota pendente"))
+    assert saida["resposta"] is None
+    assert "O Gemini voltou sem resposta" in saida["erro"] and motivo in saida["erro"]
+    # o turno vazio não entra no histórico, e a nota continua pendente
+    assert saida["historico"] == [] and saida["nota"] == "nota pendente"
+    assert saida["consumo"]  # a chamada custou: o gasto aparece mesmo sem resposta
+
+
+def test_vazia_depois_de_agir_diz_o_que_ja_foi_feito(teto, gemini):
+    gemini(
+        _chama("criar_lembrete", titulo="Dentista"),
+        _vazia(content=types.Content(role="model", parts=[]), finish_reason="STOP"),
+    )
+    saida = na_nuvem.turno(_pedido("lembra do dentista"))
+    assert saida["resposta"] is None and "O Gemini voltou sem resposta" in saida["erro"]
+    assert "Dentista" in saida["aviso"]  # a tool agiu: o dono fica sabendo
+    assert "Dentista" in saida["nota"]  # e o Gemini também, no turno seguinte
+
+
+def test_limite_de_tools_no_turno_e_erro_e_nao_resposta_vazia(teto, gemini):
+    gemini(*[_chama("listar_lembretes") for _ in range(na_nuvem.MAX_CHAMADAS_DE_TOOL + 5)])
+    saida = na_nuvem.turno(_pedido("lista meus lembretes"))
+    assert saida["resposta"] is None
+    assert "limite de chamadas" in saida["erro"]
+
+
 def test_registro_da_nuvem_leva_origem_e_turno(teto, gemini):
     gemini(_chama("criar_lembrete", titulo="Dentista"), _texto("Criado."))
     na_nuvem.turno(_pedido("lembra do dentista", numero=7))

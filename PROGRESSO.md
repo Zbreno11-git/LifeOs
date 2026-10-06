@@ -1098,7 +1098,7 @@ com uma pergunta ao dono.
   - `/fumaca/segredos` → `{'gemini': True, 'agenda': True, 'gmail': True}`;
   - os três segredos só como volume;
   - o log sem erro.
-- **Ok** → `python scripts/nuvem.py prova-chat --mensagem "quantos e-mails não lidos chegaram
+- **Ok** → `python scripts/nuvem.py prova-chat "quantos e-mails não lidos chegaram
   hoje?"`, só leitura, anotando o tempo, os tokens e o custo. Esperado: HTTP 200, menos de 30 s e
   menos de US$ 0,005.
 - O log da revisão nova sem a pergunta, a resposta ou um número de 4 dígitos vindo de `ao_dono`.

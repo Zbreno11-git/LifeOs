@@ -186,15 +186,47 @@ class Resultado:
     nota: str = ""
 
 
+class SemResposta(RuntimeError):
+    """O Gemini voltou sem texto. Não é uma resposta vazia: é um erro, com o motivo dele (o
+    `finish_reason`, ou o limite de chamadas de tool do turno), e passa pelo mesmo aviso do que já
+    foi feito. Visto no Mac em 2026-10-06: o turno saía como "🤖 Viking: " calado."""
+
+
+def _nome(valor: Any) -> str:
+    return str(getattr(valor, "name", None) or valor)
+
+
+def _sem_resposta(resposta: Any) -> SemResposta:
+    """Por que a resposta veio sem texto, sem copiar nada do conteúdo (só nomes de enum)."""
+    candidatos = getattr(resposta, "candidates", None) or []
+    if not candidatos:
+        bloqueio = getattr(getattr(resposta, "prompt_feedback", None), "block_reason", None)
+        motivo = f"o pedido foi bloqueado: {_nome(bloqueio)}" if bloqueio else "nenhuma resposta"
+    elif any(
+        getattr(parte, "function_call", None)
+        for parte in getattr(getattr(candidatos[0], "content", None), "parts", None) or []
+    ):
+        # o SDK para de chamar tools no `maximum_remote_calls` e devolve o pedido pendente
+        motivo = "o modelo passou do limite de chamadas de tool deste turno"
+    else:
+        fim = getattr(candidatos[0], "finish_reason", None)
+        motivo = f"motivo: {_nome(fim)}" if fim else "sem motivo informado"
+    return SemResposta(f"O Gemini voltou sem resposta ({motivo}). Peça de novo.")
+
+
 def executar(chat: Any, prompt: str, turno: str) -> Resultado:
     """Manda o turno ao Gemini (que chama as tools). Uma tool pode ter agido antes de um erro (o §7
-    da auditoria): o aviso diz o que já foi feito, e a nota leva a mesma lista ao Gemini."""
+    da auditoria): o aviso diz o que já foi feito, e a nota leva a mesma lista ao Gemini. Uma
+    resposta sem texto é um desses erros (`SemResposta`), nunca um "" calado."""
     try:
         resposta = chat.send_message(prompt)
+        texto = resposta.text
+        if not (texto or "").strip():
+            raise _sem_resposta(resposta)
     except Exception as e:  # noqa: BLE001 - o turno não deve derrubar quem chama (REPL ou motor)
         aviso, nota = registro_texto.aviso_pos_erro(registro.do_turno(turno))
         return Resultado(None, erro=e, aviso=aviso, nota=nota)
-    return Resultado(resposta.text or "")
+    return Resultado(texto)
 
 
 def juntar(pendente: str, nova: str) -> str:

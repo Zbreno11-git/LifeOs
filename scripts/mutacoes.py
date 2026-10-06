@@ -2448,6 +2448,28 @@ MUTACOES = [
         "    if False:\n",
         "tests/test_script_limpar_lembretes.py::test_depois_da_migracao_aplicar_recusa_e_nada_some",
     ),
+    # 2026-10-06, o C9 da 10c no Mac: a resposta vazia do Gemini saía como "🤖 Viking: " calado.
+    Mutacao(
+        "turno: resposta sem texto vira um vazio calado",
+        "src/lifeos/assistant/turno.py",
+        '        if not (texto or "").strip():\n',
+        "        if False:\n",
+        "tests/test_na_nuvem.py::test_resposta_vazia_do_gemini_e_erro_com_o_motivo",
+    ),
+    Mutacao(
+        "turno: a resposta vazia sem o motivo do Gemini",
+        "src/lifeos/assistant/turno.py",
+        '        motivo = f"motivo: {_nome(fim)}" if fim else "sem motivo informado"\n',
+        '        motivo = "sem motivo informado"\n',
+        "tests/test_na_nuvem.py::test_resposta_vazia_do_gemini_e_erro_com_o_motivo",
+    ),
+    Mutacao(
+        "turno: o limite de tools do turno sem nome",
+        "src/lifeos/assistant/turno.py",
+        '        motivo = "o modelo passou do limite de chamadas de tool deste turno"\n',
+        '        motivo = "sem motivo informado"\n',
+        "tests/test_na_nuvem.py::test_limite_de_tools_no_turno_e_erro_e_nao_resposta_vazia",
+    ),
 ]
 
 
