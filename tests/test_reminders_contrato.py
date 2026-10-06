@@ -15,6 +15,7 @@ from datetime import UTC, datetime, timedelta, timezone
 import pytest
 
 from lifeos.reminders import interface, store, store_firestore
+from lifeos.reminders.models import Reminder
 
 IMPLEMENTACOES = {"sqlite": store, "firestore": store_firestore}
 
@@ -201,3 +202,59 @@ def test_muitas_execucoes_ao_mesmo_tempo_uma_so_ganha_a_reserva(lembretes):
     assert erros == []  # quem perde recebe "não", não uma exceção (o Firestore desistia em 5)
     assert len(ganhou) == 1, ganhou
     assert lembretes.marcar_envio(alvo.id, por=ganhou[0], estado="enviado", agora=T0)
+
+
+# --- a cópia: todos e importar (a migração da 11 e o backup da 11c, D63) ----------------------
+
+
+def _inteiro(**mudar) -> Reminder:
+    campos = {
+        "id": "0b9a4d52-6f1e-4c3a-9d8e-1f2a3b4c5d6e",
+        "type": "note",
+        "title": "Renovar passaporte",
+        "body": "levar a foto",
+        "tags": ["docs", "viagem"],
+        "due_at": T0,
+        "completed_at": T0 + MINUTO,
+        "source": "manual",
+        "external_id": "x-1",
+        "metadata": {"origem": "teste", "n": 2},
+        "created_at": T0 - MINUTO,
+        "updated_at": T0 + MINUTO,
+        "enviado_em": T0,
+        "envio_estado": interface.ENVIADO,
+    }
+    campos.update(mudar)
+    return Reminder(**campos)
+
+
+def test_todos_traz_abertos_e_concluidos_pela_criacao(lembretes):
+    primeiro = lembretes.add(title="primeiro")
+    segundo = lembretes.add(title="segundo")
+    lembretes.complete(primeiro.id)
+    assert [r.id for r in lembretes.todos()] == [primeiro.id, segundo.id]
+
+
+def test_importar_grava_o_lembrete_inteiro_com_o_id(lembretes):
+    from lifeos.reminders import transporte
+
+    copia = _inteiro()
+    assert lembretes.importar(copia) == interface.CRIADO
+    assert transporte.impressao(lembretes.get(copia.id)) == transporte.impressao(copia)
+
+
+def test_importar_de_novo_e_igual_e_diferente_nunca_sobrescreve(lembretes):
+    from lifeos.reminders import transporte
+
+    copia = _inteiro()
+    lembretes.importar(copia)
+    assert lembretes.importar(copia) == interface.IGUAL
+    assert lembretes.importar(_inteiro(title="outro título")) == interface.DIFERENTE
+    assert lembretes.importar(_inteiro(envio_estado=None, enviado_em=None)) == interface.DIFERENTE
+    assert transporte.impressao(lembretes.get(copia.id)) == transporte.impressao(copia)
+
+
+def test_importar_recusa_id_que_nao_e_uuid(lembretes):
+    with pytest.raises(ValueError, match="UUID"):
+        lembretes.importar(_inteiro(id="a/b"))
+    assert lembretes.todos() == []

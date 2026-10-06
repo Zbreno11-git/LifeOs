@@ -283,3 +283,41 @@ class Teto:
             return {"total": float(dados.get("total", 0.0)) + custo, "dias": dias}, None
 
         firestore_comum.trocar(ref, decidir)
+
+
+def exportar_gastos() -> list[dict]:
+    """Os gastos do teto, um por mês (`gastos/AAAA-MM`), para o backup (Sessão 11c, D63)."""
+    from lifeos import firestore_comum
+
+    copias = []
+    for snap in firestore_comum.cliente().collection(Teto.COLECAO).stream():
+        dados = snap.to_dict() or {}
+        copias.append(
+            {
+                "mes": snap.id,
+                "total": float(dados.get("total", 0.0)),
+                "dias": {dia: float(v) for dia, v in dict(dados.get("dias", {})).items()},
+            }
+        )
+    return sorted(copias, key=lambda c: c["mes"])
+
+
+def importar_gasto(copia: dict) -> str:
+    """Grava o mês só se ele não existe (`criado`); se existe, nada muda (`igual`/`diferente`):
+    um mês que voltou a gastar depois do backup tem o total mais novo, e ele fica."""
+    from google.api_core.exceptions import AlreadyExists
+
+    from lifeos import firestore_comum
+
+    ref = firestore_comum.cliente().collection(Teto.COLECAO).document(copia["mes"])
+    try:
+        ref.create({"total": float(copia["total"]), "dias": dict(copia["dias"])})
+    except AlreadyExists:
+        atual = ref.get().to_dict() or {}
+        mesmo = {
+            "mes": copia["mes"],
+            "total": float(atual.get("total", 0.0)),
+            "dias": {dia: float(v) for dia, v in dict(atual.get("dias", {})).items()},
+        } == copia
+        return "igual" if mesmo else "diferente"
+    return "criado"

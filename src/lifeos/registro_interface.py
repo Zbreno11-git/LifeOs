@@ -11,6 +11,10 @@ Regras que valem para todas:
 - **só lê o que nasceu desde `desde`**: quem chama passa o corte da retenção, e um store que apaga
   com atraso (a TTL do Firestore) continua sem devolver o que venceu;
 - **desfazer uma vez só**: `reivindicar_desfazer` só devolve a cópia a quem chegou primeiro.
+- **a cópia do backup é a linha inteira** (Sessão 11c, D63): `exportar` devolve cada ação no
+  formato de `CAMPOS_DA_COPIA` (os textos literais, os instantes em UTC com microssegundos), e
+  `importar` grava uma com o mesmo id e **nunca sobrescreve**: se o id já existe, responde
+  `IGUAL` ou `DIFERENTE` e nada muda.
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
@@ -18,10 +22,37 @@ Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Protocol
 
 FEITA, FALHOU, INCERTA, INICIADA = "feita", "falhou", "incerta", "iniciada"
+
+# A cópia de uma ação para o backup (Sessão 11c): a linha inteira, inclusive a cópia para desfazer.
+CAMPOS_DA_COPIA = (
+    "id",
+    "turno",
+    "origem",
+    "operacao",
+    "parametros",
+    "estado",
+    "resultado",
+    "erro",
+    "desfazer",
+    "desfeita_em",
+    "criada_em",
+    "terminada_em",
+)
+INSTANTES_DA_COPIA = ("desfeita_em", "criada_em", "terminada_em")
+CRIADA, IGUAL, DIFERENTE = "criada", "igual", "diferente"
+
+
+def texto_do_instante(momento: datetime | None) -> str | None:
+    """O instante na cópia: UTC, com os microssegundos sempre escritos (largura fixa)."""
+    if momento is None:
+        return None
+    if momento.tzinfo is None or momento.utcoffset() is None:
+        raise ValueError("horário sem fuso: a cópia só leva instantes")
+    return momento.astimezone(UTC).isoformat(timespec="microseconds")
 
 
 @dataclass(frozen=True)
@@ -92,4 +123,13 @@ class Registro(Protocol):
 
     def devolver_desfazer(self, acao_id: int) -> None:
         """O desfazer falhou: a ação volta a ser desfazível."""
+        ...
+
+    def exportar(self, *, desde: datetime) -> list[dict[str, Any]]:
+        """As que nasceram desde `desde`, inteiras, no formato de `CAMPOS_DA_COPIA`; pelo id."""
+        ...
+
+    def importar(self, copia: dict[str, Any]) -> str:
+        """Grava a cópia com o mesmo id: `CRIADA`; se o id já existe, nada muda e a resposta diz
+        se o que está aqui é `IGUAL` à cópia ou `DIFERENTE`."""
         ...

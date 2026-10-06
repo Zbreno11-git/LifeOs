@@ -25,12 +25,23 @@
 - **No ar:** o motor `bbcba1a`, sem mudança.
 
 **Checkpoints da 11c:**
-- C0 ⬜ (o lock ✅, os docs em curso);
-- C0b ⬜ (a medição de 24 h: só depois de 2026-10-07 ~17:00Z);
-- C1, C2, C3, C4 e C5 ⬜.
+- C0 ✅: o lock em `d4f5127`, os docs em `8db5ab7`.
+- C0b ⬜: a medição de 24 h, só depois de 2026-10-07 ~17:00Z.
+- C1 ✅ (2026-10-06, ~23:55Z):
+  - `backup/formato.py`: o arquivo versionado, que `ler` confere inteiro;
+  - a cópia do registro (`registro_interface.CAMPOS_DA_COPIA`, `exportar`/`importar` nos dois
+    stores e `registro.exportar`/`importar`);
+  - `todos`/`importar` dos lembretes no `Protocol` (o SQLite ganhou `importar`, o Firestore
+    `todos`);
+  - `custos.exportar_gastos`/`importar_gasto`.
+  - Medido: `2437 passed`; ruff, format e mypy limpos; mutações `10 · mortas pelo teste esperado:
+    10` (8 novas e a reancorada do `store: add`, que passou a casar duas vezes).
+- C2, C3, C4 e C5 ⬜.
 
-**Próximo passo exato:** fechar o C0 (o commit dos docs, o push e o CI pelo SHA) e seguir para o
-C1 (`src/lifeos/backup/formato.py` e os `importar`), conforme o plano.
+**Próximo passo exato:** o C2. O rascunho de `backup/drive.py` e de `backup/rodada.py` está no
+scratchpad da sessão. Falta o `config` (`DRIVE_TOKEN_PATH`, `DRIVE_TOKEN_ARQUIVO`), o
+`google_auth`, o segredo `viking-drive` no `scripts/nuvem.py` (a régua "todo `_ARQUIVO` tem
+segredo" exige junto), a rota `/tarefas/backup`, o `/versao` e os testes.
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;

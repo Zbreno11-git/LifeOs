@@ -30,6 +30,7 @@ from typing import Any, Protocol
 from lifeos.reminders.models import Reminder
 
 ENVIADO, INCERTO = "enviado", "incerto"
+CRIADO, IGUAL, DIFERENTE = "criado", "igual", "diferente"
 
 
 def id_valido(texto: object) -> bool:
@@ -78,4 +79,14 @@ class Lembretes(Protocol):
 
     def soltar_envio(self, reminder_id: str, *, por: str) -> None:
         """Devolve a reserva de `por` (falha definitiva, limite): a próxima execução tenta."""
+        ...
+
+    def todos(self) -> list[Reminder]:
+        """Todos, abertos e concluídos, pela criação: o que se copia (a migração e o backup)."""
+        ...
+
+    def importar(self, lembrete: Reminder) -> str:
+        """Grava um lembrete inteiro com o id dele (a migração e a restauração de um backup):
+        `CRIADO`; se o id já existe, nada muda e a resposta diz se é `IGUAL` ou `DIFERENTE`
+        (nunca sobrescreve)."""
         ...

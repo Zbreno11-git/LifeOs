@@ -1712,7 +1712,9 @@ MUTACOES = [
     Mutacao(
         "store: add repetido sobrescreve o que existe",
         "src/lifeos/reminders/store.py",
+        '            "metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "\n'
         '            "ON CONFLICT (id) DO NOTHING",',
+        '            "metadata, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "\n'
         '            "ON CONFLICT (id) DO UPDATE SET title = excluded.title",',
         "tests/test_reminders_contrato.py::test_add_repetido_com_o_mesmo_id_nao_duplica",
     ),
@@ -2469,6 +2471,63 @@ MUTACOES = [
         '        motivo = "o modelo passou do limite de chamadas de tool deste turno"\n',
         '        motivo = "sem motivo informado"\n',
         "tests/test_na_nuvem.py::test_limite_de_tools_no_turno_e_erro_e_nao_resposta_vazia",
+    ),
+    # --- Sessão 11c: o backup (D63) ---------------------------------------------------------
+    Mutacao(
+        "backup: o arquivo com um campo a mais passa",
+        "src/lifeos/backup/formato.py",
+        "    if set(dados) != set(CAMPOS):\n",
+        "    if not set(CAMPOS) <= set(dados):\n",
+        "tests/test_backup_formato.py::test_campo_a_mais_no_arquivo_e_recusado",
+    ),
+    Mutacao(
+        "backup: a contagem do arquivo não é conferida",
+        "src/lifeos/backup/formato.py",
+        '    if dados["contagens"] != backup.contagens():\n',
+        "    if False:\n",
+        "tests/test_backup_formato.py::test_contagem_errada_e_recusada",
+    ),
+    Mutacao(
+        "backup: a impressão dos lembretes não é conferida",
+        "src/lifeos/backup/formato.py",
+        '    if dados["impressoes"] != impressoes:\n',
+        "    if False:\n",
+        "tests/test_backup_formato.py::test_lembrete_alterado_no_arquivo_e_recusado_pela_impressao",
+    ),
+    Mutacao(
+        "registro firestore: importar sobrescreve a ação que existe",
+        "src/lifeos/registro_firestore.py",
+        "        ref.create(documento)\n",
+        "        ref.set(documento)\n",
+        "tests/test_registro.py::test_importar_de_novo_e_igual_e_diferente_nao_sobrescreve",
+    ),
+    Mutacao(
+        "registro sqlite: importar sobrescreve a ação que existe",
+        "src/lifeos/registro_sqlite.py",
+        '            f"INSERT INTO acoes ({colunas}) VALUES ({marcas}) ON CONFLICT (id) DO NOTHING",\n',
+        '            f"INSERT OR REPLACE INTO acoes ({colunas}) VALUES ({marcas})",\n',
+        "tests/test_registro.py::test_importar_de_novo_e_igual_e_diferente_nao_sobrescreve",
+    ),
+    Mutacao(
+        "registro: o backup sem o corte dos 30 dias",
+        "src/lifeos/registro.py",
+        "    return _STORE.exportar(desde=_corte(agora))\n",
+        "    return _STORE.exportar(desde=_corte(agora) - RETENCAO)\n",
+        "tests/test_registro.py::test_exportar_corta_pelos_30_dias",
+    ),
+    Mutacao(
+        "lembretes sqlite: importar sobrescreve o que existe",
+        "src/lifeos/reminders/store.py",
+        '            "ON CONFLICT (id) DO NOTHING",\n            valores,\n',
+        '            "ON CONFLICT (id) DO UPDATE SET title = excluded.title",\n            valores,\n',
+        "tests/test_reminders_contrato.py::test_importar_de_novo_e_igual_e_diferente_nunca_sobrescreve",
+    ),
+    Mutacao(
+        "gastos: importar sobrescreve o mês que existe",
+        "src/lifeos/custos.py",
+        '        ref.create({"total": float(copia["total"]), "dias": dict(copia["dias"])})\n',
+        '        ref.set({"total": float(copia["total"]), "dias": dict(copia["dias"])})\n',
+        "tests/test_backup_formato.py::test_gasto_existente_nunca_e_sobrescrito",
     ),
 ]
 

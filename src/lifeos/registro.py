@@ -179,3 +179,13 @@ def reivindicar_desfazer(acao_id: int) -> dict[str, Any] | None:
 def devolver_desfazer(acao_id: int) -> None:
     """O desfazer falhou: a ação volta a ser desfazível."""
     _STORE.devolver_desfazer(acao_id)
+
+
+def exportar(agora: datetime | None = None) -> list[dict[str, Any]]:
+    """As ações da retenção (30 dias), inteiras, para o backup (Sessão 11c, D63)."""
+    return _STORE.exportar(desde=_corte(agora))
+
+
+def importar(copia: dict[str, Any]) -> str:
+    """Grava uma ação de um backup com o mesmo id; nunca sobrescreve (`registro_interface`)."""
+    return _STORE.importar(copia)

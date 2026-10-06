@@ -150,14 +150,14 @@ def add(
     return _lembrete(snap)
 
 
-IGUAL, DIFERENTE, CRIADO = "igual", "diferente", "criado"
+IGUAL, DIFERENTE, CRIADO = interface.IGUAL, interface.DIFERENTE, interface.CRIADO
 
 
 def importar(lembrete: Reminder) -> str:
-    """Grava um lembrete que veio do Mac (Sessão 11, D61), com o id e todo campo de lá, inclusive o
-    estado do envio. Idempotente: se o id já existe, nada muda, e a resposta diz se o que está na
-    nuvem é `igual` ao que veio ou `diferente` (nunca sobrescreve). Fora do `Protocol`: só a
-    nuvem recebe cópia."""
+    """Grava um lembrete que veio do Mac (a migração da Sessão 11, D61) ou de um backup (a
+    restauração da 11c, D63), com o id e todo campo, inclusive o estado do envio. Idempotente: se
+    o id já existe, nada muda, e a resposta diz se o que está na nuvem é `igual` ao que veio ou
+    `diferente` (nunca sobrescreve)."""
     from google.api_core.exceptions import AlreadyExists
 
     from lifeos.reminders import transporte
@@ -189,6 +189,12 @@ def importar(lembrete: Reminder) -> str:
         )
         return IGUAL if mesmo else DIFERENTE
     return CRIADO
+
+
+def todos() -> list[Reminder]:
+    """Todos, abertos e concluídos, pela criação (como o SQLite): o que o backup copia (D63)."""
+    lembretes = [_lembrete(snap) for snap in _cliente().collection(COLECAO).stream()]
+    return sorted(lembretes, key=lambda r: (r.created_at, r.id))
 
 
 def impressoes() -> dict[str, str]:

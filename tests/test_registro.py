@@ -9,13 +9,14 @@ teste roda no SQLite do Mac e no Firestore da nuvem (no emulador, limpo a cada t
 fica em `registro.py`; o que muda entre os dois é só onde se guarda.
 """
 
+import json
 import sqlite3
 import threading
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from lifeos import banco, registro, registro_firestore, registro_sqlite
+from lifeos import banco, registro, registro_firestore, registro_interface, registro_sqlite
 
 STORES = {"sqlite": registro_sqlite, "firestore": registro_firestore}
 JUNTAS = 16
@@ -263,3 +264,58 @@ def test_o_que_passou_dos_30_dias_nao_volta_por_nenhum_caminho():
         marca.feito(desfazer={"evento": {}})
     assert registro.do_turno("sessao-a:1") == []
     assert registro.obter(marca.id) is None
+
+
+# --- a cópia do backup (Sessão 11c, D63) --------------------------------------------------------
+
+
+def test_exportar_traz_a_linha_inteira_com_a_copia_para_desfazer():
+    with registro.acao("calendario.apagar", {"event_id": "e1"}) as marca:
+        marca.feito({"titulo": "x"}, desfazer={"evento": {"summary": "Dentista"}})
+    (copia,) = registro.exportar()
+    assert set(copia) == set(registro_interface.CAMPOS_DA_COPIA)
+    assert copia["id"] == marca.id and copia["estado"] == "feita"
+    assert json.loads(copia["desfazer"]) == {"evento": {"summary": "Dentista"}}
+    assert copia["terminada_em"] is not None and copia["desfeita_em"] is None
+    for campo in registro_interface.INSTANTES_DA_COPIA:
+        valor = copia[campo]
+        assert valor is None or valor.endswith("+00:00") and len(valor) == 32
+
+
+def test_exportar_corta_pelos_30_dias():
+    velha = datetime.now(UTC) - registro.RETENCAO - timedelta(days=1)
+    with registro.acao("calendario.criar", {}, agora=velha) as marca:
+        marca.feito()
+    with registro.acao("calendario.criar", {}) as nova:
+        nova.feito()
+    assert [c["id"] for c in registro.exportar()] == [nova.id]
+
+
+def test_importar_num_registro_vazio_devolve_a_mesma_linha():
+    with registro.acao("gmail.arquivar", {"remetentes": ["a@b.c"]}) as marca:
+        marca.feito({"n": 3}, desfazer={"ids": ["m1", "m2"]})
+    (copia,) = registro.exportar()
+    _esvaziar()
+    assert registro.exportar() == []
+    assert registro.importar(copia) == registro_interface.CRIADA
+    assert registro.exportar() == [copia]
+    assert registro.reivindicar_desfazer(copia["id"]) == {"ids": ["m1", "m2"]}
+
+
+def test_importar_de_novo_e_igual_e_diferente_nao_sobrescreve():
+    with registro.acao("calendario.criar", {"titulo": "x"}) as marca:
+        marca.feito()
+    (copia,) = registro.exportar()
+    assert registro.importar(copia) == registro_interface.IGUAL
+    assert registro.importar({**copia, "estado": "falhou"}) == registro_interface.DIFERENTE
+    assert registro.exportar() == [copia]
+
+
+def _esvaziar() -> None:
+    """Apaga o registro do store em uso (o banco do teste), para restaurar num vazio."""
+    if registro._STORE is registro_sqlite:
+        with banco.conectar() as conn:
+            conn.execute("DELETE FROM acoes")
+        return
+    for snap in registro_firestore._colecao().stream():
+        snap.reference.delete()

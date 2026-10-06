@@ -135,12 +135,52 @@ def list_open(type: str | None = None) -> list[Reminder]:
 
 def todos() -> list[Reminder]:
     """Todos, abertos e concluídos, pela criação: o que a migração para a nuvem copia (Sessão 11,
-    D61). Fora do `Protocol`: só o SQLite do Mac é origem de cópia."""
+    D61)."""
     with _session() as conn:
         return [
             _lembrete(linha)
             for linha in conn.execute(f"SELECT {_COLUNAS} FROM reminders ORDER BY created_at, id")
         ]
+
+
+def importar(lembrete: Reminder) -> str:
+    """Grava um lembrete inteiro com o id dele. No Mac, só o `viking backup --conferir` grava
+    cópia, num `viking.db` temporário (Sessão 11c, D63): o banco real não recebe cópia."""
+    from lifeos.reminders import transporte
+
+    if not interface.id_valido(lembrete.id or ""):
+        raise ValueError("id de lembrete tem de ser um UUID")
+
+    def texto(momento: datetime | None) -> str | None:
+        return _gravavel(momento) if momento is not None else None
+
+    valores = (
+        lembrete.id,
+        lembrete.type,
+        lembrete.title,
+        lembrete.body,
+        json.dumps(list(lembrete.tags)),
+        texto(lembrete.due_at),
+        texto(lembrete.completed_at),
+        lembrete.source,
+        lembrete.external_id,
+        json.dumps(dict(lembrete.metadata)),
+        texto(lembrete.created_at),
+        texto(lembrete.updated_at),
+        texto(lembrete.enviado_em),
+        lembrete.envio_estado,
+    )
+    with _session() as conn:
+        cursor = conn.execute(
+            f"INSERT INTO reminders ({_COLUNAS}) VALUES ({', '.join('?' * len(valores))}) "
+            "ON CONFLICT (id) DO NOTHING",
+            valores,
+        )
+        if cursor.rowcount == 1:
+            return interface.CRIADO
+        atual = _um(conn, str(lembrete.id))
+    mesmo = atual is not None and transporte.impressao(atual) == transporte.impressao(lembrete)
+    return interface.IGUAL if mesmo else interface.DIFERENTE
 
 
 def complete(reminder_id: str) -> Reminder | None:

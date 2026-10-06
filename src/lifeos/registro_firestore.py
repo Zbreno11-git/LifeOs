@@ -25,7 +25,17 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from lifeos import firestore_comum
-from lifeos.registro_interface import FALHOU, FEITA, Acao
+from lifeos.registro_interface import (
+    CAMPOS_DA_COPIA,
+    CRIADA,
+    DIFERENTE,
+    FALHOU,
+    FEITA,
+    IGUAL,
+    INSTANTES_DA_COPIA,
+    Acao,
+    texto_do_instante,
+)
 
 if TYPE_CHECKING:
     from google.cloud.firestore import DocumentReference, DocumentSnapshot
@@ -225,3 +235,52 @@ def devolver_desfazer(acao_id: int) -> None:
     ref = _ref(acao_id)
     if ref.get().exists:
         ref.update({"desfeita_em": None})
+
+
+def _copia(snap: DocumentSnapshot) -> dict[str, Any]:
+    dados = snap.to_dict() or {}
+    faltam = [c for c in _CAMPOS if c not in dados]
+    if faltam:  # como em `_acao`: um documento parcial erra alto
+        raise ValueError(f"ação {snap.id} sem os campos {faltam}")
+    copia = {campo: dados[campo] for campo in CAMPOS_DA_COPIA}
+    copia["id"] = int(copia["id"])
+    for campo in INSTANTES_DA_COPIA:
+        copia[campo] = texto_do_instante(firestore_comum.lido(copia[campo]))
+    return copia
+
+
+def exportar(*, desde: datetime) -> list[dict[str, Any]]:
+    from google.cloud.firestore import FieldFilter
+
+    corte = firestore_comum.instante(desde)
+    consulta = _colecao().where(filter=FieldFilter("criada_em", ">=", corte))
+    copias = [_copia(snap) for snap in consulta.stream()]
+    return sorted(
+        (c for c in copias if datetime.fromisoformat(c["criada_em"]) >= corte),
+        key=lambda c: c["id"],
+    )
+
+
+def importar(copia: dict[str, Any]) -> str:
+    """A restauração de um backup (Sessão 11c, D63): o documento inteiro com o mesmo id, por
+    `create()`; a `expira_em` sai da `criada_em`, então uma ação restaurada que já passou dos 30
+    dias some de novo pela TTL, que é o certo."""
+    from google.api_core.exceptions import AlreadyExists
+
+    acao_id = int(copia["id"])
+    criada_em = firestore_comum.instante(datetime.fromisoformat(copia["criada_em"]))
+    documento = dict.fromkeys(_CAMPOS)
+    documento.update({campo: copia[campo] for campo in CAMPOS_DA_COPIA})
+    for campo in INSTANTES_DA_COPIA:
+        texto = copia[campo]
+        documento[campo] = (
+            firestore_comum.instante(datetime.fromisoformat(texto)) if texto else None
+        )
+    documento.update(id=acao_id, criada_em=criada_em, expira_em=criada_em + VIDA)
+    ref = _ref(acao_id)
+    try:
+        ref.create(documento)
+    except AlreadyExists:
+        atual = ref.get()
+        return IGUAL if atual.exists and _copia(atual) == copia else DIFERENTE
+    return CRIADA

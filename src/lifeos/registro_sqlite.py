@@ -13,9 +13,20 @@ import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
+from typing import Any
 
 from lifeos import banco
-from lifeos.registro_interface import FALHOU, FEITA, Acao
+from lifeos.registro_interface import (
+    CAMPOS_DA_COPIA,
+    CRIADA,
+    DIFERENTE,
+    FALHOU,
+    FEITA,
+    IGUAL,
+    INSTANTES_DA_COPIA,
+    Acao,
+    texto_do_instante,
+)
 
 
 @contextmanager
@@ -140,3 +151,39 @@ def reivindicar_desfazer(acao_id: int, *, agora: datetime) -> str | None:
 def devolver_desfazer(acao_id: int) -> None:
     with _sessao() as conn:
         conn.execute("UPDATE acoes SET desfeita_em = NULL WHERE id = ?", (acao_id,))
+
+
+def _copia(linha: sqlite3.Row) -> dict[str, Any]:
+    copia = {campo: linha[campo] for campo in CAMPOS_DA_COPIA}
+    for campo in INSTANTES_DA_COPIA:
+        texto = copia[campo]
+        copia[campo] = texto_do_instante(datetime.fromisoformat(texto)) if texto else None
+    return copia
+
+
+def exportar(*, desde: datetime) -> list[dict[str, Any]]:
+    with _sessao() as conn:
+        linhas = conn.execute(
+            "SELECT * FROM acoes WHERE criada_em >= ? ORDER BY id", (desde.isoformat(),)
+        ).fetchall()
+    return [_copia(linha) for linha in linhas]
+
+
+def importar(copia: dict[str, Any]) -> str:
+    """No Mac, só o `viking backup --conferir` grava cópia, num `viking.db` temporário (D63). Os
+    instantes voltam ao texto que `iniciar` grava (`isoformat()` em UTC)."""
+    valores = dict(copia)
+    for campo in INSTANTES_DA_COPIA:
+        texto = valores[campo]
+        valores[campo] = datetime.fromisoformat(texto).isoformat() if texto else None
+    colunas = ", ".join(CAMPOS_DA_COPIA)
+    marcas = ", ".join("?" * len(CAMPOS_DA_COPIA))
+    with _sessao() as conn:
+        cursor = conn.execute(
+            f"INSERT INTO acoes ({colunas}) VALUES ({marcas}) ON CONFLICT (id) DO NOTHING",
+            tuple(valores[campo] for campo in CAMPOS_DA_COPIA),
+        )
+        if cursor.rowcount == 1:
+            return CRIADA
+        linha = conn.execute("SELECT * FROM acoes WHERE id = ?", (copia["id"],)).fetchone()
+    return IGUAL if linha is not None and _copia(linha) == copia else DIFERENTE
