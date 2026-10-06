@@ -5,23 +5,53 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-01 ~06:30Z: Sessão 11 com C0–C5 ✅ (no ar e testada no Mac), esperando o portão da 10c (a prova do Gmail a partir de 2026-10-04 em Seattle)
+## ▶️ RETOMAR AQUI — 2026-10-06 16:20Z: Sessão 11 com C0–C5 ✅ (no ar e testada no Mac); o portão da 10c já pode ser feito (a prova do Gmail ainda não subiu); a próxima sessão a planejar
 
-**Estado (2026-10-01 ~05:00Z, medido):**
-- `git status --short` limpo depois do commit "C4 da 11" · HEAD = esse commit = remoto · trava
-  `.mutacao.lock`: nenhuma · background: nenhum.
-- Commits da 11: `5b0df87` (lock), `c413748` (plano, D61, a 11c), `b3fe4d5` (C1), `ae7e472`
-  (C2), `a38d9a8` (C3), `b780720` (checkpoint) e o do C4. CI `success` pelo SHA inteiro até
-  `b780720`; o do C4: conferir.
-- Portões no C4: `VIKING_EXIGIR_EMULADOR=1 pytest -q` → `2360 passed`; `ruff check` "All checks
-  passed!"; `ruff format --check` "146 files already formatted"; `mypy` "Success: no issues found
-  in 34 source files"; gitleaks "no leaks found"; `uv lock --check` ok.
-- `python scripts/nuvem.py` (medido na retomada, ~04:00Z): 9 ✅ e o ⬜ da TTL de `tarefas`
-  (entrou no C2; liga com o ok do C5). O bloco anterior dizia "10 ✅": errado desde o C2.
-- **No ar: nada mudou.** O motor é o `36fcd13` (sem o Gmail, sem as mãos). Nenhum recurso foi
-  criado na 11 (`viking-maos@`, a TTL de `tarefas` e o deploy pedem o ok do dono no C5).
+**Estado (2026-10-06 16:20Z, medido no checkpoint antes do compact):**
+- `git status --short` limpo · HEAD = `c7e184e` + este checkpoint = remoto · trava
+  `.mutacao.lock`: nenhuma · background: nenhum. CI `success` pelo SHA inteiro em `c7e184e`.
+- **No ar:** o motor `1480027` (sem o Gmail, com as mãos); `python scripts/nuvem.py deploy` → 17
+  ✅ (`gmail: False`, `envio_de_lembretes: False (esperado False)`, as portas do `maos@` ✅, 0
+  erro no log em 30 min); 0 commit nos caminhos da imagem desde ela.
+- `python scripts/nuvem.py` → 10 ✅ e o ⬜ do `agendador` ("a API do Cloud Scheduler
+  desligada").
+- `python scripts/nuvem.py segredo viking-gmail` → **0 versões**: a prova do Gmail (o portão da
+  10c, possível desde 2026-10-04 em Seattle) **ainda não subiu**. Perguntar ao dono se ele já fez
+  `viking gmail --login` no Mac e se passou sem abrir o navegador.
+- `uv lock --upgrade --dry-run` → **19 versões novas** (entre elas google-auth 2.60.0,
+  google-api-core 2.41.0, google-cloud-firestore 2.34.0, google-genai 2.28.0, mcp 2.3.0,
+  fastmcp 4.0.11, mypy 2.4.0, ruff 0.16.10, cyclopts 5.2.0): `uv lock --upgrade` num commit
+  próprio, com a suíte antes e depois (D45), **antes** do C7 da 10c (o C7 publica o HEAD).
+- Suíte no último commit de código (`f0f9cfc`): `2380 passed` no VPS; no Mac `2207 passed, 173
+  skipped` (os da nuvem).
 
-**O que a 11 já tem (C0–C4 ✅; detalhes nos bullets "C0…C4" logo abaixo):**
+**Próximo passo exato (depois do compact, da leitura e das conferências):**
+1. O lock (19 versões) num commit próprio: suíte com `VIKING_EXIGIR_EMULADOR=1` antes e depois,
+   ruff, mypy, CI pelo SHA. Uma versão nova de ruff/mypy pode acusar algo: consertar no mesmo
+   commit, sem `--fix` em arquivo que eu não abri.
+2. Uma rodada de perguntas ao dono: (a) a prova do Gmail foi feita? Se sim, o C6 da 10c (ele roda
+   `python scripts/nuvem.py segredo viking-gmail --executar` no Mac) e então o caminho do portão
+   abaixo; (b) qual sessão abre agora, enquanto o portão não fecha ou junto dele: **11c**
+   (backup no Drive + a medição só de leitura das finanças, D51; o consentimento do Drive só
+   **depois** da prova do Gmail), **11b** (formulários: o Viking preenche, o dono envia; D55; usa
+   as mãos da 11) ou **12** (agente geral com busca; a pergunta de dinheiro do modelo: o acesso
+   ao 2.5 está sendo limitado, pesquisado em 2026-09-28). Recomendação: o portão primeiro (curto
+   para o dono e fecha a 10c e a 11), depois a 11c, que é a única com prazo (o Drive é backup do
+   que a migração põe na nuvem).
+3. Abrir a sessão escolhida com a skill `software-build` (plano em
+   `referencia/plano-de-sessao.md`, perguntas em rodadas, plano no `PROGRESSO.md` acima do da 11)
+   e implementar até o fim, pedindo o ok só no que custa, cria recurso ou publica.
+
+**O caminho do portão (quando a prova chegar; os detalhes em "a 10c retoma" e na seção "Depois do
+portão" do plano da 11):** C6 da 10c (o token sobe do Mac) → C7 da 10c (ok → `deploy --executar`;
+a prova `gmail: True`; ok → `prova-chat` com uma pergunta do Gmail; C8 docs; C9 o Mac) → ok →
+`python scripts/nuvem.py --executar agendador` (conferir se o Scheduler aceita
+`southamerica-east1`; esperado depois: `/versao` `envio_de_lembretes: true` e a prova do `deploy`
+`(esperado True)`) → a prova do lembrete com o Mac desligado (±2 min, os dois fusos escritos) →
+`viking lembretes --migrar --executar` no Mac (esperado "Migrado: 5 copiado(s)" se nada mudou) →
+o fechamento da 11 (diário, barra, `sessoes.md`, D61 fechada, a cota do Firestore depois de 24 h).
+
+**O que a 11 já tem (C0–C5 ✅; o C4 e o C5 em detalhe logo abaixo, o resto nos bullets "C0…C3" do fim do bloco):**
 - **C1:** o Gmail opcional na nuvem; a identidade conferida por rota (`motor.QUEM_FALA`); o
   texto de sistema com `onde`.
 - **C2:** a fila das mãos (`maos/fila.py`, `fila_firestore.py`, `pedir.py`) e
@@ -104,40 +134,6 @@ corretos"):**
   por e-mail)", "Na nuvem já iguais: 0.", "Envio por e-mail da nuvem: ainda não ligado.",
   "Ensaio: nada foi copiado".
 
-**Próximo passo exato:** nada da 11 até o portão. Quando o dono trouxer a prova do Gmail (a
-partir de 2026-10-04 em Seattle): o C6 e o C7 da 10c (logo abaixo, "a 10c retoma"), depois a
-seção "Depois do portão" do plano da 11: ok → `python scripts/nuvem.py --executar agendador`
-(o passo já existe; conferir se o Scheduler aceita `southamerica-east1`), a prova do lembrete
-com o Mac desligado, `viking lembretes --migrar --executar` no Mac (esperado: "Migrado: 5
-copiado(s)" se nada mudar até lá), e o fechamento (diário, barra, `sessoes.md`, D61 fechada, a
-cota do Firestore medida depois de 24 h).
-
-**O roteiro do Mac (depois do deploy):**
-1. `cd ~/LifeOs && git pull && git log --oneline -1`
-2. `uv sync --locked --extra dev`
-3. `source .venv/bin/activate && which python && python -m pytest -q`
-4. num terminal: `viking maos`
-5. noutro: `viking chat --nuvem` → "abre example.com e me diz o título" (esperado: o título,
-   pelas mãos; o terminal do `viking maos` mostra a tarefa); depois Ctrl-C no `viking maos` e
-   "abre example.com de novo" (esperado, em ~15 s: o `viking maos` não está ligado)
-6. `viking lembretes --migrar` (o ensaio: as contagens, "Envio por e-mail da nuvem: ainda não
-   ligado", "Ensaio: nada foi copiado")
-
-**C5 (depois do C4; o plano tem os detalhes):**
-- portões; a rodada **inteira** de mutações em background, sem `timeout` (esperado 282 + todas
-  as novas, mortas pelo teste esperado);
-- duas passadas de revisão (`referencia/revisao.md`); docs parciais (`AGENTS.md`: estrutura,
-  comandos `viking maos` e `--migrar`, as rotas, o `onde`; `docs/fontes/gcp-cloud-run-firestore.md`
-  com o preço do Scheduler lido em 2026-10-01);
-- commit, push e o CI pelo SHA;
-- **pedir o ok do dono**, com o custo: `scripts/nuvem.py` precisa antes de um passo `contas` que
-  crie o `viking-maos@` e dê ao dono o `serviceAccountTokenCreator` nele, e de uma linha no
-  `comandos_do_deploy` com o `run.invoker` do `maos@`, mais a prova "só o viking-cli@ invoca"
-  ajustada para os dois. **Isso ainda não foi escrito: é a primeira coisa do C5.** Depois:
-  `--executar contas` e `--executar ttl` (a de `tarefas`), e o ok → `deploy --executar` sem o
-  Gmail;
-- o roteiro do Mac (o plano, Fase 5).
-
 **Quando o dono trouxer a prova (a partir de 2026-10-04 em Seattle), a 10c retoma:**
 1. **O portão (dono):** `viking gmail --login` no Mac **sem** abrir o navegador; se passou, no
    Mac, `python scripts/nuvem.py segredo viking-gmail --executar`; no VPS, `python
@@ -145,23 +141,22 @@ cota do Firestore medida depois de 24 h).
 2. **O C7 da 10c:** ok → `python scripts/nuvem.py deploy --executar`. Desde o C1 da 11, o token
    que subiu pede revisão mesmo sem código novo. As provas ✅ (com `gmail: True`); ok →
    `prova-chat` com uma pergunta do Gmail. Depois o C8 (docs, barra 18/30) e o C9 (o Mac).
-3. **Depois do C7 da 10c:** a seção "Depois do portão" do plano da 11 (ok → o passo
-   `agendador`, que **ainda não existe** em `scripts/nuvem.py`: a API do Scheduler, o
+3. **Depois do C7 da 10c:** a seção "Depois do portão" do plano da 11 (ok → `python
+   scripts/nuvem.py --executar agendador`, **já escrito no C5**: a API do Scheduler, o
    `viking-agendador@`, o `run.invoker` e a tarefa `* * * * *` com OIDC; a prova com o Mac
    desligado; a migração de verdade no Mac).
 
 **Reler, nesta ordem:**
-1. `CLAUDE.md`/`AGENTS.md`;
-2. este bloco e o plano da 11 logo abaixo (as tabelas "Respostas do dono" e "Decisões
-   técnicas", as fases 4 e 5);
-3. `sessoes.md` (▶️, 11, 11c), D61 (e D57–D60);
-4. o índice de `docs/erros.md` e a classe 5 (antes de emendar por script ou rodar mutação) e a
-   classe 4 (o teste de corrida medido sem o conserto);
-5. as skills `software-build` (`referencia/revisao.md`), `testes-que-provam`, `nuvem-e-deploy`,
-   `dados-e-banco`, `seguranca`;
-6. o código do C4 (lista acima), mais `tests/test_motor.py` (os helpers),
-   `tests/test_na_nuvem_gmail.py` (a troca dos stores), `tests/test_banco_migracoes.py` e
-   `tests/banco_antigo.py`.
+1. `CLAUDE.md`/`AGENTS.md` (a estrutura e as armadilhas já têm a 11: `maos/`, `onde`, o motor
+   por rota, o `envio.store` ligado no import);
+2. este bloco inteiro, o plano da 11 logo abaixo (a seção "Depois do portão") e o da 10c (C6–C9);
+3. `sessoes.md`: o ▶️, a 11, a 11c, a 11b e a 12 (as candidatas a próxima sessão);
+4. `docs/decisoes.md`: D61 e D57–D60 (e D51 para a 11c, D55 para a 11b);
+5. o índice de `docs/erros.md` e as classes 4, 5 e 6 (as três tiveram ocorrência nova na 11);
+6. a memória (o fuso, a visão do dono, o fluxo de entrega);
+7. as skills `software-build` (com `referencia/plano-de-sessao.md` e `referencia/revisao.md`),
+   `testes-que-provam`, `nuvem-e-deploy`, `seguranca`, e a da área da sessão escolhida
+   (`integracoes` para o Drive e a Pluggy; `dados-e-banco` para o backup).
 
 **Não pode ser esquecido:**
 - **O que mora onde:** o navegador, a trava, o freio e a liberação moram no Mac. A tarefa da
@@ -180,20 +175,20 @@ cota do Firestore medida depois de 24 h).
 - **O C7 da 10c publica o HEAD do momento:** a 11 só deixa o master em commit limpo, com portões
   e CI verdes.
 
-**Depende do dono:** o ok do C5 (o `viking-maos@`, a TTL de `tarefas`, o deploy sem o Gmail:
-custo zero e centavos); o roteiro do Mac do C5; a prova do Gmail a partir de 2026-10-04; os oks
-do C7 da 10c e do `agendador` (US$ 0 a 0,10/mês).
+**Depende do dono:** a prova do Gmail no Mac (o portão; possível desde 2026-10-04 em Seattle,
+ainda não feita no registro de 2026-10-06: `viking-gmail` com 0 versões); a escolha da próxima
+sessão; os oks do C7 da 10c (deploy com o Gmail, centavos; `prova-chat`, ~US$ 0,002) e do
+`agendador` (US$ 0 a 0,10/mês); `viking lembretes --migrar --executar` no Mac.
 
 **Antes de confiar neste bloco:**
-- `git status --short` vazio e HEAD = remoto;
-- `ls .mutacao.lock` → não existe;
-- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2360 passed` (mais o que o C5
-  acrescentar);
+- `git status --short` vazio e HEAD = remoto; `ls .mutacao.lock` → não existe;
+- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2380 passed`;
 - `gh run list --commit $(git rev-parse HEAD)` → `success`;
-- `python scripts/nuvem.py` → 9 ✅ e o ⬜ da TTL de `tarefas` (antes do ok do C5);
-- `python scripts/nuvem.py deploy` → o motor `36fcd13` e os ❌ esperados (a imagem e o
-  `/versao` não são o código de agora; a prova do `/fumaca/segredos` sem o Gmail);
-- `uv lock --upgrade --dry-run`.
+- `python scripts/nuvem.py` → 10 ✅ e o ⬜ do `agendador`;
+- `python scripts/nuvem.py deploy` → o motor `1480027`, 17 ✅ (e, se o lock mudou, "commits desde
+  ela nos caminhos da imagem" > 0: esperado, o C7 publica);
+- `python scripts/nuvem.py segredo viking-gmail` → 0 versões (ou 1, se o dono já subiu);
+- `uv lock --upgrade --dry-run` → as 19 versões (ou mais).
 
 ### Sessão 11 — os checkpoints feitos
 

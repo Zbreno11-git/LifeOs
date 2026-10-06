@@ -28,12 +28,12 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-01):** a 10c está com C0–C5 ✅ e parada no portão (a prova do token do Gmail
-  no Mac a partir de 2026-10-04 em Seattle, `viking gmail --login` sem abrir o navegador). Por
-  decisão do dono, a **Sessão 11** foi aberta e planejada antes disso (as mãos, os lembretes com
-  uma fonte só, a migração e o código do envio pela nuvem; D61) e está em curso; o backup no
-  Drive e a medição das finanças foram para a **11c**, depois de 04/10. A 10c retoma no C6
-  quando o dono trouxer a prova.
+- **Agora (2026-10-06):** a 11 está com C0–C5 ✅ (o motor `1480027` no ar sem o Gmail, `viking
+  maos` testado no Mac). O portão da 10c (a prova do token do Gmail no Mac, `viking gmail --login`
+  sem abrir o navegador) já pode ser feito desde 2026-10-04 em Seattle e ainda não subiu
+  (`viking-gmail` com 0 versões). Depois dele: o C6–C9 da 10c, o agendador e a migração de verdade
+  da 11. A próxima sessão a abrir é escolha do dono (11c, 11b ou 12; o `PROGRESSO.md` tem a
+  recomendação).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
