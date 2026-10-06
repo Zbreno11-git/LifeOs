@@ -25,10 +25,17 @@
 - Suíte no último commit de código (`f0f9cfc`): `2380 passed` no VPS; no Mac `2207 passed, 173
   skipped` (os da nuvem).
 
+**Atualização 2026-10-06 ~17:00Z (depois do compact):** as conferências bateram (`2380 passed`,
+17 ✅, 10 ✅ + ⬜, `viking-gmail` 0 versões). Feito: o lock em `53dda98` (19 versões; `2380
+passed` antes e depois; ruff, format, mypy, gitleaks limpos; CI `success` pelo SHA). Respostas
+do dono: **a prova do Gmail passou sem navegador** e **a próxima sessão é a 11c**; o dono pediu
+uma pausa antes da 11c e, nela, o estudo do Browser Use Cloud → **D62** (não migrar; o navegador
+fica no Mac; navegador na nuvem sem login só como terceira rota medida na S12). Agora: o dono
+roda no Mac `python scripts/nuvem.py segredo viking-gmail --executar` (o C6 da 10c); depois, o
+caminho do portão abaixo; e então a 11c.
+
 **Próximo passo exato (depois do compact, da leitura e das conferências):**
-1. O lock (19 versões) num commit próprio: suíte com `VIKING_EXIGIR_EMULADOR=1` antes e depois,
-   ruff, mypy, CI pelo SHA. Uma versão nova de ruff/mypy pode acusar algo: consertar no mesmo
-   commit, sem `--fix` em arquivo que eu não abri.
+1. ✅ O lock (19 versões) num commit próprio (`53dda98`).
 2. Uma rodada de perguntas ao dono: (a) a prova do Gmail foi feita? Se sim, o C6 da 10c (ele roda
    `python scripts/nuvem.py segredo viking-gmail --executar` no Mac) e então o caminho do portão
    abaixo; (b) qual sessão abre agora, enquanto o portão não fecha ou junto dele: **11c**

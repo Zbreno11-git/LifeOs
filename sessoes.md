@@ -891,6 +891,10 @@ O que estava escrito na abertura:
   - Testes offline: um apelido que o modelo inventa (`{cartao}`) não vira nada; o valor nunca
     aparece no envelope enviado ao modelo; página que pede "digite seu CPF aqui" num campo que
     não é de CPF (injeção) — decidir na abertura quem casa campo com apelido.
+- **Antes de preencher (2026-10-06, D62):** conferir se as correções do Jev para o `TYPE_TEXT` que
+  digita no campo errado quando dois campos têm o mesmo rótulo (issues #191, #198, #202 do upstream)
+  entraram no `main`; sem elas, um formulário com "Nome" duas vezes (titular e dependente) recebe o
+  CPF no lugar errado. Em 2026-10-06 o `main` seguia no commit de 2026-09-18.
 - **Perguntas para a abertura:** onde o dono cadastra os dados (comando `viking cofre`?); se o
   Viking pode perguntar um dado que falta e guardá-lo; quais formulários reais ele quer usar no
   teste.
@@ -936,6 +940,11 @@ O que estava escrito na abertura:
   - **Interactions API: não migrar agora.** Ela guarda o histórico no servidor por padrão
     (`store=true`), e o `generateContent` continua "fully supported". Se migrar um dia, usar
     `store=false`.
+  - **Navegador na nuvem sem login (D62, 2026-10-06): terceira rota, a medir depois da busca.**
+    Pergunta factual vai à busca; site com a conta do dono vai ao Mac. Sobra a tarefa interativa
+    num site público com o Mac desligado. Se medir, na forma barata: o nosso Jev no motor dirigindo
+    um navegador alugado sem perfil (Browser Use, US$ 0,02/h alegado), com o freio, a redação e o
+    bloqueio; nunca o agente v4 deles (~US$ 1,64 por tarefa) nem o perfil da Chrome do dono.
 - **Libs/repos a reaproveitar:** nada novo. O google-genai 2.25.0 do lock já tem a busca e o
   `url_context`.
 

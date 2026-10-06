@@ -84,6 +84,38 @@
   - **Não medido:** se o Chrome abre `view-source:` por CDP com os cookies do dono.
   - O conserto é o primeiro passo da Sessão 8.
 
+## 2b. Browser Use Cloud (pesquisado em 2026-10-06, depois da lista de espera)
+
+Pesquisa só de leitura, feita por um subagente; quase tudo é **ALEGADO** pela empresa. Medido por
+terceiros só há sobre o Jev, e pouco. Decisão: D62 (não migrar).
+
+- **A lista de espera é de um modo "SUPERFAST"** do Cloud, "Coming soon", sem preço nem número
+  (https://browser-use.com/ultrafast). O dono confirmou que a conta liberada é a normal.
+- **O agente v4 do Cloud não usa o Jev.** O modelo padrão é o deles ("Luna"); BYOK de Anthropic,
+  OpenAI e Google com acréscimo de 0,2× (https://docs.browser-use.com/cloud/agent/models.md).
+- **Custo e tempo (dado de produção publicado por eles,
+  https://docs.browser-use.com/cloud/choosing-an-agent.md):** tarefa mediana bem-sucedida v2 ~1
+  min e US$ 0,70; v3 ~2 min e US$ 0,87; v4 ~5 min e US$ 1,64. A alegação de lançamento (US$ 0,03
+  por tarefa) não diz tarefas, rodadas nem juiz. Navegador alugado: US$ 0,02/h; proxy
+  residencial US$ 5/GB (https://browser-use.com/pricing.md). **Conta nossa:** 10–30 tarefas por
+  dia a US$ 0,70–1,64 passam de US$ 200/mês.
+- **A Chrome do dono não é alcançável** pelo agente deles: o `cdpUrl` aponta para um navegador
+  deles. O único jeito de usar os logins é o `profile-sync` (cookies sobem), recusado na D53.
+- **Termos** (revisados em 2026-07-15): licença "perpetual and irrevocable, sublicensable" sobre o
+  conteúdo; entradas e saídas podem ir a provedores de modelo terceiros
+  (https://browser-use.com/legal/terms-of-service). SOC 2 Type II alegado. Gravação de sessão
+  desligada por padrão na API; o modo sem retenção (ZDR) **não aceita o v4**.
+- **Controles:** `allowed_domains`; nada como o nosso bloqueio de banco e e-mail, nem aprovação
+  antes de um clique (o "human in the loop" deles é pausar depois da run).
+- **O Jev em si (2026-10-06):** o `main` do upstream continua no commit de 2026-09-18 (`git fetch`
+  no VPS); há correções em PR para o `TYPE_TEXT` digitar no campo errado quando dois campos têm o
+  mesmo rótulo (issues #191, #198, #202) e para `{"text": null}` recusado (#203). HN de
+  2026-09-17: 93 pontos, opiniões divididas ("at best misleading"). Os ~7 s do Google Flights são
+  do Jev **local**, uma tarefa, três repetições.
+- **A forma barata, se um dia houver navegador na nuvem sem login:** o nosso Jev no motor (com o
+  freio, a redação e o bloqueio) dirigindo um navegador alugado sem perfil pelo Browser Harness
+  (que já aceita CDP remoto). A medir na S12, depois da busca; nunca o agente deles.
+
 ## 3. Memória de agente
 
 | Lib | Fonte | Licença, versão | Árvore e wheels | Como grava / contradição | Veredito |

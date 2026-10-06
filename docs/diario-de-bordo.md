@@ -1046,6 +1046,19 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-06 — o Browser Use Cloud estudado e recusado (D62); o lock da 11
+
+- O lock subiu 19 versões num commit próprio (`53dda98`): `2380 passed` antes e depois, ruff,
+  format, mypy e gitleaks limpos, CI `success` pelo SHA.
+- O dono saiu da lista de espera do Browser Use Cloud e perguntou se o navegador deveria migrar.
+  Pesquisa só de leitura (`docs/fontes/pesquisa-roteiro.md`, seção 2b): a conta liberada é a
+  normal; o agente deles não usa o Jev e custa, no dado de produção publicado, ~US$ 0,70–1,64 por
+  tarefa; não alcança a Chrome do dono sem subir cookies; os termos dão licença perpétua sobre o
+  conteúdo. Os ~7 s anunciados são do Jev local, o mesmo que já roda no Mac.
+- **Decidido (D62):** o navegador fica no Mac; pergunta factual vai à busca do Gemini (S12); um
+  navegador na nuvem sem login só como terceira rota medida na S12, com o nosso Jev e as nossas
+  travas. A 11b ganha um item: conferir as correções do Jev para campos com o mesmo rótulo.
+
 ### 2026-09-30 — Sessão 10b fechada no Mac
 
 Saída colada pelo dono:
