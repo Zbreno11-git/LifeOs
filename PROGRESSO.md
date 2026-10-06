@@ -30,9 +30,24 @@
 passed` antes e depois; ruff, format, mypy, gitleaks limpos; CI `success` pelo SHA). Respostas
 do dono: **a prova do Gmail passou sem navegador** e **a próxima sessão é a 11c**; o dono pediu
 uma pausa antes da 11c e, nela, o estudo do Browser Use Cloud → **D62** (não migrar; o navegador
-fica no Mac; navegador na nuvem sem login só como terceira rota medida na S12). Agora: o dono
-roda no Mac `python scripts/nuvem.py segredo viking-gmail --executar` (o C6 da 10c); depois, o
-caminho do portão abaixo; e então a 11c.
+fica no Mac; navegador na nuvem sem login só como terceira rota medida na S12).
+
+**O portão passou (2026-10-06, ~16:45–17:00Z, com os oks do dono no chat):**
+- **10c C6 ✅:** no Mac, `segredo viking-gmail --executar` → "✅ viking-gmail: versão nova
+  enviada (1 habilitada(s))"; no VPS, `viking-gmail: 1 versão(ões)`.
+- **10c C7 ✅:** `deploy --executar` → o motor **`66cf7d9`** no ar com os 3 segredos como volume;
+  17 ✅ (`{'gemini': True, 'agenda': True, 'gmail': True}`, `gmail: True`, log 0 erro).
+  `prova-chat "quantos e-mails não lidos chegaram hoje?"` (o argumento é **posicional**; o plano
+  da 10c dizia `--mensagem`) → `HTTP 200 em 6.1 s`, 9969 tokens, ~US$ 0,003389, "Chegaram 16
+  e-mails não lidos hoje.". O log da revisão (22 linhas desde 16:50Z): nem a pergunta nem a
+  resposta; os únicos 4 dígitos são a porta 8080; 0 erro.
+- **11, agendador ✅:** `--executar agendador` → a API, o `viking-agendador@`, o `run.invoker` e a
+  tarefa `viking-lembretes` em `southamerica-east1` (aceita); "✅ agendador: a cada minuto, como
+  agendador@, só na rota do envio". 4 min depois: a tarefa `ENABLED`, última execução
+  16:57:03Z sem erro; `deploy` → `envio_de_lembretes: True (esperado True)`, os três invocam, 0
+  erro.
+- **Falta:** a prova do lembrete com o Mac desligado (roteiro entregue ao dono), a migração no
+  Mac (`viking lembretes --migrar --executar`), o C8/C9 da 10c e o fechamento da 11; então a 11c.
 
 **Próximo passo exato (depois do compact, da leitura e das conferências):**
 1. ✅ O lock (19 versões) num commit próprio (`53dda98`).
