@@ -124,7 +124,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     devolve só o texto; a liberação de um clique se aprova no próprio terminal)
   - `assistant/` — loop de chat (Gemini function-calling) unificando as três capacidades acima.
     `turno.py` é o núcleo do turno dos dois chats (o texto de sistema por seção, conforme as
-    tools presentes; o envio com o aviso depois de um erro; o histórico em JSON); `agent.py` é o
+    tools presentes; o envio com o aviso depois de um erro, e uma resposta sem texto do Gemini
+    é erro com o motivo, `SemResposta`, nunca um vazio calado; o histórico em JSON); `agent.py` é o
     REPL do Mac e `na_nuvem.py` o turno no motor (a barreira que não deixa uma linha com cara de
     aprovação chegar ao modelo e aprova pelo mesmo laço do Mac, o teto, o prazo do turno, o
     campo `ao_dono` da resposta, e só as tools da nuvem: `SO_NO_MAC`

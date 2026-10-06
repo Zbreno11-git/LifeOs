@@ -7,14 +7,43 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-09-30 (Sessão 10b fechada no seu Mac).**
+**Última atualização: 2026-10-06 (Sessões 10c e 11 fechadas no seu Mac).**
 
-`███████████░░░░░░░░░ 17 de 30 sessões fechadas`
+`████████████░░░░░░░░ 19 de 31 sessões fechadas`
 
-Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9
-10 e 10b; parciais: nenhuma; em curso: nenhuma; na fila: 10c (o
-Gmail na nuvem), 11, 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi
-dividida, e para 30 quando a 10b foi dividida (2026-09-30).
+Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
+10, 10b, 10c e 11; parciais: nenhuma; em curso: nenhuma; na fila: 11c (backup no Drive e as
+finanças), 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi dividida,
+para 30 quando a 10b foi dividida (2026-09-30), e para 31 quando a 11c saiu da 11 (2026-10-01).
+
+## 2026-10-06 — Sessões 10c e 11: o Gmail na nuvem, e o Viking trabalha com o Mac fechado (fechadas no seu Mac)
+
+**O que ficou pronto:**
+- **O chat da nuvem cuida do seu e-mail:** lê, faz o raio-x, arquiva com o seu código (e
+  desfaz por 7 dias) e manda e-mail. O código aparece só no seu terminal, nunca para o modelo nem
+  no registro do Google; 3 códigos errados cancelam a proposta.
+- **Lembrete por e-mail com o Mac fechado:** a nuvem confere a cada minuto e manda o e-mail do
+  lembrete vencido. Provado hoje: o lembrete das 10:02 saiu às 10:02:03, com o Mac fechado.
+- **Os seus lembretes moram num lugar só, a nuvem:** os 5 do Mac foram copiados e conferidos um
+  por um. O Mac, o chat e o MCP leem e gravam lá; a cópia de antes fica guardada no Mac.
+- **As "mãos":** com o `viking maos` aberto no Mac, o chat da nuvem usa o navegador do Mac, com
+  todas as travas de sempre rodando no Mac. Fechou o `viking maos`, a nuvem diz que ele não está
+  ligado.
+- **Uma resposta vazia do modelo agora aparece como erro**, com o motivo, em vez de uma linha em
+  branco (achado no seu teste de hoje e consertado na hora).
+
+**Como sabemos:**
+- 17 provas no ar, e uma pergunta de verdade sobre o e-mail respondida em 6,1 s por ~US$ 0,003.
+- 2386 testes passando no VPS (2207 no seu Mac, mais os da nuvem que o Mac não instala), e os
+  defeitos plantados de propósito derrubados pelo teste certo (337 de 337 na rodada inteira da 11, mais 4 hoje).
+- No seu Mac: o e-mail, a limpeza com código e o desfazer, o envio, a recusa sem terminal, e o
+  título do example.com trazido pelas mãos.
+
+**Custo:** o envio de lembretes custa de US$ 0 a 0,10 por mês; o gasto do Gemini na nuvem hoje,
+com todos os testes, ficou em ~US$ 0,04 pela estimativa do próprio Viking (o limite é US$ 1 por dia).
+
+**Decidido hoje:** o navegador continua no seu Mac; o Browser Use Cloud foi estudado e não entra
+(caro, sem acesso à sua Chrome sem subir os seus cookies, e termos amplos sobre o conteúdo; D62).
 
 ## 2026-09-30 — Sessão 10b: o chat foi para a nuvem (fechada no seu Mac)
 

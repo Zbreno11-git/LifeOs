@@ -16,32 +16,28 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** 11 — as mãos e os lembretes com uma fonte só, **em curso desde 2026-10-01**
-  (adiantada pelo dono; D61). C0–C5 feitos: o motor `1480027` no ar sem o Gmail, `viking maos`
-  testado no Mac (o título do example.com veio pelas mãos), o ensaio da migração sem copiar nada.
-  O resto (o agendador, a migração de verdade, o fechamento) espera o portão da 10c. A 10c (o Gmail na nuvem) está parada no portão: a prova no Mac, **a
-  partir de 2026-10-04 (Seattle)**, vem antes de subir o token do Gmail. Planos e estado no
-  `PROGRESSO.md`; decisões na D60 e na D61.
+- **Sessão:** 11c — backup no Drive e a medição das finanças (D51), **a abrir**. A 10c e a 11
+  fecharam no Mac em 2026-10-06 (o Gmail na nuvem, o agendador ligado, o lembrete por e-mail com
+  o Mac fechado, a migração dos lembretes; o motor `bbcba1a`). O dono pediu uma pausa antes de
+  atacar a 11c. Estado no `PROGRESSO.md`; decisões D60–D62.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-06):** a 11 está com C0–C5 ✅ (o motor `1480027` no ar sem o Gmail, `viking
-  maos` testado no Mac). O portão da 10c (a prova do token do Gmail no Mac, `viking gmail --login`
-  sem abrir o navegador) já pode ser feito desde 2026-10-04 em Seattle e ainda não subiu
-  (`viking-gmail` com 0 versões). Depois dele: o C6–C9 da 10c, o agendador e a migração de verdade
-  da 11. A próxima sessão a abrir é escolha do dono (11c, 11b ou 12; o `PROGRESSO.md` tem a
-  recomendação).
+- **Agora (2026-10-06, ~17:40Z):** 19 de 31 sessões fechadas. Primeiro passo da 11c: medir as
+  leituras do Firestore e os pedidos do Cloud Run com 24 h de agendador ligado (a partir de
+  2026-10-07 ~17:00Z) contra a conta da D61; depois, as perguntas da abertura (o consentimento do
+  Drive, `drive.file`, é outro login no Mac, agora liberado: a prova do Gmail passou).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D59), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D62), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** a prova do token do Gmail no Mac a partir de 2026-10-04 (o portão da 10c)
-  e os ok's do que custa ou publica.
+- **Depende do dono:** abrir a 11c (ele pediu uma pausa antes), o login do Drive no Mac, o pedido
+  da medição da Pluggy (um GET), e os ok's do que custa ou publica.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -747,7 +743,7 @@ O que estava escrito na abertura:
     - `viking lembretes --nuvem` com a marca;
     - o `viking chat` local igual.
 
-## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (em curso desde 2026-09-30)
+## Sessão 10c — nuvem 1c: o Gmail na nuvem e a aprovação pela rede (feita e testada no Mac em 2026-10-06)
 
 - **Respostas do dono na abertura (2026-09-30, D60):** começar já a parte que não depende da
   prova, com a prova como portão antes de subir o token e publicar; 3 tentativas erradas cancelam
@@ -776,7 +772,7 @@ O que estava escrito na abertura:
 - **Herdado da 10b:** o laço do chat no motor, o teto de gasto, o registro de ações no Firestore,
   os segredos como volume e `viking chat --nuvem`.
 
-## Sessão 11 — nuvem 2: as mãos e os lembretes com uma fonte só (em curso desde 2026-10-01)
+## Sessão 11 — nuvem 2: as mãos e os lembretes com uma fonte só (feita e testada no Mac em 2026-10-06)
 
 - **Respostas do dono na abertura (2026-10-01, D61):**
   - esta sessão = as mãos e a migração; o Drive e as finanças vão para a 11c, depois de 04/10;

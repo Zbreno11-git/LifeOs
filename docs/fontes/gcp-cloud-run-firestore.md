@@ -104,8 +104,14 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
   milhões de pedidos por mês) e do Firestore (50 mil leituras por dia). A rodada do envio por
   minuto não relê os atrasados: ≈ 1,5 mil leituras por dia com poucos lembretes; relendo 20
   atrasados seriam ≈ 29 mil. Medir no ar depois de 24 h com o agendador ligado.
-- **A conferir quando o passo rodar:** se o Cloud Scheduler aceita `southamerica-east1` como
-  local da tarefa (o passo usa a região do Viking).
+- **Medido (2026-10-06, ~16:53Z):** o Cloud Scheduler **aceita `southamerica-east1`** (o `jobs
+  create` passou de primeira). 4 min depois: a tarefa `ENABLED`, última execução sem erro, e o
+  `/versao` com `envio_de_lembretes: True`; o `run.invoker` do `agendador@` não precisou esperar
+  propagação visível. A prova: um lembrete para 17:02:00Z saiu às 17:02:02.9Z (o `enviado_em` do
+  Firestore).
+- **O turno com o Gmail no ar (2026-10-06):** "quantos e-mails não lidos chegaram hoje?" → HTTP
+  200 em 6,1 s, 9.969 tokens, ~US$ 0,0034 (a 10c estimava um teto de ~+5.000 tokens pelas 7
+  tools do Gmail: a pergunta da agenda na 10b deu 3.982).
 
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 

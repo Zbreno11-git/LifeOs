@@ -1046,6 +1046,54 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-06 — Sessões 10c e 11 fechadas no Mac: o Gmail na nuvem, as mãos e os lembretes com uma fonte só
+
+**O portão e o que subiu** (com os oks do dono no chat, nesta ordem):
+- 10c C6: a prova passou (`viking gmail --login` no Mac sem abrir o navegador, depois de
+  2026-10-04, com o token de 2026-09-26); o token subiu do Mac (`viking-gmail: 1 versão`).
+- 10c C7: o motor `66cf7d9` com os 3 segredos como volume, 17 provas ✅; `prova-chat` "quantos
+  e-mails não lidos chegaram hoje?" → HTTP 200 em 6,1 s, 9.969 tokens, ~US$ 0,0034; o log da
+  revisão sem a pergunta, a resposta ou um código.
+- 11: o passo `agendador` (a API do Cloud Scheduler, o `viking-agendador@`, a tarefa de 1 em 1
+  min em `southamerica-east1`, aceita); 4 min depois, `envio_de_lembretes: True`.
+- **A prova do lembrete com o Mac fechado:** criado pelo chat da nuvem às 16:59:22Z (09:59
+  Seattle) para 17:02:00Z (10:02); o motor enviou às 17:02:02.9Z (Firestore, `enviado`), e o
+  e-mail apareceu na caixa às 10:02. Três segundos depois do prazo.
+- **A migração de verdade, no Mac:** "✅ Migrado: 5 copiado(s), todos conferidos"; `viking
+  lembretes` lista da nuvem; o estado do envio veio junto (o "Testar o Viking" continua
+  `enviado` desde 29/09).
+
+**O C9 da 10c no Mac (2026-10-06):** `2207 passed, 173 skipped`; pelo chat da nuvem: os não
+lidos, o raio-x, a limpeza de 194 e-mails de um remetente com o código só no quadro do terminal,
+`confirma` → arquivados, `desfaz` → de volta, o envio para a própria conta; um "confimar 1616"
+com erro de digitação não foi ao modelo; sem terminal, a limpeza recusa antes de criar o código;
+no chat local, "confirma o 4821 da nuvem" barrado.
+
+**Um defeito achado no C9 e consertado na hora (`bbcba1a`, no ar):** `echo "o que chegou hoje no
+meu e-mail?" | viking chat --nuvem` voltou "🤖 Viking: " calado (3.884 tokens de entrada, 0 de
+saída). O núcleo do turno, dos dois chats, devolvia `resposta.text or ""`: uma resposta do Gemini
+sem texto virava silêncio e escondia o aviso do que uma tool já tinha feito; o limite de chamadas
+de tool do turno caía no mesmo vazio. Agora é `turno.SemResposta`, com o motivo, pelo caminho de
+erro (aviso, nota, fora do histórico). 6 testes que caíam antes, 4 mutações mortas, `2386
+passed`; o motor `bbcba1a` com as 17 provas ✅; no Mac, a mesma pergunta pelo `echo` respondeu.
+**Não medido:** por que o Gemini voltou vazio naquela vez (agora o motivo aparece na tela).
+
+**Em linguagem simples:** o Viking na nuvem lê, arquiva (com o seu código) e manda e-mail; o
+lembrete chega por e-mail com o Mac fechado; os lembretes moram num lugar só; e o navegador do
+Mac atende o chat da nuvem enquanto o `viking maos` está aberto.
+
+**Erros desta sessão (meus; em `docs/erros.md`):** na 11, um `monkeypatch` dentro de um contexto
+que se desfazia (classe 4), mutações em primeiro plano pela terceira sessão seguida (classe 5),
+"10 ✅" escrito no bloco sem medir (classe 2), a espera da propagação do IAM só para o `cli@`
+(classe 6); na 10c, o teste de corrida que pegava em 1 de 10 (classe 4) e quatro escorregões de
+ferramenta (classe 5); hoje, `<o mesmo remetente>` dentro de um comando para colar (classe 1) e o
+`prova-chat --mensagem` do plano (classe 2).
+
+**Fica para a 11c (primeiro passo):** medir as leituras do Firestore e os pedidos do Cloud Run
+com 24 h de agendador ligado (a partir de 2026-10-07 ~17:00Z), contra a conta da D61 (~1,5 mil
+leituras por dia; o gatilho é passar de metade das 50 mil grátis). E o texto da recusa sem
+terminal, que o modelo repete como se fosse para ele ("peça ao usuário…"), no próximo deploy.
+
 ### 2026-10-06 — o Browser Use Cloud estudado e recusado (D62); o lock da 11
 
 - O lock subiu 19 versões num commit próprio (`53dda98`): `2380 passed` antes e depois, ruff,
