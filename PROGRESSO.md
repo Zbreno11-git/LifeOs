@@ -5,26 +5,99 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-06 ~23:30Z: Sessão 11c aberta e planejada (backup no Drive); C0 em curso
+## ▶️ RETOMAR AQUI — 2026-10-07 ~16:45Z: Sessão 11c, código pronto (C0–C4 ✅, C5 do VPS ✅); falta publicar e testar no Mac
 
-**Estado (2026-10-06 ~23:30Z):**
-- A 11c foi aberta depois de um compact. As conferências bateram com o bloco anterior:
-  - `2386 passed`;
-  - CI `success` em `12e775e`;
-  - a infraestrutura com 11 ✅;
-  - o motor `bbcba1a` com 17 ✅;
-  - o Scheduler `ENABLED`.
-- **As duas rodadas de perguntas foram respondidas**, e o plano foi aprovado (logo abaixo deste
-  bloco, "Plano — Sessão 11c"; as respostas na tabela dele; D63).
-- **O lock** (opentelemetry-api 1.45.1) está em `d4f5127`, com `2386 passed` antes e depois.
-- **A D51 foi medida (2026-10-06 22:27Z, com o ok do dono): pode.**
-  - `GET /smart-transfers/preauthorizations` → 403 `PAYMENT_INITIATION_NOT_ALLOWED`;
-  - `GET /payments/requests` → 200, 0 pedidos;
-  - as docs dizem que todo PIX avulso exige a autorização no banco.
-  - A mudança das finanças vai para a **11d nova** (resposta do dono).
-- **No ar:** o motor `bbcba1a`, sem mudança.
+**Estado (2026-10-07 ~16:45Z, medido antes do compact):**
+- **Repositório:** o HEAD é este checkpoint (depois de `afd568c`, o C5, CI `success` pelo SHA) =
+  remoto; trava `.mutacao.lock`: nenhuma; background: nenhum. O VPS foi reiniciado pelo dono em
+  2026-10-07; a sessão retomou sem perda.
+- **Suíte:** `2489 passed` (`VIKING_EXIGIR_EMULADOR=1`). A rodada inteira de mutações deu
+  `366 · mortas pelo teste esperado: 366`, mais 1/1 da última. `docker build` ok (521 MB).
+- **Nuvem (com os oks do dono, 2026-10-07 ~16:39Z, "Os dois"):**
+  - `--executar segredos` ✅: o `viking-drive` existe **vazio**, e o `motor@` o lê;
+  - `python scripts/nuvem.py` → 11 ✅ e ⬜ `backup` ("o token do Drive ainda não subiu");
+  - **o deploy (o 2º ok) NÃO rodou:** o dono pediu o compact antes. O motor no ar segue o
+    `bbcba1a`, com 5 commits nos caminhos da imagem desde ele. O `deploy` só-leitura dá 5 ❌,
+    todos esperados até publicar: a imagem, o commit no `/versao`, `/fumaca/segredos` sem
+    `drive`, `backup: None`, e `/tarefas/backup` 404. O resto ✅, com 0 erro no log.
+  - O agendador `viking-lembretes`: `ENABLED`, última execução 16:40:02Z, sem erro.
+- **No ar sem mudança:** o Gmail, as mãos, o envio de lembretes.
 
-**Checkpoints da 11c:**
+**Próximo passo exato:**
+1. **O deploy.** O ok foi dado em 2026-10-07 ~16:39Z, antes do compact. Diga ao dono que vai
+   publicar e rode `python scripts/nuvem.py deploy --executar` (só com o HEAD limpo, no GitHub e
+   CI verde). Esperado: todas as provas ✅, `backup: False` (o token ainda não subiu), `drive`
+   fora da revisão ("Fora desta revisão (sem versão; sobe do Mac): viking-drive"), `cli@`
+   recusado em `/tarefas/backup` (403).
+2. **O roteiro do Mac**, entregue ao dono depois do deploy:
+   1. `cd ~/LifeOs && git pull && git log --oneline -1`
+   2. `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q`
+   3. `viking backup --login` (a tela pede só os arquivos que o app cria; esperado "✅ Login do
+      Drive ok …: nenhum backup na pasta ainda")
+   4. `python scripts/nuvem.py segredo viking-drive` e depois o mesmo com `--executar`
+3. **No VPS, com o ok na hora:**
+   1. o `deploy --executar` de novo (o segredo novo pede revisão; esperado `backup: True`);
+   2. `python scripts/nuvem.py --executar backup` (cria a tarefa `viking-backup` e roda uma; de
+      US$ 0 a 0,10/mês);
+   3. `deploy` só-leitura: o último backup com menos de 48 h.
+4. **No Mac:** `viking backup` (a data), `viking backup --conferir` (esperado "✅ O backup
+   restaura inteiro e bate com a nuvem", saída 0) e `viking chat --nuvem` (a abertura sem aviso
+   de backup).
+5. **A medição de 24 h do agendador (C0b)**, que já dá a partir de 2026-10-07 17:00Z: as leituras
+   e escritas do Firestore e os pedidos do Cloud Run do dia, pela API do Cloud Monitoring (só
+   leitura), contra os ~1,5 mil/dia da D61 (gatilho: 25 mil).
+6. **O fechamento:**
+   - o diário (com "Erros desta sessão": os horários do C1/C2 escritos sem medir, classe 2);
+   - a barra (20 de 32);
+   - `sessoes.md` (a 11c feita, o ▶️ na 11d) e a D63;
+   - o texto do passo `segredos` no `scripts/nuvem.py` ainda diz "os tokens da agenda e do
+     Gmail": acrescentar o Drive;
+   - commit, push e CI.
+
+**Reler, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md`;
+- este bloco e o plano da 11c logo abaixo;
+- `sessoes.md` (a 11c e a 11d);
+- `docs/decisoes.md` (D51, D61–D63);
+- o índice de `docs/erros.md` e as classes 1, 2, 5 e 6;
+- as skills `software-build`, `nuvem-e-deploy`, `testes-que-provam` e `pre-compact` ("Depois do
+  compact").
+
+**Não pode ser esquecido:**
+- **O backup nunca apaga nada no Drive:** o módulo só cria, lista e baixa, e um teste lê o código.
+- **O token do Drive** faz o login no Mac e sobe pelo `segredo viking-drive --executar`, rodado
+  no Mac; o VPS não o guarda. O cliente OAuth é de outro projeto do dono, com a API do Drive
+  ligada (medido em 2026-10-06).
+- **O `--conferir` restaura num `viking.db` temporário;** o real do Mac (migrado) não muda.
+- **O motor envia e-mail sozinho** (lembretes vencidos, a cada minuto, só para a conta do dono).
+- **O código de aprovação** nunca vai ao Gemini, ao MCP, ao registro, ao log nem por e-mail.
+- **O VPS:** nada que envie, apague ou arquive daqui; todo `gcloud` com `--project`; segredo só
+  pela entrada padrão.
+- **A chave da Pluggy alcança PIX:** a D51 foi medida em 2026-10-06 ("pode"), e a mudança é a
+  11d; nunca uma escrita.
+- **Rotina:**
+  - mutações em background, sem `timeout`, com a saída num arquivo, e nada editado enquanto
+    rodam;
+  - sem `| tail` antes de commit;
+  - nenhum `<…>` em comando para o dono;
+  - migração publicada não se edita.
+- **O fuso do dono:** Seattle até ~fim de outubro, depois o Brasil (perguntar a cidade).
+
+**Depende do dono:**
+- a confirmação do deploy (o ok já dado);
+- o roteiro do Mac (o login e o segredo do Drive);
+- os oks do 2º deploy e do `--executar backup`;
+- a saída do `--conferir`.
+
+**Antes de confiar neste bloco:**
+- `git status --short` vazio, HEAD = remoto, `ls .mutacao.lock` → não existe;
+- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2489 passed` (o VPS reiniciou:
+  confira que o emulador sobe, com 0 pulados);
+- `gh run list --commit $(git rev-parse HEAD)` → `success`;
+- `python scripts/nuvem.py` → 11 ✅ e ⬜ `backup`;
+- `python scripts/nuvem.py deploy` → o motor `bbcba1a` e os 5 ❌ esperados acima.
+
+### Sessão 11c — os checkpoints feitos (o registro)
 - C0 ✅: o lock em `d4f5127`, os docs em `8db5ab7`.
 - C0b ⬜: a medição de 24 h, só depois de 2026-10-07 ~17:00Z.
 - C1 ✅ (2026-10-06, commit às 23:39Z):
@@ -92,63 +165,6 @@
       sessão e a janela.
   - `2489 passed`; ruff, format, mypy (40) limpos.
 - C5, a parte do dono ⬜.
-
-**Próximo passo exato:** o C5, com os oks na hora:
-1. `--executar segredos`, que cria o `viking-drive` vazio;
-2. o deploy;
-3. o roteiro do Mac (o login, o segredo);
-4. o `--executar backup`;
-5. o `--conferir` no Mac. A rodada inteira de mutações e o `docker build` em background, as
-duas passadas de revisão, o push e o CI pelo SHA. Depois, pedir os oks na hora:
-1. `--executar segredos`, que cria o `viking-drive` vazio;
-2. o deploy;
-3. o roteiro do Mac (o login, o segredo);
-4. o `--executar backup`;
-5. o `--conferir` no Mac.
-
-**Reler, nesta ordem:**
-- `CLAUDE.md`/`AGENTS.md`;
-- este bloco e o plano da 11c logo abaixo;
-- `sessoes.md` (a 11c e a 11d);
-- `docs/decisoes.md` (D51, D56–D63);
-- o índice de `docs/erros.md` e as classes 2, 4, 5 e 6;
-- as skills `software-build`, `testes-que-provam`, `dados-e-banco`, `nuvem-e-deploy`,
-  `seguranca` e `integracoes`.
-
-**Não pode ser esquecido:**
-- **O backup nunca apaga nada no Drive** (resposta do dono: todas as cópias ficam). O módulo do
-  Drive só cria, lista e baixa.
-- **O token do Drive** (`drive.file`) faz o login no Mac e sobe ao Secret Manager como o do Gmail;
-  o VPS não o guarda.
-- **O `--conferir` restaura num `viking.db` temporário;** o real não muda.
-- **O cliente OAuth do Google mora noutro projeto do dono.** A API do Drive já está ligada lá
-  (medido em 2026-10-06).
-- **O motor envia e-mail sozinho**, a cada minuto, só para a conta do dono: um lembrete de teste
-  na nuvem vira e-mail de verdade.
-- **O código de aprovação** nunca vai ao Gemini, ao MCP, ao registro, ao log nem por e-mail. Na
-  nuvem, vai só no `ao_dono`, e no motor o stdout e o stderr são o log.
-- **O VPS:** nada que envie, apague ou arquive roda daqui; todo `gcloud` leva `--project`; segredo
-  só pela entrada padrão.
-- **A chave da Pluggy alcança PIX:** nada a usa sem o pedido do dono, e nunca uma escrita.
-- **Rotina:**
-  - mutações em background, sem `timeout`, com a saída num arquivo, e nada editado enquanto
-    rodam;
-  - nenhuma checagem antes de commit com `| tail`;
-  - migração publicada não se edita;
-  - nenhum `<…>` dentro de um comando para o dono colar.
-- **O fuso do dono:** Seattle até ~fim de outubro, depois o Brasil (perguntar a cidade).
-
-**Depende do dono:**
-- os oks do deploy e do passo `backup`;
-- no Mac: o login do Drive (`viking backup --login`) e o `segredo viking-drive --executar`;
-- a saída do `viking backup --conferir`.
-
-**Antes de confiar neste bloco:**
-- `git status --short` vazio, HEAD = remoto, `ls .mutacao.lock` → não existe;
-- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2386 passed` (antes do C1);
-- `gh run list --commit $(git rev-parse HEAD)` → `success`;
-- `python scripts/nuvem.py` → 11 ✅; `python scripts/nuvem.py deploy` → o motor `bbcba1a`,
-  17 ✅.
 
 ### 2026-10-06 — o fechamento da 10c e da 11 (o registro)
 
