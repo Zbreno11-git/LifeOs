@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 ~18:00Z: Sessão 11c, o 1º deploy no ar, o token do Drive subiu, C6 (só quando mudar) pronto; falta o 2º deploy, a tarefa e o `--conferir`
+## ▶️ RETOMAR AQUI — 2026-10-07 ~18:05Z: Sessão 11c no ar (o motor `3a38d07`, a tarefa `viking-backup`, o 1º backup às 18:03:07Z); falta o `--conferir` no Mac e o fechamento
 
 **Depois do compact (2026-10-07, ~16:58Z até o commit `751bed4` às 17:08:47Z):**
 - As conferências bateram com o bloco abaixo: `a41cfa9` = remoto, CI `success` pelo SHA,
@@ -44,6 +44,15 @@
   ("conferido pela última vez"), o ⚠️ do passo `backup`, e o passo `segredos` com o Drive. Testes
   novos: 11 no formato e na rodada, 1 do texto da CLI; mutações `backup:` → `11 · mortas pelo
   teste esperado: 11` (6 novas, 2 reancoradas).
+  Commit `3a38d07`, CI `success` pelo SHA.
+- **O 2º deploy ✅ (o ok do dono no chat, ~18:00Z):** o motor **`3a38d07`** no ar, 19 ✅ (o
+  relógio: 18:02:08Z no fim): `{'gemini': True, 'agenda': True, 'gmail': True, 'drive': True}`,
+  `backup: True (esperado True)`, `VIKING_DRIVE_TOKEN_ARQUIVO` e o volume `viking-drive`, log 0 erro.
+- **A tarefa ✅ (o ok do dono no mesmo pedido):** `--executar backup` → "✅ backup: todo dia às
+  09:00 UTC, como agendador@, só na rota do backup"; `scheduler jobs describe` → `ENABLED`, última
+  tentativa 18:03:07Z; o log do Cloud Run: `/tarefas/backup` **200 em 5,4 s** às 18:03:07Z; o
+  `deploy` só-leitura: "o último backup tem menos de 48 h: backup_em:
+  2026-10-07T18:03:07.197761+00:00" e 0 erro; `python scripts/nuvem.py` → **12 ✅**.
 
 **Estado (2026-10-07 ~16:45Z, medido antes do compact):**
 - **Repositório:** o HEAD é este checkpoint (depois de `afd568c`, o C5, CI `success` pelo SHA) =
@@ -73,7 +82,7 @@
    3. `viking backup --login` (a tela pede só os arquivos que o app cria; esperado "✅ Login do
       Drive ok …: nenhum backup na pasta ainda")
    4. `python scripts/nuvem.py segredo viking-drive` e depois o mesmo com `--executar`
-3. **No VPS, com o ok na hora** (depois do commit do C6 e do CI verde):
+3. ✅ (acima) **No VPS, com o ok na hora** (depois do commit do C6 e do CI verde):
    1. o `deploy --executar` de novo (o segredo novo pede revisão; esperado `backup: True`);
    2. `python scripts/nuvem.py --executar backup` (cria a tarefa `viking-backup` e roda uma; de
       US$ 0 a 0,10/mês);
