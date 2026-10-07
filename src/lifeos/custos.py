@@ -5,13 +5,38 @@ Duas fontes, com confiabilidade diferente:
 - **Jev/OpenRouter**: o próprio provedor devolve `usage` em cada chamada, e quando vem um campo de
   custo ele é usado como valor real. É exato.
 - **Gemini**: a API devolve contagem de tokens, não preço. O custo aqui é *estimativa*, calculada
-  com as tarifas em `VIKING_PRECO_GEMINI_*` — confira-as no painel do provedor, preço muda. Tokens
-  de conteúdo em cache têm tarifa própria e não são modelados aqui; a conta continua estimativa.
+  com a tarifa **do modelo que respondeu** (`TARIFAS`, desde a Sessão 12: o dia a dia e o forte
+  custam diferente) — confira-as no painel do provedor, preço muda. Tokens de conteúdo em cache
+  têm tarifa própria e não são modelados aqui; a conta continua estimativa.
 """
 
 from dataclasses import dataclass, field
+from datetime import UTC, date, datetime
 
 from lifeos.config import PRECO_GEMINI_ENTRADA, PRECO_GEMINI_SAIDA
+
+# US$ por 1M de tokens (entrada, saída), por modelo e a partir de que dia (UTC), lidos em
+# 2026-10-07 em https://ai.google.dev/gemini-api/docs/pricing (D65). O modelo do dia a dia
+# (`turno.MODELO`) usa as `VIKING_PRECO_GEMINI_*` do `.env`, que valem 0,30/2,50 sem elas. O 3.8
+# Flash dobra em 2027-01-01 ("$1.50 starting January 1, 2027"): a tabela já cobra o preço novo.
+_SEMPRE = date.min
+TARIFAS: dict[str, tuple[tuple[date, float, float], ...]] = {
+    "gemini-3.5-flash-lite": ((_SEMPRE, PRECO_GEMINI_ENTRADA, PRECO_GEMINI_SAIDA),),
+    "gemini-3.8-flash": ((_SEMPRE, 0.75, 3.75), (date(2027, 1, 1), 1.50, 7.50)),
+    "gemini-2.5-flash": ((_SEMPRE, 0.30, 2.50),),
+}
+
+
+def tarifa(modelo: str, quando: date | None = None) -> tuple[float, float]:
+    """(entrada, saída) do modelo naquele dia. Um modelo fora da tabela custa a tarifa mais cara
+    dela: o teto erra para o lado de parar, nunca de subcontar."""
+    dia = quando or datetime.now(UTC).date()
+    faixas = TARIFAS.get(modelo.removeprefix("models/"))
+    if faixas is None:
+        return max(((e, s) for f in TARIFAS.values() for _d, e, s in f), key=sum)
+    vigentes = [(e, s) for desde, e, s in faixas if desde <= dia]
+    return vigentes[-1]
+
 
 # Nomes possíveis do campo de custo no `usage` do provedor; o primeiro encontrado vence.
 _CHAVES_CUSTO = ("cost", "total_cost", "cost_usd")
@@ -41,14 +66,17 @@ class Consumo:
     custo: float = 0.0
     estimado: bool = False
     chamadas: int = 0
+    modelo: str = ""  # quem respondeu (só o Gemini); somas de modelos diferentes ficam sem nome
 
     def __add__(self, outro: "Consumo") -> "Consumo":
+        modelos = {m for m in (self.modelo, outro.modelo) if m}
         return Consumo(
             entrada=self.entrada + outro.entrada,
             saida=self.saida + outro.saida,
             custo=self.custo + outro.custo,
             estimado=self.estimado or outro.estimado,
             chamadas=self.chamadas + outro.chamadas,
+            modelo=modelos.pop() if len(modelos) == 1 else "",
         )
 
     def resumo(self) -> str:
@@ -57,8 +85,8 @@ class Consumo:
         return f"{tokens} · {prefixo}{dinheiro(self.custo)}"
 
 
-def do_gemini(usage_metadata) -> Consumo:
-    """Converte o usage_metadata do google-genai. Custo é estimado a partir das tarifas.
+def do_gemini(usage_metadata, modelo: str, quando: date | None = None) -> Consumo:
+    """Converte o usage_metadata do google-genai. Custo é estimado pela tarifa do `modelo`.
 
     Entrada inclui `tool_use_prompt_token_count` (o schema das tools recontado a cada chamada de
     function-calling). Saída inclui `thoughts_token_count`: é raciocínio do modelo, mas é saída
@@ -73,8 +101,12 @@ def do_gemini(usage_metadata) -> Consumo:
     saida = (getattr(m, "candidates_token_count", 0) or 0) + (
         getattr(m, "thoughts_token_count", 0) or 0
     )
-    custo = (entrada * PRECO_GEMINI_ENTRADA + saida * PRECO_GEMINI_SAIDA) / 1_000_000
-    return Consumo(entrada=entrada, saida=saida, custo=custo, estimado=True, chamadas=1)
+    preco_entrada, preco_saida = tarifa(modelo, quando)
+    custo = (entrada * preco_entrada + saida * preco_saida) / 1_000_000
+    modelo = modelo.removeprefix("models/")
+    return Consumo(
+        entrada=entrada, saida=saida, custo=custo, estimado=True, chamadas=1, modelo=modelo
+    )
 
 
 def do_jev(usage: dict | None) -> Consumo:
@@ -100,7 +132,9 @@ class Sessao:
 
     gemini: Consumo = field(default_factory=Consumo)
     navegador: Consumo = field(default_factory=Consumo)
+    por_modelo: dict[str, Consumo] = field(default_factory=dict)
     _turno: Consumo = field(default_factory=Consumo, repr=False)
+    _turno_por_modelo: dict[str, Consumo] = field(default_factory=dict, repr=False)
 
     @property
     def total(self) -> float:
@@ -109,6 +143,7 @@ class Sessao:
     def iniciar_turno(self) -> None:
         """Zera o acumulador do turno. Chame antes de cada `send_message`."""
         self._turno = Consumo()
+        self._turno_por_modelo = {}
 
     def registrar_gemini(self, consumo: Consumo) -> None:
         """Soma ao total da sessão E ao turno corrente. Chamado por `instrumentar()` a cada
@@ -116,14 +151,22 @@ class Sessao:
         `usage_metadata` da resposta final não inclui."""
         self.gemini = self.gemini + consumo
         self._turno = self._turno + consumo
+        for contas in (self.por_modelo, self._turno_por_modelo):
+            contas[consumo.modelo] = contas.get(consumo.modelo, Consumo()) + consumo
 
     def turno(self) -> Consumo:
         """Consumo acumulado desde o último `iniciar_turno()` — inclui chamadas que já custaram
         mesmo que uma chamada posterior do mesmo turno tenha falhado."""
         return self._turno
 
+    def resumo_do_turno(self) -> str:
+        """O gasto do turno com o modelo que respondeu (Sessão 12: o forte aparece pelo nome)."""
+        return _por_modelo(self._turno_por_modelo)
+
     def total_formatado(self) -> str:
         linhas = [f"Gemini:    {self.gemini.resumo()}"]
+        if len(self.por_modelo) > 1:
+            linhas += [f"  {m}: {c.resumo()}" for m, c in sorted(self.por_modelo.items())]
         if self.navegador.chamadas:
             linhas.append(
                 f"Navegador: {self.navegador.resumo()} em {self.navegador.chamadas} chamadas"
@@ -132,11 +175,17 @@ class Sessao:
         return "\n".join(linhas)
 
 
+def _por_modelo(contas: dict[str, Consumo]) -> str:
+    return "; ".join(f"{m or '?'}: {c.resumo()}" for m, c in sorted(contas.items()))
+
+
 # Acumulador da sessão corrente. Global por simplicidade: o Viking é um CLI de um usuário só.
 SESSAO = Sessao()
 
 
-def instrumentar(client, *, sessao: "Sessao | None" = None, antes=None, depois=None) -> bool:
+def instrumentar(
+    client, *, sessao: "Sessao | None" = None, antes=None, depois=None, escolher=None
+) -> bool:
     """Conta cada requisição do function-calling automático (AFC), não só a última.
 
     Em google-genai 2.24.0, `Models.generate_content` roda um laço síncrono de AFC que
@@ -152,9 +201,10 @@ def instrumentar(client, *, sessao: "Sessao | None" = None, antes=None, depois=N
     vez de quebrar o assistente — e o teste de acoplamento avisa alto quando isso acontecer.
 
     `sessao` é injetável (o motor da nuvem usa uma por pedido; o chat do Mac, o `SESSAO` global).
-    `antes()` roda antes de CADA chamada ao modelo e pode recusá-la levantando (o teto de gasto da
-    nuvem: conferir antes, não depois, é o que impede a chamada que passaria do teto); `depois`
-    recebe o `Consumo` de cada chamada.
+    `escolher(modelo)` devolve o modelo desta chamada (o forte no meio do turno, Sessão 12);
+    `antes(modelo)` roda antes de CADA chamada ao modelo e pode recusá-la levantando (o teto de
+    gasto da nuvem: conferir antes, não depois, é o que impede a chamada que passaria do teto);
+    `depois` recebe o `Consumo` de cada chamada, com o modelo que respondeu.
 
     Devolve True se instrumentou agora, False se já estava instrumentado ou se o gancho não existe.
     """
@@ -166,10 +216,13 @@ def instrumentar(client, *, sessao: "Sessao | None" = None, antes=None, depois=N
     assert modelos is not None  # com `original`, `models` existe
 
     def contabilizado(**kwargs):
+        if escolher is not None:
+            kwargs["model"] = escolher(kwargs.get("model") or "")
+        modelo = str(kwargs.get("model") or "")
         if antes is not None:
-            antes()
+            antes(modelo)
         resposta = original(**kwargs)
-        consumo = do_gemini(getattr(resposta, "usage_metadata", None))
+        consumo = do_gemini(getattr(resposta, "usage_metadata", None), modelo)
         alvo.registrar_gemini(consumo)
         if depois is not None:
             depois(consumo)
@@ -283,6 +336,90 @@ class Teto:
             return {"total": float(dados.get("total", 0.0)) + custo, "dias": dias}, None
 
         firestore_comum.trocar(ref, decidir)
+
+
+# --- as cotas do dia: o modelo forte e a busca (Sessão 12, D65) -------------------------------
+
+
+class CotaAtingida(RuntimeError):
+    """A cota do dia do modelo forte ou da busca acabou: o pedido não sai (o texto diz qual)."""
+
+
+class Cotas:
+    """O que o dono limitou por dia além do teto (D65, 2026-10-07): o gasto do modelo forte (US$)
+    e as consultas de busca. Um documento por dia do dono (`cotas/AAAA-MM-DD`), fora do backup
+    (um contador de um dia não se restaura) e fora de `gastos/` (o formato fechado do backup e o
+    `Teto.somar`, que reescreve o mês inteiro). Cada campo muda sozinho, por comparar e trocar:
+    duas instâncias somando juntas não perdem nada, e a 31ª reserva de busca não passa."""
+
+    COLECAO = "cotas"
+
+    def __init__(self, *, forte_dia: float, buscas_dia: int, fuso):
+        self.forte_dia, self.buscas_dia, self.fuso = forte_dia, buscas_dia, fuso
+
+    def _dia(self, agora=None) -> str:
+        return f"{(agora or datetime.now(UTC)).astimezone(self.fuso):%Y-%m-%d}"
+
+    def _ref(self, agora=None):
+        from lifeos import firestore_comum
+
+        return firestore_comum.cliente().collection(self.COLECAO).document(self._dia(agora))
+
+    def hoje(self, agora=None) -> dict:
+        snap = self._ref(agora).get()
+        dados = (snap.to_dict() if snap.exists else None) or {}
+        return {"forte": float(dados.get("forte", 0.0)), "buscas": int(dados.get("buscas", 0))}
+
+    def conferir_forte(self, agora=None) -> None:
+        gasto = self.hoje(agora)["forte"]
+        if gasto >= self.forte_dia:
+            raise CotaAtingida(
+                f"o modelo forte já gastou ~{dinheiro(gasto)} hoje, e a cota do dia é "
+                f"{dinheiro(self.forte_dia)}"
+            )
+
+    def _criar(self, agora=None):
+        from google.api_core.exceptions import AlreadyExists
+
+        ref = self._ref(agora)
+        try:
+            ref.create({"forte": 0.0, "buscas": 0})
+        except AlreadyExists:
+            pass
+        return ref
+
+    def _somar(self, campo: str, valor: float, agora=None) -> None:
+        from lifeos import firestore_comum
+
+        def decidir(snap):
+            dados = snap.to_dict() or {}
+            return {campo: dados.get(campo, 0) + valor}, None
+
+        firestore_comum.trocar(self._criar(agora), decidir)
+
+    def somar_forte(self, custo: float, agora=None) -> None:
+        if custo > 0:
+            self._somar("forte", float(custo), agora)
+
+    def reservar_busca(self, agora=None) -> None:
+        """Uma consulta, antes de buscar; `CotaAtingida` sem gastar nada se o dia acabou."""
+        from lifeos import firestore_comum
+
+        def decidir(snap):
+            feitas = int((snap.to_dict() or {}).get("buscas", 0))
+            if feitas >= self.buscas_dia:
+                return None, False
+            return {"buscas": feitas + 1}, True
+
+        if not firestore_comum.trocar(self._criar(agora), decidir):
+            raise CotaAtingida(
+                f"já foram {self.buscas_dia} buscas na web hoje, a cota do dia; amanhã volta"
+            )
+
+    def somar_buscas(self, consultas: int, agora=None) -> None:
+        """As consultas a mais que o modelo fez numa busca (a primeira já foi reservada)."""
+        if consultas > 0:
+            self._somar("buscas", int(consultas), agora)
 
 
 def exportar_gastos() -> list[dict]:

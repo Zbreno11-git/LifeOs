@@ -470,7 +470,7 @@ def iniciar_assistente() -> None:
         # turno falhou, o custo da primeira ainda deve aparecer — não some com o erro.
         consumo = custos.SESSAO.turno()
         if consumo.chamadas:
-            print(f"   💸 gemini: {consumo.resumo()}", file=sys.stderr)
+            print(f"   💸 gemini: {custos.SESSAO.resumo_do_turno()}", file=sys.stderr)
 
 
 if __name__ == "__main__":

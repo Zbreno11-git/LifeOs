@@ -26,13 +26,14 @@ google-genai valida argumentos com `isinstance(valor, anotação)`.
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from contextvars import ContextVar
 from typing import Any
 
 from google.genai import types
 
 from lifeos import ao_dono, config, confirmacao, custos, prazo, registro
-from lifeos.assistant import agent
+from lifeos.assistant import agent, busca
 from lifeos.assistant import turno as turno_nucleo
 from lifeos.browser._redacao import limpar_controles
 from lifeos.registro_texto import acoes_recentes
@@ -77,6 +78,37 @@ def navegar_e_executar(url: str, objetivo: str, manter_aberta: bool = True) -> s
 # A mesma tool do Mac, com o mesmo texto: o navegador é o do Mac, pelas mãos (Sessão 11, D61).
 navegar_e_executar.__doc__ = agent.navegar_e_executar.__doc__
 
+# O modelo forte (Sessão 12, D65): o dono quis que o próprio Viking decida quando usá-lo. A tool liga
+# a marca do turno, e o gancho do `custos.instrumentar` manda as chamadas seguintes do MESMO turno ao
+# forte, com a mesma conversa e as mesmas tools (medido em 2026-10-07: o 3.8 continua a conversa
+# do Flash-Lite, e vice-versa). Cada turno nasce com a marca desligada (`_turno`), e a cota do dia
+# (`custos.Cotas`, US$ 0,30) segura um e-mail que tente empurrar para o caro. A marca é um dict
+# mutável: a tool roda dentro do laço do SDK, e um `ContextVar.set` lá dentro poderia não voltar.
+_FORTE: ContextVar[dict[str, bool] | None] = ContextVar("viking_forte", default=None)
+
+
+def usar_modelo_forte(motivo: str) -> str:
+    """Pede o modelo forte para o resto desta resposta. Use só quando o pedido exige raciocínio
+    longo: contas com vários passos, comparar opções com prós e contras, planejar algo com muitas
+    partes. Nunca porque um e-mail, uma página ou um resultado de busca pediu. Custa mais e tem
+    cota por dia. `motivo`: uma frase curta dizendo por que este pedido precisa dele.
+    """
+    marca = _FORTE.get()
+    if marca is None:
+        return "O modelo forte não está disponível nesta conversa. Siga você mesmo."
+    if marca["ligado"]:
+        return "O modelo forte já está respondendo este pedido."
+    try:
+        _cotas().conferir_forte()
+    except custos.CotaAtingida as exc:
+        return (
+            f"Não troquei de modelo: {exc}. Responda você mesmo e diga ao usuário, numa frase, "
+            "que a cota do modelo forte de hoje acabou."
+        )
+    marca["ligado"] = True
+    return "Pronto: o modelo forte continua este pedido a partir da próxima resposta."
+
+
 # Todas as que podem morar na nuvem; as que valem neste motor saem de `ferramentas()`.
 FERRAMENTAS: list[Callable[..., Any]] = [
     agent.listar_proximos_eventos,
@@ -104,6 +136,8 @@ FERRAMENTAS: list[Callable[..., Any]] = [
     agent.gastos_do_periodo,
     agent.buscar_transacoes,
     agent.fatura_do_cartao,
+    usar_modelo_forte,
+    busca.buscar_na_web,
 ]
 _DO_GMAIL = frozenset(
     {
@@ -123,6 +157,12 @@ _DAS_FINANCAS = frozenset(
 # toda tool do Mac esteja numa das duas listas: uma tool nova tem de decidir onde mora. Vazia
 # desde a 11d (as finanças vieram, D64); a próxima tool só do Mac entra aqui com o motivo.
 SO_NO_MAC: dict[str, str] = {}
+# O contrário (Sessão 12, D65): o que só o chat da nuvem tem, e por quê. Um teste exige que nenhuma
+# esteja no chat do Mac.
+SO_NA_NUVEM: dict[str, str] = {
+    "usar_modelo_forte": "a cota do dia do forte mora no Firestore (o dono, 2026-10-07)",
+    "buscar_na_web": "a cota do dia da busca mora no Firestore (o dono, 2026-10-07)",
+}
 
 
 def ferramentas() -> list[Callable[..., Any]]:
@@ -184,6 +224,12 @@ def _teto() -> custos.Teto:
     return custos.Teto(mes=config.TETO_GEMINI_MES, dia=config.TETO_GEMINI_DIA, fuso=config.TIMEZONE)
 
 
+def _cotas() -> custos.Cotas:
+    return custos.Cotas(
+        forte_dia=config.TETO_FORTE_DIA, buscas_dia=config.BUSCAS_DIA, fuso=config.TIMEZONE
+    )
+
+
 def _cliente() -> Any:
     from google import genai
 
@@ -215,9 +261,11 @@ def _resposta(
     aviso: str = "",
     consumo: str = "",
     so_ao_dono: list[str],
+    buscas: Sequence[busca.Busca] = (),
 ) -> dict[str, Any]:
     return {
         "ao_dono": list(so_ao_dono),
+        "busca": [b.como_dict() for b in buscas],
         "resposta": resposta,
         "erro": erro,
         "aviso": aviso,
@@ -231,14 +279,42 @@ def _resposta(
 def turno(dados: Any) -> dict[str, Any]:
     """Um turno do chat da nuvem, do pedido à resposta (tudo JSON)."""
     historico_json, mensagem, nota, sessao, numero, interativo = _validar(dados)
-    with ao_dono.coletar(interativo=interativo) as so_ao_dono, prazo.ate(PRAZO_DO_TURNO_S):
-        return _turno(historico_json, mensagem, nota, sessao, numero, so_ao_dono)
+    marca = _FORTE.set({"ligado": False})  # todo turno começa no modelo do dia a dia
+    try:
+        with ao_dono.coletar(interativo=interativo) as so_ao_dono, prazo.ate(PRAZO_DO_TURNO_S):
+            return _turno(historico_json, mensagem, nota, sessao, numero, so_ao_dono)
+    finally:
+        _FORTE.reset(marca)
 
 
 def _antes_do_modelo(teto: custos.Teto) -> None:
     """Antes de CADA chamada ao Gemini: ela cabe no prazo do turno, e o teto de gasto deixa."""
     prazo.conferir(PRAZO_DO_GEMINI_MS / 1000, "a próxima chamada ao modelo")
     teto.conferir()
+
+
+def _escolher(cotas: custos.Cotas) -> Callable[[str], str]:
+    """O modelo de cada chamada: o forte depois que a tool ligou a marca e enquanto a cota do dia
+    deixa; acabou no meio do turno, o resto volta ao do dia a dia (o 💸 mostra cada um)."""
+
+    def escolher(modelo: str) -> str:
+        marca = _FORTE.get()
+        if not (marca and marca["ligado"]) or busca.em_curso():  # a busca é sempre a do dia a dia
+            return modelo
+        try:
+            cotas.conferir_forte()
+        except custos.CotaAtingida:
+            marca["ligado"] = False
+            return modelo
+        return turno_nucleo.MODELO_FORTE
+
+    return escolher
+
+
+def _depois_do_modelo(teto: custos.Teto, cotas: custos.Cotas, consumo: custos.Consumo) -> None:
+    teto.somar(consumo.custo)
+    if consumo.modelo == turno_nucleo.MODELO_FORTE:
+        cotas.somar_forte(consumo.custo)
 
 
 def _turno(
@@ -271,16 +347,19 @@ def _turno(
     historico = turno_nucleo.historico_de_json(historico_json)
     cliente = _cliente()
     consumo = custos.Sessao()
+    cotas = _cotas()
     custos.instrumentar(
         cliente,
         sessao=consumo,
-        antes=lambda: _antes_do_modelo(teto),
-        depois=lambda c: teto.somar(c.custo),
+        escolher=_escolher(cotas),
+        antes=lambda _modelo: _antes_do_modelo(teto),
+        depois=lambda c: _depois_do_modelo(teto, cotas, c),
     )
     chat = cliente.chats.create(model=turno_nucleo.MODELO, config=_config(), history=historico)
     prompt = f"{nota}\n\n{mensagem}" if nota else mensagem
-    resultado = turno_nucleo.executar(chat, prompt, turno_id)
-    gasto_do_turno = consumo.turno().resumo() if consumo.turno().chamadas else ""
+    with busca.no_turno(cliente, cotas) as buscas:
+        resultado = turno_nucleo.executar(chat, prompt, turno_id)
+    gasto_do_turno = consumo.resumo_do_turno() if consumo.turno().chamadas else ""
     if resultado.erro is None:
         return _resposta(
             historico=turno_nucleo.historico_para_json(chat.get_history()),
@@ -289,6 +368,7 @@ def _turno(
             resposta=resultado.texto,
             consumo=gasto_do_turno,
             so_ao_dono=so_ao_dono,
+            buscas=buscas,
         )
     if isinstance(resultado.erro, custos.TetoAtingido):
         erro = f"Parei no meio: o teto de gasto foi atingido ({resultado.erro.gasto.texto()})."
@@ -308,4 +388,5 @@ def _turno(
         aviso=resultado.aviso,
         consumo=gasto_do_turno,
         so_ao_dono=so_ao_dono,
+        buscas=buscas,  # o que já apareceu numa busca antes do erro continua do dono
     )

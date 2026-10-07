@@ -14,6 +14,10 @@ antes de sair) chega no campo `ao_dono`, separado da resposta do modelo, e só �
 terminal é interativo. O pedido diz ao motor se é (`interativo`): sem terminal, o motor nem cria a
 proposta.
 
+Desde a 12 (D65), a resposta de uma busca na web chega no campo `busca` e aparece **igual**, com
+as fontes e as consultas à parte, antes da resposta do modelo (os termos do Google pedem mostrá-la
+a quem perguntou, sem modificar). Não é segredo: aparece mesmo sem terminal interativo.
+
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
 
@@ -62,10 +66,32 @@ def abertura(capacidades: dict[str, Any]) -> str:
         tem.append("finanças, só leitura")
     else:
         so_no_mac.append("finanças")
+    if capacidades.get("busca") is True:  # Sessão 12: a busca na web, com fontes
+        tem.append("busca na web com fontes")
     if not so_no_mac:  # tudo na nuvem: nada a mandar para o Mac
         return f"☁️  Viking na nuvem ({_em_lista(tem)})."
     fora = _em_lista(so_no_mac)
     return f"☁️  Viking na nuvem ({_em_lista(tem)}). {fora[0].upper()}{fora[1:]}: `viking chat`."
+
+
+def buscas(resposta: dict[str, Any]) -> list[str]:
+    """Cada busca do turno como o dono a vê: o texto igual, as fontes numeradas (título e link) e
+    o que foi buscado. Uma entrada fora do formato é pulada, sem derrubar o turno."""
+    blocos = []
+    for item in resposta.get("busca") or []:
+        if not isinstance(item, dict) or not _texto(item.get("texto")):
+            continue
+        linhas = ["🔎 Busca na web (Google):", _texto(item.get("texto")), "Fontes:"]
+        fontes = [f for f in item.get("fontes") or [] if isinstance(f, list) and len(f) == 2]
+        linhas += [
+            f"  {n}. {_texto(titulo)} — {_texto(link)}"
+            for n, (titulo, link) in enumerate(fontes, 1)
+        ] or ["  (a busca não informou fontes)"]
+        consultas = [_texto(c) for c in item.get("consultas") or [] if _texto(c)]
+        if consultas:
+            linhas.append("Buscado no Google: " + "; ".join(f"“{c}”" for c in consultas))
+        blocos.append("\n".join(linhas))
+    return blocos
 
 
 def _em_lista(itens: list[str]) -> str:
@@ -162,6 +188,8 @@ def iniciar(entrada: Any = input) -> int:
                 print(f"{texto}\n")
         elif so_seu:
             print(f"{SEM_TERMINAL}\n")
+        for bloco in buscas(resposta):
+            print(f"{bloco}\n")
         if resposta.get("resposta") is not None:
             print(f"🤖 Viking: {_texto(resposta.get('resposta'))}\n")
         elif _texto(resposta.get("erro")) or not so_seu:

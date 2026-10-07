@@ -95,6 +95,9 @@ def test_o_terminal_do_dono_entra(cliente, monkeypatch):
         "backup": False,
         "backup_em": None,
         "financas": False,
+        "busca": True,
+        "modelo": "gemini-3.5-flash-lite",
+        "forte": "gemini-3.8-flash",
     }
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
     assert _get(cliente, "/versao", _token()).json()["gmail"] is True

@@ -122,7 +122,16 @@ def test_toda_tool_do_mac_decide_onde_mora():
     do_mac = {f.__name__ for f in agent.FERRAMENTAS}
     na_nuvem_nomes = {f.__name__ for f in na_nuvem.FERRAMENTAS}
     assert na_nuvem_nomes.isdisjoint(na_nuvem.SO_NO_MAC)
-    assert do_mac == na_nuvem_nomes | set(na_nuvem.SO_NO_MAC)
+    assert do_mac == (na_nuvem_nomes - set(na_nuvem.SO_NA_NUVEM)) | set(na_nuvem.SO_NO_MAC)
+
+
+def test_o_que_so_a_nuvem_tem_nao_esta_no_mac():
+    """Sessão 12 (D65): o forte (e a busca) só no chat da nuvem, onde mora a cota do dia."""
+    do_mac = {f.__name__ for f in agent.FERRAMENTAS}
+    assert set(na_nuvem.SO_NA_NUVEM) <= {f.__name__ for f in na_nuvem.FERRAMENTAS}
+    assert do_mac.isdisjoint(na_nuvem.SO_NA_NUVEM)
+    texto_do_mac = turno.instrucao(agent.FERRAMENTAS, "HOJE", onde="mac")
+    assert "usar_modelo_forte" not in texto_do_mac and "buscar_na_web" not in texto_do_mac
 
 
 def test_as_financas_da_nuvem_sao_as_do_mac_e_so_com_o_servico(monkeypatch):
@@ -235,7 +244,10 @@ def test_instrucao_da_nuvem_sem_o_gmail_continua_a_da_10b():
 
 
 # O sha256 dos textos de sistema medidos em 2026-10-01, antes de `onde` (Sessão 11): o do Mac, o
-# da nuvem com o Gmail (10c) e o da nuvem sem ele (10b) não mudam nem num byte.
+# da nuvem com o Gmail (10c) e o da nuvem sem ele (10b) não mudam nem num byte. Desde a Sessão 12
+# (D65) a última linha é o tom (`_TOM`), de propósito: o teste a troca de volta pela de antes, e o
+# resto continua igual byte a byte; as tools só da nuvem (o forte, a busca) ficam fora da conta.
+_FIM_DE_ANTES = "- Seja sempre prestativo, direto e confirme as ações realizadas com clareza."
 _TEXTO_DO_MAC = "42df116199f0be41f7c117fe8f46468090599c2d74118be9d83b8f7552a2f7a4"
 _TEXTO_DA_NUVEM_10C = "b3f8cba76b3b12f2bb9718d9f2d168a166d4587e758cdfdbb0156442c36d8959"
 _TEXTO_DA_NUVEM_10B = "18f98cc384767c5b1f12a33e1e1c3364db9da1d6a4ad1de69685c38f11f3d002"
@@ -245,14 +257,28 @@ def _sha(texto):
     return hashlib.sha256(texto.encode()).hexdigest()
 
 
+def _de_antes(ferramentas, onde):
+    texto = turno.instrucao(ferramentas, "HOJE", onde=onde)
+    assert texto.endswith(turno._TOM)
+    return _sha(texto.removesuffix(turno._TOM) + _FIM_DE_ANTES)
+
+
 def test_os_textos_de_antes_nao_mudam_nem_num_byte(monkeypatch):
-    assert _sha(turno.instrucao(agent.FERRAMENTAS, "HOJE", onde="mac")) == _TEXTO_DO_MAC
+    assert _de_antes(agent.FERRAMENTAS, "mac") == _TEXTO_DO_MAC
+    fora = {"navegar_e_executar", *na_nuvem.SO_NA_NUVEM}
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
-    com = [f for f in na_nuvem.ferramentas() if f.__name__ != "navegar_e_executar"]
-    assert _sha(turno.instrucao(com, "HOJE", onde="nuvem")) == _TEXTO_DA_NUVEM_10C
+    com = [f for f in na_nuvem.ferramentas() if f.__name__ not in fora]
+    assert _de_antes(com, "nuvem") == _TEXTO_DA_NUVEM_10C
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "")
-    sem = [f for f in na_nuvem.ferramentas() if f.__name__ != "navegar_e_executar"]
-    assert _sha(turno.instrucao(sem, "HOJE", onde="nuvem")) == _TEXTO_DA_NUVEM_10B
+    sem = [f for f in na_nuvem.ferramentas() if f.__name__ not in fora]
+    assert _de_antes(sem, "nuvem") == _TEXTO_DA_NUVEM_10B
+
+
+def test_o_tom_e_o_mesmo_nos_dois_chats():
+    """D65: caloroso e direto, nos dois chats (o texto de sistema é um núcleo só)."""
+    assert turno.instrucao(agent.FERRAMENTAS, "HOJE", onde="mac").endswith(turno._TOM)
+    assert turno.instrucao(na_nuvem.ferramentas(), "HOJE", onde="nuvem").endswith(turno._TOM)
+    assert "calorosa e direta" in turno._TOM
 
 
 def test_onde_e_dito_por_quem_chama():

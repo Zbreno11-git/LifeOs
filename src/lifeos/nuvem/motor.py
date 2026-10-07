@@ -86,6 +86,7 @@ def _lembrete(lembrete: Reminder) -> dict[str, Any]:
 async def versao(request: Request) -> JSONResponse:
     """O commit no ar e o que este motor tem (o terminal do Mac diz isso na abertura)."""
     await _quem(request)
+    from lifeos.assistant import turno
     from lifeos.backup import rodada
     from lifeos.reminders import agendador
 
@@ -100,6 +101,10 @@ async def versao(request: Request) -> JSONResponse:
             "backup": config.drive_no_motor(),
             "backup_em": _instante(backup_em),
             "financas": config.financas_no_motor(),
+            # Sessão 12 (D65): a busca na web e os modelos do chat desta imagem
+            "busca": True,
+            "modelo": turno.MODELO,
+            "forte": turno.MODELO_FORTE,
         }
     )
 

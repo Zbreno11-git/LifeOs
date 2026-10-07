@@ -1301,8 +1301,8 @@ MUTACOES = [
     Mutacao(
         "teto: conferido depois da chamada (a que passa do teto sai)",
         "src/lifeos/custos.py",
-        "        if antes is not None:\n            antes()\n        resposta = original(**kwargs)",
-        "        resposta = original(**kwargs)\n        if antes is not None:\n            antes()",
+        "        if antes is not None:\n            antes(modelo)\n        resposta = original(**kwargs)",
+        "        resposta = original(**kwargs)\n        if antes is not None:\n            antes(modelo)",
         "tests/test_na_nuvem.py::test_teto_no_meio_do_turno_para_antes_da_chamada_seguinte",
     ),
     Mutacao(
@@ -1329,8 +1329,8 @@ MUTACOES = [
     Mutacao(
         "nuvem: uma tool do Mac some da nuvem sem decidir onde mora",
         "src/lifeos/assistant/na_nuvem.py",
-        "    agent.fatura_do_cartao,\n]\n",
-        "]\n",
+        "    agent.fatura_do_cartao,\n    usar_modelo_forte,\n",
+        "    usar_modelo_forte,\n",
         "tests/test_na_nuvem.py::test_toda_tool_do_mac_decide_onde_mora",
     ),
     Mutacao(

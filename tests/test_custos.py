@@ -24,14 +24,14 @@ def test_dinheiro_nao_arredonda_fracao_de_centavo_para_zero():
 
 
 def test_gemini_estima_a_partir_dos_tokens():
-    c = do_gemini(_Usage())
+    c = do_gemini(_Usage(), "gemini-3.5-flash-lite")
     assert (c.entrada, c.saida, c.chamadas) == (1000, 200, 1)
     assert c.estimado is True
     assert c.custo > 0
 
 
 def test_gemini_sem_metadata_nao_inventa():
-    assert do_gemini(None) == Consumo()
+    assert do_gemini(None, "gemini-3.5-flash-lite") == Consumo()
 
 
 def test_jev_usa_o_custo_real_quando_o_provedor_informa():
@@ -50,7 +50,7 @@ def test_jev_sem_custo_nao_inventa_numero():
 
 def test_sessao_soma_as_duas_fontes():
     s = Sessao()
-    s.gemini = s.gemini + do_gemini(_Usage())
+    s.gemini = s.gemini + do_gemini(_Usage(), "gemini-3.5-flash-lite")
     s.navegador = s.navegador + do_jev({"cost": 0.001, "chamadas": 1})
     assert s.total == s.gemini.custo + 0.001
     texto = s.total_formatado()
@@ -60,7 +60,7 @@ def test_sessao_soma_as_duas_fontes():
 def test_gemini_conta_thinking_e_tool_use_prompt():
     """Achado da auditoria: thoughts_token_count e tool_use_prompt_token_count existem no SDK
     instalado e eram ignorados, subcontando justamente os turnos com ferramenta."""
-    c = do_gemini(_UsageCompleta())
+    c = do_gemini(_UsageCompleta(), "gemini-3.5-flash-lite")
     assert c.entrada == 1000 + 300
     assert c.saida == 200 + 150
 
@@ -68,8 +68,8 @@ def test_gemini_conta_thinking_e_tool_use_prompt():
 def test_sessao_turno_acumula_desde_iniciar_turno():
     s = Sessao()
     s.iniciar_turno()
-    s.registrar_gemini(do_gemini(_Usage()))
-    s.registrar_gemini(do_gemini(_Usage()))
+    s.registrar_gemini(do_gemini(_Usage(), "gemini-3.5-flash-lite"))
+    s.registrar_gemini(do_gemini(_Usage(), "gemini-3.5-flash-lite"))
     assert s.turno().chamadas == 2
     assert s.gemini.chamadas == 2
     s.iniciar_turno()

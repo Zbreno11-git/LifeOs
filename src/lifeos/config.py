@@ -184,6 +184,11 @@ PRECO_GEMINI_SAIDA = _float_env("VIKING_PRECO_GEMINI_SAIDA", "2.50", inclusive=T
 # só avisa; este para. É estimativa pelas tarifas acima.
 TETO_GEMINI_MES = _float_env("VIKING_TETO_GEMINI_MES", "10")
 TETO_GEMINI_DIA = _float_env("VIKING_TETO_GEMINI_DIA", "1")
+# As cotas do dia do chat da nuvem (D65, decisão do dono em 2026-10-07), além do teto: o gasto do
+# modelo forte (US$) e as consultas de busca na web (`custos.Cotas`). 30 buscas por dia ficam
+# abaixo das 5.000 grátis por mês dos modelos 3 (lido em 2026-10-07).
+TETO_FORTE_DIA = _float_env("VIKING_TETO_FORTE_DIA", "0.30")
+BUSCAS_DIA = _int_env("VIKING_BUSCAS_DIA", "30")
 
 # Nuvem (Sessão 10, D58). O ID do projeto, a URL do motor e a conta de faturamento moram só no
 # `.env`, nunca no repo. A região é decisão do dono (a casa dele, 2026-09-29).
