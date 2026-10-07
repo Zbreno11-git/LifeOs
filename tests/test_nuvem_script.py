@@ -254,11 +254,15 @@ class _Mundo:
         mudou=3,
         vazios=(),
         vazios_no_ar=None,
+        financas=False,
+        financas_no_ar=False,
     ):
         self.nuvem = nuvem
-        self.vazios = set(vazios)  # segredos sem versão no Secret Manager
+        # segredos sem versão no Secret Manager; o da Pluggy (11d) só com `financas=True`
+        self.vazios = set(vazios) | ({"viking-pluggy"} if not financas else set())
         # os que a revisão no ar não monta (por padrão, os mesmos que estão sem versão)
         self.vazios_no_ar = self.vazios if vazios_no_ar is None else set(vazios_no_ar)
+        self.financas_no_ar = financas_no_ar  # o motor no ar tem a URL do serviço de finanças
         self.gcloud: list[list[str]] = []
         self.local: list[tuple[list[str], str | None]] = []
         self.limpo, self.publicado, self.ci, self.no_ar = limpo, publicado, ci, no_ar
@@ -277,10 +281,14 @@ class _Mundo:
                 for s in self.nuvem.SEGREDOS
                 if s.nome not in self.vazios_no_ar
             ]
+            env = [{"name": "VIKING_FINANCAS_URL", "value": "x"}] if self.financas_no_ar else []
             servico = {
                 "spec": {
                     "template": {
-                        "spec": {"containers": [{"image": f"x:{self.no_ar}"}], "volumes": volumes}
+                        "spec": {
+                            "containers": [{"image": f"x:{self.no_ar}", "env": env}],
+                            "volumes": volumes,
+                        }
                     }
                 }
             }
@@ -310,7 +318,7 @@ def mundo(nuvem, monkeypatch):
         m = _Mundo(nuvem, **estado)
         monkeypatch.setattr(nuvem, "_rodar", m.rodar)
         monkeypatch.setattr(nuvem, "_local", m.rodar_local)
-        monkeypatch.setattr(nuvem, "provas", lambda _ctx, _sha, _montados=(): [])
+        monkeypatch.setattr(nuvem, "provas", lambda _ctx, _sha, _montados=(), _fin=False: [])
         monkeypatch.setenv("VIKING_NUVEM_FUSO", "America/Los_Angeles")
         return m
 
@@ -385,7 +393,9 @@ def test_commit_que_nao_mexe_na_imagem_nao_publica_de_novo(nuvem, ctx, mundo, mo
     agora, e as provas comparam com ela (não com o HEAD)."""
     m = mundo(no_ar="b" * 40, mudou=0)
     esperados = []
-    monkeypatch.setattr(nuvem, "provas", lambda _ctx, sha, _m=(): esperados.append(sha) or [])
+    monkeypatch.setattr(
+        nuvem, "provas", lambda _ctx, sha, _m=(), _f=False: esperados.append(sha) or []
+    )
     assert nuvem.deploy(ctx, executar=True) == 0
     assert not _publicou(m)
     assert esperados == ["b" * 40]
@@ -975,7 +985,7 @@ def test_a_tarefa_do_agendador_chama_so_a_rota_do_envio_com_oidc(nuvem, ctx, mon
 
 def test_o_agendador_vem_antes_do_backup_e_sem_flag_nada_e_criado(nuvem):
     (passo,) = [p for p in nuvem.PASSOS if p.nome == "agendador"]
-    assert nuvem.PASSOS[-2] is passo and "contas" in passo.depende
+    assert nuvem.PASSOS[-3] is passo and "contas" in passo.depende
     assert "só para a conta do dono" in passo.irreversivel and "US$" in passo.irreversivel
 
 
@@ -1045,7 +1055,7 @@ def test_com_a_tarefa_ja_criada_o_passo_so_roda_o_backup(nuvem, ctx, monkeypatch
 
 
 def test_o_backup_e_o_ultimo_passo_e_diz_que_nunca_apaga(nuvem):
-    passo = nuvem.PASSOS[-1]
+    passo = nuvem.PASSOS[-2]  # depois dele, só o das finanças (11d)
     assert passo.nome == "backup" and passo.depende == ("agendador",)
     assert "nunca apaga" in passo.irreversivel and "US$" in passo.irreversivel
 
@@ -1123,3 +1133,294 @@ def test_token_do_drive_torto_nao_sobe_nem_aparece(
         nuvem.segredo(ctx, "viking-drive", executar=True)
     assert not any("add" in c for c, _ in g.chamadas)
     assert REFRESH_FALSO not in str(erro.value) + capsys.readouterr().out
+
+
+# --- o serviço de finanças (Sessão 11d, D64) ---------------------------------------------------
+
+MOTOR_SA = "serviceAccount:viking-motor@viking-teste.iam.gserviceaccount.com"
+FINANCAS_SA = "serviceAccount:viking-financas@viking-teste.iam.gserviceaccount.com"
+ITEM = "0f8c2a3e-1b2c-4d5e-8f90-123456789abc"
+SEGREDO_DA_PLUGGY = "segredo-da-pluggy-nao-pode-vazar"
+
+
+def _leitura(*membros):
+    return {"bindings": [{"role": "roles/secretmanager.secretAccessor", "members": list(membros)}]}
+
+
+def test_o_passo_das_financas_cria_so_o_que_falta_e_so_o_financas_le(nuvem, ctx, monkeypatch):
+    monkeypatch.setattr(nuvem, "_ler", lambda _c: None)  # nada existe
+    pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"apis", "contas"}))
+    comandos = nuvem._c_financas(pronto)
+    assert [c[1:5] for c in comandos] == [
+        ["iam", "service-accounts", "create", "viking-financas"],
+        ["secrets", "create", "viking-pluggy", "--replication-policy=automatic"],
+        ["secrets", "add-iam-policy-binding", "viking-pluggy", f"--member={FINANCAS_SA}"],
+    ]
+    assert not any("viking-motor" in a for c in comandos for a in c)
+    # quase tudo existe (a segunda vida do passo, erros classe 7): só a leitura, idempotente
+    monkeypatch.setattr(nuvem, "_ler", lambda _c: {"name": "x"})
+    (so_a_leitura,) = nuvem._c_financas(pronto)
+    assert so_a_leitura[1:3] == ["secrets", "add-iam-policy-binding"]
+
+
+@pytest.mark.parametrize(
+    ("leem", "pronto"),
+    [
+        ((FINANCAS_SA,), True),
+        ((FINANCAS_SA, MOTOR_SA), False),
+        ((MOTOR_SA,), False),
+        ((), False),
+    ],
+)
+def test_a_medida_reprova_quem_mais_le_o_segredo_da_pluggy(nuvem, ctx, monkeypatch, leem, pronto):
+    g = _Gravador(
+        {
+            "iam service-accounts describe": {"email": "x"},
+            "secrets describe viking-pluggy": {"name": "x"},
+            "secrets get-iam-policy viking-pluggy": _leitura(*leem),
+            "secrets versions list viking-pluggy": [],
+        }
+    )
+    monkeypatch.setattr(nuvem, "_rodar", g)
+    estado = nuvem._m_financas(ctx)
+    assert estado.pronto is pronto
+    if pronto:
+        assert "vazio (sobe do Mac" in estado.detalhe
+
+
+def test_o_passo_das_financas_e_o_ultimo_e_nao_toca_o_motor(nuvem):
+    passo = nuvem.PASSOS[-1]
+    assert passo.nome == "financas" and set(passo.depende) == {"apis", "contas"}
+    assert nuvem.SEGREDO_DAS_FINANCAS not in nuvem.SEGREDOS
+    assert nuvem.SEGREDO_DAS_FINANCAS in nuvem.TODOS_OS_SEGREDOS
+
+
+def _deploys(m):
+    return [c for c in m.gcloud if c[1:3] == ["run", "deploy"]]
+
+
+def test_com_o_segredo_da_pluggy_publica_as_financas_antes_do_motor(nuvem, ctx, mundo):
+    m = mundo(financas=True)
+    assert nuvem.deploy(ctx, executar=True) == 0
+    financas, motor = _deploys(m)
+    assert financas[3] == "financas" and motor[3] == "motor"
+    assert m.gcloud.index(financas) < m.gcloud.index(motor)
+    for esperado in (
+        "--service-account=viking-financas@viking-teste.iam.gserviceaccount.com",
+        "--no-allow-unauthenticated",
+        "--max-instances=1",
+        "--command=/app/.venv/bin/uvicorn",
+        "--args=lifeos.nuvem.financas:app,--host,0.0.0.0,--port,8080,--no-access-log",
+        "--set-secrets=/segredos/pluggy/credenciais.json=viking-pluggy:latest",
+    ):
+        assert esperado in financas, esperado
+    assert financas[4] == motor[4]  # a mesma imagem
+    (variaveis,) = [a for a in financas if a.startswith("--set-env-vars=")]
+    assert "VIKING_NUVEM_URL=https://financas-42.southamerica-east1.run.app" in variaveis
+    assert "VIKING_PLUGGY_ARQUIVO=/segredos/pluggy/credenciais.json" in variaveis
+    assert "GEMINI" not in variaveis and "FINANCAS_URL" not in variaveis
+    (invoca,) = [
+        c
+        for c in m.gcloud
+        if c[1:4] == ["run", "services", "add-iam-policy-binding"] and c[4] == "financas"
+    ]
+    assert f"--member={MOTOR_SA}" in invoca and "--role=roles/run.invoker" in invoca
+    (do_motor,) = [a for a in motor if a.startswith("--set-env-vars=")]
+    assert "VIKING_FINANCAS_URL=https://financas-42.southamerica-east1.run.app" in do_motor
+    (segredos_do_motor,) = [a for a in motor if a.startswith("--set-secrets=")]
+    assert "viking-pluggy" not in segredos_do_motor and "PLUGGY" not in do_motor
+
+
+def test_sem_o_segredo_da_pluggy_so_o_motor_e_sem_a_url(nuvem, ctx, mundo, capsys):
+    m = mundo()
+    assert nuvem.deploy(ctx, executar=True) == 0
+    (motor,) = _deploys(m)
+    assert motor[3] == "motor" and not any("FINANCAS" in a for a in motor)
+    assert not any("financas" in a for c in m.gcloud for a in c[:5])
+    assert "viking-pluggy (sem ele, o serviço de finanças)" in capsys.readouterr().out
+
+
+def test_o_segredo_da_pluggy_que_subiu_pede_revisao_mesmo_sem_codigo_novo(nuvem, ctx, mundo):
+    m = mundo(no_ar=SHA, financas=True, financas_no_ar=False)
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert [c[3] for c in _deploys(m)] == ["financas", "motor"]
+    m = mundo(no_ar=SHA, financas=True, financas_no_ar=True)
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert _deploys(m) == []
+
+
+def _env_da_pluggy(monkeypatch, client_id="id-do-app", ids=(ITEM,)):
+    from lifeos import config
+
+    monkeypatch.setattr(config, "PLUGGY_CLIENT_ID", client_id)
+    monkeypatch.setattr(config, "PLUGGY_CLIENT_SECRET", SEGREDO_DA_PLUGGY)
+    monkeypatch.setattr(config, "PLUGGY_ITEM_IDS", ids)
+
+
+def test_o_segredo_da_pluggy_sobe_pela_entrada_padrao_e_nunca_aparece(
+    nuvem, ctx, monkeypatch, capsys
+):
+    _env_da_pluggy(monkeypatch)
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    assert nuvem.segredo(ctx, "viking-pluggy", executar=True) == 0
+    ((comando, entrada),) = [(c, e) for c, e in g.chamadas if "add" in c]
+    assert "viking-pluggy" in comando and "--data-file=-" in comando
+    assert json.loads(entrada) == {
+        "client_id": "id-do-app",
+        "client_secret": SEGREDO_DA_PLUGGY,
+        "item_ids": [ITEM],
+    }
+    assert all(SEGREDO_DA_PLUGGY not in " ".join(c) for c, _ in g.chamadas)
+    assert SEGREDO_DA_PLUGGY not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "mudanca",
+    [{"ids": ()}, {"ids": ("0f8c2a3e",)}, {"client_id": ""}],
+)
+def test_o_env_sem_conexoes_ou_torto_nao_sobe(nuvem, ctx, monkeypatch, capsys, mudanca):
+    """No VPS o `.env` não tem os IDs (medido em 2026-10-07): o segredo sobe do Mac."""
+    _env_da_pluggy(monkeypatch, **mudanca)
+    g = _Gcloud()
+    monkeypatch.setattr(nuvem, "_rodar", g.rodar)
+    with pytest.raises(SystemExit, match="nada foi enviado") as erro:
+        nuvem.segredo(ctx, "viking-pluggy", executar=True)
+    assert not any("add" in c for c, _ in g.chamadas)
+    assert SEGREDO_DA_PLUGGY not in str(erro.value) + capsys.readouterr().out
+
+
+# --- as provas das finanças, sem a Pluggy ------------------------------------------------------
+
+
+class _Resposta:
+    def __init__(self, status, corpo):
+        self.status_code = status
+        self.text = corpo if isinstance(corpo, str) else json.dumps(corpo)
+
+    def json(self):
+        return json.loads(self.text)
+
+
+def _servico_das_financas(**mudancas):
+    conteiner = {
+        "image": f"southamerica-east1-docker.pkg.dev/viking-teste/viking/motor:{SHA}",
+        "command": ["/app/.venv/bin/uvicorn"],
+        "args": [
+            "lifeos.nuvem.financas:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8080",
+            "--no-access-log",
+        ],
+        "env": [
+            {"name": "VIKING_NUVEM_PROJETO", "value": "viking-teste"},
+            {"name": "VIKING_NUVEM_URL", "value": "https://financas-42.x"},
+            {"name": "VIKING_TIMEZONE", "value": "America/Los_Angeles"},
+            {"name": "VIKING_PLUGGY_ARQUIVO", "value": "/segredos/pluggy/credenciais.json"},
+        ],
+    }
+    conteiner.update(mudancas.pop("conteiner", {}))
+    modelo = {
+        "serviceAccountName": "viking-financas@viking-teste.iam.gserviceaccount.com",
+        "containers": [conteiner],
+        "volumes": [{"name": "viking-pluggy", "secret": {"secretName": "viking-pluggy"}}],
+    }
+    modelo.update(mudancas)
+    return {"spec": {"template": {"spec": modelo}}}
+
+
+def _provas_das_financas(
+    nuvem, ctx, monkeypatch, *, servico=None, invocam=(MOTOR_SA,), leem=(FINANCAS_SA,), fumaca=None
+):
+    import requests
+
+    respostas = {
+        "projects describe": {"projectNumber": "42"},
+        "run services describe financas": servico or _servico_das_financas(),
+        "run services get-iam-policy financas": {
+            "bindings": [{"role": "roles/run.invoker", "members": list(invocam)}]
+        },
+        "secrets get-iam-policy viking-pluggy": _leitura(*leem),
+        "logging read": [],
+    }
+
+    def ler(comando):
+        chave = " ".join(a for a in comando[1:] if not a.startswith("--"))
+        return next((v for k, v in respostas.items() if chave.startswith(k)), None)
+
+    monkeypatch.setattr(nuvem, "_ler", ler)
+    monkeypatch.setattr(
+        nuvem,
+        "_token",
+        lambda _ctx, *a: "TOKEN-CLI" if any("viking-cli@" in x for x in a) else "TOKEN-DONO",
+    )
+    monkeypatch.setattr(nuvem, "_fuso", lambda: "America/Los_Angeles")
+    chamadas = []
+
+    def post(url, **_k):
+        chamadas.append(url)
+        if _k.get("headers", {}).get("Authorization") == "Bearer TOKEN-DONO":
+            return _Resposta(401, "token recusado")  # o dono passa no IAM; o código recusa
+        return _Resposta(403, "<html>Forbidden</html>")  # sem token, ou o cli@: o Google
+
+    def get(url, **_k):
+        chamadas.append(url)
+        return _Resposta(200, fumaca or {"commit": SHA, "credenciais": True, "conexoes": 2})
+
+    monkeypatch.setattr(requests, "post", post)
+    monkeypatch.setattr(requests, "get", get)
+    return {p.nome: p for p in nuvem._provas_das_financas(ctx, SHA, URL_DO_MOTOR, {})}, chamadas
+
+
+def test_as_provas_das_financas_passam_no_certo_e_nao_chamam_a_pluggy(nuvem, ctx, monkeypatch):
+    provas_, chamadas = _provas_das_financas(nuvem, ctx, monkeypatch)
+    assert [n for n, p in provas_.items() if not p.passou] == []
+    assert len(provas_) == 11
+    assert all("pluggy.ai" not in url for url in chamadas)
+    assert f"{URL_DO_MOTOR}/fumaca/financas" in chamadas
+
+
+@pytest.mark.parametrize(
+    ("caso", "mudanca", "prova"),
+    [
+        ("o motor@ lê o segredo", {"leem": (FINANCAS_SA, MOTOR_SA)}, "viking-pluggy: só o"),
+        (
+            "o cli@ invoca",
+            {"invocam": (MOTOR_SA, MOTOR_SA.replace("motor", "cli"))},
+            "finanças: só o viking-motor@ invoca",
+        ),
+        (
+            "outra conta",
+            {"servico": _servico_das_financas(serviceAccountName="x@y")},
+            "finanças: a conta é o viking-financas@",
+        ),
+        (
+            "o comando do motor",
+            {"servico": _servico_das_financas(conteiner={"command": [], "args": []})},
+            "finanças: roda o app de finanças",
+        ),
+        (
+            "a chave do Gemini junto",
+            {
+                "servico": _servico_das_financas(
+                    volumes=[
+                        {"name": "viking-pluggy", "secret": {"secretName": "viking-pluggy"}},
+                        {"name": "viking-gemini", "secret": {"secretName": "viking-gemini"}},
+                    ]
+                )
+            },
+            "finanças: só o segredo da Pluggy, como volume",
+        ),
+        (
+            "sem credenciais",
+            {"fumaca": {"commit": SHA, "credenciais": False, "conexoes": 0}},
+            "viking-cli@: /fumaca/financas (o serviço lê as credenciais, sem chamar a Pluggy)",
+        ),
+    ],
+)
+def test_as_provas_das_financas_reprovam_o_errado(nuvem, ctx, monkeypatch, caso, mudanca, prova):
+    provas_, _ = _provas_das_financas(nuvem, ctx, monkeypatch, **mudanca)
+    (achada,) = [p for n, p in provas_.items() if n.startswith(prova)]
+    assert not achada.passou, caso

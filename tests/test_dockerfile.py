@@ -64,4 +64,5 @@ def test_a_imagem_confere_que_o_motor_e_o_fuso_existem():
     """Uma imagem que constrói sem o pacote (ou sem a base de fusos) passaria no build e cairia
     no primeiro pedido: o `RUN test -f` e o `ZoneInfo` reprovam o build antes."""
     assert "test -f /app/.venv/lib/python3.12/site-packages/lifeos/nuvem/motor.py" in DOCKERFILE
+    assert "test -f /app/.venv/lib/python3.12/site-packages/lifeos/nuvem/financas.py" in DOCKERFILE
     assert "zoneinfo.ZoneInfo(" in DOCKERFILE

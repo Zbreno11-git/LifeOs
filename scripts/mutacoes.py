@@ -2851,6 +2851,55 @@ MUTACOES = [
         "    if False:\n",
         "tests/test_financas_na_nuvem.py::test_a_abertura_com_as_financas_na_nuvem",
     ),
+    Mutacao(
+        "nuvem: o motor@ ganha a leitura do segredo da Pluggy",
+        "scripts/nuvem.py",
+        '            f"--member=serviceAccount:{ctx.conta(FINANCAS)}",\n',
+        '            f"--member=serviceAccount:{ctx.conta(MOTOR)}",\n',
+        "tests/test_nuvem_script.py::test_o_passo_das_financas_cria_so_o_que_falta_e_so_o_financas_le",
+    ),
+    Mutacao(
+        "nuvem: a medida aceita outro leitor do segredo da Pluggy",
+        "scripts/nuvem.py",
+        '    if leem != {f"serviceAccount:{ctx.conta(FINANCAS)}"}:\n',
+        '    if f"serviceAccount:{ctx.conta(FINANCAS)}" not in leem:\n',
+        "tests/test_nuvem_script.py::test_a_medida_reprova_quem_mais_le_o_segredo_da_pluggy",
+    ),
+    Mutacao(
+        "nuvem: o serviço de finanças aberto sem token",
+        "scripts/nuvem.py",
+        '            f"--service-account={ctx.conta(FINANCAS)}",\n            "--no-allow-unauthenticated",\n',
+        '            f"--service-account={ctx.conta(FINANCAS)}",\n            "--allow-unauthenticated",\n',
+        "tests/test_nuvem_script.py::test_com_o_segredo_da_pluggy_publica_as_financas_antes_do_motor",
+    ),
+    Mutacao(
+        "nuvem: o deploy esquece o serviço de finanças",
+        "scripts/nuvem.py",
+        "    das_financas = _comandos_das_financas(ctx, sha) if financas else []\n",
+        "    das_financas: list[list[str]] = []\n",
+        "tests/test_nuvem_script.py::test_com_o_segredo_da_pluggy_publica_as_financas_antes_do_motor",
+    ),
+    Mutacao(
+        "nuvem: o segredo da Pluggy que subiu não pede revisão",
+        "scripts/nuvem.py",
+        "        and agora.financas_no_ar == financas\n",
+        "        and True\n",
+        "tests/test_nuvem_script.py::test_o_segredo_da_pluggy_que_subiu_pede_revisao_mesmo_sem_codigo_novo",
+    ),
+    Mutacao(
+        "nuvem: a prova aceita o motor@ lendo o segredo da Pluggy",
+        "scripts/nuvem.py",
+        '            leem == {f"serviceAccount:{ctx.conta(FINANCAS)}"},\n',
+        '            f"serviceAccount:{ctx.conta(FINANCAS)}" in leem,\n',
+        "tests/test_nuvem_script.py::test_as_provas_das_financas_reprovam_o_errado",
+    ),
+    Mutacao(
+        "nuvem: a prova aceita outro invocador das finanças",
+        "scripts/nuvem.py",
+        '            quem == {f"serviceAccount:{ctx.conta(MOTOR)}"},\n',
+        '            f"serviceAccount:{ctx.conta(MOTOR)}" in quem,\n',
+        "tests/test_nuvem_script.py::test_as_provas_das_financas_reprovam_o_errado",
+    ),
 ]
 
 

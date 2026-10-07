@@ -26,8 +26,9 @@ arquive por aqui (`docs/erros.md`, classe 2).
 **O `.env` do VPS tem as chaves do Gemini e da Pluggy** (desde 2026-09-26; medido na abertura da
 Sessão 10, e o `CLAUDE.md` dizia o contrário). O dono decidiu mantê-las: são a fonte do que a nuvem
 vai usar. Nada daqui as usa sem pedido: um `viking chat` ou `viking financas` no VPS gastaria
-tokens de verdade e leria o banco de verdade. A da Pluggy alcança PIX, e ir para a nuvem continua
-condicionado à D51.
+tokens de verdade e leria o banco de verdade. A da Pluggy alcança PIX: na nuvem ela mora só no
+serviço de finanças (D64, Sessão 11d), e o segredo `viking-pluggy` sobe do Mac (os IDs das
+conexões só existem lá).
 
 **E o VPS tem o `gcloud` logado com a conta do dono** (desde 2026-09-07, de propósito, para os
 projetos dele; o ADC junto). O projeto padrão da configuração é **outro** projeto dele: todo

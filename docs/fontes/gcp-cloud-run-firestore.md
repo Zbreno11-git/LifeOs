@@ -134,6 +134,21 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
   mudou. São 2 a 3 pedidos à API do Drive por dia (o quanto isso pesa na cota dela não foi
   medido).
 
+## O serviço de finanças (Sessão 11d, D64)
+
+- **Lido (2026-10-07, `cloud.google.com/run/pricing`, pelo texto da página):** cobrança por pedido
+  ("request-based"): grátis por mês 180.000 vCPU-segundos, 360.000 GiB-segundos e 2 milhões de
+  pedidos, "aggregated across projects by billing account", aplicado como desconto a preço da
+  faixa 1; "Idle instances that are not minimum instances are not charged"; pedido negado pelo
+  IAM não é cobrado. Pedidos: US$ 0,40 por milhão.
+- **O 2º serviço** (`financas`, 0 instâncias mínimas, máximo 1, 1 CPU, 512 MiB) parado custa
+  zero; cada pergunta de finanças são alguns segundos de CPU dele e do motor (não medido no ar
+  ainda). Quanto do grátis os outros projetos do dono usam na mesma conta não foi medido.
+- **Sem imagem nova:** a mesma imagem do motor, com outro comando (o registro não cresce).
+- **O segredo `viking-pluggy`** é o 5º com versão ativa (6 grátis por mês, lido em 2026-09-30).
+- **O motor fala com ele** pelo token de identidade do servidor de metadados (a conta
+  `viking-motor@`, sem papel novo: só o `run.invoker` no serviço `financas`).
+
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find

@@ -81,7 +81,13 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     serve a janela oficial da Pluggy numa página local em 127.0.0.1; `service.py` normaliza
     contas e transações (sentido pela `type`, movimento interno e parcela futura fora do gasto,
     dia no fuso); `tools.py` é o texto do Gemini (saldo, gastos, busca, fatura), com a descrição
-    redigida e no bloco de não confiável. Consulta a cada pergunta, nada em disco; só no chat
+    redigida e no bloco de não confiável. Consulta a cada pergunta, nada em disco; só no chat.
+    Desde a Sessão 11d (D64), no chat da nuvem também, por um **serviço isolado**:
+    `pergunta.py` é o formato fechado das 5 perguntas que atravessam a rede (saldo, gastos,
+    busca, fatura, conexões); `remoto.py` é o motor perguntando ao serviço (o token do servidor
+    de metadados, dentro do prazo do turno); no motor cada `tools.responder_*` pede o texto
+    pronto ao serviço, e o motor nunca tem a chave. `pluggy.credenciais()`: o `.env` no Mac, o
+    JSON do segredo `viking-pluggy` no serviço; na nuvem, a única escrita é o `/auth`
   - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;
     desfazer por 7 dias). Desde a Sessão 8, **enviar** (`envio.py`, D46): para a própria conta
@@ -150,7 +156,13 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     conversa vai e volta no corpo, até 4 MiB), as rotas dos lembretes do Mac migrado
     (`/lembretes/criar`, `/concluir`, `/importar`, `/impressoes`), as das mãos, a do envio, as do
     backup (`/tarefas/backup`, e `/backup/importar` do `cli@`; Sessão 11c) e fumaças grátis
-    (`/fumaca/vencidos`, `/registro`, `/segredos`);
+    (`/fumaca/vencidos`, `/registro`, `/segredos`), e as finanças pelo serviço delas
+    (`/financas` e `/fumaca/financas`, do `cli@`; Sessão 11d);
+    `identidade.py` é a verificação do token dos dois serviços (a mesma régua; Sessão 11d);
+    `financas.py` é o **serviço de finanças** (D64): outro Cloud Run, a mesma imagem com outro
+    comando, a conta `viking-financas@` (a única que lê o `viking-pluggy`), só o `viking-motor@`
+    entra, e só responde `/responder` (uma das perguntas fechadas → o texto) e `/saude` (sem
+    rede);
     `cliente.py` é o terminal do Mac falando com ele (`viking lembretes --nuvem`), com o token do
     `viking-cli@` pedido pelo login do Google Cloud do dono; `chat_cliente.py` é o `viking chat
     --nuvem` (a conversa e a nota ficam na memória do terminal; Sessão 10b, D59; desde a 10c manda
@@ -166,7 +178,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   pela entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
   quando pedido). O passo `agendador` (Sessão 11) liga o Cloud Scheduler que dispara o envio de
   lembretes a cada minuto, só depois do portão da 10c; o passo `backup` (Sessão 11c) liga a
-  tarefa `viking-backup` (todo dia às 09:00 UTC) e roda uma na hora. `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
+  tarefa `viking-backup` (todo dia às 09:00 UTC) e roda uma na hora; o passo `financas` (Sessão
+  11d, D64) cria a conta `viking-financas@` e o segredo `viking-pluggy` (que sobe do Mac, com
+  `segredo viking-pluggy`), e o `deploy` publica o serviço `financas` antes do motor quando o
+  segredo tem versão. As provas do deploy nunca chamam a Pluggy; `prova-financas` (o status das
+  conexões, do ar) só quando o dono pedir. `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `tests/` — pytest para `src/lifeos`.
 - `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
@@ -239,6 +255,9 @@ python scripts/nuvem.py segredo viking-gemini
                                # (o token do Gmail mora lá), depois de `viking gmail --login`
 python scripts/nuvem.py prova-chat
                                # um turno real no motor (gasta: ~US$ 0,001), o tempo e o gasto
+python scripts/nuvem.py prova-financas
+                               # o status das conexões, do ar (chama a Pluggy: só GET, e só
+                               # quando o dono pedir; sem IDs nem valores)
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
                                # acessar, egress e das contas de finanças (à mão; não
                                # editar nada enquanto roda;
@@ -248,9 +267,9 @@ viking chat                    # assistente de chat (calendário + navegador + l
                                # dentro dele: /custos mostra o gasto da sessão
 viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes, registro, o
                                # Gmail quando o token dele está na nuvem, e o navegador do Mac
-                               # quando o `viking maos` está ligado; as finanças seguem no
-                               # `viking chat`). O código de aprovação só aparece num
-                               # terminal interativo
+                               # quando o `viking maos` está ligado; as finanças quando o
+                               # serviço delas está no ar, desde a 11d). O código de
+                               # aprovação só aparece num terminal interativo
 viking maos                    # o navegador deste Mac atende o chat da nuvem (num terminal,
                                # em primeiro plano; Ctrl-C desliga; a liberação de um clique
                                # se aprova aqui)
@@ -284,6 +303,7 @@ viking backup                   # quando foi o último backup no Drive (pela nuv
                                # desastre, e com --executar copia para a nuvem sem sobrescrever
 viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
                                # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
+                               # com --nuvem, o mesmo texto pelo serviço de finanças da nuvem
 ```
 
 As ferramentas de navegador exigem `uv` no PATH e o clone do Jev (`VIKING_JEV_DIR`); o Viking o
@@ -354,7 +374,9 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   da nuvem, US$ 10 e 1)/`VIKING_DRIVE_TOKEN_PATH` (o token do Drive do backup, Sessão
   11c)/`VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO`, `VIKING_GMAIL_TOKEN_ARQUIVO` e
   `VIKING_DRIVE_TOKEN_ARQUIVO` (só no
-  motor, postos pelo deploy: os arquivos do volume do Secret Manager). Copiar de `.env.example`. Caminhos relativos
+  motor, postos pelo deploy: os arquivos do volume do Secret Manager)/`VIKING_FINANCAS_URL` (só
+  no motor: a URL do serviço de finanças)/`VIKING_PLUGGY_ARQUIVO` (só no serviço de finanças: o
+  arquivo do `viking-pluggy`; Sessão 11d). Copiar de `.env.example`. Caminhos relativos
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
   `viking` foi chamado.
 - Navegador: banco e e-mail são **bloqueados por padrão** (lista em `config._BLOQUEADOS_PADRAO`,

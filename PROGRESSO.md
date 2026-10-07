@@ -44,15 +44,27 @@ com `--conectar`); mypy com `financas/pergunta.py` e `remoto.py` (44 arquivos).
 `pluggy.cliente` levantando fora dele); a suíte `2615 passed`; mutações 21/21 (13 novas; duas
 antigas do `na_nuvem` reancoradas, uma reescrita: as finanças agora entram de propósito).
 
-**Próximo passo exato:** C3, `scripts/nuvem.py`: o passo `financas` (a conta `viking-financas@`,
-o segredo `viking-pluggy` vazio e a leitura só dele; a medida reprova o `motor@` lendo); `segredo
-viking-pluggy` (no Mac: `pluggy.segredo_para_json` do `.env`); `comandos_do_deploy` com o serviço
-`financas` primeiro (`--command=/app/.venv/bin/uvicorn`, `--args=lifeos.nuvem.financas:app,…`,
-conta `financas@`, só o volume dele, `run.invoker` só do `motor@`) e o motor com
-`VIKING_FINANCAS_URL`; `em_dia` sabe das finanças; as provas sem a Pluggy; `prova-financas`.
+**Feito no C3 e na parte do C4 sem nuvem (2026-10-07):** `scripts/nuvem.py`: o passo
+`financas` (o último; `_m_financas` reprova qualquer outro leitor do `viking-pluggy`),
+`financas_montavel`, `_comandos_das_financas` (o serviço antes do motor, a mesma imagem,
+`--command`/`--args`, só o `motor@` invoca), o motor com `VIKING_FINANCAS_URL`, `em_dia` sabe das
+finanças, `_provas_das_financas` (11 provas, nenhuma chama a Pluggy), `prova-financas`, `segredo
+viking-pluggy` (do `.env` do Mac, conferido). Testes do script: 109. Mutações `nuvem:` 40/40 (7
+novas). `python scripts/nuvem.py` (só lendo) → 12 ✅ e 1 ⬜ `financas` ("falta a conta
+viking-financas@"). `docker build` ok; no contêiner local com o comando do deploy, `/saude` sem
+token → 401 "sem token", com token falso → 401 "token recusado". Página de preço do Cloud Run lida
+(o grátis por conta de faturamento; parado não cobra). Docs: AGENTS, CLAUDE, `.env.example`,
+`docs/fontes/gcp-cloud-run-firestore.md`, `Dockerfile` (confere `financas.py` na imagem). A
+suíte `2635 passed`, 0 pulados; ruff, format (164), mypy (44), gitleaks e `uv lock --check` ok.
 
-**Depende do dono:** nada até o C4 (os oks: o passo `financas`, o segredo no Mac, o deploy, a
-`prova-financas`).
+**Próximo passo exato:** a rodada inteira das mutações em background (sem `timeout`, a saída num
+arquivo, nada editado); em paralelo, o **ok 1** do dono → `python scripts/nuvem.py --executar
+financas` (a conta, o segredo vazio e a leitura; grátis); depois o roteiro do Mac 1 (o segredo
+`viking-pluggy` pelo Mac), o **ok 2** (deploy), o **ok 3** (`prova-financas`) e o roteiro do Mac
+2 (`cmp` local × nuvem).
+
+**Depende do dono:** os oks do C4, na ordem: o passo `financas`, o segredo no Mac, o deploy, a
+`prova-financas`; e o roteiro do Mac.
 
 **Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; o plano da 11d
 abaixo; `docs/decisoes.md` (D51, D57–D61, D63, D64); `src/lifeos/financas/` (`pluggy.py`,

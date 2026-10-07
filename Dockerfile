@@ -1,5 +1,7 @@
 # O motor do Viking no Cloud Run (Sessão 10, D58). Construído no VPS (`scripts/nuvem.py deploy`),
-# com a tag = o SHA do commit. Copia só o que o motor precisa: nada de `.env`, `secrets/`, `data/`
+# com a tag = o SHA do commit. Desde a Sessão 11d (D64) a mesma imagem roda também o serviço de
+# finanças, com outro comando (`scripts/nuvem.py`, `--command`/`--args`).
+# Copia só o que o motor precisa: nada de `.env`, `secrets/`, `data/`
 # nem `.git` (o `.dockerignore` fecha, e `tests/test_dockerfile.py` confere as duas pontas).
 FROM python:3.12-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f AS construir
 
@@ -14,6 +16,7 @@ RUN uv sync --locked --extra nuvem --no-install-project --no-editable
 COPY src ./src
 RUN uv sync --locked --extra nuvem --no-editable \
     && test -f /app/.venv/lib/python3.12/site-packages/lifeos/nuvem/motor.py \
+    && test -f /app/.venv/lib/python3.12/site-packages/lifeos/nuvem/financas.py \
     && /app/.venv/bin/python -c "import zoneinfo; zoneinfo.ZoneInfo('America/Sao_Paulo')"
 
 # A imagem final: a mesma base, só o ambiente pronto (sem o uv nem o pip de construir).

@@ -46,7 +46,8 @@ APIS = (
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "billingbudgets.googleapis.com",
-    "secretmanager.googleapis.com",  # a chave do Gemini e os tokens da agenda, do Gmail e do Drive
+    # a chave do Gemini, os tokens da agenda, do Gmail e do Drive, e a Pluggy (o serviço de finanças)
+    "secretmanager.googleapis.com",
 )
 REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
@@ -749,6 +750,91 @@ def _c_backup(ctx: Contexto) -> list[list[str]]:
     return comandos
 
 
+# --- as finanças num serviço isolado (Sessão 11d, D64) ------------------------------------------
+
+SERVICO_DAS_FINANCAS = "financas"
+FINANCAS = "viking-financas"  # a conta do serviço: a única que lê o `viking-pluggy`
+# A mesma imagem do motor, outro comando: o app de finanças (`lifeos/nuvem/financas.py`).
+COMANDO_DAS_FINANCAS = "/app/.venv/bin/uvicorn"
+ARGS_DAS_FINANCAS = (
+    "lifeos.nuvem.financas:app",
+    "--host",
+    "0.0.0.0",
+    "--port",
+    "8080",
+    "--no-access-log",
+)
+
+
+def _leem_o_segredo_das_financas(ctx: Contexto) -> set[str]:
+    politica = _ler(_gcloud(ctx, "secrets", "get-iam-policy", SEGREDO_DAS_FINANCAS.nome))
+    return _membros(politica, LER_SEGREDO)
+
+
+def _m_financas(ctx: Contexto) -> Estado:
+    nome = SEGREDO_DAS_FINANCAS.nome
+    if _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(FINANCAS))) is None:
+        return Estado(False, f"falta a conta {FINANCAS}@")
+    if _ler(_gcloud(ctx, "secrets", "describe", nome)) is None:
+        return Estado(False, f"falta o segredo {nome}")
+    leem = _leem_o_segredo_das_financas(ctx)
+    if leem != {f"serviceAccount:{ctx.conta(FINANCAS)}"}:
+        quem = ", ".join(sorted(leem)) or "ninguém"
+        return Estado(False, f"{nome}: tem de ser lido só pelo {FINANCAS}@ (hoje: {quem})")
+    versoes = _versoes(ctx, nome)
+    if not versoes:
+        return Estado(
+            True,
+            f"a conta e o segredo prontos; {nome} vazio (sobe do Mac: `python scripts/nuvem.py "
+            f"segredo {nome} --executar`)",
+        )
+    return Estado(True, f"{FINANCAS}@ e o {nome} ({versoes} versão(ões)), lido só por ela")
+
+
+def _c_financas(ctx: Contexto) -> list[list[str]]:
+    """Cria a conta e o segredo vazio que faltam (o valor sobe do Mac, pela entrada padrão) e dá
+    a leitura **só** à conta do serviço de finanças. O `motor@` nunca entra aqui."""
+    nome = SEGREDO_DAS_FINANCAS.nome
+    medido = "apis" in ctx.prontos
+    comandos = []
+    if (
+        not medido
+        or _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(FINANCAS))) is None
+    ):
+        comandos.append(
+            _gcloud(
+                ctx,
+                "iam",
+                "service-accounts",
+                "create",
+                FINANCAS,
+                "--display-name=Viking: o serviço de finanças (só leitura da Pluggy)",
+            )
+        )
+    if not medido or _ler(_gcloud(ctx, "secrets", "describe", nome)) is None:
+        comandos.append(
+            _gcloud(
+                ctx,
+                "secrets",
+                "create",
+                nome,
+                "--replication-policy=automatic",
+                "--labels=app=viking",
+            )
+        )
+    comandos.append(
+        _gcloud(
+            ctx,
+            "secrets",
+            "add-iam-policy-binding",
+            nome,
+            f"--member=serviceAccount:{ctx.conta(FINANCAS)}",
+            f"--role={LER_SEGREDO}",
+        )
+    )
+    return comandos
+
+
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
     Passo(
@@ -814,6 +900,13 @@ PASSOS = (
             "a 0,10 por mês"
         ),
     ),
+    Passo(
+        "financas",
+        "o serviço de finanças: a conta e o segredo da Pluggy (só o financas@ lê; Sessão 11d)",
+        _m_financas,
+        _c_financas,
+        depende=("apis", "contas"),
+    ),
 )
 
 
@@ -861,6 +954,12 @@ class Situacao:
     no_ar: str | None  # o SHA da imagem no ar (a tag), ou None sem serviço
     mudou_desde: int | None  # commits nos caminhos da imagem desde a do ar
     volumes_no_ar: frozenset[str] = frozenset()  # os segredos montados na revisão no ar
+    financas_no_ar: bool = False  # o motor no ar tem a URL do serviço de finanças (11d)
+
+
+def _variaveis(servico: dict) -> dict[str, dict]:
+    conteiner = servico["spec"]["template"]["spec"]["containers"][0]
+    return {v.get("name"): v for v in conteiner.get("env", [])}
 
 
 def _volumes(servico: dict) -> frozenset[str]:
@@ -893,8 +992,10 @@ def situacao(ctx: Contexto) -> Situacao:
     servico = _ler(_gcloud(ctx, "run", "services", "describe", SERVICO, f"--region={ctx.regiao}"))
     no_ar = mudou = None
     volumes: frozenset[str] = frozenset()
+    financas = False
     if isinstance(servico, dict):
         volumes = _volumes(servico)
+        financas = "VIKING_FINANCAS_URL" in _variaveis(servico)
         imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
         no_ar = imagem.rsplit(":", 1)[-1]
         mudou = int(
@@ -908,6 +1009,7 @@ def situacao(ctx: Contexto) -> Situacao:
         no_ar=no_ar,
         mudou_desde=mudou,
         volumes_no_ar=volumes,
+        financas_no_ar=financas,
     )
 
 
@@ -915,12 +1017,18 @@ def _imagem(ctx: Contexto, sha: str) -> str:
     return f"{ctx.regiao}-docker.pkg.dev/{ctx.projeto}/{REPOSITORIO}/{SERVICO}:{sha}"
 
 
-def _url(ctx: Contexto) -> str:
-    """A URL do serviço, que o Cloud Run monta com o número do projeto: é a audience que o motor
-    exige, e sai antes do primeiro deploy."""
+def _url(ctx: Contexto, servico: str = SERVICO) -> str:
+    """A URL do serviço, que o Cloud Run monta com o número do projeto: é a audience que o serviço
+    exige (o motor, ou o de finanças), e sai antes do primeiro deploy."""
     dados = _ler(_gcloud(ctx, "projects", "describe", ctx.projeto))
     assert isinstance(dados, dict)
-    return f"https://{SERVICO}-{dados['projectNumber']}.{ctx.regiao}.run.app"
+    return f"https://{servico}-{dados['projectNumber']}.{ctx.regiao}.run.app"
+
+
+def financas_montavel(ctx: Contexto) -> bool:
+    """O segredo da Pluggy tem versão: o deploy publica o serviço de finanças e dá ao motor a URL
+    dele. Sem versão, só o motor, sem as finanças (como o Gmail sem o token)."""
+    return bool(_versoes(ctx, SEGREDO_DAS_FINANCAS.nome))
 
 
 def _fuso() -> str:
@@ -941,10 +1049,64 @@ def montaveis(ctx: Contexto) -> tuple[tuple[Segredo, ...], list[str]]:
     return montados, faltam
 
 
-def comandos_do_deploy(
-    ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS
-) -> list[list[str]]:
+def _comandos_das_financas(ctx: Contexto, sha: str) -> list[list[str]]:
+    """O serviço de finanças (D64): a imagem do motor com o comando dele, a conta dele, só o
+    segredo da Pluggy, e só o `motor@` invoca. Vem antes do motor, para o motor nunca apontar para
+    um serviço que não existe."""
+    segredo = SEGREDO_DAS_FINANCAS
     return [
+        _gcloud(
+            ctx,
+            "run",
+            "deploy",
+            SERVICO_DAS_FINANCAS,
+            f"--image={_imagem(ctx, sha)}",
+            f"--region={ctx.regiao}",
+            f"--service-account={ctx.conta(FINANCAS)}",
+            "--no-allow-unauthenticated",
+            "--min-instances=0",
+            "--max-instances=1",
+            "--concurrency=4",
+            "--cpu=1",
+            "--memory=512Mi",
+            # O motor espera até 60 s (`financas/remoto.PRAZO_MAX_S`); só é cobrado enquanto roda.
+            "--timeout=120",
+            "--labels=app=viking",
+            f"--command={COMANDO_DAS_FINANCAS}",
+            "--args=" + ",".join(ARGS_DAS_FINANCAS),
+            f"--set-secrets={segredo.caminho}={segredo.nome}:latest",
+            "--set-env-vars="
+            + ",".join(
+                [
+                    f"VIKING_NUVEM_PROJETO={ctx.projeto}",
+                    f"VIKING_NUVEM_URL={_url(ctx, SERVICO_DAS_FINANCAS)}",
+                    f"VIKING_TIMEZONE={_fuso()}",
+                    f"{segredo.variavel}={segredo.caminho}",
+                ]
+            ),
+        ),
+        _gcloud(
+            ctx,
+            "run",
+            "services",
+            "add-iam-policy-binding",
+            SERVICO_DAS_FINANCAS,
+            f"--region={ctx.regiao}",
+            f"--member=serviceAccount:{ctx.conta(MOTOR)}",
+            "--role=roles/run.invoker",
+        ),
+    ]
+
+
+def comandos_do_deploy(
+    ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS, financas: bool = False
+) -> list[list[str]]:
+    das_financas = _comandos_das_financas(ctx, sha) if financas else []
+    url_das_financas = (
+        [f"VIKING_FINANCAS_URL={_url(ctx, SERVICO_DAS_FINANCAS)}"] if financas else []
+    )
+    return [
+        *das_financas,
         _gcloud(
             ctx,
             "run",
@@ -973,6 +1135,7 @@ def comandos_do_deploy(
                     f"VIKING_NUVEM_URL={_url(ctx)}",
                     f"VIKING_TIMEZONE={_fuso()}",
                     *(f"{s.variavel}={s.caminho}" for s in montados),
+                    *url_das_financas,
                 ]
             ),
         ),
@@ -1003,7 +1166,9 @@ def _token(ctx: Contexto, *args: str) -> str:
     return resultado.stdout.strip()
 
 
-def publicar(ctx: Contexto, sha: str, montados: tuple[Segredo, ...]) -> None:
+def publicar(
+    ctx: Contexto, sha: str, montados: tuple[Segredo, ...], financas: bool = False
+) -> None:
     """Constrói, envia e põe no ar. Só roda depois de `situacao` dizer que dá (árvore limpa, HEAD
     no GitHub, CI verde) e do ok do dono."""
     imagem = _imagem(ctx, sha)
@@ -1021,7 +1186,7 @@ def publicar(ctx: Contexto, sha: str, montados: tuple[Segredo, ...]) -> None:
         _saida(["docker", "push", imagem])
     finally:
         _local(["docker", "logout", registro])  # o token de 1 h não fica no ~/.docker
-    for comando in comandos_do_deploy(ctx, sha, montados):
+    for comando in comandos_do_deploy(ctx, sha, montados, financas):
         print(f"$ {_legivel(comando)}")
         resultado = _rodar(comando)
         if resultado.returncode != 0:
@@ -1036,16 +1201,17 @@ class Prova:
 
 
 def _segredos_so_como_volume(
-    servico: dict, montados: tuple[Segredo, ...] = SEGREDOS
+    servico: dict, montados: tuple[Segredo, ...] = SEGREDOS, financas: bool = False
 ) -> tuple[bool, str]:
     """No `describe` do serviço: as variáveis são só as esperadas para os segredos montados
     (nenhuma com `valueFrom`, que seria um segredo no ambiente), e os volumes de segredo são
     exatamente os montados."""
-    modelo = servico["spec"]["template"]["spec"]
-    variaveis = {v.get("name"): v for v in modelo["containers"][0].get("env", [])}
+    variaveis = _variaveis(servico)
     esperadas = {"VIKING_NUVEM_PROJETO", "VIKING_NUVEM_URL", "VIKING_TIMEZONE"} | {
         s.variavel for s in montados
     }
+    if financas:  # a URL do serviço de finanças (D64): não é segredo, e só ela
+        esperadas.add("VIKING_FINANCAS_URL")
     sem_segredo = set(variaveis) <= esperadas and not any(
         "valueFrom" in v for v in variaveis.values()
     )
@@ -1062,7 +1228,9 @@ def _invocadores_certos(ctx: Contexto, quem: set[str]) -> bool:
     return precisam <= quem <= podem
 
 
-def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) -> list[Prova]:
+def provas(
+    ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS, financas: bool = False
+) -> list[Prova]:
     """Rodam sempre, com ou sem deploy (skill `nuvem-e-deploy` §6 e §8): a imagem no ar, o IAM do
     serviço, a recusa sem token, a recusa do nosso código, o caminho com a identidade certa, a
     consulta que pede o índice, e os erros no log."""
@@ -1075,7 +1243,7 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
     no_ar = imagem.rsplit("/", 1)[-1]
     resultado.append(Prova("imagem no ar = a esperada", imagem == _imagem(ctx, sha), no_ar))
-    certo, detalhe = _segredos_so_como_volume(servico, montados)
+    certo, detalhe = _segredos_so_como_volume(servico, montados, financas)
     resultado.append(Prova("segredos só como volume, nada no ambiente", certo, detalhe))
     # O `status.url` é a URL antiga, com hash; a determinística (com o número do projeto) é a
     # audience que o motor exige, e o Cloud Run a lista nesta anotação (medido em 2026-09-30).
@@ -1187,7 +1355,16 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     )
     if com_drive and _m_backup(ctx).pronto:
         resultado.append(_prova_do_ultimo_backup(dados_versao.get("backup_em")))
+    resultado.append(
+        Prova(
+            "viking-cli@: /versao diz se tem as finanças",
+            dados_versao.get("financas") is financas,
+            f"financas: {dados_versao.get('financas')} (esperado {financas})",
+        )
+    )
     resultado.extend(_provas_das_portas(ctx, url, cabecalho))
+    if financas:
+        resultado.extend(_provas_das_financas(ctx, sha, url, cabecalho))
 
     filtro = (
         f'resource.type="cloud_run_revision" AND resource.labels.service_name="{SERVICO}" '
@@ -1196,6 +1373,164 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     erros = _ler(_gcloud(ctx, "logging", "read", filtro, "--freshness=30m", "--limit=20"))
     resultado.append(Prova("log sem erro (30 min)", not erros, f"{len(erros or [])} erro(s)"))
     return resultado
+
+
+def _provas_das_financas(
+    ctx: Contexto, sha: str, url_do_motor: str, cabecalho_do_cli: dict
+) -> list[Prova]:
+    """O serviço de finanças (D64), **sem chamar a Pluggy** (o dono, 2026-10-07): a imagem e o
+    comando, a conta, só o segredo dele como volume, só o `motor@` invoca, só o `financas@` lê o
+    segredo; de fora, sem token, com o `cli@` e com o dono, recusado; pelo motor, `/fumaca/financas`
+    (o serviço lê as credenciais e conta as conexões, sem rede); e o log dele."""
+    import requests
+
+    provas_: list[Prova] = []
+    servico = _ler(
+        _gcloud(ctx, "run", "services", "describe", SERVICO_DAS_FINANCAS, f"--region={ctx.regiao}")
+    )
+    if not isinstance(servico, dict):
+        return [Prova("finanças: o serviço no ar", False, "não existe")]
+    modelo = servico["spec"]["template"]["spec"]
+    conteiner = modelo["containers"][0]
+    imagem = conteiner.get("image", "")
+    provas_.append(
+        Prova(
+            "finanças: a imagem = a do motor",
+            imagem == _imagem(ctx, sha),
+            imagem.rsplit("/", 1)[-1],
+        )
+    )
+    comando = [*conteiner.get("command", []), *conteiner.get("args", [])]
+    provas_.append(
+        Prova(
+            "finanças: roda o app de finanças",
+            comando == [COMANDO_DAS_FINANCAS, *ARGS_DAS_FINANCAS],
+            " ".join(comando)[:120],
+        )
+    )
+    conta = modelo.get("serviceAccountName", "")
+    provas_.append(Prova(f"finanças: a conta é o {FINANCAS}@", conta == ctx.conta(FINANCAS), conta))
+    variaveis = _variaveis(servico)
+    esperadas = {
+        "VIKING_NUVEM_PROJETO",
+        "VIKING_NUVEM_URL",
+        "VIKING_TIMEZONE",
+        SEGREDO_DAS_FINANCAS.variavel,
+    }
+    certo = (
+        set(variaveis) <= esperadas
+        and not any("valueFrom" in v for v in variaveis.values())
+        and _volumes(servico) == {SEGREDO_DAS_FINANCAS.nome}
+    )
+    provas_.append(
+        Prova(
+            "finanças: só o segredo da Pluggy, como volume",
+            certo,
+            f"variáveis {sorted(variaveis)}; volumes {sorted(_volumes(servico))}",
+        )
+    )
+    politica = _ler(
+        _gcloud(
+            ctx,
+            "run",
+            "services",
+            "get-iam-policy",
+            SERVICO_DAS_FINANCAS,
+            f"--region={ctx.regiao}",
+        )
+    )
+    quem = _membros(politica, "roles/run.invoker")
+    provas_.append(
+        Prova(
+            "finanças: só o viking-motor@ invoca",
+            quem == {f"serviceAccount:{ctx.conta(MOTOR)}"},
+            ", ".join(sorted(quem)) or "ninguém",
+        )
+    )
+    leem = _leem_o_segredo_das_financas(ctx)
+    provas_.append(
+        Prova(
+            f"{SEGREDO_DAS_FINANCAS.nome}: só o {FINANCAS}@ lê (o motor@ não)",
+            leem == {f"serviceAccount:{ctx.conta(FINANCAS)}"},
+            ", ".join(sorted(leem)) or "ninguém",
+        )
+    )
+
+    url = _url(ctx, SERVICO_DAS_FINANCAS)
+    nossas = ("sem token", "token recusado", "identidade sem acesso")
+    sem = requests.post(f"{url}/saude", timeout=30)
+    provas_.append(
+        Prova(
+            "finanças sem token: recusado pelo Google",
+            sem.status_code == 403 and sem.text.strip() not in nossas,
+            f"HTTP {sem.status_code}",
+        )
+    )
+    cli = _token(
+        ctx,
+        "print-identity-token",
+        f"--impersonate-service-account={ctx.conta(CLI)}",
+        f"--audiences={url}",
+        "--include-email",
+    )
+    do_cli = requests.post(f"{url}/saude", headers={"Authorization": f"Bearer {cli}"}, timeout=30)
+    provas_.append(
+        Prova(
+            "finanças com o viking-cli@: recusado pelo Google",
+            do_cli.status_code == 403 and do_cli.text.strip() not in nossas,
+            f"HTTP {do_cli.status_code}",
+        )
+    )
+    dono = requests.post(
+        f"{url}/saude",
+        headers={"Authorization": f"Bearer {_token(ctx, 'print-identity-token')}"},
+        timeout=30,
+    )
+    provas_.append(
+        Prova(
+            "finanças com o dono em pessoa: recusado pelo serviço",
+            dono.status_code in (401, 403) and dono.text.strip() in nossas[1:],
+            f"HTTP {dono.status_code} {dono.text.strip()[:40]!r}",
+        )
+    )
+    # O `run.invoker` do motor@ recém-dado leva minutos para valer (erros, classe 6, 2026-10-01):
+    # enquanto o serviço responde 403 do Google ao motor, espera.
+    esperou = 0
+    while True:
+        fumaca = requests.get(
+            f"{url_do_motor}/fumaca/financas", headers=cabecalho_do_cli, timeout=90
+        )
+        propagando = fumaca.status_code == 502 and "respondeu 403" in fumaca.text
+        if not propagando or esperou >= ESPERA_DO_IAM_S:
+            break
+        time.sleep(15)
+        esperou += 15
+    dados = fumaca.json() if fumaca.status_code == 200 else {}
+    conexoes = dados.get("conexoes")
+    certo = (
+        dados.get("commit") == sha
+        and dados.get("credenciais") is True
+        and isinstance(conexoes, int)
+        and not isinstance(conexoes, bool)
+        and conexoes >= 1
+    )
+    quanto = f", depois de {esperou} s" if esperou else ""
+    provas_.append(
+        Prova(
+            "viking-cli@: /fumaca/financas (o serviço lê as credenciais, sem chamar a Pluggy)",
+            certo,
+            f"HTTP {fumaca.status_code}{quanto} {dados or fumaca.text.strip()[:80]}",
+        )
+    )
+    filtro = (
+        f'resource.type="cloud_run_revision" AND '
+        f'resource.labels.service_name="{SERVICO_DAS_FINANCAS}" AND severity>=ERROR'
+    )
+    erros = _ler(_gcloud(ctx, "logging", "read", filtro, "--freshness=30m", "--limit=20"))
+    provas_.append(
+        Prova("finanças: log sem erro (30 min)", not erros, f"{len(erros or [])} erro(s)")
+    )
+    return provas_
 
 
 def _prova_do_ultimo_backup(backup_em: object, agora: datetime | None = None) -> Prova:
@@ -1284,6 +1619,7 @@ def deploy(ctx: Contexto, executar: bool) -> int:
         )
     pode = agora.limpo and agora.publicado and agora.ci == "completed success"
     montados, faltam = montaveis(ctx)
+    financas = financas_montavel(ctx)
     # Nada nos caminhos da imagem desde a que está no ar, e os mesmos segredos montados: ela já é
     # o código de agora, e publicar de novo só trocaria a etiqueta (skill `nuvem-e-deploy` §4, a
     # segunda pergunta). Um segredo que ganhou versão (o do Gmail, subido do Mac) pede revisão.
@@ -1291,6 +1627,7 @@ def deploy(ctx: Contexto, executar: bool) -> int:
         agora.no_ar is not None
         and agora.mudou_desde == 0
         and agora.volumes_no_ar == {s.nome for s in montados}
+        and agora.financas_no_ar == financas
     )
     esperado = agora.no_ar if em_dia and agora.no_ar else agora.head
     if executar:
@@ -1304,16 +1641,18 @@ def deploy(ctx: Contexto, executar: bool) -> int:
                 # Um volume de segredo sem versão derruba a revisão nova: nada é construído.
                 print(f"Não publico: sem valor no Secret Manager: {', '.join(faltam)}.")
                 return 1
-            publicar(ctx, agora.head, montados)
+            publicar(ctx, agora.head, montados, financas)
     elif not em_dia:
-        for comando in comandos_do_deploy(ctx, agora.head, montados):
+        for comando in comandos_do_deploy(ctx, agora.head, montados, financas):
             print(f"  → {_legivel(comando)}")
         print("Nada foi publicado (sem --executar).")
     fora = [s.nome for s in SEGREDOS if s not in montados]
+    if not financas:
+        fora.append(f"{SEGREDO_DAS_FINANCAS.nome} (sem ele, o serviço de finanças)")
     if fora:
         print(f"Fora desta revisão (sem versão; sobe do Mac): {', '.join(fora)}.")
     print("Provas (rodam sempre):")
-    feitas = provas(ctx, esperado, montados)
+    feitas = provas(ctx, esperado, montados, financas)
     for prova in feitas:
         print(f"  {'✅' if prova.passou else '❌'} {prova.nome}: {prova.detalhe}")
     return 0 if all(p.passou for p in feitas) else 2
@@ -1391,11 +1730,25 @@ def _token_do_drive() -> str:
     )
 
 
+def _credenciais_da_pluggy() -> str:
+    """O JSON do `viking-pluggy` (a chave, o segredo e os IDs das conexões), do `.env` DESTE
+    computador (o Mac: os IDs só existem lá), conferido antes de subir. Nada dele é mostrado."""
+    from lifeos.financas import pluggy
+
+    try:
+        return pluggy.segredo_para_json(
+            config.PLUGGY_CLIENT_ID, config.PLUGGY_CLIENT_SECRET, config.PLUGGY_ITEM_IDS
+        )
+    except pluggy.SemCredenciais as exc:
+        raise SystemExit(f"nuvem.py: {exc}, no .env deste computador (nada foi enviado)") from None
+
+
 FONTES: dict[str, tuple[str, Callable[[], str]]] = {
     "viking-gemini": ("o GEMINI_API_KEY do .env", _chave_do_gemini),
     "viking-agenda": ("o token da agenda de secrets/", _token_da_agenda),
     "viking-gmail": ("o token do Gmail de secrets/ (no Mac)", _token_do_gmail),
     "viking-drive": ("o token do Drive de secrets/ (no Mac)", _token_do_drive),
+    "viking-pluggy": ("as credenciais da Pluggy do .env (no Mac)", _credenciais_da_pluggy),
 }
 
 
@@ -1417,6 +1770,38 @@ def segredo(ctx: Contexto, nome: str, executar: bool) -> int:
         return 1
     print(f"✅ {nome}: versão nova enviada ({_versoes(ctx, nome)} habilitada(s)).")
     return 0
+
+
+def prova_financas(ctx: Contexto) -> int:
+    """O status das conexões, do ar: o motor pergunta ao serviço de finanças, que faz o login na
+    Pluggy e lê cada conexão (só GET; sem IDs nem valores na saída). Chama a Pluggy: só quando o
+    dono pedir (2026-10-07)."""
+    import requests
+
+    url = _url(ctx)
+    token = _token(
+        ctx,
+        "print-identity-token",
+        f"--impersonate-service-account={ctx.conta(CLI)}",
+        f"--audiences={url}",
+        "--include-email",
+    )
+    inicio = time.monotonic()
+    resposta = requests.post(
+        f"{url}/financas",
+        json={"pergunta": "conexoes"},
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=120,
+    )
+    segundos = time.monotonic() - inicio
+    dados = (
+        resposta.json()
+        if resposta.headers.get("content-type", "").startswith("application/json")
+        else {}
+    )
+    print(f"HTTP {resposta.status_code} em {segundos:.1f} s")
+    print(dados.get("texto") or dados.get("erro") or resposta.text.strip()[:200])
+    return 0 if resposta.status_code == 200 else 1
 
 
 def prova_chat(ctx: Contexto, mensagem: str) -> int:
@@ -1515,6 +1900,9 @@ def main(argv: list[str]) -> int:
         leitor = argparse.ArgumentParser(prog="nuvem.py prova-chat")
         leitor.add_argument("mensagem", nargs="?", default="o que tenho amanhã na agenda?")
         return prova_chat(_contexto(), leitor.parse_args(argv[1:]).mensagem)
+    if argv[:1] == ["prova-financas"]:
+        argparse.ArgumentParser(prog="nuvem.py prova-financas").parse_args(argv[1:])
+        return prova_financas(_contexto())
     if argv[:1] == ["deploy"]:
         leitor = argparse.ArgumentParser(prog="nuvem.py deploy")
         leitor.add_argument("--executar", action="store_true")
