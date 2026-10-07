@@ -33,6 +33,7 @@ import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from lifeos import config, registro_firestore
@@ -566,15 +567,22 @@ TAREFA_DO_AGENDADOR = "viking-lembretes"
 ESPERA_DA_RODADA = "250s"
 
 
-def _tarefa_certa(ctx: Contexto, tarefa: dict) -> list[str]:
-    """O que difere do esperado na tarefa do Scheduler (vazio = certa)."""
+def _tarefa_certa(
+    ctx: Contexto,
+    tarefa: dict,
+    *,
+    agenda: tuple[str, str] = ("* * * * *", "a cada minuto"),
+    rota: tuple[str, str] = ("/tarefas/lembretes", "do envio"),
+) -> list[str]:
+    """O que difere do esperado numa tarefa do Scheduler (vazio = certa): a do envio de lembretes
+    (Sessão 11) ou a do backup (11c, com `agenda` e `rota` dele)."""
     url = _url(ctx)
     alvo = tarefa.get("httpTarget", {})
     oidc = alvo.get("oidcToken", {})
     esperado = {
-        "a cada minuto": tarefa.get("schedule") == "* * * * *",
+        agenda[1]: tarefa.get("schedule") == agenda[0],
         "ligada": tarefa.get("state") == "ENABLED",
-        "POST na rota do envio": alvo.get("uri") == f"{url}/tarefas/lembretes"
+        f"POST na rota {rota[1]}": alvo.get("uri") == f"{url}{rota[0]}"
         and alvo.get("httpMethod") == "POST",
         "como o agendador@": oidc.get("serviceAccountEmail") == ctx.conta(AGENDADOR),
         "com a audience do motor": oidc.get("audience") == url,
@@ -664,6 +672,75 @@ def _c_agendador(ctx: Contexto) -> list[list[str]]:
     return comandos
 
 
+# --- o backup diário no Drive (Sessão 11c, D63): depois do token do Drive subir do Mac --------
+
+TAREFA_DO_BACKUP = "viking-backup"
+AGENDA_DO_BACKUP = ("0 9 * * *", "todo dia às 09:00 UTC")  # 2h em Seattle, 6h no Brasil
+ROTA_DO_BACKUP = ("/tarefas/backup", "do backup")
+
+
+def _m_backup(ctx: Contexto) -> Estado:
+    if not _versoes(ctx, "viking-drive"):
+        return Estado(
+            False,
+            "o token do Drive ainda não subiu (no Mac: `viking backup --login` e `python "
+            "scripts/nuvem.py segredo viking-drive --executar`)",
+        )
+    tarefa = _ler(
+        _gcloud(ctx, "scheduler", "jobs", "describe", TAREFA_DO_BACKUP, f"--location={ctx.regiao}")
+    )
+    if not isinstance(tarefa, dict):
+        return Estado(False, "falta a tarefa do Scheduler")
+    errado = _tarefa_certa(ctx, tarefa, agenda=AGENDA_DO_BACKUP, rota=ROTA_DO_BACKUP)
+    if errado:
+        return Estado(False, "a tarefa existe, mas não está: " + ", ".join(errado))
+    return Estado(True, "todo dia às 09:00 UTC, como agendador@, só na rota do backup")
+
+
+def _c_backup(ctx: Contexto) -> list[list[str]]:
+    """Cria a tarefa (se falta) e a roda uma vez, para o primeiro backup existir já. A conta e o
+    `run.invoker` são os do passo `agendador` (a mesma identidade, outra rota)."""
+    url = (
+        _url(ctx)
+        if "apis" in ctx.prontos
+        else f"https://{SERVICO}-<número do projeto>.{ctx.regiao}.run.app"
+    )
+    comandos = []
+    existe = "agendador" in ctx.prontos and isinstance(
+        _ler(
+            _gcloud(
+                ctx, "scheduler", "jobs", "describe", TAREFA_DO_BACKUP, f"--location={ctx.regiao}"
+            )
+        ),
+        dict,
+    )
+    if not existe:
+        comandos.append(
+            _gcloud(
+                ctx,
+                "scheduler",
+                "jobs",
+                "create",
+                "http",
+                TAREFA_DO_BACKUP,
+                f"--location={ctx.regiao}",
+                f"--schedule={AGENDA_DO_BACKUP[0]}",
+                "--time-zone=Etc/UTC",
+                f"--uri={url}{ROTA_DO_BACKUP[0]}",
+                "--http-method=POST",
+                f"--oidc-service-account-email={ctx.conta(AGENDADOR)}",
+                f"--oidc-token-audience={url}",
+                f"--attempt-deadline={ESPERA_DA_RODADA}",
+                "--max-retry-attempts=0",
+                "--description=Viking: o backup diário no Drive do dono",
+            )
+        )
+    comandos.append(
+        _gcloud(ctx, "scheduler", "jobs", "run", TAREFA_DO_BACKUP, f"--location={ctx.regiao}")
+    )
+    return comandos
+
+
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
     Passo(
@@ -715,6 +792,17 @@ PASSOS = (
         irreversivel=(
             "o motor passa a enviar sozinho, a cada minuto, o e-mail dos lembretes vencidos, só "
             "para a conta do dono e no limite de 20 em 24 h; custa de US$ 0 a 0,10 por mês"
+        ),
+    ),
+    Passo(
+        "backup",
+        "o backup diário no Drive do dono, com o Mac desligado (depois do token do Drive)",
+        _m_backup,
+        _c_backup,
+        depende=("agendador",),
+        irreversivel=(
+            "o motor passa a criar, todo dia, um arquivo na pasta 'Viking — backups' do Drive "
+            "do dono (nunca apaga); roda uma vez agora; custa de US$ 0 a 0,10 por mês"
         ),
     ),
 )
@@ -1053,11 +1141,13 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     segredos = requests.get(f"{url}/fumaca/segredos", headers=cabecalho, timeout=60)
     lidos = segredos.json() if segredos.status_code == 200 else {}
     com_gmail = any(s.nome == "viking-gmail" for s in montados)
+    com_drive = any(s.nome == "viking-drive" for s in montados)
     resultado.append(
         Prova(
             "viking-cli@: /fumaca/segredos (a chave lê, os tokens renovam; o do Gmail "
-            f"{'montado' if com_gmail else 'ainda não subiu: sem ele'})",
-            lidos == {"gemini": True, "agenda": True, "gmail": com_gmail},
+            f"{'montado' if com_gmail else 'ainda não subiu: sem ele'}, o do Drive "
+            f"{'montado' if com_drive else 'ainda não subiu: sem ele'})",
+            lidos == {"gemini": True, "agenda": True, "gmail": com_gmail, "drive": com_drive},
             f"HTTP {segredos.status_code} {lidos}",
         )
     )
@@ -1076,6 +1166,18 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
             f"envio_de_lembretes: {envio} (esperado {esperado})",
         )
     )
+    # O backup (Sessão 11c, D63): o `/versao` diz se o token do Drive está montado e, com o passo
+    # `backup` pronto, o último backup tem menos de 48 h (o passo roda um na hora em que liga).
+    dados_versao = versao.json() if versao.status_code == 200 else {}
+    resultado.append(
+        Prova(
+            "viking-cli@: /versao diz se o backup está ligado",
+            dados_versao.get("backup") is com_drive,
+            f"backup: {dados_versao.get('backup')} (esperado {com_drive})",
+        )
+    )
+    if com_drive and _m_backup(ctx).pronto:
+        resultado.append(_prova_do_ultimo_backup(dados_versao.get("backup_em")))
     resultado.extend(_provas_das_portas(ctx, url, cabecalho))
 
     filtro = (
@@ -1085,6 +1187,19 @@ def provas(ctx: Contexto, sha: str, montados: tuple[Segredo, ...] = SEGREDOS) ->
     erros = _ler(_gcloud(ctx, "logging", "read", filtro, "--freshness=30m", "--limit=20"))
     resultado.append(Prova("log sem erro (30 min)", not erros, f"{len(erros or [])} erro(s)"))
     return resultado
+
+
+def _prova_do_ultimo_backup(backup_em: object, agora: datetime | None = None) -> Prova:
+    """O último backup no Drive tem menos de 48 h (a mesma régua do aviso do chat)."""
+    agora = agora or datetime.now(UTC)
+    try:
+        ultimo = datetime.fromisoformat(backup_em) if isinstance(backup_em, str) else None
+    except ValueError:
+        ultimo = None
+    recente = ultimo is not None and agora - ultimo <= timedelta(hours=48)
+    return Prova(
+        "viking-cli@: o último backup tem menos de 48 h", recente, f"backup_em: {backup_em}"
+    )
 
 
 def _provas_das_portas(ctx: Contexto, url: str, cabecalho_do_cli: dict) -> list[Prova]:
@@ -1106,6 +1221,12 @@ def _provas_das_portas(ctx: Contexto, url: str, cabecalho_do_cli: dict) -> list[
     }
     pedidos = [
         ("viking-cli@: /maos/pegar recusado pelo motor", cabecalho_do_cli, "/maos/pegar", 403),
+        (
+            "viking-cli@: /tarefas/backup recusado pelo motor",
+            cabecalho_do_cli,
+            "/tarefas/backup",
+            403,
+        ),
         ("viking-maos@: /versao recusado pelo motor", maos, "/versao", 403),
         (
             "viking-maos@: /maos/pegar entra (pedido torto: 400, nada pego)",

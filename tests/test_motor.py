@@ -305,10 +305,11 @@ def test_fumaca_dos_segredos_so_diz_se_le(cliente, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "GEMINI_CHAVE_ARQUIVO", str(chave))
     monkeypatch.setattr(config, "AGENDA_TOKEN_ARQUIVO", "")
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "")
+    monkeypatch.setattr(config, "DRIVE_TOKEN_ARQUIVO", "")
     monkeypatch.setattr(config, "_SEGREDOS", {})
     resposta = _get(cliente, "/fumaca/segredos", _token())
     assert resposta.status_code == 200
-    assert resposta.json() == {"gemini": True, "agenda": False, "gmail": False}
+    assert resposta.json() == {"gemini": True, "agenda": False, "gmail": False, "drive": False}
     assert "AIza" not in resposta.text
 
 

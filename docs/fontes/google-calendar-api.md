@@ -5,6 +5,12 @@
   com servidor local para o redirect; token cacheado em disco e renovado automaticamente. Desde a
   Sessão Gmail o fluxo mora em `lifeos/google_auth.py`, compartilhado com o Gmail (que tem token
   próprio) — ver `docs/fontes/gmail-api.md`, "Login compartilhado".
+  Desde a Sessão 11c (D63), o backup tem o terceiro token, o do Drive
+  (`secrets/google_token_drive.json`, escopo `drive.file`, que só enxerga os arquivos que o Viking
+  cria e não é escopo sensível), feito no Mac por `viking backup --login`. O cliente OAuth mora
+  noutro projeto do dono, e a API do Drive já estava ligada lá (medido em 2026-10-06, `gcloud
+  services list --enabled`). O token da agenda de 2026-09-20 ainda renovava em 2026-10-06: o app
+  não está no modo "teste", que venceria os tokens em 7 dias.
 - **Escopo usado:** operações sobre `calendarId='primary'` — listar próximos eventos, listar por
   data/intervalo (no fuso civil configurado por `VIKING_TIMEZONE`), criar evento (com hora ou dia
   inteiro), deletar por ID (com conferência de título), reagendar por ID (idem).

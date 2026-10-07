@@ -19,7 +19,7 @@ do bloco de não confiável (`nao_confiavel.bloco`).
 # quebrando toda chamada que passe argumento (`isinstance() arg 2 must be a type...`).
 import re
 
-from lifeos import ao_dono, confirmacao
+from lifeos import ao_dono, config, confirmacao
 from lifeos.browser import _redacao
 from lifeos.config import TIMEZONE
 from lifeos.gmail import envio, formato, limpeza, service
@@ -55,10 +55,7 @@ def mensagem_de_erro(exc: service.ErroGmail) -> str:
     if isinstance(exc, service.LimiteDoGmail):
         return f"Parei: {detalhe}. Nada foi perdido."
     if isinstance(exc, service.SemTerminal):
-        return (
-            f"NÃO preparei nada: {detalhe}. O código só se mostra num terminal interativo: "
-            "peça ao usuário para abrir o `viking chat` num terminal."
-        )
+        return _sem_terminal(detalhe, "A limpeza")
     if isinstance(exc, service.SemLogin):
         return (
             f"Não consegui entrar no Gmail ({detalhe}). No Mac do usuário, "
@@ -346,12 +343,23 @@ def texto_do_envio(pedido: envio.Pedido) -> str:
     return "\n".join(linhas)
 
 
+def _sem_terminal(detalhe: str, o_que: str) -> str:
+    """A recusa sem terminal interativo, já com as palavras para o dono: o modelo repete este texto
+    a ele (visto no Mac em 2026-10-06, quando dizia "peça ao usuário"). O comando citado é o do
+    chat em que ele está: na nuvem, `viking chat --nuvem`."""
+    comando = "viking chat --nuvem" if config.STORE == "firestore" else "viking chat"
+    return (
+        f'NÃO preparei nada: {detalhe}. Diga ao dono: "{o_que} só se aprova com um código, que '
+        f'só aparece num terminal interativo. Abra `{comando}` num terminal e peça de novo."'
+    )
+
+
 def mensagem_de_erro_do_envio(exc: service.ErroGmail) -> str:
     detalhe = _redacao.limpar_controles(str(exc))
     if isinstance(exc, envio.LimiteDiario):
         return f"NÃO enviei: {detalhe}. Isso protege a caixa dele de um laço."
     if isinstance(exc, envio.SemTerminal):
-        return f"NÃO preparei nada: {detalhe}. O envio a outra pessoa só se aprova no terminal."
+        return _sem_terminal(detalhe, "O envio a outra pessoa")
     if isinstance(exc, service.EntradaInvalida) and "endereco" in exc.dados:
         return f"NÃO preparei nada: {detalhe} ({exc.dados['endereco']!r})."
     if isinstance(exc, service.EntradaInvalida) and "ID" in str(exc):

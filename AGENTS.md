@@ -130,15 +130,25 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     aprovação chegar ao modelo e aprova pelo mesmo laço do Mac, o teto, o prazo do turno, o
     campo `ao_dono` da resposta, e só as tools da nuvem: `SO_NO_MAC`
     diz o que fica no Mac e por quê, e um teste exige que toda tool esteja numa das duas)
+  - `backup/` — o backup diário no Drive do dono (Sessão 11c, D63): `formato.py` (o arquivo
+    versionado: lembretes no formato da migração, o registro de ações dos 30 dias inteiro, os
+    gastos do teto; contagens e a impressão de cada lembrete; `ler` confere tudo e `montar` lê de
+    volta antes de devolver), `drive.py` (escopo `drive.file`; **só cria, lista e baixa**, nunca
+    apaga, e uma régua lê o código; o envio dentro de `registro.acao("backup.drive")`),
+    `rodada.py` (a rodada da nuvem: `estado/backup` só depois de o Drive confirmar),
+    `conferir.py` (`viking backup --conferir`: restaura num `viking.db` temporário e compara com a
+    nuvem) e `restaurar.py` (`viking backup --restaurar`: o desastre, em lotes pelo motor, nunca
+    sobrescreve)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
     pelo IAM e, na primeira instrução de toda rota, pela verificação do token (assinatura,
     audience, e o e-mail na lista **daquela rota**, `QUEM_FALA`: o `viking-cli@` no chat e nos
     lembretes, o `viking-maos@` só em `/maos/*`, o `viking-agendador@` só em
-    `/tarefas/lembretes`; Sessão 11), com `POST /chat` (o turno, sem estado: a conversa vai e
-    volta no corpo, até 4 MiB), as rotas dos lembretes do Mac migrado (`/lembretes/criar`,
-    `/concluir`, `/importar`, `/impressoes`), as das mãos e a do envio, e fumaças grátis
+    `/tarefas/lembretes` e `/tarefas/backup`; Sessão 11), com `POST /chat` (o turno, sem estado: a
+    conversa vai e volta no corpo, até 4 MiB), as rotas dos lembretes do Mac migrado
+    (`/lembretes/criar`, `/concluir`, `/importar`, `/impressoes`), as das mãos, a do envio, as do
+    backup (`/tarefas/backup`, e `/backup/importar` do `cli@`; Sessão 11c) e fumaças grátis
     (`/fumaca/vencidos`, `/registro`, `/segredos`);
     `cliente.py` é o terminal do Mac falando com ele (`viking lembretes --nuvem`), com o token do
     `viking-cli@` pedido pelo login do Google Cloud do dono; `chat_cliente.py` é o `viking chat
@@ -149,11 +159,13 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
 - `scripts/nuvem.py` — a infraestrutura e o deploy do GCP: sem flag só lê e roda as provas; com
   `--executar` cria um passo ou publica (só um commit limpo, no GitHub e com CI verde). Todo
   `gcloud` leva o `--project` do Viking (o login do VPS é o do dono e alcança os outros projetos
-  dele). `segredo NOME` sobe a chave do Gemini, o token da agenda (no VPS) ou o do Gmail (no
-  Mac, que é onde ele mora; o subcomando exige só `VIKING_NUVEM_PROJETO`) para o Secret Manager
+  dele). `segredo NOME` sobe a chave do Gemini, o token da agenda (no VPS) ou os do Gmail e do
+  Drive (no Mac, que é onde eles moram; o subcomando exige só `VIKING_NUVEM_PROJETO`) para o
+  Secret Manager
   pela entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
   quando pedido). O passo `agendador` (Sessão 11) liga o Cloud Scheduler que dispara o envio de
-  lembretes a cada minuto, só depois do portão da 10c. `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
+  lembretes a cada minuto, só depois do portão da 10c; o passo `backup` (Sessão 11c) liga a
+  tarefa `viking-backup` (todo dia às 09:00 UTC) e roda uma na hora. `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `tests/` — pytest para `src/lifeos`.
 - `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
@@ -187,7 +199,7 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
 - `archive/` — trilhas pausadas mas preservadas (código real, não só docs). Hoje:
   `wristband-fail-test/` (Arduino Uno R3 → Serial → Windows-MCP, funcional, ver seu próprio README).
 - `secrets/` — gitignored (exceto `.gitkeep`): credenciais OAuth reais (`google_credentials.json`,
-  `google_token.json`, `google_token_gmail.json`). Nunca commitar.
+  `google_token.json`, `google_token_gmail.json`, `google_token_drive.json`). Nunca commitar.
 - `data/` — local, gitignored exceto `.gitkeep`; inclui `viking.db` (lembretes, registro de
   ações e confirmações; `lifeos/banco.py`) em runtime e, depois de uma migração, a cópia de antes
   (`viking.db.antes-da-migracao-N`, que o Viking nunca apaga).
@@ -264,6 +276,11 @@ viking lembretes                # os pendentes; --enviar manda por e-mail (para 
                                # --migrar conta e confere (ensaio), e com --executar copia
                                # para a nuvem (só com o envio da nuvem ligado); depois disso
                                # os lembretes do Mac moram na nuvem e o --enviar recusa
+viking backup                   # quando foi o último backup no Drive (pela nuvem); --login
+                               # faz o login do Drive (drive.file) deste Mac; --conferir
+                               # restaura o último num banco vazio temporário e compara com
+                               # a nuvem (1 = divergiu); --restaurar ARQUIVO é o ensaio do
+                               # desastre, e com --executar copia para a nuvem sem sobrescrever
 viking financas --saldo         # o texto que o chat recebe, sem o Gemini (também --gastos,
                                # --buscar TEXTO, --valor V, --fatura; período com --desde/--ate)
 ```
@@ -333,8 +350,9 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   nuvem, no Mac e no VPS)/`VIKING_NUVEM_FATURAMENTO`, `_ORCAMENTO` e `_FUSO` (só no VPS, para
   `scripts/nuvem.py`; o fuso é o que o motor recebe, e troca quando o dono se mudar)/`VIKING_STORE`
   (`sqlite` ou `firestore`, este só no motor)/`VIKING_TETO_GEMINI_MES` e `_DIA` (o teto do chat
-  da nuvem, US$ 10 e 1)/`VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO` e
-  `VIKING_GMAIL_TOKEN_ARQUIVO` (só no
+  da nuvem, US$ 10 e 1)/`VIKING_DRIVE_TOKEN_PATH` (o token do Drive do backup, Sessão
+  11c)/`VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO`, `VIKING_GMAIL_TOKEN_ARQUIVO` e
+  `VIKING_DRIVE_TOKEN_ARQUIVO` (só no
   motor, postos pelo deploy: os arquivos do volume do Secret Manager). Copiar de `.env.example`. Caminhos relativos
   (`VIKING_DB_PATH`, `VIKING_JEV_DIR` etc.) ancoram em `REPO_ROOT`, não no diretório de onde
   `viking` foi chamado.

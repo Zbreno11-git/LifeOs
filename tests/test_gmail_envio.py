@@ -402,3 +402,23 @@ def test_email_do_viking_lido_de_volta_vem_marcado(caixa):
     (lido,) = service.buscar("from:dono", 5).emails
     assert lido.do_viking
     assert not service.buscar("from:ana", 5).emails[0].do_viking
+
+
+@pytest.mark.parametrize(
+    ("store", "comando"), [("sqlite", "`viking chat`"), ("firestore", "`viking chat --nuvem`")]
+)
+def test_a_recusa_sem_terminal_fala_com_o_dono_e_cita_o_chat_dele(monkeypatch, store, comando):
+    """Visto no Mac em 2026-10-06: o modelo repetia "peça ao usuário para abrir o `viking chat`"
+    no chat da nuvem. O texto já vem com as palavras para o dono e o comando de onde ele está."""
+    from lifeos import config
+    from lifeos.gmail import service, tools
+
+    monkeypatch.setattr(config, "STORE", store)
+    textos = [
+        tools.mensagem_de_erro(service.SemTerminal("sem terminal")),
+        tools.mensagem_de_erro_do_envio(envio.SemTerminal("sem terminal")),
+    ]
+    for texto in textos:
+        assert "Diga ao dono" in texto and f"Abra {comando} num terminal" in texto
+        assert "usuário" not in texto
+    assert "A limpeza" in textos[0] and "O envio a outra pessoa" in textos[1]

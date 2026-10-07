@@ -973,10 +973,92 @@ def test_a_tarefa_do_agendador_chama_so_a_rota_do_envio_com_oidc(nuvem, ctx, mon
     assert not any(_verbo(c) in _ESCRITAS for c in gravador.comandos)  # montar não escreve
 
 
-def test_o_agendador_e_o_ultimo_passo_e_sem_flag_nada_e_criado(nuvem):
+def test_o_agendador_vem_antes_do_backup_e_sem_flag_nada_e_criado(nuvem):
     (passo,) = [p for p in nuvem.PASSOS if p.nome == "agendador"]
-    assert nuvem.PASSOS[-1] is passo and "contas" in passo.depende
+    assert nuvem.PASSOS[-2] is passo and "contas" in passo.depende
     assert "só para a conta do dono" in passo.irreversivel and "US$" in passo.irreversivel
+
+
+# --- o passo do backup (Sessão 11c, D63) --------------------------------------------------------
+
+
+def _tarefa_do_backup(**mudancas):
+    tarefa = _tarefa(schedule="0 9 * * *")
+    tarefa["httpTarget"] = {**tarefa["httpTarget"], "uri": f"{URL_DO_MOTOR}/tarefas/backup"}
+    tarefa.update(mudancas)
+    return tarefa
+
+
+def _backup(versoes=1, tarefa=None):
+    gravador = _agendador(tarefa=None)
+    gravador.respostas["secrets versions list viking-drive"] = [{"name": "v"}] * versoes
+    if tarefa is not None:
+        gravador.respostas["scheduler jobs describe viking-backup"] = tarefa
+    return gravador
+
+
+@pytest.mark.parametrize(
+    ("estado", "pronto", "trecho"),
+    [
+        ({"versoes": 0}, False, "o token do Drive ainda não subiu"),
+        ({}, False, "falta a tarefa"),
+        ({"tarefa": _tarefa_do_backup(schedule="* * * * *")}, False, "todo dia às 09:00 UTC"),
+        ({"tarefa": _tarefa()}, False, "POST na rota do backup"),
+        ({"tarefa": _tarefa_do_backup(state="PAUSED")}, False, "ligada"),
+        ({"tarefa": _tarefa_do_backup()}, True, "só na rota do backup"),
+    ],
+)
+def test_o_backup_so_esta_pronto_com_o_token_e_a_tarefa_certa(
+    nuvem, ctx, monkeypatch, estado, pronto, trecho
+):
+    monkeypatch.setattr(nuvem, "_rodar", _backup(**estado))
+    medido = nuvem._m_backup(ctx)
+    assert medido.pronto is pronto and trecho in medido.detalhe
+
+
+def test_a_tarefa_do_backup_chama_so_a_rota_dele_e_roda_uma_vez(nuvem, ctx, monkeypatch):
+    gravador = _backup()
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    pronto = nuvem.Contexto(**{**ctx.__dict__, "prontos": frozenset({"apis", "agendador"})})
+    criar, rodar = nuvem._c_backup(pronto)
+    assert criar[1:6] == ["scheduler", "jobs", "create", "http", "viking-backup"]
+    conta = "viking-agendador@viking-teste.iam.gserviceaccount.com"
+    for opcao in (
+        "--schedule=0 9 * * *",
+        "--time-zone=Etc/UTC",
+        f"--uri={URL_DO_MOTOR}/tarefas/backup",
+        "--http-method=POST",
+        f"--oidc-service-account-email={conta}",
+        f"--oidc-token-audience={URL_DO_MOTOR}",
+        "--max-retry-attempts=0",
+    ):
+        assert opcao in criar, opcao
+    assert rodar[1:5] == ["scheduler", "jobs", "run", "viking-backup"]
+    assert not any(_verbo(c) in _ESCRITAS for c in gravador.comandos)  # montar não escreve
+
+
+def test_com_a_tarefa_ja_criada_o_passo_so_roda_o_backup(nuvem, ctx, monkeypatch):
+    monkeypatch.setattr(nuvem, "_rodar", _backup(tarefa=_tarefa_do_backup()))
+    pronto = nuvem.Contexto(**{**ctx.__dict__, "prontos": frozenset({"apis", "agendador"})})
+    (rodar,) = nuvem._c_backup(pronto)
+    assert rodar[1:5] == ["scheduler", "jobs", "run", "viking-backup"]
+
+
+def test_o_backup_e_o_ultimo_passo_e_diz_que_nunca_apaga(nuvem):
+    passo = nuvem.PASSOS[-1]
+    assert passo.nome == "backup" and passo.depende == ("agendador",)
+    assert "nunca apaga" in passo.irreversivel and "US$" in passo.irreversivel
+
+
+def test_a_prova_do_ultimo_backup_e_a_regua_de_48_horas(nuvem):
+    from datetime import UTC, datetime, timedelta
+
+    agora = datetime(2026, 10, 9, 12, tzinfo=UTC)
+    assert nuvem._prova_do_ultimo_backup((agora - timedelta(hours=47)).isoformat(), agora).passou
+    assert not nuvem._prova_do_ultimo_backup(
+        (agora - timedelta(hours=49)).isoformat(), agora
+    ).passou
+    assert not nuvem._prova_do_ultimo_backup(None, agora).passou
 
 
 # --- o token do Drive sobe do Mac, como o do Gmail (Sessão 11c, D63) ----------------------------

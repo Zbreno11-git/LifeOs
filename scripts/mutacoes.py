@@ -2425,8 +2425,8 @@ MUTACOES = [
     Mutacao(
         "nuvem: a tarefa do agendador com qualquer frequência",
         "scripts/nuvem.py",
-        '        "a cada minuto": tarefa.get("schedule") == "* * * * *",\n',
-        '        "a cada minuto": True,\n',
+        '        agenda[1]: tarefa.get("schedule") == agenda[0],\n',
+        "        agenda[1]: True,\n",
         "tests/test_nuvem_script.py::test_o_agendador_so_esta_pronto_com_tudo_certo",
     ),
     Mutacao(
@@ -2439,8 +2439,14 @@ MUTACOES = [
     Mutacao(
         "nuvem: a tarefa do agendador criada sem audience",
         "scripts/nuvem.py",
-        '            f"--oidc-token-audience={url}",\n',
-        '            "--oidc-token-audience=",\n',
+        '            f"--oidc-token-audience={url}",\n'
+        '            f"--attempt-deadline={ESPERA_DA_RODADA}",\n'
+        '            "--max-retry-attempts=0",\n'
+        '            "--description=Viking: envia por e-mail os lembretes vencidos",\n',
+        '            "--oidc-token-audience=",\n'
+        '            f"--attempt-deadline={ESPERA_DA_RODADA}",\n'
+        '            "--max-retry-attempts=0",\n'
+        '            "--description=Viking: envia por e-mail os lembretes vencidos",\n',
         "tests/test_nuvem_script.py::test_a_tarefa_do_agendador_chama_so_a_rota_do_envio_com_oidc",
     ),
     Mutacao(
@@ -2626,6 +2632,34 @@ MUTACOES = [
         "    if agora - ultimo > BACKUP_VELHO:\n",
         "    if agora - ultimo > timedelta(hours=24):\n",
         "tests/test_chat_nuvem_cliente.py::test_o_aviso_do_backup_vem_so_depois_de_48_horas",
+    ),
+    Mutacao(
+        "nuvem: a tarefa do backup a cada minuto",
+        "scripts/nuvem.py",
+        '                f"--schedule={AGENDA_DO_BACKUP[0]}",\n',
+        '                "--schedule=* * * * *",\n',
+        "tests/test_nuvem_script.py::test_a_tarefa_do_backup_chama_so_a_rota_dele_e_roda_uma_vez",
+    ),
+    Mutacao(
+        "nuvem: o backup pronto sem o token do Drive",
+        "scripts/nuvem.py",
+        '    if not _versoes(ctx, "viking-drive"):\n',
+        "    if False:\n",
+        "tests/test_nuvem_script.py::test_o_backup_so_esta_pronto_com_o_token_e_a_tarefa_certa",
+    ),
+    Mutacao(
+        "nuvem: a prova do último backup aceita qualquer idade",
+        "scripts/nuvem.py",
+        "    recente = ultimo is not None and agora - ultimo <= timedelta(hours=48)\n",
+        "    recente = True\n",
+        "tests/test_nuvem_script.py::test_a_prova_do_ultimo_backup_e_a_regua_de_48_horas",
+    ),
+    Mutacao(
+        "gmail: a recusa sem terminal cita sempre o chat do Mac",
+        "src/lifeos/gmail/tools.py",
+        '    comando = "viking chat --nuvem" if config.STORE == "firestore" else "viking chat"\n',
+        '    comando = "viking chat"\n',
+        "tests/test_gmail_envio.py::test_a_recusa_sem_terminal_fala_com_o_dono_e_cita_o_chat_dele",
     ),
 ]
 

@@ -113,6 +113,16 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
   200 em 6,1 s, 9.969 tokens, ~US$ 0,0034 (a 10c estimava um teto de ~+5.000 tokens pelas 7
   tools do Gmail: a pergunta da agenda na 10b deu 3.982).
 
+## O backup no Drive (Sessão 11c, D63)
+
+- **Uma 2ª tarefa do Scheduler** (`viking-backup`, `0 9 * * *` em `Etc/UTC`, como o
+  `viking-agendador@`, só na rota `/tarefas/backup`). O preço lido em 2026-10-01 vale: US$ 0,10
+  por tarefa por mês, com 3 grátis por **conta de faturamento**. Quantas os outros projetos do
+  dono usam na mesma conta não foi medido, então a conta vai de US$ 0 a 0,10/mês.
+- **O segredo `viking-drive`** é o 4º com versão ativa (6 grátis por mês, lido em 2026-09-30).
+- **Leituras:** uma rodada lê os lembretes, as ações dos 30 dias e os meses de gasto: centenas de
+  documentos por dia, contra as 50 mil grátis. Não medido no ar ainda.
+
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find

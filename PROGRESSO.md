@@ -61,13 +61,25 @@
   - o aviso de 48 h na abertura do `viking chat --nuvem`.
   - Medido: `2476 passed`; ruff, format e mypy (40) limpos; mutações `7 · mortas pelo teste
     esperado: 7`.
-- C4 e C5 ⬜.
+- C4 ✅ (2026-10-07, ~04:10Z):
+  - o passo `backup` no `scripts/nuvem.py` (a tarefa `viking-backup`, `0 9 * * *` UTC, e um
+    `jobs run` ao ligar; `_tarefa_certa` parametrizada);
+  - as provas do deploy: `/fumaca/segredos` com `drive`, `/versao` `backup` coerente, `cli@`
+    recusado em `/tarefas/backup`, e o último backup com menos de 48 h com o passo pronto;
+  - as recusas sem terminal do Gmail falam com o dono e citam `viking chat --nuvem` na nuvem;
+  - os docs (`AGENTS.md`, `.env.example`, as fontes do GCP e do OAuth).
+  - Medido: `2488 passed`; ruff, format, mypy (40), gitleaks e `uv lock --check` limpos; a
+    varredura de controles nos 11 arquivos; mutações `7 · mortas pelo teste esperado: 7` (4 novas
+    e 3 reancoradas).
+- C5 ⬜.
 
-**Próximo passo exato:** o C4. Em `scripts/nuvem.py`, o passo `backup` (a tarefa
-`viking-backup`, `0 9 * * *` UTC, POST `/tarefas/backup`, OIDC do `agendador@`, e com
-`--executar` um `jobs run`). As provas do deploy: `/fumaca/segredos` com `drive`, `/versao`
-`backup` coerente com o montado, `cli@` recusado em `/tarefas/backup`, `backup_em` com menos de
-48 h com o passo pronto. Os textos do Gmail sem terminal (`gmail/tools.py:57-60` e `:353`).
+**Próximo passo exato:** o C5. A rodada inteira de mutações e o `docker build` em background, as
+duas passadas de revisão, o push e o CI pelo SHA. Depois, pedir os oks na hora:
+1. `--executar segredos`, que cria o `viking-drive` vazio;
+2. o deploy;
+3. o roteiro do Mac (o login, o segredo);
+4. o `--executar backup`;
+5. o `--conferir` no Mac.
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;

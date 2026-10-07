@@ -182,13 +182,14 @@ async def fumaca_registro(request: Request) -> JSONResponse:
 
 
 def _segredos() -> dict[str, bool]:
-    """A chave do Gemini lê e os tokens da agenda e do Gmail renovam (o Gmail desde a 10c). Nenhuma
-    chamada paga nem à API do Gmail; nenhum valor sai."""
+    """A chave do Gemini lê e os tokens da agenda, do Gmail (desde a 10c) e do Drive (desde a 11c)
+    renovam. Nenhuma chamada paga nem às APIs; nenhum valor sai."""
     from lifeos import google_auth
+    from lifeos.backup import drive
     from lifeos.calendar import oauth
     from lifeos.gmail import oauth as gmail_oauth
 
-    resposta = {"gemini": False, "agenda": False, "gmail": False}
+    resposta = {"gemini": False, "agenda": False, "gmail": False, "drive": False}
     try:
         resposta["gemini"] = bool(config.gemini_chave())
     except RuntimeError:
@@ -203,6 +204,11 @@ def _segredos() -> dict[str, bool]:
         resposta["gmail"] = bool(creds.valid)
     except (RuntimeError, ValueError) as exc:
         log.warning("segredo do gmail: %s", type(exc).__name__)
+    try:  # o do Drive desde a 11c (D63): renova, sem chamar a API do Drive
+        creds = google_auth.credenciais_da_nuvem(drive.SCOPES, config.DRIVE_TOKEN_PATH)
+        resposta["drive"] = bool(creds.valid)
+    except (RuntimeError, ValueError) as exc:
+        log.warning("segredo do drive: %s", type(exc).__name__)
     return resposta
 
 
