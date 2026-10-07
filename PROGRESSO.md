@@ -57,11 +57,17 @@ token → 401 "sem token", com token falso → 401 "token recusado". Página de 
 `docs/fontes/gcp-cloud-run-firestore.md`, `Dockerfile` (confere `financas.py` na imagem). A
 suíte `2635 passed`, 0 pulados; ruff, format (164), mypy (44), gitleaks e `uv lock --check` ok.
 
-**Próximo passo exato:** a rodada inteira das mutações em background (sem `timeout`, a saída num
-arquivo, nada editado); em paralelo, o **ok 1** do dono → `python scripts/nuvem.py --executar
-financas` (a conta, o segredo vazio e a leitura; grátis); depois o roteiro do Mac 1 (o segredo
-`viking-pluggy` pelo Mac), o **ok 2** (deploy), o **ok 3** (`prova-financas`) e o roteiro do Mac
-2 (`cmp` local × nuvem).
+**Feito depois (2026-10-07):** a rodada inteira das mutações: **400 de 400 mortas** pelo teste
+esperado (19:32–20:05Z). **Ok 1 do dono → `--executar financas`** às ~20:05Z: a conta e o
+segredo criados, mas o `add-iam-policy-binding` deu 400 "Service account … does not exist" (a
+conta recém-criada ainda não estava no IAM); rodado de novo, só a leitura, ✅ "a conta e o segredo
+prontos; viking-pluggy vazio". Conserto de estrutura: `_rodar_esperando_a_conta` (todo
+`add-iam-policy-binding` de todo passo espera 15/30/45 s nesse erro e só nele), 3 testes, 1
+mutação morta. A suíte `2638 passed`.
+
+**Próximo passo exato:** o roteiro do Mac 1 (o dono): `git pull`, a suíte, `python
+scripts/nuvem.py segredo viking-pluggy` e depois com `--executar`. Em seguida, no VPS, `python
+scripts/nuvem.py` → 13 ✅ e o `deploy` só-leitura (o plano com o serviço `financas`) → o **ok 2**.
 
 **Depende do dono:** os oks do C4, na ordem: o passo `financas`, o segredo no Mac, o deploy, a
 `prova-financas`; e o roteiro do Mac.

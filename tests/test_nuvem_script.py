@@ -1424,3 +1424,36 @@ def test_as_provas_das_financas_reprovam_o_errado(nuvem, ctx, monkeypatch, caso,
     provas_, _ = _provas_das_financas(nuvem, ctx, monkeypatch, **mudanca)
     (achada,) = [p for n, p in provas_.items() if n.startswith(prova)]
     assert not achada.passou, caso
+
+
+def test_dar_papel_a_conta_recem_criada_espera_a_propagacao(nuvem, monkeypatch):
+    """Medido no passo `financas` (2026-10-07): o IAM ainda não enxergava a conta recém-criada."""
+    respostas = [
+        subprocess.CompletedProcess([], 1, "", "ERROR: Service account x does not exist.."),
+        subprocess.CompletedProcess([], 0, "", ""),
+    ]
+    chamadas, esperas = [], []
+    monkeypatch.setattr(nuvem, "_rodar", lambda c: chamadas.append(c) or respostas.pop(0))
+    monkeypatch.setattr(nuvem.time, "sleep", esperas.append)
+    comando = ["gcloud", "secrets", "add-iam-policy-binding", "s", "--project=viking-teste"]
+    assert nuvem._rodar_esperando_a_conta(comando).returncode == 0
+    assert len(chamadas) == 2 and esperas == [15]
+
+
+@pytest.mark.parametrize(
+    ("comando", "erro"),
+    [
+        (["gcloud", "secrets", "add-iam-policy-binding", "s"], "PERMISSION_DENIED"),
+        (["gcloud", "secrets", "create", "s"], "Service account x does not exist"),
+    ],
+)
+def test_outro_erro_ou_outro_comando_nao_espera(nuvem, monkeypatch, comando, erro):
+    chamadas = []
+    monkeypatch.setattr(
+        nuvem,
+        "_rodar",
+        lambda c: chamadas.append(c) or subprocess.CompletedProcess(c, 1, "", erro),
+    )
+    monkeypatch.setattr(nuvem.time, "sleep", lambda _s: pytest.fail("esperou"))
+    assert nuvem._rodar_esperando_a_conta(comando).returncode == 1
+    assert len(chamadas) == 1

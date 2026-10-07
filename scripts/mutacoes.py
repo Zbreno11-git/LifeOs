@@ -2900,6 +2900,13 @@ MUTACOES = [
         '            f"serviceAccount:{ctx.conta(MOTOR)}" in quem,\n',
         "tests/test_nuvem_script.py::test_as_provas_das_financas_reprovam_o_errado",
     ),
+    Mutacao(
+        "nuvem: o papel da conta recém-criada não espera a propagação",
+        "scripts/nuvem.py",
+        '        if resultado.returncode == 0 or "does not exist" not in resultado.stderr:\n',
+        "        if True:\n",
+        "tests/test_nuvem_script.py::test_dar_papel_a_conta_recem_criada_espera_a_propagacao",
+    ),
 ]
 
 

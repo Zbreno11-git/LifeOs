@@ -1889,6 +1889,25 @@ def medir(ctx: Contexto) -> list[tuple[Passo, Estado]]:
     return medidos
 
 
+# Uma conta de serviço recém-criada leva um tempo para o IAM a enxergar: o `add-iam-policy-binding`
+# logo depois do `create` deu 400 "Service account … does not exist" (passo `financas`, 2026-10-07
+# 20:05Z; na segunda vez passou). Só esse erro, só nesse comando, espera e tenta de novo.
+ESPERAS_DA_CONTA_NOVA_S = (15, 30, 45)
+
+
+def _rodar_esperando_a_conta(comando: list[str]):  # o que `_rodar` devolve
+    resultado = _rodar(comando)
+    if "add-iam-policy-binding" not in comando:
+        return resultado
+    for espera in ESPERAS_DA_CONTA_NOVA_S:
+        if resultado.returncode == 0 or "does not exist" not in resultado.stderr:
+            break
+        print(f"   a conta nova ainda não aparece no IAM: de novo em {espera} s")
+        time.sleep(espera)
+        resultado = _rodar(comando)
+    return resultado
+
+
 def main(argv: list[str]) -> int:
     if argv[:1] == ["segredo"]:
         leitor = argparse.ArgumentParser(prog="nuvem.py segredo")
@@ -1931,7 +1950,7 @@ def main(argv: list[str]) -> int:
     (passo,) = [p for p in PASSOS if p.nome == args.executar]
     for comando in passo.comandos(ctx):
         print(f"$ {_legivel(comando)}")
-        resultado = _rodar(comando)
+        resultado = _rodar_esperando_a_conta(comando)
         if resultado.returncode != 0:
             print(resultado.stderr.strip(), file=sys.stderr)
             return 1
