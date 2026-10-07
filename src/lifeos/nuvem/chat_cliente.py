@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import secrets
 import sys
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from lifeos import ao_dono
@@ -63,6 +64,32 @@ def abertura(capacidades: dict[str, Any]) -> str:
     return f"☁️  Viking na nuvem ({lista}). {fora[0].upper()}{fora[1:]}: `viking chat`."
 
 
+# Sem backup há mais que isto, a abertura avisa (resposta do dono, 2026-10-06; D63).
+BACKUP_VELHO = timedelta(hours=48)
+
+
+def aviso_do_backup(capacidades: dict[str, Any], agora: datetime | None = None) -> str | None:
+    """O aviso da abertura quando o backup no Drive está ligado e o último passou de 48 h (ou não
+    houve nenhum). Sem o backup ligado, nada: a abertura não promete o que a nuvem não tem."""
+    if capacidades.get("backup") is not True:
+        return None
+    agora = agora or datetime.now(UTC)
+    texto = capacidades.get("backup_em")
+    try:
+        ultimo = datetime.fromisoformat(texto) if isinstance(texto, str) else None
+    except ValueError:
+        ultimo = None
+    if ultimo is None:
+        return "⚠️  Backup no Drive: nenhum feito ainda (`viking backup` mostra o estado)."
+    if agora - ultimo > BACKUP_VELHO:
+        dias = (agora - ultimo).total_seconds() / 86400
+        return (
+            f"⚠️  Backup no Drive: o último é de há {dias:.1f} dias; a rodada diária pode estar "
+            "falhando (`viking backup`)."
+        )
+    return None
+
+
 def _texto(valor: Any) -> str:
     return limpar_controles(valor) if isinstance(valor, str) else ""
 
@@ -76,6 +103,9 @@ def iniciar(entrada: Any = input) -> int:
         print(f"❌ Nuvem: {exc}.", file=sys.stderr)
         return 1
     print(abertura(capacidades))
+    aviso = aviso_do_backup(capacidades)
+    if aviso:
+        print(aviso)
     print("Digite 'sair' para encerrar.\n")
 
     sessao, numero = secrets.token_hex(4), 0

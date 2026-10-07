@@ -39,6 +39,8 @@ CAMPOS = (
     "gastos",
 )
 COLECOES = ("lembretes", "acoes", "gastos")
+# Um pedido da restauração leva até isto de ações e meses (as ações têm a cópia para desfazer).
+LOTE_DO_BACKUP = 50
 CAMPOS_DO_GASTO = ("mes", "total", "dias")
 _MES = re.compile(r"\d{4}-\d{2}")
 _DIA = re.compile(r"\d{4}-\d{2}-\d{2}")

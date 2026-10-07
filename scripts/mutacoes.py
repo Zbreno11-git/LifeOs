@@ -2578,6 +2578,55 @@ MUTACOES = [
         '            "backup": True,\n',
         "tests/test_backup_rodada.py::test_sem_o_token_do_drive_o_versao_diz_que_nao_ha_backup",
     ),
+    Mutacao(
+        "conferir: restaura no viking.db real, sem o banco temporário",
+        "src/lifeos/backup/conferir.py",
+        "    with banco_temporario():\n",
+        "    if True:\n",
+        "tests/test_backup_conferir.py::test_restaura_inteiro_num_banco_vazio_e_bate_com_a_nuvem",
+    ),
+    Mutacao(
+        "conferir: o diferente vira 'mudou depois' sem conferir quando mudou",
+        "src/lifeos/backup/conferir.py",
+        "        elif nuvem[lembrete_id].mudou_em > backup.criado_em:\n",
+        "        elif True:\n",
+        "tests/test_backup_conferir.py::test_diferente_sem_ter_mudado_depois_e_divergencia",
+    ),
+    Mutacao(
+        "conferir: o que falta no backup vira 'criado depois'",
+        "src/lifeos/backup/conferir.py",
+        "        if estado.criado_em > backup.criado_em:\n",
+        "        if True:\n",
+        "tests/test_backup_conferir.py::test_sumido_da_nuvem_e_faltando_no_backup_sao_divergencia",
+    ),
+    Mutacao(
+        "restaurar: o ensaio grava na nuvem",
+        "src/lifeos/backup/restaurar.py",
+        "    if not executar:\n",
+        "    if False:\n",
+        "tests/test_backup_restaurar.py::test_o_ensaio_conta_e_nao_grava",
+    ),
+    Mutacao(
+        "motor: as mãos restauram um backup",
+        "src/lifeos/nuvem/motor.py",
+        '    "/backup/importar": frozenset({CLI}),\n',
+        '    "/backup/importar": frozenset({CLI, MAOS}),\n',
+        "tests/test_backup_restaurar.py::test_so_o_terminal_do_dono_restaura",
+    ),
+    Mutacao(
+        "motor: a restauração grava a ação sem conferir o formato",
+        "src/lifeos/nuvem/motor.py",
+        '    acoes = [formato.acao_conferida(a, f"ação {n}") for n, a in enumerate(acoes, 1)]\n',
+        "    acoes = list(acoes)\n",
+        "tests/test_backup_restaurar.py::test_lote_torto_e_recusado_sem_gravar",
+    ),
+    Mutacao(
+        "chat: o aviso do backup já com 24 h",
+        "src/lifeos/nuvem/chat_cliente.py",
+        "    if agora - ultimo > BACKUP_VELHO:\n",
+        "    if agora - ultimo > timedelta(hours=24):\n",
+        "tests/test_chat_nuvem_cliente.py::test_o_aviso_do_backup_vem_so_depois_de_48_horas",
+    ),
 ]
 
 

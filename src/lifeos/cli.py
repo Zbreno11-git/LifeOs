@@ -10,6 +10,7 @@ import json
 import subprocess
 import sys
 from dataclasses import asdict
+from pathlib import Path
 
 
 def _doctor() -> int:
@@ -386,9 +387,62 @@ def _migrar(*, executar: bool) -> int:
     return 0
 
 
+def _backup_conferir() -> int:
+    """`viking backup --conferir`: 0 = restaura inteiro e bate com a nuvem; 1 = divergiu ou não
+    deu para conferir (o texto diz o quê)."""
+    from lifeos import google_auth
+    from lifeos.backup import conferir, drive, formato
+    from lifeos.nuvem import cliente
+
+    try:
+        relatorio = conferir.conferir()
+    except conferir.SemBackup as exc:
+        print(f"❌ {exc}.", file=sys.stderr)
+        return 1
+    except (drive.FalhaDoDrive, google_auth.PermissaoNaoConcedida, FileNotFoundError) as exc:
+        print(f"❌ Drive: {exc}", file=sys.stderr)
+        return 1
+    except formato.BackupInvalido as exc:
+        print(f"❌ O último backup não se lê: {exc}.", file=sys.stderr)
+        return 1
+    except cliente.ErroDaNuvem as exc:
+        print(f"❌ Nuvem: {exc}.", file=sys.stderr)
+        return 1
+    print(conferir.texto(relatorio))
+    return 0 if relatorio.certo else 1
+
+
+def _backup_restaurar(caminho: Path, *, executar: bool) -> int:
+    """`viking backup --restaurar ARQUIVO [--executar]`: 0 = ensaio feito ou restaurado e
+    conferido; 1 = não restaurou (o texto diz por quê)."""
+    from lifeos.backup import formato, restaurar
+    from lifeos.nuvem import cliente
+
+    try:
+        relatorio = restaurar.restaurar(caminho, executar=executar)
+    except OSError as exc:
+        print(f"❌ O arquivo não abriu ({type(exc).__name__}).", file=sys.stderr)
+        return 1
+    except formato.BackupInvalido as exc:
+        print(f"❌ O arquivo não é um backup que se lê: {exc}. Nada foi copiado.", file=sys.stderr)
+        return 1
+    except (cliente.ErroDaNuvem, restaurar.NaoRestaurou) as exc:
+        print(f"❌ Não terminei: {exc}.", file=sys.stderr)
+        return 1
+    print(restaurar.texto(relatorio, executou=executar))
+    return 0
+
+
 def _backup(args: argparse.Namespace) -> int:
     """`viking backup` (Sessão 11c, D63): sem opção, o último backup da nuvem (pelo `/versao`);
     `--login`, o login do Drive deste Mac (`drive.file`), conferido lendo a pasta. 1 = falhou."""
+    if args.conferir:
+        return _backup_conferir()
+    if args.restaurar is not None:
+        return _backup_restaurar(Path(args.restaurar).expanduser(), executar=args.executar)
+    if args.executar:
+        print("❌ --executar só vale com --restaurar.", file=sys.stderr)
+        return 1
     if args.login:
         from lifeos import google_auth
         from lifeos.backup import drive
@@ -599,8 +653,22 @@ def main() -> None:
     backup_cli = subparsers.add_parser(
         "backup", help="O backup diário no Drive (padrão: quando foi o último)"
     )
-    backup_cli.add_argument(
+    modo_backup = backup_cli.add_mutually_exclusive_group()
+    modo_backup.add_argument(
         "--login", action="store_true", help="Faz/confere o login do Drive deste Mac e sai"
+    )
+    modo_backup.add_argument(
+        "--conferir",
+        action="store_true",
+        help="Restaura o último backup num banco vazio temporário e compara com a nuvem",
+    )
+    modo_backup.add_argument(
+        "--restaurar",
+        metavar="ARQUIVO",
+        help="Ensaio da restauração de um backup na nuvem (com --executar, restaura)",
+    )
+    backup_cli.add_argument(
+        "--executar", action="store_true", help="Com --restaurar: copia de verdade e confere"
     )
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"

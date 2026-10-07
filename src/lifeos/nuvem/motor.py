@@ -258,6 +258,7 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/lembretes/impressoes": frozenset({CLI}),
     "/tarefas/lembretes": frozenset({AGENDADOR}),
     "/tarefas/backup": frozenset({AGENDADOR}),
+    "/backup/importar": frozenset({CLI}),
 }
 
 
@@ -323,9 +324,60 @@ def _importar(dados: Any) -> dict[str, Any]:
 
 
 def _impressoes() -> dict[str, Any]:
-    from lifeos.reminders import store_firestore
+    """A impressão de cada lembrete e, desde a 11c (D63), quando nasceu e quando mudou pela última
+    vez: o `viking backup --conferir` separa "mudou depois do backup" de uma divergência."""
+    from lifeos.reminders import store_firestore, transporte
 
-    return {"impressoes": store_firestore.impressoes()}
+    lembretes = store_firestore.todos()
+    return {
+        "impressoes": {str(r.id): transporte.impressao(r) for r in lembretes},
+        "instantes": {
+            str(r.id): {"criado": _instante(r.created_at), "mudou": _instante(r.updated_at)}
+            for r in lembretes
+        },
+    }
+
+
+def _importar_do_backup(dados: Any) -> dict[str, Any]:
+    """Um lote de ações e meses de gasto de um backup (`viking backup --restaurar`, D63): tudo
+    conferido pelo formato antes de gravar; nunca sobrescreve."""
+    from lifeos import custos
+    from lifeos.backup import formato
+
+    if not isinstance(dados, dict) or set(dados) != {"acoes", "gastos"}:
+        raise ValueError("o pedido tem de ter acoes e gastos")
+    acoes, gastos = dados["acoes"], dados["gastos"]
+    if not isinstance(acoes, list) or not isinstance(gastos, list):
+        raise ValueError("acoes e gastos têm de ser listas")  # noqa: TRY004 - o motor: 400
+    if not 1 <= len(acoes) + len(gastos) <= formato.LOTE_DO_BACKUP:
+        raise ValueError(f"o lote tem de ter de 1 a {formato.LOTE_DO_BACKUP} itens")
+    acoes = [formato.acao_conferida(a, f"ação {n}") for n, a in enumerate(acoes, 1)]
+    gastos = [formato.gasto_conferido(g, f"gasto {n}") for n, g in enumerate(gastos, 1)]
+    registro.ORIGEM.set("mac")
+    resposta: dict[str, Any] = {
+        "acoes": {"criadas": 0, "iguais": 0, "diferentes": []},
+        "gastos": {"criados": 0, "iguais": 0, "diferentes": []},
+    }
+    with registro.acao("backup.restaurar", {"acoes": len(acoes), "gastos": len(gastos)}) as marca:
+        for acao in acoes:
+            resultado = registro.importar(acao)
+            if resultado == "diferente":
+                resposta["acoes"]["diferentes"].append(acao["id"])
+            else:
+                resposta["acoes"]["criadas" if resultado == "criada" else "iguais"] += 1
+        for gasto in gastos:
+            resultado = custos.importar_gasto(gasto)
+            if resultado == "diferente":
+                resposta["gastos"]["diferentes"].append(gasto["mes"])
+            else:
+                resposta["gastos"]["criados" if resultado == "criado" else "iguais"] += 1
+        marca.feito(
+            {
+                "acoes_criadas": resposta["acoes"]["criadas"],
+                "gastos_criados": resposta["gastos"]["criados"],
+            }
+        )
+    return resposta
 
 
 async def _lembretes_post(request: Request, fazer: Any, teto: int) -> JSONResponse:
@@ -353,6 +405,12 @@ async def lembretes_importar(request: Request) -> JSONResponse:
     """Um lote da migração do Mac: idempotente pelo id, nunca sobrescreve."""
     await _quem(request)
     return await _lembretes_post(request, _importar, MAX_CORPO_DA_COPIA)
+
+
+async def backup_importar(request: Request) -> JSONResponse:
+    """Um lote da restauração de um backup (Sessão 11c, D63): idempotente, nunca sobrescreve."""
+    await _quem(request)
+    return await _lembretes_post(request, _importar_do_backup, MAX_CORPO)
 
 
 async def lembretes_impressoes(request: Request) -> JSONResponse:
@@ -465,5 +523,6 @@ ROTAS = [
     Route("/lembretes/impressoes", lembretes_impressoes, methods=["GET"]),
     Route("/tarefas/lembretes", tarefas_lembretes, methods=["POST"]),
     Route("/tarefas/backup", tarefas_backup, methods=["POST"]),
+    Route("/backup/importar", backup_importar, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)

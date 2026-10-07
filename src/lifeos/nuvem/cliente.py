@@ -17,6 +17,7 @@ erro: o texto diz o que falhou e o que fazer.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -227,3 +228,41 @@ def impressoes_dos_lembretes(sessao: Any) -> dict[str, str]:
     if not isinstance(impressoes, dict):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
     return {str(k): str(v) for k, v in impressoes.items()}
+
+
+@dataclass(frozen=True)
+class EstadoDoLembrete:
+    impressao: str
+    criado_em: datetime
+    mudou_em: datetime
+
+
+def estado_dos_lembretes(sessao: Any) -> dict[str, EstadoDoLembrete]:
+    """{id: impressão, quando nasceu, quando mudou} de todos os lembretes da nuvem (Sessão 11c):
+    o que o `viking backup --conferir` compara com o arquivo."""
+    dados = _chamar(sessao, "GET", "/lembretes/impressoes")
+    impressoes, instantes = dados.get("impressoes"), dados.get("instantes")
+    if not isinstance(impressoes, dict) or not isinstance(instantes, dict):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    try:
+        return {
+            str(i): EstadoDoLembrete(
+                str(imp),
+                datetime.fromisoformat(instantes[i]["criado"]),
+                datetime.fromisoformat(instantes[i]["mudou"]),
+            )
+            for i, imp in impressoes.items()
+        }
+    except (KeyError, TypeError, ValueError):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado") from None
+
+
+def importar_do_backup(
+    sessao: Any, acoes: list[dict[str, Any]], gastos: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Um lote da restauração (`/backup/importar`): o que foi criado, o que já estava igual e os
+    ids que já estavam diferentes."""
+    dados = _chamar(sessao, "POST", "/backup/importar", corpo={"acoes": acoes, "gastos": gastos})
+    if not isinstance(dados.get("acoes"), dict) or not isinstance(dados.get("gastos"), dict):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return dados

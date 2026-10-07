@@ -192,3 +192,29 @@ def test_sem_o_primeiro_contato_nao_abre(monkeypatch, capsys):
     monkeypatch.setattr(cliente, "capacidades", recusa)
     assert chat_cliente.iniciar(entrada=lambda _p="": "sair") == 1
     assert "❌ Nuvem: a nuvem recusou a identidade (HTTP 403)." in capsys.readouterr().err
+
+
+# --- o aviso do backup na abertura (Sessão 11c, D63) --------------------------------------------
+
+
+def test_o_aviso_do_backup_vem_so_depois_de_48_horas():
+    from datetime import UTC, datetime, timedelta
+
+    agora = datetime(2026, 10, 9, 12, tzinfo=UTC)
+
+    def com(horas):
+        feito = (agora - timedelta(hours=horas)).isoformat()
+        return chat_cliente.aviso_do_backup({"backup": True, "backup_em": feito}, agora)
+
+    assert com(47) is None
+    assert com(49) == (
+        "⚠️  Backup no Drive: o último é de há 2.0 dias; a rodada diária pode estar falhando "
+        "(`viking backup`)."
+    )
+    nenhum = chat_cliente.aviso_do_backup({"backup": True, "backup_em": None}, agora)
+    assert nenhum is not None and "nenhum feito ainda" in nenhum
+
+
+def test_sem_o_backup_ligado_a_abertura_nao_fala_dele():
+    assert chat_cliente.aviso_do_backup({"backup": False, "backup_em": None}) is None
+    assert chat_cliente.aviso_do_backup({}) is None  # um motor velho, sem o campo

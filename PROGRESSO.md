@@ -27,7 +27,7 @@
 **Checkpoints da 11c:**
 - C0 ✅: o lock em `d4f5127`, os docs em `8db5ab7`.
 - C0b ⬜: a medição de 24 h, só depois de 2026-10-07 ~17:00Z.
-- C1 ✅ (2026-10-06, ~23:55Z):
+- C1 ✅ (2026-10-06, commit às 23:39Z):
   - `backup/formato.py`: o arquivo versionado, que `ler` confere inteiro;
   - a cópia do registro (`registro_interface.CAMPOS_DA_COPIA`, `exportar`/`importar` nos dois
     stores e `registro.exportar`/`importar`);
@@ -36,7 +36,7 @@
   - `custos.exportar_gastos`/`importar_gasto`.
   - Medido: `2437 passed`; ruff, format e mypy limpos; mutações `10 · mortas pelo teste esperado:
     10` (8 novas e a reancorada do `store: add`, que passou a casar duas vezes).
-- C2 ✅ (2026-10-07, ~00:30Z):
+- C2 ✅ (2026-10-06, commit às 23:48Z):
   - o token do Drive (`config.DRIVE_TOKEN_PATH`/`_ARQUIVO`, `drive_no_motor`, o `google_auth` na
     nuvem);
   - `backup/drive.py` (só cria, lista e baixa; o envio dentro de `registro.acao("backup.drive")`;
@@ -51,13 +51,23 @@
   - `backup/` no mypy.
   - Medido: `2458 passed`, ruff, format e mypy (38) limpos; mutações `9 · mortas pelo teste
     esperado: 9` (7 novas e 2 reancoradas pela generalização do token).
-- C3, C4 e C5 ⬜. O C4 encolheu: o segredo e as conferências do token já entraram no C2. Falta o
-  passo `backup` (a tarefa do Scheduler), as provas do deploy e os textos do Gmail.
+- C3 ✅ (2026-10-07, commit às ~04:05Z):
+  - `backup/conferir.py` (`viking backup --conferir`): restaura num `viking.db` temporário (o real
+    intocado, provado por sha256) e compara com a nuvem;
+  - `/lembretes/impressoes` ganhou os instantes `criado`/`mudou`, para separar "mudou depois" de
+    "divergente";
+  - `backup/restaurar.py` (`--restaurar ARQUIVO [--executar]`) e `POST /backup/importar` (só o
+    `cli@`, formato conferido, nunca sobrescreve);
+  - o aviso de 48 h na abertura do `viking chat --nuvem`.
+  - Medido: `2476 passed`; ruff, format e mypy (40) limpos; mutações `7 · mortas pelo teste
+    esperado: 7`.
+- C4 e C5 ⬜.
 
-**Próximo passo exato:** o C3. O rascunho de `backup/conferir.py` está no scratchpad. A rota
-`/lembretes/impressoes` ganha os instantes (`criado`, `mudou`), para separar "mudou depois do
-backup" de "divergente"; depois `backup/restaurar.py`, `/backup/importar`, a CLI e o aviso na
-abertura do chat.
+**Próximo passo exato:** o C4. Em `scripts/nuvem.py`, o passo `backup` (a tarefa
+`viking-backup`, `0 9 * * *` UTC, POST `/tarefas/backup`, OIDC do `agendador@`, e com
+`--executar` um `jobs run`). As provas do deploy: `/fumaca/segredos` com `drive`, `/versao`
+`backup` coerente com o montado, `cli@` recusado em `/tarefas/backup`, `backup_em` com menos de
+48 h com o passo pronto. Os textos do Gmail sem terminal (`gmail/tools.py:57-60` e `:353`).
 
 **Reler, nesta ordem:**
 - `CLAUDE.md`/`AGENTS.md`;

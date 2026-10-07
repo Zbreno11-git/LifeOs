@@ -578,8 +578,10 @@ def test_o_que_a_nuvem_responde_nao_tem_titulo_nas_impressoes(mac):
     """A conferência só leva impressões: nenhum título sai pela rota."""
     store.add(title="Consulta secreta")
     resposta = cliente._chamar(cliente.sessao_de_chat(), "GET", "/lembretes/impressoes")
-    assert resposta == {"impressoes": {}}
+    assert resposta == {"impressoes": {}, "instantes": {}}
     with _do_lado_da_nuvem() as nuvem:
         nuvem.add(title="Consulta secreta")
     resposta = cliente._chamar(cliente.sessao_de_chat(), "GET", "/lembretes/impressoes")
     assert len(resposta["impressoes"]) == 1 and "secreta" not in json.dumps(resposta)
+    (instantes,) = resposta["instantes"].values()  # desde a 11c: quando nasceu e quando mudou
+    assert set(instantes) == {"criado", "mudou"}
