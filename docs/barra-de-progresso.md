@@ -7,15 +7,37 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-10-07 (Sessão 11c fechada no seu Mac).**
+**Última atualização: 2026-10-07 (Sessão 11d fechada no seu Mac).**
 
-`████████████▌░░░░░░░ 20 de 32 sessões fechadas`
+`█████████████░░░░░░░ 21 de 32 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11 e 11c; parciais: nenhuma; em curso: nenhuma; na fila: 11d (finanças na nuvem, a
-próxima), 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi dividida, para
+10, 10b, 10c, 11, 11c e 11d; parciais: nenhuma; em curso: nenhuma; na fila: 12 (agente geral, a
+próxima), 13 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
 30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), e para 32
 quando a medição das finanças abriu a 11d (2026-10-06).
+
+## 2026-10-07 — Sessão 11d: as suas finanças no chat da nuvem (fechada no seu Mac)
+
+**O que ficou pronto:**
+- **O chat da nuvem responde as finanças:** saldo, gastos do período, busca de transação e
+  fatura, com os mesmos textos do `viking chat` do Mac. O `viking chat` do Mac continua igual.
+- **A chave da Pluggy num cofre à parte:** ela fica num segundo serviço da nuvem, com uma conta só
+  dele, que só sabe responder essas perguntas e só aceita pedidos do motor. A parte da nuvem que
+  conversa com o modelo e lê e-mails nunca vê a chave. Conectar um banco novo continua só no Mac.
+- **`viking financas --nuvem`:** a mesma pergunta pela nuvem, sem o modelo, para conferir.
+
+**Como sabemos:**
+- No seu Mac, saldo, gastos e fatura deram **iguais** entre o Mac e a nuvem, e o chat da nuvem
+  respondeu o gasto do mês e o de ontem.
+- 32 provas no ar, nenhuma chamando a Pluggy; a prova que chama (só com o seu ok) leu as duas
+  conexões em 1,3 s.
+- Os testes passando (2638 no VPS; 2421 no seu Mac, mais os da nuvem que o Mac não instala), e os
+  defeitos plantados de propósito derrubados pelo teste certo (400 de 400, e mais 1).
+- A Pluggy medida de novo antes de tudo: a sua chave não consegue pagar sem você.
+
+**Custo:** parado, o serviço novo custa zero; cada pergunta são alguns segundos dele, dentro do
+grátis do Google. Uma pergunta no chat custou ~US$ 0,004 (o modelo).
 
 ## 2026-10-07 — Sessão 11c: uma cópia dos seus dados no seu Drive (fechada no seu Mac)
 

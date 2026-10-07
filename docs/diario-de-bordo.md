@@ -1046,6 +1046,62 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-07 — Sessão 11d fechada no Mac: as finanças no chat da nuvem, por um serviço isolado
+
+**A abertura** (depois do compact; leitura e conferências batendo com o bloco): o lock com o
+iniconfig 2.3.1 (`050b46e`); a D51 medida de novo com o ok do dono às 18:46:45Z, igual a
+2026-10-06 (403 `PAYMENT_INITIATION_NOT_ALLOWED`; 200 com 0 pedidos); 6 respostas do dono (D64):
+serviço isolado, as 4 tools do Mac, o chat do Mac igual, o segredo subido do Mac, as provas
+automáticas sem a Pluggy. A leitura do código mostrou que o "só nos GET da lista fechada" do
+`sessoes.md` não era verdade (o cliente aceita qualquer GET): o serviço responde 5 perguntas
+fechadas com texto pronto.
+
+**O que entrou** (D64; plano, checkpoints e medições no `PROGRESSO.md`):
+- `nuvem/financas.py`, o 2º serviço do Cloud Run: a mesma imagem do motor com outro comando, a
+  conta `viking-financas@` (a única que lê o segredo `viking-pluggy`), só o `viking-motor@` entra;
+  `/responder` (uma das 5 perguntas → o texto do Mac) e `/saude` (sem rede). Na nuvem, a Pluggy só
+  aceita o `/auth`.
+- `nuvem/identidade.py`: a verificação do token tirada do motor, a mesma para os dois serviços.
+- `financas/pergunta.py` (o formato fechado) e `financas/remoto.py` (o motor pergunta, com o token
+  do servidor de metadados e dentro do prazo do turno); cada `tools.responder_*` pergunta ao
+  serviço no motor. O motor nunca tem a chave: um teste faz `pluggy.cliente` levantar fora do
+  serviço.
+- O texto de sistema e a abertura do chat da nuvem montados das capacidades (os textos de antes,
+  iguais byte a byte; as 8 combinações testadas).
+- Motor: `/financas` e `/fumaca/financas` (só o `cli@`), `/versao.financas`; `viking financas
+  --nuvem`.
+- `scripts/nuvem.py`: o passo `financas`, o segredo `viking-pluggy` subido do `.env` do Mac, o
+  deploy do serviço antes do motor, 11 provas do serviço (nenhuma chama a Pluggy) e a
+  `prova-financas`. Todo `add-iam-policy-binding` agora espera a propagação de uma conta
+  recém-criada (o 1º `--executar financas` caiu nisso).
+
+**No ar, com os oks do dono no chat:** o passo `financas` (a conta, o segredo vazio, a leitura;
+13 ✅); o segredo subido do Mac (`viking-pluggy: 1 versão`); o deploy de `dda075f` (os dois
+serviços), todas as provas ✅ menos o "log sem erro" do motor, que pegou o 502 da 1ª tentativa
+da própria `/fumaca/financas` durante a propagação do `run.invoker` do `motor@` (15 s depois
+passou: `credenciais: True, conexoes: 2`); a `prova-financas` às 22:02Z → HTTP 200 em 1,3 s, as
+duas conexões `UPDATED`. O `deploy` só-leitura às 22:32:04Z, com o 502 fora da janela de 30 min:
+**32 ✅, 0 ❌**, o log limpo nos dois serviços.
+
+**No Mac (2026-10-07):** `2421 passed, 217 skipped` (2638); `viking financas --saldo`, `--gastos`
+e `--fatura` contra o mesmo com `--nuvem`: **iguais nos três** (`cmp`); `viking financas --nuvem`
+→ as duas conexões; `viking chat --nuvem` abriu com "finanças, só leitura" e respondeu o gasto do
+mês e o de ontem pelo serviço (~US$ 0,004 por turno).
+
+**Portões:** a suíte `2638 passed`, 0 pulados (emulador exigido); ruff; format (164); mypy (44);
+gitleaks; `docker build` e o contêiner local recusando sem token; mutações **400 de 400** na
+rodada inteira e a do conserto do IAM, 1 de 1 (374 → 401 na sessão: 27 novas, e uma reescrita).
+
+**Em linguagem simples:** o chat da nuvem agora responde saldo, gastos, busca e fatura, igual ao
+do Mac. A chave da Pluggy, que alcança PIX, fica num serviço separado que só sabe responder essas
+perguntas; a parte da nuvem que conversa com o modelo e lê e-mails nunca a vê.
+
+**Erros desta sessão (meus; em `docs/erros.md`):** a "lista fechada de GET" escrita na 11c sem
+abrir o cliente (classe 2); o dublê das provas que dava o mesmo token ao `cli@` e ao dono, e uma
+exclusão que escondia a prova da `/fumaca/financas` (classe 4); três âncoras de mutação quebradas
+pelas minhas mudanças e a conta recém-criada sem esperar o IAM (classe 6); a espera do CI com o
+SHA digitado errado, que nunca terminaria (classe 5).
+
 ### 2026-10-07 — Sessão 11c fechada no Mac: o backup no Drive que restaura num banco vazio, e a D51 medida
 
 **O que entrou** (D63; plano e medições no `PROGRESSO.md`):

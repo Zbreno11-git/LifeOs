@@ -17,11 +17,11 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 25 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 26 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 8 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 22 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
-| 5 | A ferramenta fez outra coisa do que eu li | 15 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 13 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 4 | Teste que não separava o certo do errado | 23 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 15 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
@@ -242,6 +242,15 @@ pelo `git log --format=%cI` antes do commit. Sem efeito fora do documento, mas o
 retomada existe para ser o registro de uma medição. O que tem de novo: a regra já tinha um
 incidente **nesta** sessão; um horário é número, e passa pelo `date -u` antes de ser escrito.
 
+**2026-10-06 → 2026-10-07 — "só nos GET da lista fechada de `financas/pluggy.py`" (a 11d
+escrita na 11c).** A seção da 11d em `sessoes.md` prometia que o serviço isolado chamaria a Pluggy
+"só nos GET da lista fechada". O cliente nunca teve lista de GET: `_pedir` recusa todo método que
+não é GET (fora de `/auth` e `/connect_token`), e o GET aceita qualquer caminho. Pego na leitura
+de `pluggy.py` na abertura da 11d, antes do plano; o plano trocou isso por 5 perguntas fechadas
+com texto pronto (D64), e a frase foi corrigida no `sessoes.md` e na fonte da Pluggy. O que tem
+de novo: uma garantia de segurança escrita num roteiro **de outra sessão**, sobre um código que eu
+não abri ao escrever.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -429,6 +438,15 @@ abertura dizia "…ligado lá).  e finanças: `viking chat`.". Visto pelo dono n
 --nuvem` do fechamento da 11c. O que tem de novo: um texto montado de uma lista se testa com 1, 2
 e 3 itens, e as combinações de capacidade incluem a que está no ar.
 
+**2026-10-07 — o dublê das provas das finanças dava o mesmo token a duas contas (Sessão 11d,
+C3).** O teste `test_as_provas_das_financas_passam_no_certo…` trocava `_token` por um que devolvia
+sempre `"TOKEN"`, e o `post` falso tratava esse token como o do dono. A prova "com o
+`viking-cli@`: recusado pelo Google" reprovava no teste, e eu exclui da checagem **toda** prova
+com "viking-cli@" no nome, o que escondia junto a prova da `/fumaca/financas`, a mais importante.
+Pego ao reler o teste antes do commit: o dublê passou a dar um token por conta, e a checagem
+voltou a ser "nenhuma prova reprova" (11). O que tem de novo: um filtro feito para calar uma
+falha do dublê calou também um caso verdadeiro; o filtro por nome é um `or` disfarçado.
+
 ### 5. A ferramenta fez outra coisa do que eu li
 
 **2026-09-26 — `\u202e` pela ferramenta de escrita (Sessão 4).** O parâmetro é JSON: o escape virou
@@ -534,6 +552,12 @@ criar arquivo; `source .venv/bin/activate` no começo do comando, e `git diff --
 da mudança) antes de ler o resultado dos testes. Texto que contém um heredoc nunca vai dentro de outro: escrever
 num arquivo e ler dele.
 
+**2026-10-07 — a espera do CI com o SHA digitado errado (abertura da 11d).** Para esperar o CI
+do commit do lock, mandei um laço em background `until gh run list --commit 050b46e2 …`; o SHA
+era `050b46e1…`. O `gh` não acha nada, e o laço nunca terminaria. Pego ao conferir o CI à mão
+(`success`) e o laço foi parado. O que tem de novo: um prefixo de SHA digitado de memória; o SHA
+sai do `git rev-parse`, nunca da cabeça.
+
 ### 6. Conserto que cobriu um ponto e não o vizinho
 
 **2026-09-26 — `_executar` só no `.execute()` (Sessão 3b).** A falha da API também nasce ao montar
@@ -624,6 +648,25 @@ autorizado no mesmo deploy, caíram com 403 do Google; a resposta crua (o HTML, 
 e-mail e a audience certos) mostrou a propagação, que levou mais uns minutos. A espera agora vale
 para todo pedido das portas. O que tem de novo: a regra estava escrita para o primeiro deploy, e
 uma conta nova num deploy seguinte é outro "primeiro".
+
+**2026-10-07 — três âncoras de mutação quebradas pelas minhas próprias mudanças (Sessão 11d).**
+Trocar `_ESCRITAS_PERMITIDAS` por `_escritas_permitidas()` na recusa da Pluggy, levar a
+verificação do token do motor para `nuvem/identidade.py` e reescrever `na_nuvem.ferramentas()`
+mudaram linhas que três mutações usavam de âncora (e uma delas, "as finanças entram no chat da
+nuvem", perdeu o sentido: agora entram de propósito). A rodada recusou antes de rodar, e
+`test_mutacoes_ancoras` caiu na suíte. Reancoradas na linha inteira, e a sem sentido foi trocada
+por "uma tool do Mac some da nuvem sem decidir onde mora". O que tem de novo: um refatoramento
+meu é um "conserto" para as mutações; o `grep` das âncoras nos arquivos que mudei vem antes da
+rodada, não depois da recusa.
+
+**2026-10-07 — a conta recém-criada sem esperar o IAM (Sessão 11d, ok 1).** O passo `financas`
+cria a conta `viking-financas@` e logo dá a ela a leitura do segredo; o `add-iam-policy-binding`
+deu 400 "Service account … does not exist". Rodado de novo, passou. Em 2026-10-01 eu tinha
+posto a espera da propagação só nas **provas** do deploy (o `run.invoker` novo); o mesmo atraso
+vale para o passo que cria a conta. Conserto de estrutura: `_rodar_esperando_a_conta`, em todo
+`add-iam-policy-binding` de todo passo, só nesse erro. O que tem de novo: a mesma propagação, num
+terceiro lugar (o deploy da 11d também esperou 15 s pelo `run.invoker` do `motor@` no serviço
+de finanças, e a prova de log pegou o 502 dessa espera).
 
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 

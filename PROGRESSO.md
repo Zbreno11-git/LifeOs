@@ -5,7 +5,65 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 18:53Z: Sessão 11d aberta e planejada; o próximo é o C1
+## ▶️ RETOMAR AQUI — 2026-10-07 22:33Z: Sessão 11d fechada no Mac; a próxima é a 12 (abrir e planejar)
+
+**Estado (2026-10-07, medido):**
+- **A 11d fechou no Mac:** `viking financas --saldo/--gastos/--fatura` local × `--nuvem` →
+  **iguais** nos três (`cmp`); `viking financas --nuvem` → as 2 conexões `UPDATED`; `viking chat
+  --nuvem` abriu com "finanças, só leitura" e respondeu o gasto do mês e o de ontem pelo serviço.
+  O dono colou valores na conversa: **nenhum valor vai para documento**.
+- **No ar:** o motor `dda075f` e o serviço `financas` (a mesma imagem, a conta `viking-financas@`,
+  o volume `viking-pluggy` lido só por ela, só o `motor@` invoca). `deploy` só-leitura às
+  22:32:04Z → **32 ✅, 0 ❌** (o "imagem no ar = HEAD" segue ✅ com commits só de documento: eles
+  não tocam os caminhos da imagem). `python scripts/nuvem.py` → **13 ✅** (o passo `financas`
+  com `viking-pluggy: 1 versão`). `prova-financas` às 22:02Z → HTTP 200 em 1,3 s.
+- **Portões do fechamento:** `2638 passed` (emulador exigido, 0 pulados); ruff; format (164);
+  mypy (44); gitleaks; mutações 400/400 na rodada inteira (19:32–20:05Z) + 1/1 do conserto do IAM
+  (401 no total; eram 374 no início da sessão). No Mac: `2421 passed, 217 skipped`.
+- **Não há background nem trava.**
+
+**Próximo passo exato:** abrir a **Sessão 12 — agente geral** (skill `software-build`): ler a
+seção dela em `sessoes.md` (a entrega, as travas, a medição da busca com function calling, a
+pergunta de dinheiro sobre o modelo); medir na abertura (`uv lock --upgrade --dry-run`, o CI do
+HEAD pelo SHA, `python scripts/nuvem.py` → 13 ✅, `deploy` só-leitura → 32 ✅); reler as páginas
+do Gemini que a seção cita (deprecations, pricing, tool-combination, termos), porque os preços e
+os modelos mudam; e fazer ao dono as perguntas da abertura, em rodadas curtas, antes de planejar.
+
+**Depende do dono:** as respostas da abertura da 12 (o modelo do dia a dia e o do difícil, com o
+preço lido no dia; o teto diário do modelo forte e da busca; o tom).
+
+**Reler para a 12, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md` (a armadilha "Não estime tokens por caractere" e o procedimento de
+  medir tokens com `max_output_tokens=1` e `automatic_function_calling` desligado; "Nunca `from
+  __future__ import annotations` num módulo que define tool");
+- `sessoes.md`, a seção da **12** e o ▶️;
+- `docs/decisoes.md`: D53 (as regras e recusas da pesquisa do roteiro), D59 (o teto do Gemini),
+  D62 (a busca antes do navegador na nuvem; a 3ª rota medida depois da busca), D64;
+- `docs/fontes/pesquisa-roteiro.md` (a pesquisa datada da 12);
+- o código: `src/lifeos/assistant/turno.py` (o núcleo do turno, `_SECOES`, `instrucao`),
+  `agent.py` (`FERRAMENTAS`, o modelo, o laço), `na_nuvem.py` (`FERRAMENTAS`, `SO_NO_MAC`,
+  `ferramentas()`), `custos.py` (`Teto`, as tarifas), `config.py` (o modelo e as tarifas do
+  `.env`), `nao_confiavel.py` (o bloco);
+- o índice de `docs/erros.md` e as classes 2, 3, 4 e 6;
+- as skills `software-build` (abrir e planejar; `referencia/plano-de-sessao.md`), `seguranca`,
+  `integracoes`, `nuvem-e-deploy`, `testes-que-provam` e `evidencia`.
+
+**Fronteiras da 12 (valem desde a abertura):**
+- qualquer chamada ao Gemini do VPS gasta dinheiro de verdade: medir tokens (o procedimento do
+  `AGENTS.md`) só com o ok do dono naquele passo, e dizer o custo estimado antes;
+- trocar de modelo é decisão de dinheiro do dono e refaz a medição de tokens das tools e o teste
+  das regras das docstrings;
+- o resultado da busca é conteúdo de terceiros: vai no bloco de não confiável, e as fontes saem do
+  `grounding_metadata`, nunca do texto do modelo; nada da busca vai ao Claude (os termos);
+- um deploy é publicar: o ok do dono naquele passo; as provas automáticas não chamam a Pluggy (D64);
+- o fuso do dono: Seattle até ~fim de outubro, depois o Brasil (perguntar a cidade).
+
+**Não pode ser esquecido:** o dono ainda não usa o Viking ativamente e manteve a ordem 12–16 e
+então o app (2026-10-07); a 11b (formulários) está na fila sem posição decidida; o backup só cria
+arquivo quando algo muda (D63 3b); a chave da Pluggy só no serviço `financas` e no Mac (D64).
+
+### Sessão 11d — o fechamento (2026-10-07, o registro)
+
 
 **Estado (2026-10-07):**
 - **A 11d abriu** depois do compact: leitura e conferências batendo com o bloco anterior
@@ -620,11 +678,11 @@ Pluggy são pedidos **na hora**.
 ### Mapa de checkpoints
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
-| C0 | o plano no `PROGRESSO.md`; `sessoes.md` (a 11d com as respostas, o ▶️); a D51 com a medição de hoje; `docs/fontes/pluggy-open-finance.md`; commit, push e CI | — | ⬜ |
-| C1 | `config` (as credenciais do arquivo, `FINANCAS_URL`, `financas_no_motor`); o `pluggy` sem `/connect_token` na nuvem; `nuvem/identidade.py`; o app `nuvem/financas.py` com as 3 rotas | C0 | ⬜ |
-| C2 | o motor: `financas/remoto.py`, as tools que perguntam ao serviço, `na_nuvem.FERRAMENTAS`, o texto de sistema montado, as rotas `/financas` e `/fumaca/financas`, o `/versao`; a abertura; `viking financas --nuvem`; o teste de ponta a ponta com os dois apps | C1 | ⬜ |
-| C3 | `scripts/nuvem.py`: `Segredo.servico`, o passo `financas`, `segredo viking-pluggy`, o deploy dos dois serviços, as provas, `prova-financas` | C1 | ⬜ |
-| C4 | portões, mutações, duas passadas, docs, commit, push e CI; os oks na hora (o passo, o segredo no Mac, o deploy, a `prova-financas`); o roteiro do Mac; o fechamento | C2, C3 | ⬜ |
+| C0 | o plano no `PROGRESSO.md`; `sessoes.md` (a 11d com as respostas, o ▶️); a D51 com a medição de hoje; `docs/fontes/pluggy-open-finance.md`; commit, push e CI | — | ✅ |
+| C1 | `config` (as credenciais do arquivo, `FINANCAS_URL`, `financas_no_motor`); o `pluggy` sem `/connect_token` na nuvem; `nuvem/identidade.py`; o app `nuvem/financas.py` com as 3 rotas | C0 | ✅ |
+| C2 | o motor: `financas/remoto.py`, as tools que perguntam ao serviço, `na_nuvem.FERRAMENTAS`, o texto de sistema montado, as rotas `/financas` e `/fumaca/financas`, o `/versao`; a abertura; `viking financas --nuvem`; o teste de ponta a ponta com os dois apps | C1 | ✅ |
+| C3 | `scripts/nuvem.py`: `Segredo.servico`, o passo `financas`, `segredo viking-pluggy`, o deploy dos dois serviços, as provas, `prova-financas` | C1 | ✅ |
+| C4 | portões, mutações, duas passadas, docs, commit, push e CI; os oks na hora (o passo, o segredo no Mac, o deploy, a `prova-financas`); o roteiro do Mac; o fechamento | C2, C3 | ✅ |
 
 ### Fase 0 — C0: os documentos
 **Faz:**

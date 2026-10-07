@@ -16,16 +16,17 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **11d — finanças na nuvem, só leitura** (em curso desde 2026-10-07: aberta,
-  respondida e com o plano aprovado; o estado está no `PROGRESSO.md`). A 11c fechou no Mac em
-  2026-10-07 (o backup restaurou 7 de 7 lembretes num banco vazio); decisões D60–D64.
+- **Sessão:** **12 — agente geral** (a próxima, pela ordem que o dono manteve em 2026-10-07: 12–16
+  e então o app). A 11d fechou no Mac em 2026-10-07 (as finanças no chat da nuvem por um serviço
+  isolado; local e nuvem iguais pelo `cmp`); decisões D60–D64. A 11b (formulários) segue na fila,
+  sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-07):** 20 de 32 sessões fechadas. O dono ainda não usa o Viking ativamente
+- **Agora (2026-10-07):** 21 de 32 sessões fechadas. O dono ainda não usa o Viking ativamente
   ("só vou usar ativo quando eu tiver ele em hardware ou em app/site com ele completo") e decidiu
   **manter a ordem**: 11d, 12–16 e então o app (17–18).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
@@ -34,8 +35,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D64), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** nada até o C4 da 11d (aberta e planejada em 2026-10-07): os oks do passo
-  `financas`, do segredo no Mac, do deploy e da `prova-financas`.
+- **Depende do dono:** as respostas da abertura da 12 (a seção dela tem as perguntas).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -875,7 +875,7 @@ O que estava escrito na abertura:
   chat --nuvem` (achado no teste do Mac de 2026-10-06).
 - **Libs:** só o `googleapiclient` (já no lock).
 
-## Sessão 11d — finanças na nuvem, só leitura (criada em 2026-10-06; aberta em 2026-10-07)
+## Sessão 11d — finanças na nuvem, só leitura (criada em 2026-10-06; feita e testada no Mac em 2026-10-07)
 
 - **Por quê:** a medição da D51 (2026-10-06 22:27Z, na abertura da 11c) deu "pode":
   - `GET /smart-transfers/preauthorizations` → **403 `PAYMENT_INITIATION_NOT_ALLOWED`**. É o único
@@ -911,6 +911,10 @@ O que estava escrito na abertura:
     do dono.
 
   Plano, medições e checkpoints no `PROGRESSO.md`.
+- **Feita e testada no Mac em 2026-10-07** (diário, mesma data; D64): o serviço `financas` no ar
+  (`dda075f`), só o `motor@` o invoca e só o `financas@` lê o `viking-pluggy`; a `prova-financas`
+  → as 2 conexões `UPDATED`; no Mac, `viking financas --saldo/--gastos/--fatura` local e
+  `--nuvem` **iguais** pelo `cmp`, e o `viking chat --nuvem` respondendo as finanças.
 
 ## Sessão 11b — formulários: o Viking preenche, o dono envia (pedida em 2026-09-29)
 
