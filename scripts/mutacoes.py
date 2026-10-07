@@ -2661,6 +2661,13 @@ MUTACOES = [
         '    comando = "viking chat"\n',
         "tests/test_gmail_envio.py::test_a_recusa_sem_terminal_fala_com_o_dono_e_cita_o_chat_dele",
     ),
+    Mutacao(
+        "conferir: o módulo do Mac passa a depender do extra nuvem",
+        "src/lifeos/backup/conferir.py",
+        "from __future__ import annotations\n",
+        "from __future__ import annotations\n\nimport starlette  # noqa: F401\n",
+        "tests/test_backup_drive.py::test_o_backup_do_mac_abre_sem_o_extra_nuvem",
+    ),
 ]
 
 

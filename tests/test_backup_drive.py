@@ -108,3 +108,31 @@ def test_so_o_modulo_do_drive_fala_com_o_drive():
         if p != Path(ARQUIVO) and _chamadas_de_files(ast.parse(p.read_text()))
     ]
     assert fora == []
+
+
+_SEM_O_EXTRA_NUVEM = """
+import sys
+class Bloqueia:
+    def find_spec(self, nome, caminho=None, alvo=None):
+        if nome == "google.cloud" or nome.startswith(("google.cloud.", "starlette")):
+            raise ImportError("sem o extra nuvem: " + nome)
+sys.meta_path.insert(0, Bloqueia())
+from lifeos.backup import conferir, drive, formato, restaurar
+from lifeos.nuvem import chat_cliente, cliente
+print("ok")
+"""
+
+
+def test_o_backup_do_mac_abre_sem_o_extra_nuvem():
+    """O Mac instala só `--extra dev`: o login, o `--conferir` e o `--restaurar` rodam lá."""
+    import subprocess
+    import sys
+
+    saida = subprocess.run(
+        [sys.executable, "-c", _SEM_O_EXTRA_NUVEM],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert saida.returncode == 0 and saida.stdout.strip() == "ok", saida.stderr[-500:]

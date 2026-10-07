@@ -71,9 +71,34 @@
   - Medido: `2488 passed`; ruff, format, mypy (40), gitleaks e `uv lock --check` limpos; a
     varredura de controles nos 11 arquivos; mutações `7 · mortas pelo teste esperado: 7` (4 novas
     e 3 reancoradas).
-- C5 ⬜.
+- C5, a parte do VPS ✅ (2026-10-07, ~04:45Z):
+  - A rodada inteira de mutações (em background): `mutações: 366 · mortas pelo teste esperado:
+    366` · `recusadas: 0 · sobreviventes ou mal atribuídas: 0`. Mais a do achado abaixo: 1/1.
+  - `docker build` do HEAD: ok, 521 MB (513 MB na 10c).
+  - CI do `26035f4` (C4): `success`.
+  - **1ª passada** (o diff contra a intenção; e se chegar duas vezes?): a rodada que roda duas
+    vezes no mesmo minuto cria dois arquivos de mesmo nome no Drive, o que é inofensivo (as
+    cópias se acumulam). A importação nunca sobrescreve, testada nos dois stores. Achado: nada
+    provava que o backup do Mac abre sem o extra `nuvem` → `test_o_backup_do_mac_abre_sem_o_
+    extra_nuvem`, com mutação.
+  - **2ª passada** (o que o conserto tornou falso? quem mais escreve?):
+    - a âncora do `store: add` e a da audience do agendador passaram a casar duas vezes, e o
+      teste das âncoras pegou (reancoradas);
+    - a mensagem de `credenciais_da_nuvem` mudou, e o teste dela foi atualizado;
+    - o `/lembretes/impressoes` ganhou `instantes`, e a migração só lê `impressoes` (conferido);
+    - `files()` só em `backup/drive.py` (um teste);
+    - a `/backup/importar` aceita ações do `cli@`, ou seja, do dono: uma ação velha restaurada
+      não vira um `desfaz` da sessão de agora, porque `ultima_desfazivel` pede o prefixo da
+      sessão e a janela.
+  - `2489 passed`; ruff, format, mypy (40) limpos.
+- C5, a parte do dono ⬜.
 
-**Próximo passo exato:** o C5. A rodada inteira de mutações e o `docker build` em background, as
+**Próximo passo exato:** o C5, com os oks na hora:
+1. `--executar segredos`, que cria o `viking-drive` vazio;
+2. o deploy;
+3. o roteiro do Mac (o login, o segredo);
+4. o `--executar backup`;
+5. o `--conferir` no Mac. A rodada inteira de mutações e o `docker build` em background, as
 duas passadas de revisão, o push e o CI pelo SHA. Depois, pedir os oks na hora:
 1. `--executar segredos`, que cria o `viking-drive` vazio;
 2. o deploy;
