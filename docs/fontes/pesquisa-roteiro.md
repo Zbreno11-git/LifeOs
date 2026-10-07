@@ -331,6 +331,51 @@ fica quase todo para os modelos. Com Cloud SQL, cerca de US$ 9,5.
   - nada com hook sem o dono revisar;
   - sem atualização automática.
 
+## 9. Releitura e medição de 2026-10-07 (abertura da Sessão 12)
+
+**Lido em 2026-10-07** (as mesmas páginas da seção 4, de novo, porque modelos e preços mudam):
+- **Deprecations** (https://ai.google.dev/gemini-api/docs/deprecations):
+  - os 2.5 (Pro, Flash, Flash-Lite) seguem sem data de fim, mas "we are limiting access to the 2.5
+    models to users who have actively used them in the past… For any new projects, use our latest
+    models: 3.5 Flash-Lite or 3.8 Flash";
+  - os 3.x estáveis: 3.8, 3.7, 3.6 e 3.5 Flash, e o 3.5 Flash-Lite;
+  - o 3.1 Flash-Lite fecha em 2027-05-07.
+- **Pricing** (https://ai.google.dev/gemini-api/docs/pricing), em US$ por 1M de tokens:
+  - 3.5 Flash-Lite: 0,30/2,50, sem cache de contexto;
+  - 3.8, 3.7 e 3.6 Flash: 0,75/3,75 até 2026-12-31 e 1,50/7,50 a partir de 2027-01-01;
+  - 3.5 Flash: 1,50/9,00;
+  - 3.1 Pro (preview, sem nível grátis): 2/12;
+  - 2.5 Flash: 0,30/2,50.
+- **Busca:**
+  - nos 3.x, "5,000 free search requests per month (shared across all Gemini 3.x models), then
+    $14 per 1,000", e a cobrança é **por consulta** que o modelo decide fazer
+    (https://ai.google.dev/gemini-api/docs/google-search);
+  - no 2.5, 1.500 por dia grátis e depois US$ 35 por mil **pedidos**.
+- **Combinação com as nossas tools** (https://ai.google.dev/gemini-api/docs/tool-combination):
+  - "Preview and supported for Gemini 3 models only";
+  - a página só mostra a Interactions API;
+  - o google-genai 2.28/2.29 tem `ToolConfig.include_server_side_tool_invocations` e
+    `Part.tool_call`/`tool_response` para o `generateContent`, mas sem documentação na página.
+    Não testado e não usado (D65).
+- **Termos** (https://ai.google.dev/gemini-api/terms):
+  - "only display the Grounded Results with the associated Search Suggestion(s) to the end user
+    who submitted the prompt";
+  - "will not modify, or intersperse any other content with, the Grounded Results or Search
+    Suggestions";
+  - "will not… cache, frame, syndicate, resell, analyze, train on…";
+  - "will not… copy, store", com exceções, entre elas o histórico do chat.
+  - A página das Search Suggestions não fala de terminal. **Inferência minha, não de advogado:**
+    no terminal, mostrar a resposta igual, com as consultas e os links, e o HTML no app.
+
+**Medido em 2026-10-07 23:26:54Z** (VPS, a chave do `.env`, ok do dono; ~US$ 0,005 pelas tarifas;
+nada do conteúdo da busca guardado, só forma e números):
+
+| O quê | Resultado |
+|---|---|
+| Texto de sistema da nuvem + 23 tools, `max_output_tokens=1`, AFC desligado, mesmo processo | 2.5 Flash 4.554 (1.082 sem as tools); 3.5 Flash-Lite 4.650 (1.082 sem); o schema custa +2,8% no Flash-Lite |
+| Busca no 3.5 Flash-Lite só com `google_search`, 3 perguntas | 1,6–2,1 s; 1–2 consultas cada; 1–4 fontes web; `uri` sempre `vertexaisearch.cloud.google.com` (redirecionamento); `title` = domínio; `domain` vazio; `search_entry_point` nas 3; 96–206 tokens de saída, sem raciocínio |
+| Conversa Flash-Lite (chama tool, com assinatura) → 3.8 Flash → Flash-Lite | as duas trocas aceitas: o 3.8 continua o histórico do Flash-Lite, e o Flash-Lite o do 3.8 |
+
 ## Afirmações não conferidas (a medir na sessão que as usa)
 
 - **S8:** se o Chrome abre `view-source:` por CDP com os cookies; se "In production" sem
@@ -341,7 +386,8 @@ fica quase todo para os modelos. Com Cloud SQL, cerca de US$ 9,5.
   - quantos segundos leva a partida a frio;
   - se o `gcloud` aceita um access token de 1 h num arquivo para o deploy.
 - **S12:** se busca e funções combinam pelo `generateContent` no 3.x (o campo
-  `include_server_side_tool_invocations` existe no SDK 2.25.0 instalado; não testado).
+  `include_server_side_tool_invocations` existe no SDK 2.25.0 instalado; não testado). Em
+  2026-10-07 a D65 escolheu a busca numa chamada separada: segue não testado, e não é usado.
 - **S13:** se o Python do Mac carrega extensão do SQLite; o preço da consulta vetorial do
   Firestore.
 - **S17:** WebAuthn em PWA da tela de início no iPhone; se o MP4 do Safari passa no Gemini como

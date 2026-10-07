@@ -16,8 +16,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **12 — agente geral** (a próxima, pela ordem que o dono manteve em 2026-10-07: 12–16
-  e então o app). A 11d fechou no Mac em 2026-10-07 (as finanças no chat da nuvem por um serviço
+- **Sessão:** **12 — agente geral, em curso** (aberta e planejada em 2026-10-07; a ordem que o
+  dono manteve em 2026-10-07: 12–16 e então o app). O estado está no `PROGRESSO.md`. A 11d fechou no Mac em 2026-10-07 (as finanças no chat da nuvem por um serviço
   isolado; local e nuvem iguais pelo `cmp`); decisões D60–D64. A 11b (formulários) segue na fila,
   sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
@@ -33,9 +33,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D64), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D65), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as respostas da abertura da 12 (a seção dela tem as perguntas).
+- **Depende do dono:** o ok do deploy da 12 e o teste no Mac (as respostas da abertura já estão na
+  seção dela e na D65).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -951,7 +952,23 @@ O que estava escrito na abertura:
   Viking pode perguntar um dado que falta e guardá-lo; quais formulários reais ele quer usar no
   teste.
 
-## Sessão 12 — agente geral (planejada em 2026-09-28)
+## Sessão 12 — agente geral (planejada em 2026-09-28; aberta em 2026-10-07)
+
+- **Abertura (2026-10-07), as respostas do dono (D65):**
+  - **Modelos:** o 3.5 Flash-Lite no dia a dia, nos dois chats. O 3.8 Flash é o forte, e quem o
+    pede é o próprio Viking (uma tool).
+  - **Onde:** a busca e o forte só no chat da nuvem.
+  - **Tetos:** o forte a US$ 0,30 por dia e a busca a 30 consultas por dia.
+  - **Tom:** caloroso e direto.
+  - **A busca na tela:** a resposta aparece igual, com as fontes à parte.
+  - **Releitura das páginas e medições:** em `docs/fontes/pesquisa-roteiro.md`, seção 9.
+    O que mudou desde 2026-09-28:
+    - a busca nos 3.x cobra por consulta;
+    - a combinação busca + tools só aparece na Interactions API;
+    - o 3.8 continua a conversa do Flash-Lite (medido).
+  - **O plano, por fases:** está no `PROGRESSO.md`.
+  - **A 3ª rota do navegador (D62)** segue "medir depois da busca": fica para a próxima abertura
+    que tocar o navegador, não para esta.
 
 - **Entrega:**
   - uma pergunta factual responde com fontes;
@@ -997,8 +1014,8 @@ O que estava escrito na abertura:
     num site público com o Mac desligado. Se medir, na forma barata: o nosso Jev no motor dirigindo
     um navegador alugado sem perfil (Browser Use, US$ 0,02/h alegado), com o freio, a redação e o
     bloqueio; nunca o agente v4 deles (~US$ 1,64 por tarefa) nem o perfil da Chrome do dono.
-- **Libs/repos a reaproveitar:** nada novo. O google-genai 2.25.0 do lock já tem a busca e o
-  `url_context`.
+- **Libs/repos a reaproveitar:** nada novo. O google-genai do lock já tem a busca e o
+  `url_context` (era o 2.25.0 em 2026-09-28; 2.29.0 desde a abertura, em 2026-10-07).
 
 ## Sessão 13 — memória de fatos e receitas (planejada em 2026-09-28)
 

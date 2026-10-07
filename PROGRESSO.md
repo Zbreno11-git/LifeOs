@@ -5,7 +5,87 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 22:33Z: Sessão 11d fechada no Mac; a próxima é a 12 (abrir e planejar)
+## ▶️ RETOMAR AQUI — 2026-10-07 23:27Z: Sessão 12 aberta e planejada; C0 e C1 feitos, o próximo é o C2
+
+**Estado (2026-10-07, medido):**
+- **A abertura da 12** (depois do compact): leitura e conferências batendo com o bloco anterior.
+  - a suíte: `2638 passed in 59.81s`, 0 pulados;
+  - o CI do `f7746d5`: `success`;
+  - `python scripts/nuvem.py` → 13 ✅;
+  - o `deploy` só lendo → 32 ✅ e 0 ❌; o motor `dda075f`; o backup de 2026-10-07 18:03Z; o log
+    sem erro nos dois serviços.
+- **O lock (C0):** google-auth 2.60.0 → 2.61.0 e google-genai 2.28.0 → 2.29.0, no commit `15e7dd9`.
+  - a suíte antes e depois: `2638 passed`;
+  - ruff, format (164), mypy (44) e `uv lock --check` verdes;
+  - o CI pelo SHA: `success` (os dois runs).
+- **As 8 respostas do dono e o plano aprovado** estão no "Plano — Sessão 12", logo abaixo dos
+  registros. Em resumo:
+  - o 3.5 Flash-Lite no dia a dia, nos dois chats;
+  - o 3.8 Flash pedido pelo próprio modelo (`usar_modelo_forte`);
+  - a busca e o forte só no chat da nuvem;
+  - os tetos: o forte a US$ 0,30 por dia e a busca a 30 consultas por dia;
+  - o tom caloroso e direto;
+  - a busca mostrada igual, com as fontes à parte.
+- **C1, as medições** (ok do dono; 2026-10-07 23:26:54Z; script no scratchpad, não no repo).
+  Gasto estimado pelas tarifas: ~US$ 0,005. As 4 consultas de busca entram nas 5.000 grátis.
+  - **M1, tokens** (o mesmo processo; o texto de sistema da nuvem com as 23 tools; `max_output_tokens=1`;
+    AFC desligado):
+
+    | Modelo | Com as tools | Sem as tools |
+    |---|---|---|
+    | 2.5 Flash | 4.554 | 1.082 |
+    | 3.5 Flash-Lite | 4.650 | 1.082 |
+
+    O schema das tools custa 3.472 tokens no 2.5 e 3.568 no Flash-Lite (+2,8%). Nenhum dos dois
+    reportou raciocínio.
+  - **M2, busca** (3.5 Flash-Lite só com `google_search`, 3 perguntas):
+    - de 1,6 a 2,1 s;
+    - de 1 a 2 consultas por pergunta (4 no total);
+    - de 1 a 4 fontes web;
+    - **toda `uri` é um redirecionamento `vertexaisearch.cloud.google.com`**, e o `title` é o
+      domínio (o campo `domain` vem vazio);
+    - o `search_entry_point.rendered_content` veio nas 3;
+    - os `grounding_supports` vieram;
+    - de 14 a 16 tokens de entrada, de 96 a 206 de saída, sem raciocínio; `finish=STOP`.
+  - **M3, a troca de modelo:**
+    - o Flash-Lite chama a tool (com assinatura de raciocínio);
+    - o 3.8 Flash continua a mesma conversa e responde: **aceita**;
+    - o Flash-Lite continua depois do 3.8 e chama a tool de novo: **aceita**.
+    - Consequência: vale o **plano A** (a troca do modelo no meio do turno, pelo gancho).
+- **Não há background nem trava.**
+
+**Próximo passo exato:** o C2.
+- `custos.TARIFAS` + `tarifa(modelo, quando)`;
+- `do_gemini(usage, modelo)`, com o gancho passando o `kwargs["model"]`;
+- `custos.Cotas`: `cotas/AAAA-MM-DD`, com `forte` e `buscas`;
+- o `config`: `MODELO_FORTE`, `TETO_FORTE_DIA`=0.30 e `BUSCAS_DIA`=30;
+- os testes: `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest tests/test_custos*.py -q`.
+
+**Depende do dono:** o ok do deploy (C5) e o roteiro do Mac.
+
+**Reler antes de continuar, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md`;
+- este bloco e o "Plano — Sessão 12";
+- `docs/decisoes.md` (D59, D64 e a **D65**);
+- o código:
+  - `src/lifeos/custos.py` (`instrumentar`, `Teto`);
+  - `assistant/turno.py` (`_SECOES`, `MODELO`);
+  - `assistant/na_nuvem.py` (`FERRAMENTAS`, `_config`, `_turno`);
+  - `ao_dono.py` (o coletor, o modelo da porta da busca);
+  - `nuvem/chat_cliente.py`, `nao_confiavel.py` e `firestore_comum.py` (`trocar`);
+- os testes: `tests/test_custos*.py` e `tests/test_na_nuvem.py` (o sha256 dos textos);
+- `docs/erros.md`, classes 2, 3, 4, 6 e 7;
+- as skills `software-build`, `integracoes`, `seguranca` e `testes-que-provam`.
+
+**Não pode ser esquecido:**
+- **Os termos da busca:**
+  - nenhum resultado de busca vai a documento, log, teste ou commit, só forma e números;
+  - a resposta da busca aparece ao dono **igual**, com as fontes do `grounding_metadata`;
+  - nada da busca vai ao Claude.
+- **Preço:** o 3.8 Flash dobra de preço em 2027-01-01.
+- **Fuso:** o do dono é Seattle até ~fim de outubro; depois, perguntar a cidade.
+
+### 2026-10-07 22:33Z — o bloco de retomada do fechamento da 11d (o registro)
 
 **Estado (2026-10-07, medido):**
 - **A 11d fechou no Mac:** `viking financas --saldo/--gastos/--fatura` local × `--nuvem` →
@@ -577,6 +657,214 @@ D61). Medido na abertura: `2216 passed`, CI `success` em `687068d`, 10 ✅, o mo
   viking-gmail` → "viking-gmail: 0 versão(ões) habilitada(s); a fonte é o token do Gmail de
   secrets/ (no Mac)." e "Nada foi enviado (sem --executar)." O `gcloud` do Mac lê o Secret
   Manager do Viking: o passo do C6 não depende de login novo.
+
+## Plano — Sessão 12: agente geral (busca com fontes, tom, Flash-Lite e o forte quando precisa) (aprovado em 2026-10-07)
+
+### Context
+O roteiro (D46–D52) quer um agente geral que converse e busque na web sempre com fonte. A 11d
+fechou em 2026-10-07: o chat da nuvem já faz tudo o que o do Mac faz (SO_NO_MAC vazio). Desde
+2026-09-28 o Google restringiu o 2.5 a quem já usa, lançou os 3.x estáveis e mudou a cobrança da
+busca. O dono respondeu a abertura em 2026-10-07 (~22:50Z). Aprovado este plano, o C0 o copia para
+o `PROGRESSO.md` acima do plano da 11d, e a execução segue até o fim. Oks na hora só para o que
+custa (Gemini incluído), cria recurso ou publica.
+
+### O que esta sessão entrega (verificável)
+No `viking chat --nuvem`:
+1. uma pergunta factual dispara `buscar_na_web`, e a resposta da busca aparece ao dono **igual**,
+   com as fontes (título e link, do `grounding_metadata`) e as consultas feitas; o Viking comenta à
+   parte;
+2. o dia a dia roda no `gemini-3.5-flash-lite`, e o modelo, sozinho, pede o `gemini-3.8-flash`
+   para o resto do turno quando acha difícil; o `/custos` e a linha 💸 dizem qual modelo respondeu;
+3. o tom é caloroso e direto (nos dois chats: o texto de sistema é um núcleo só);
+4. os tetos recusam com clareza: o forte até US$ 0,30 por dia, a busca até 30 consultas por dia,
+   e os de antes (US$ 1/dia, US$ 10/mês) seguem.
+
+### O que ela NÃO faz (e para onde foi)
+- Busca e modelo forte no `viking chat` do Mac → não vão (resposta do dono); o Mac só troca o
+  modelo do dia a dia e o tom.
+- O HTML das Search Suggestions → o app (S17); no terminal, as consultas e os links em texto.
+- `url_context` (o modelo mandar abrir uma URL) → fora: uma URL vinda de e-mail viraria pedido.
+- A combinação busca + tools na mesma chamada (preview, só Interactions API na doc) → fora; a
+  busca é uma chamada separada, sem tools (decisão técnica abaixo).
+- O navegador na nuvem sem login (D62, a 3ª rota) → continua "medir depois da busca": escrito na
+  seção da 12 em `sessoes.md` como pendente para a próxima abertura que tocar navegador (C0).
+- A Interactions API → não migrar (sem gatilho).
+
+### Respostas do dono (2026-10-07)
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| Modelo do dia a dia | 3.5 Flash-Lite | `turno.MODELO` muda para os dois chats; mede-se antes (C1) |
+| Modelo forte | 3.8 Flash | só na nuvem, só quando chamado; tarifa dobra em 2027-01-01 (tabela datada) |
+| Quem decide o forte | o Viking, sozinho | tool `usar_modelo_forte(motivo)`; o teto do forte segura um e-mail injetado |
+| Onde busca e forte | só no chat da nuvem | o teto mora no Firestore; o Mac fica como está |
+| Teto do forte | US$ 0,30/dia | `VIKING_TETO_FORTE_DIA` |
+| Teto da busca | 30 por dia | `VIKING_BUSCAS_DIA`; ~900/mês, dentro das 5.000 grátis |
+| Tom | caloroso e direto | uma seção `_TOM` no lugar de `_FIM`, nos dois chats |
+| A busca na tela | igual, com fontes à parte | campo novo `busca` na resposta do motor; o modelo não a repete |
+
+### Decisões técnicas minhas (declaradas; o dono pode derrubar)
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **A busca é uma tool `buscar_na_web(pergunta)`** que faz uma chamada separada ao Flash-Lite **só com `google_search`, sem nenhuma das nossas tools** | a página que se mexe com a busca não alcança o modelo que tem as tools; o texto volta ao modelo principal no bloco de não confiável (a trava da seção 12); e a resposta da busca é o "Grounded Result" que se mostra igual, como os termos pedem | a medição mostrar que a sub-chamada não traz `grounding_metadata` |
+| **Fontes só do `grounding_chunks[].web` (uri, title)** e consultas de `web_search_queries`; uma URL no texto não é fonte | a trava da seção 12 | — |
+| **A tela:** o motor devolve `busca: [{texto, fontes, consultas}]`, impresso pelo `chat_cliente` antes da resposta do modelo, mesmo sem terminal interativo (não é segredo); nunca no log | termos ("display … to the end user who submitted the prompt") | — |
+| **O forte troca o modelo das chamadas seguintes do mesmo turno**: o gancho de `custos.instrumentar` já vê o `kwargs["model"]` de cada chamada; a tool liga uma marca do turno (contextvar), e o próximo `_generate_content` vai ao 3.8 Flash com a mesma conversa e as mesmas tools | é o "decide sozinho" com o contexto inteiro, sem uma chamada extra de classificação | **plano B** se a C1 mostrar que o 3.8 recusa o histórico do Flash-Lite (assinaturas de raciocínio): o forte responde sem tools, só texto, com a pergunta e o resumo que o Flash-Lite passa no `motivo` |
+| **As cotas do dia num documento à parte**, `cotas/AAAA-MM-DD` (`forte`: US$, `buscas`: n), comparar e trocar como o `Teto` | não mexe no formato fechado do backup (`gastos` = `mes,total,dias`) nem no `somar` que reescreve o mês; contador de um dia não precisa de backup | — |
+| **Tarifas por modelo e por data** em `custos.TARIFAS` (2.5 Flash, 3.5 Flash-Lite, 3.8 Flash até 2026-12-31 e a partir de 2027-01-01); `do_gemini(usage, modelo)`; modelo desconhecido → a tarifa mais cara da tabela (erra alto) | o teto é estimativa pelas tarifas; com dois modelos, uma tarifa só subconta o forte | — |
+| **A busca conta consultas** (`len(web_search_queries)`), não pedidos: nos 3.x cobra-se por consulta; reserva 1 antes, soma o resto depois | a doc de hoje | — |
+| **O modelo da busca é sempre o Flash-Lite**, mesmo num turno forte | a busca é extração com fonte; o forte é para raciocinar | — |
+| **O prompt da sub-chamada** é só a pergunta + uma instrução fixa ("responda em português, curto, com o que achou"); nada do histórico | o histórico tem e-mail e agenda: não vai à busca | — |
+
+### Medido na abertura (2026-10-07, VPS, ~22:40–22:55Z)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repositório | `git status`, `rev-parse`, `ls-remote`, lock | limpo; `f7746d5` = origin; sem trava | ok |
+| Suíte | `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` | `2638 passed in 59.81s` | a base |
+| CI | `gh run list --commit f7746d5…` | `completed success` | ok |
+| Infra | `python scripts/nuvem.py` | 13 ✅ | ok |
+| No ar | `python scripts/nuvem.py deploy` | motor `dda075f`, 0 commits nos caminhos da imagem, 32 ✅ 0 ❌, backup 2026-10-07 18:03Z, logs 0 erro | ok |
+| Versões | `uv lock --upgrade --dry-run` | google-auth 2.60.0→2.61.0; google-genai 2.28.0→2.29.0 | C0 (o `sessoes.md` dizia 2.25.0: divergência, corrigir) |
+| Deprecations (lido) | ai.google.dev/…/deprecations | 2.5 "limiting access … to users who have actively used them"; "new projects: 3.5 Flash-Lite or 3.8 Flash"; 3.x GA: 3.8/3.7/3.6/3.5 Flash, 3.5 Flash-Lite; 3.1 Flash-Lite fecha 2027-05-07 | 3.5 Flash-Lite |
+| Pricing (lido) | …/pricing | 3.5 Flash-Lite US$ 0,30/2,50 (sem cache de contexto); 3.8 Flash 0,75/3,75 até 2026-12-31, 1,50/7,50 a partir de 2027-01-01; 3.5 Flash 1,50/9,00; 3.1 Pro preview 2/12; busca 3.x: 5.000/mês grátis (todos os 3.x), depois US$ 14/1.000 consultas; 2.5: 1.500/dia grátis | tabela datada |
+| Tool combination (lido) | …/tool-combination | "Preview and supported for Gemini 3 models only"; exemplos só na Interactions API | não usar |
+| SDK instalado (lido) | `types.py` do 2.28.0 | `ToolConfig.include_server_side_tool_invocations`, `Part.tool_call/tool_response`, `GroundingMetadata.web_search_queries/grounding_chunks/search_entry_point` | os campos existem; não testados |
+| Termos (lido) | …/terms | só no app do próprio; mostrar os Grounded Results "with the associated Search Suggestion(s) to the end user who submitted the prompt"; não modificar nem "intersperse"; não "cache, frame, syndicate…", não "copy, store" (exceção: histórico do chat) | busca igual + fontes à parte; nenhum resultado em doc, log ou teste |
+| Search Suggestions (lido) | …/grounding/search-suggestions | nada sobre terminal | consultas + links em texto; HTML no app |
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | o lock num commit próprio (suíte antes e depois, CI pelo SHA); o plano no `PROGRESSO.md`; `sessoes.md` (12 com as respostas; google-genai; a 3ª rota pendente); D65; `pesquisa-roteiro.md` (a releitura de hoje) | — | ✅ (`15e7dd9`) |
+| C1 | **ok do dono (~US$ 0,05)** → as três medições, com números no `PROGRESSO.md` e na fonte | C0 | ✅ (plano A) |
+| C2 | tarifas por modelo; `Cotas` (forte e busca) no Firestore; config | C1 | ⬜ |
+| C3 | Flash-Lite nos dois chats; `_TOM`; `usar_modelo_forte` e a troca no gancho; `/custos` por modelo | C2 | ⬜ |
+| C4 | `buscar_na_web`; o campo `busca`; o `chat_cliente` imprime; seções `_BUSCA`/`_FORTE` | C2 | ⬜ |
+| C5 | portões, mutações, duas passadas, docs, commit, CI; **ok** → deploy; roteiro do Mac; fechamento (22 de 32) | C3, C4 | ⬜ |
+
+### Fase 0 — C0
+**Faz:** `uv lock --upgrade` + `uv sync --locked --extra dev --extra nuvem`; suíte e portões antes e
+depois; commit só do `uv.lock`; push; CI pelo SHA. Depois os docs: este plano no `PROGRESSO.md`
+(bloco RETOMAR → C1), `sessoes.md`, D65, `docs/fontes/pesquisa-roteiro.md` ("Releitura de
+2026-10-07", com o lido e o suposto separados).
+**✅** `git log --oneline -2` mostra o lock e os docs; CI `success` pelo SHA; a suíte 2638.
+**🐞 → Depurar:** o google-genai 2.29 mudar `_generate_content` (o gancho de `instrumentar`) →
+`test_custos` acusa o acoplamento; ler o diff do SDK (`uv pip show`, o fonte) antes de mexer
+(classe 2).
+
+### Fase 1 — C1: medições (gastam; o ok do dono na hora, com o custo dito)
+Um script no scratchpad (não no repo), com a chave do `.env` do VPS, sem imprimir conteúdo da busca
+(termos: nada guardado; só forma e números):
+- **M1 tokens** (o procedimento do `AGENTS.md`, no mesmo processo): texto de sistema + as tools da
+  nuvem, `max_output_tokens=1`, AFC desligado, `prompt_token_count` no 2.5 Flash e no 3.5
+  Flash-Lite, com e sem tools.
+- **M2 busca**: 3 perguntas factuais no 3.5 Flash-Lite só com `google_search`: latência, tokens
+  (com raciocínio), nº de consultas, nº de `grounding_chunks`, host das URIs (redirecionamento?),
+  `search_entry_point` presente.
+- **M3 troca de modelo**: um turno no Flash-Lite que chama uma tool falsa (AFC desligado, à mão),
+  e a continuação da mesma conversa no 3.8 Flash; depois mais um turno no Flash-Lite. Aceita ou
+  recusa (o erro, só o tipo e o status)?
+Custo estimado pelas tarifas: < US$ 0,05 (≈ 15 chamadas de ~6 mil tokens; buscas dentro do grátis).
+**✅** os números com data no `PROGRESSO.md` e em `docs/fontes/pesquisa-roteiro.md`; a escolha
+entre o plano A e o B do forte escrita.
+**🐞 → Depurar:** a busca sem `grounding_metadata` → imprimir a forma da resposta (os campos não
+nulos), não o conteúdo (skill `integracoes` §4: o schema antes do modelo).
+
+### Fase 2 — C2: tarifas e cotas
+**Faz:** `custos.TARIFAS` + `tarifa(modelo, quando)`; `do_gemini(usage, modelo)`; o gancho passa
+`kwargs["model"]`; `Consumo` ganha `por_modelo`. `custos.Cotas` (`cotas/AAAA-MM-DD`, fuso do
+dono): `conferir_forte()`, `somar_forte(custo)`, `reservar_busca()`, `somar_buscas(n)`;
+`CotaAtingida`. `config`: `MODELO_FORTE`, `TETO_FORTE_DIA` (0.30), `BUSCAS_DIA` (30), por
+`_float_env`/`_int_env`. `.env.example`.
+**Testes:** a tarifa troca em 2027-01-01 no fuso; modelo desconhecido cobra a mais cara; duas
+threads reservando a 30ª busca → só uma passa (exceções recolhidas, classe 4); a cota vira no dia
+do dono, não no UTC.
+**✅** `VIKING_EXIGIR_EMULADOR=1 pytest tests/test_custos*.py -q` verde; a suíte verde.
+**Mutações:** a tarifa sem a data; `reservar_busca` com `>` em vez de `>=`; o forte somado no
+`gastos` e não na cota.
+
+### Fase 3 — C3: o modelo do dia a dia, o tom e o forte
+**Faz:** `turno.MODELO = "gemini-3.5-flash-lite"`, `turno.MODELO_FORTE`; `_TOM` no lugar de `_FIM`
+(o sha256 dos textos de antes muda **de propósito**: o teste ganha os novos, com a data);
+`na_nuvem.usar_modelo_forte(motivo)` (sem future import): confere a cota, liga
+`turno.FORTE` (contextvar do turno) e devolve o texto ao modelo; o `instrumentar` troca o
+`model` quando a marca está ligada e confere a cota do forte antes de cada chamada forte;
+`consumo`/`/custos` por modelo ("flash-lite: …; 3.8 flash: …"). As duas tools novas são só da
+nuvem (o contrário de `SO_NO_MAC`): uma lista `SO_NA_NUVEM` com o motivo ("o teto mora lá"), e um
+teste exige que nenhuma esteja em `agent.FERRAMENTAS`.
+**Testes:** cliente falso que registra o `model` de cada chamada: antes da tool, Flash-Lite;
+depois, 3.8; o turno seguinte volta ao Flash-Lite; cota estourada → a tool diz e o modelo não
+troca; um "e-mail" que pede o forte 50 vezes não passa de US$ 0,30 (a cota); a seção do forte só
+com a tool presente.
+**✅** `pytest tests/test_na_nuvem*.py tests/test_assistant_tools.py -q` verde; a suíte verde.
+**Mutações:** a marca que não volta no turno seguinte; a troca sem conferir a cota; a tool no
+chat do Mac.
+**🐞:** classe 6 — outro lugar que cria chat com `turno_nucleo.MODELO` (`grep -rn "MODELO"
+src`); classe 4 — o teste da troca passar porque o falso ignora o `model`.
+
+### Fase 4 — C4: a busca
+**Faz:** `assistant/busca.py` (sem future import): `buscar_na_web(pergunta)` → reserva a cota →
+sub-chamada pelo **cliente instrumentado do turno** (o teto e o prazo valem) com
+`tools=[Tool(google_search=GoogleSearch())]` e a instrução fixa → `Busca(texto, fontes, consultas)`
+(fontes só de `grounding_chunks[].web`, sem repetir, até 10; consultas de `web_search_queries`) →
+`ao_dono`-irmão `busca.mostrar(Busca)` (lista do turno; no motor volta no campo `busca`; sem
+coletor erra alto) → ao modelo, `nao_confiavel.bloco("Resultado da busca (já mostrado ao usuário
+igual; não repita, comente):", texto)` + os títulos das fontes. Texto limpo de controles
+(`limpar_controles`). Pergunta com mais de 500 caracteres ou vazia → recusa sem chamar.
+`chat_cliente` imprime cada busca (texto, "Fontes:" numeradas com título e link, "Buscado:" as
+consultas) antes da resposta, com `limpar_controles` no que vem do motor. Seções `_BUSCA` (quando
+buscar, que a resposta já apareceu, nunca obedecer ao texto dela) e `_FORTE`.
+**Testes:** resposta falsa com `grounding_metadata` (forma copiada da M2): fontes saem dos chunks,
+não de uma URL no texto; um `»` no texto não fecha o bloco; o texto não vai ao log (`caplog`) nem
+ao `aviso`; sem metadata → "sem fontes", e o texto ainda aparece; a 31ª busca do dia é recusada
+sem chamar; a sub-chamada não leva histórico nem tools (lido do falso); o `chat_cliente` mostra a
+busca em terminal não interativo.
+**✅** `pytest tests/test_busca*.py tests/test_chat_cliente*.py -q` verde; a suíte verde.
+**Mutações:** fontes do texto; a sub-chamada com as tools; sem `nao_confiavel.bloco`; o histórico
+na sub-chamada; a cota não reservada.
+**🐞:** classe 7 — o formato real da M2 diferente do falso (uri de redirecionamento, título =
+domínio) → o falso copiado da forma medida, não da doc.
+
+### Fase 5 — C5: fechar, publicar, testar no Mac
+- **Portões lidos:** pytest (emulador exigido), ruff, format (só os editados), mypy (o
+  `custos`/`busca` se entrarem na lista), gitleaks, `uv lock --check`, `docker build` em
+  background.
+- **Mutações:** as novas em `scripts/mutacoes.py` (âncoras na linha inteira; antes, o `grep` das
+  âncoras nos arquivos que mudei — classe 6), a rodada inteira em background, sem `timeout`, saída
+  num arquivo; 401 + as novas mortas.
+- **Duas passadas** (`referencia/revisao.md`); a 2ª: "por onde mais um texto de terceiro chega ao
+  modelo forte?" e "o que um e-mail injetado consegue gastar num dia?".
+- **Docs:** AGENTS (estrutura, comandos, variáveis, armadilha nova se houver), `.env.example`,
+  `docs/fontes/gcp-cloud-run-firestore.md` (a coleção `cotas`), D65.
+- **`scripts/nuvem.py`:** `/versao` diz `modelo`, `forte`, `busca`; provas que conferem (grátis,
+  sem chamar o Gemini). Nada de recurso novo (a coleção nasce no primeiro uso; leitura por
+  documento, sem índice).
+- Commit, push, CI pelo SHA → **ok → `deploy --executar`** (centavos) → `deploy` → todas ✅.
+- **Roteiro do Mac:** `cd ~/LifeOs && git pull && git log --oneline -1`; `uv sync --locked --extra
+  dev && source .venv/bin/activate && which python && python -m pytest -q`; `viking chat --nuvem`
+  com: uma pergunta factual (a busca aparece igual, com fontes), uma difícil (o 💸 diz 3.8), uma da
+  agenda (o Flash-Lite com tools), `/custos`; e `viking chat` (o Mac no Flash-Lite, tom novo).
+  Gasto estimado < US$ 0,05.
+- **Fechamento:** diário com "Erros desta sessão", barra 22 de 32, `sessoes.md` (12 feita, ▶️ 13),
+  D65, `erros.md`; commit, push, CI.
+**✅** `deploy` todas ✅ com `modelo: gemini-3.5-flash-lite`; a saída do Mac colada mostra as fontes
+e o 3.8 no 💸.
+
+### Riscos e o que é irreversível
+| Passo | Custo | Irreversível? | O ok |
+|---|---|---|---|
+| Medições C1 | < US$ 0,05 | não | na hora |
+| Deploy | centavos | a revisão anterior fica | na hora |
+| Uso do 3.8 no ar | até US$ 0,30/dia (cota) | não | coberto pelo teto escolhido |
+| Busca | grátis até 5.000/mês; a cota de 30/dia fica abaixo | não | coberto |
+| Flash-Lite pior que o 2.5 nas tools | qualidade | volta é trocar a constante | a M1 e o teste no Mac |
+| Termos da busca | leitura minha, não de advogado | — | o dono escolheu a leitura mais segura |
+| A partir de 2027-01-01 o forte dobra | a tabela datada já cobra o novo preço | — | — |
+
+### Regra de conserto
+Todo defeito começa pela classe em `docs/erros.md`; o `grep` da forma inteira antes de dar por
+pronto. Previstos: `MODELO` em outro lugar; texto de busca em log/aviso/registro; outra chamada ao
+Gemini fora do cliente instrumentado; `print(` no motor. Sem `| tail` antes de commit. Emenda por
+script ancora na linha inteira. Mutações com `run_in_background`, nada editado enquanto rodam.
 
 ## Plano — Sessão 11d: finanças na nuvem, só leitura, num serviço isolado (aprovado em 2026-10-07)
 
