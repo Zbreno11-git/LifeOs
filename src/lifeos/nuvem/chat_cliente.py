@@ -84,8 +84,8 @@ def aviso_do_backup(capacidades: dict[str, Any], agora: datetime | None = None) 
     if agora - ultimo > BACKUP_VELHO:
         dias = (agora - ultimo).total_seconds() / 86400
         return (
-            f"⚠️  Backup no Drive: o último é de há {dias:.1f} dias; a rodada diária pode estar "
-            "falhando (`viking backup`)."
+            f"⚠️  Backup no Drive: conferido pela última vez há {dias:.1f} dias; a rodada diária "
+            "pode estar falhando (`viking backup`)."
         )
     return None
 

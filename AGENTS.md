@@ -135,7 +135,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     gastos do teto; contagens e a impressão de cada lembrete; `ler` confere tudo e `montar` lê de
     volta antes de devolver), `drive.py` (escopo `drive.file`; **só cria, lista e baixa**, nunca
     apaga, e uma régua lê o código; o envio dentro de `registro.acao("backup.drive")`),
-    `rodada.py` (a rodada da nuvem: `estado/backup` só depois de o Drive confirmar),
+    `rodada.py` (a rodada da nuvem: baixa o arquivo mais novo e só sobe outro se o conteúdo
+    mudou, desde 2026-10-07; `estado/backup` só depois de o Drive confirmar),
     `conferir.py` (`viking backup --conferir`: restaura num `viking.db` temporário e compara com a
     nuvem) e `restaurar.py` (`viking backup --restaurar`: o desastre, em lotes pelo motor, nunca
     sobrescreve)
@@ -621,10 +622,11 @@ só abre no emulador sob pytest. O `status.url` do Cloud Run é a URL antiga, co
 do motor é a determinística, que está na anotação `run.googleapis.com/urls`.
 
 **Segredo da nuvem é arquivo de volume, lido só pelo `config`.** A chave do Gemini e os tokens
-da agenda e do Gmail chegam ao motor como arquivos (`--set-secrets=/segredos/...`), nunca como variável de
-ambiente: a variável é lida na partida e o Google manda fixar a versão, e um `describe` do
-serviço a mostraria como referência no ambiente. A prova "segredos só como volume" do `deploy`
-reprova qualquer variável fora da lista ou com `valueFrom`. Cada leitura do volume é um acesso
+da agenda, do Gmail e do Drive chegam ao motor como arquivos (`--set-secrets=/segredos/...`),
+nunca como variável de ambiente: a variável é lida na partida e o Google manda fixar a versão, e
+um `describe` do serviço a mostraria como referência no ambiente. A prova "segredos só como
+volume" do `deploy` reprova qualquer variável fora da lista ou com `valueFrom`. Cada leitura do
+volume é um acesso
 cobrado (10 mil grátis por mês, lido em 2026-09-30), por isso `config._segredo` lê uma vez por
 processo. Os tokens na nuvem renovam **em memória**: o volume é só leitura, e `google_auth`
 nunca abre o login lá (penduraria o pedido). Subir um valor novo é `scripts/nuvem.py segredo

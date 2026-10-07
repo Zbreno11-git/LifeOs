@@ -129,6 +129,10 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
 - **O segredo `viking-drive`** é o 4º com versão ativa (6 grátis por mês, lido em 2026-09-30).
 - **Leituras:** uma rodada lê os lembretes, as ações dos 30 dias e os meses de gasto: centenas de
   documentos por dia, contra as 50 mil grátis. Não medido no ar ainda.
+- **Desde 2026-10-07 (o dono: "ainda não estou usando ativamente"):** a rodada também lista a pasta
+  e baixa o arquivo mais novo do Drive (KB) para comparar, e só cria um arquivo quando o conteúdo
+  mudou. São 2 a 3 pedidos à API do Drive por dia (o quanto isso pesa na cota dela não foi
+  medido).
 
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 

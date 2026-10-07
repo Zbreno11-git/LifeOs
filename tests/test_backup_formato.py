@@ -231,3 +231,71 @@ def test_gasto_existente_nunca_e_sobrescrito(firestore_limpo):
     assert custos.importar_gasto(copia) == "igual"
     assert custos.importar_gasto({**copia, "total": 9.0}) == "diferente"
     assert custos.exportar_gastos() == [copia]
+
+
+# --- a impressão do conteúdo: um arquivo novo só quando algo mudou (dono, 2026-10-07) ----------
+
+_OUTRO = "9e8d7c6b-5a49-4382-9172-6a5b4c3d2e1f"
+_DO_BACKUP = _acao(id=1_790_000_000_000_000_009, operacao=formato.OPERACAO_DO_BACKUP)
+
+
+def _impressao(lembretes=None, acoes=None, gastos=None, *, agora=AGORA, commit="abc1234") -> str:
+    dados = formato.montar(
+        [_lembrete(), _lembrete(id=_OUTRO, title="outro")] if lembretes is None else lembretes,
+        [_acao()] if acoes is None else acoes,
+        [_gasto()] if gastos is None else gastos,
+        agora=agora,
+        commit=commit,
+    )
+    return formato.impressao_do_conteudo(formato.ler(dados))
+
+
+def test_a_impressao_ignora_o_instante_o_commit_a_ordem_e_a_acao_do_proprio_backup():
+    base = _impressao()
+    assert _impressao(agora=AGORA + timedelta(days=1), commit="def5678") == base
+    assert _impressao(lembretes=[_lembrete(id=_OUTRO, title="outro"), _lembrete()]) == base
+    assert _impressao(acoes=[_acao(), _DO_BACKUP]) == base
+
+
+@pytest.mark.parametrize(
+    "mudanca",
+    [
+        {"lembretes": [_lembrete(title="mudou")]},
+        {
+            "lembretes": [
+                _lembrete(),
+                _lembrete(id=_OUTRO, title="outro"),
+                _lembrete(id="0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", title="novo"),
+            ]
+        },
+        {"lembretes": [_lembrete(completed_at=AGORA), _lembrete(id=_OUTRO, title="outro")]},
+        {"acoes": [_acao(), _acao(id=1_790_000_000_000_000_002, operacao="calendario.criar")]},
+        {"acoes": [_acao(estado="desfeita")]},
+        {"acoes": []},
+        {"gastos": [_gasto(total=0.5, dias={"2026-10-06": 0.5})]},
+    ],
+    ids=[
+        "titulo",
+        "lembrete-novo",
+        "concluido",
+        "acao-nova",
+        "acao-mudou",
+        "acao-expirou",
+        "gasto",
+    ],
+)
+def test_qualquer_mudanca_do_conteudo_muda_a_impressao(mudanca):
+    assert _impressao(**mudanca) != _impressao()
+
+
+def test_a_impressao_de_um_arquivo_lido_de_volta_e_a_do_que_se_montou():
+    """A rodada compara o que monta agora com o arquivo baixado do Drive: os dois caminhos."""
+    dados = formato.montar(
+        [_lembrete()],
+        [_acao()],
+        [{"mes": "2026-10", "total": 1, "dias": {"2026-10-06": 1}}],
+        agora=AGORA,
+        commit="abc1234",
+    )
+    lido = formato.de_bytes(formato.para_bytes(dados))
+    assert formato.impressao_do_conteudo(lido) == formato.impressao_do_conteudo(formato.ler(dados))

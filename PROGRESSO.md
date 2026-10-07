@@ -5,9 +5,9 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 ~17:20Z: Sessão 11c, o 1º deploy no ar e a C0b medida; falta o Mac (o token do Drive)
+## ▶️ RETOMAR AQUI — 2026-10-07 ~18:00Z: Sessão 11c, o 1º deploy no ar, o token do Drive subiu, C6 (só quando mudar) pronto; falta o 2º deploy, a tarefa e o `--conferir`
 
-**Depois do compact (2026-10-07, ~17:00–17:20Z):**
+**Depois do compact (2026-10-07, ~16:58Z até o commit `751bed4` às 17:08:47Z):**
 - As conferências bateram com o bloco abaixo: `a41cfa9` = remoto, CI `success` pelo SHA,
   `2489 passed in 58.71s` (emulador exigido, 0 pulados, depois do reinício do VPS), 11 ✅ e ⬜
   `backup`, o `deploy` só-leitura com o motor `bbcba1a` e os 5 ❌ esperados.
@@ -23,11 +23,27 @@
   - `run…/request_count` = **1.491 2xx** e **26 4xx**. Os 26 são todos das provas do `deploy`
     (`gcloud logging read` por status e rota: 10× 403 `/versao`, 5× 401 `/versao`, 5× 403 e 5×
     400 `/maos/pegar`, 1× 404 `/tarefas/backup`), nenhum de fora.
-  - **A estimativa da D61 errou de lado:** "~1,5 mil leituras/dia" eram as **gravações** (o
+  - **A estimativa da D61 errou de lado (ver também abaixo):** "~1,5 mil leituras/dia" eram as **gravações** (o
     `estado` do envio, uma por minuto: 1.440 + as do uso); as leituras ficaram em 163, contra as
     50 mil grátis (e as 1.481 gravações contra as 20 mil). **Não medido:** se a cobrança conta
     uma leitura mínima por consulta vazia (duas buscas na documentação não acharam a frase); se
     contar, são ~+1,5 mil/dia, ainda longe do gatilho de 25 mil.
+- **O Mac (2026-10-07, colado pelo dono):** `751bed4`; `uv sync` trocou o `opentelemetry-api`
+  (1.45.0 → 1.45.1); `2279 passed, 210 skipped` (2489); `viking backup --login` → "✅ Login do
+  Drive ok (só os arquivos que o Viking cria): nenhum backup na pasta ainda."; `segredo
+  viking-drive --executar` → "✅ viking-drive: versão nova enviada (1 habilitada(s))". O `deploy`
+  só-leitura passou a dar 4 ❌ esperados (o token com versão e ainda não montado), que o 2º
+  deploy cura.
+- **Respostas do dono (2026-10-07, entre 17:08Z e 17:57Z):** "ainda não estou usando o Viking ativamente" →
+  o backup **só cria arquivo quando algo mudou** (D63 3b); o roteiro **mantém a ordem**.
+- **C6 ✅ (nova, portões às ~17:57Z, medido pelo relógio): um arquivo novo só quando algo mudou.**
+  `formato.impressao_do_conteudo` (o sha256 do conteúdo sem o instante, o commit e as ações
+  `backup.drive`); a rodada baixa o mais novo do Drive, o lê de volta e só sobe se mudou, se não
+  há arquivo ou se ele não se lê; `estado/backup.ultimo` = a última conferência; a resposta da
+  rota com `novo`. Textos que ficaram falsos: o `viking backup` ("conferido em…"), o aviso de 48 h
+  ("conferido pela última vez"), o ⚠️ do passo `backup`, e o passo `segredos` com o Drive. Testes
+  novos: 11 no formato e na rodada, 1 do texto da CLI; mutações `backup:` → `11 · mortas pelo
+  teste esperado: 11` (6 novas, 2 reancoradas).
 
 **Estado (2026-10-07 ~16:45Z, medido antes do compact):**
 - **Repositório:** o HEAD é este checkpoint (depois de `afd568c`, o C5, CI `success` pelo SHA) =
@@ -46,18 +62,18 @@
 - **No ar sem mudança:** o Gmail, as mãos, o envio de lembretes.
 
 **Próximo passo exato:**
-1. ✅ (2026-10-07 ~17:15Z, acima) **O deploy.** O ok foi dado em 2026-10-07 ~16:39Z, antes do compact. Diga ao dono que vai
+1. ✅ (2026-10-07, antes das 17:08Z, acima) **O deploy.** O ok foi dado em 2026-10-07 ~16:39Z, antes do compact. Diga ao dono que vai
    publicar e rode `python scripts/nuvem.py deploy --executar` (só com o HEAD limpo, no GitHub e
    CI verde). Esperado: todas as provas ✅, `backup: False` (o token ainda não subiu), `drive`
    fora da revisão ("Fora desta revisão (sem versão; sobe do Mac): viking-drive"), `cli@`
    recusado em `/tarefas/backup` (403).
-2. **O roteiro do Mac**, entregue ao dono depois do deploy:
+2. ✅ (acima) **O roteiro do Mac**, entregue ao dono depois do deploy:
    1. `cd ~/LifeOs && git pull && git log --oneline -1`
    2. `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q`
    3. `viking backup --login` (a tela pede só os arquivos que o app cria; esperado "✅ Login do
       Drive ok …: nenhum backup na pasta ainda")
    4. `python scripts/nuvem.py segredo viking-drive` e depois o mesmo com `--executar`
-3. **No VPS, com o ok na hora:**
+3. **No VPS, com o ok na hora** (depois do commit do C6 e do CI verde):
    1. o `deploy --executar` de novo (o segredo novo pede revisão; esperado `backup: True`);
    2. `python scripts/nuvem.py --executar backup` (cria a tarefa `viking-backup` e roda uma; de
       US$ 0 a 0,10/mês);
@@ -69,7 +85,9 @@
    e escritas do Firestore e os pedidos do Cloud Run do dia, pela API do Cloud Monitoring (só
    leitura), contra os ~1,5 mil/dia da D61 (gatilho: 25 mil).
 6. **O fechamento:**
-   - o diário (com "Erros desta sessão": os horários do C1/C2 escritos sem medir, classe 2);
+   - o diário (com "Erros desta sessão": os horários do C1/C2 escritos sem medir, classe 2, e
+     de novo depois do compact: ~17:20Z, ~17:15Z e ~18:10Z no bloco, corrigidos pelo relógio e
+     pelo `git log` antes do commit);
    - a barra (20 de 32);
    - `sessoes.md` (a 11c feita, o ▶️ na 11d) e a D63;
    - o texto do passo `segredos` no `scripts/nuvem.py` ainda diz "os tokens da agenda e do
@@ -121,7 +139,7 @@
 
 ### Sessão 11c — os checkpoints feitos (o registro)
 - C0 ✅: o lock em `d4f5127`, os docs em `8db5ab7`.
-- C0b ✅ (2026-10-07 ~17:10Z): 163 leituras, 1.481 gravações, 1.491 pedidos 2xx e 26 4xx (das provas) em 24 h; o detalhe no topo do bloco.
+- C0b ✅ (2026-10-07, medida às ~17:05Z): 163 leituras, 1.481 gravações, 1.491 pedidos 2xx e 26 4xx (das provas) em 24 h; o detalhe no topo do bloco.
 - C1 ✅ (2026-10-06, commit às 23:39Z):
   - `backup/formato.py`: o arquivo versionado, que `ler` confere inteiro;
   - a cópia do registro (`registro_interface.CAMPOS_DA_COPIA`, `exportar`/`importar` nos dois

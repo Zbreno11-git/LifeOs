@@ -452,7 +452,8 @@ def _backup() -> dict[str, Any]:
 
 async def tarefas_backup(request: Request) -> JSONResponse:
     """O backup do dia no Drive (Sessão 11c, D63), disparado pelo Cloud Scheduler (só o
-    `viking-agendador@`). A resposta tem só contagens e o nome do arquivo; um erro diz só o tipo."""
+    `viking-agendador@`); um arquivo novo só quando algo mudou (`novo`). A resposta tem só
+    contagens, o nome do arquivo e `novo`; um erro diz só o tipo."""
     await _quem(request)
     try:
         return JSONResponse(await run_in_threadpool(_backup))

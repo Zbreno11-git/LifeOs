@@ -10,11 +10,16 @@ impressão errada), sem ecoar conteúdo na mensagem.
 `montar` passa o que monta por `ler` antes de devolver: um arquivo que não se lê de volta erra no
 dia do backup, não no dia do desastre.
 
+`impressao_do_conteudo` diz se o que a nuvem guarda mudou desde um backup (resposta do dono,
+2026-10-07: um arquivo novo só quando algo mudou): sem o instante, o commit e as ações do próprio
+backup, que senão fariam todo dia diferente do anterior.
+
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
@@ -42,6 +47,8 @@ COLECOES = ("lembretes", "acoes", "gastos")
 # Um pedido da restauração leva até isto de ações e meses (as ações têm a cópia para desfazer).
 LOTE_DO_BACKUP = 50
 CAMPOS_DO_GASTO = ("mes", "total", "dias")
+# A ação que o próprio backup grava ao subir (`drive.subir`): não conta como mudança.
+OPERACAO_DO_BACKUP = "backup.drive"
 _MES = re.compile(r"\d{4}-\d{2}")
 _DIA = re.compile(r"\d{4}-\d{2}-\d{2}")
 _TEXTOS_DA_ACAO = ("turno", "origem", "operacao", "parametros", "estado")
@@ -204,6 +211,22 @@ def montar(
     }
     ler(dados)
     return dados
+
+
+def impressao_do_conteudo(backup: Backup) -> str:
+    """O sha256 do que o backup guarda, na ordem dos ids: sem o instante, o commit e as ações do
+    próprio backup (`OPERACAO_DO_BACKUP`). Igual = nada mudou desde aquele arquivo."""
+    conteudo = {
+        "lembretes": sorted(
+            (transporte.para_dict(r) for r in backup.lembretes), key=lambda d: d["id"]
+        ),
+        "acoes": sorted(
+            (a for a in backup.acoes if a["operacao"] != OPERACAO_DO_BACKUP), key=lambda a: a["id"]
+        ),
+        "gastos": sorted(backup.gastos, key=lambda g: g["mes"]),
+    }
+    texto = json.dumps(conteudo, ensure_ascii=False, sort_keys=True, default=str)
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
 
 
 def para_bytes(dados: dict[str, Any]) -> bytes:

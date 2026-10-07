@@ -858,6 +858,11 @@ O que estava escrito na abertura:
   - o aviso de falha sai **na abertura do `viking chat --nuvem`** (backup com mais de 48 h);
   - a medição da D51 foi feita (dois GETs, com o ok do dono) e deu "pode"; a mudança das finanças
     é a **Sessão 11d**.
+- **Respostas do dono em 2026-10-07** ("ainda não estou usando o Viking ativamente, só vou usar
+  ativo quando eu tiver ele em hardware ou em app/site com ele completo"):
+  - o backup **só cria um arquivo quando algo mudou** (a rodada confere todo dia o mais novo do
+    Drive; D63, item 3b);
+  - o roteiro **mantém a ordem**: 11d, 12–16 e então o app (17–18), que chega com tudo dentro.
 
   Plano, medições e checkpoints no `PROGRESSO.md`.
 - **Entrega:**

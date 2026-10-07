@@ -46,7 +46,7 @@ APIS = (
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "billingbudgets.googleapis.com",
-    "secretmanager.googleapis.com",  # a chave do Gemini e os tokens da agenda e do Gmail
+    "secretmanager.googleapis.com",  # a chave do Gemini e os tokens da agenda, do Gmail e do Drive
 )
 REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
@@ -765,7 +765,7 @@ PASSOS = (
     Passo("indices", "índices compostos do Firestore", _m_indices, _c_indices, ("firestore",)),
     Passo(
         "segredos",
-        "a chave do Gemini e os tokens da agenda e do Gmail (só o motor@ lê)",
+        "a chave do Gemini e os tokens da agenda, do Gmail e do Drive (só o motor@ lê)",
         _m_segredos,
         _c_segredos,
         depende=("apis", "contas"),
@@ -801,8 +801,9 @@ PASSOS = (
         _c_backup,
         depende=("agendador",),
         irreversivel=(
-            "o motor passa a criar, todo dia, um arquivo na pasta 'Viking — backups' do Drive "
-            "do dono (nunca apaga); roda uma vez agora; custa de US$ 0 a 0,10 por mês"
+            "o motor passa a conferir todo dia a pasta 'Viking — backups' do Drive do dono e a "
+            "criar um arquivo quando algo mudou (nunca apaga); roda uma vez agora; custa de US$ 0 "
+            "a 0,10 por mês"
         ),
     ),
 )

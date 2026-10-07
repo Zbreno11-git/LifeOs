@@ -465,7 +465,10 @@ def _backup(args: argparse.Namespace) -> int:
     if not versao.get("backup"):
         print("☁️  O backup ainda não está ligado na nuvem (o token do Drive não subiu).")
     elif versao.get("backup_em"):
-        print(f"☁️  Último backup no Drive: {versao['backup_em']} (UTC).")
+        print(
+            f"☁️  Backup no Drive conferido em {versao['backup_em']} (UTC); um arquivo novo só "
+            "quando algo muda (`--conferir` restaura o mais novo)."
+        )
     else:
         print("☁️  Backup ligado, mas nenhum ainda.")
     return 0

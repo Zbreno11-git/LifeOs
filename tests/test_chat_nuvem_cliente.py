@@ -208,8 +208,8 @@ def test_o_aviso_do_backup_vem_so_depois_de_48_horas():
 
     assert com(47) is None
     assert com(49) == (
-        "⚠️  Backup no Drive: o último é de há 2.0 dias; a rodada diária pode estar falhando "
-        "(`viking backup`)."
+        "⚠️  Backup no Drive: conferido pela última vez há 2.0 dias; a rodada diária pode estar "
+        "falhando (`viking backup`)."
     )
     nenhum = chat_cliente.aviso_do_backup({"backup": True, "backup_em": None}, agora)
     assert nenhum is not None and "nenhum feito ainda" in nenhum
@@ -218,3 +218,26 @@ def test_o_aviso_do_backup_vem_so_depois_de_48_horas():
 def test_sem_o_backup_ligado_a_abertura_nao_fala_dele():
     assert chat_cliente.aviso_do_backup({"backup": False, "backup_em": None}) is None
     assert chat_cliente.aviso_do_backup({}) is None  # um motor velho, sem o campo
+
+
+def test_viking_backup_diz_a_ultima_conferencia_e_nao_promete_um_arquivo_por_dia(
+    monkeypatch, capsys
+):
+    """Desde 2026-10-07 o `backup_em` é a última vez que o Drive confirmou o conteúdo de agora (um
+    arquivo novo só quando algo muda): o texto não pode dizer que um arquivo nasceu naquela hora."""
+    from argparse import Namespace
+
+    from lifeos import cli
+    from lifeos.nuvem import cliente
+
+    monkeypatch.setattr(cliente, "sessao_de_chat", lambda: None)
+    monkeypatch.setattr(
+        cliente,
+        "capacidades",
+        lambda _s: {"backup": True, "backup_em": "2026-10-08T09:00:02+00:00"},
+    )
+    args = Namespace(conferir=False, restaurar=None, executar=False, login=False)
+    assert cli._backup(args) == 0
+    saida = capsys.readouterr().out
+    assert "conferido em 2026-10-08T09:00:02+00:00 (UTC)" in saida
+    assert "um arquivo novo só quando algo muda" in saida
