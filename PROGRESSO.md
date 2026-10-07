@@ -30,6 +30,38 @@ perguntas da abertura da 11d, em rodadas curtas, antes de planejar.
 
 **Depende do dono:** as respostas da abertura da 11d.
 
+**Medido no checkpoint do compact (2026-10-07 18:28Z):** árvore limpa; HEAD `b02c548` = remoto, CI
+`success` pelo SHA; sem `.mutacao.lock` nem background; `python scripts/nuvem.py` → 12 ✅;
+`deploy` só-leitura → o motor `3a38d07`, 1 commit desde ele nos caminhos da imagem, os 2 ❌
+esperados (a imagem e o `/versao`), "o último backup tem menos de 48 h: backup_em:
+2026-10-07T18:03:07.197761+00:00", log 0 erro.
+
+**Reler para a 11d, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md` (a Pluggy em `financas/`, as armadilhas "Na Pluggy, transação é instante
+  e fatura é data" e "Segredo da nuvem é arquivo de volume");
+- `sessoes.md`, a seção da **11d** (a entrega prevista e as 3 perguntas da abertura) e o ▶️;
+- `docs/decisoes.md`: **D51** (a condição e a medição de 2026-10-06), D57 (o que mora onde),
+  D58–D61 (a nuvem, o motor, as identidades por rota), D63;
+- `docs/fontes/pluggy-open-finance.md` (a seção "Pagamentos", medida em 2026-10-06) e
+  `docs/fontes/gcp-cloud-run-firestore.md`;
+- o código: `src/lifeos/financas/pluggy.py` (a lista fechada de GET e a recusa de escrita antes
+  da rede), `service.py`, `tools.py`; `src/lifeos/assistant/na_nuvem.py` (`SO_NO_MAC`, onde as
+  finanças estão hoje, com o motivo); `src/lifeos/nuvem/motor.py` (`QUEM_FALA`);
+  `scripts/nuvem.py` (os passos, `SEGREDOS`, o deploy); `Dockerfile`;
+- o índice de `docs/erros.md` e as classes 2, 4, 6 e 7;
+- as skills `software-build` (abrir e planejar; `referencia/plano-de-sessao.md`), `seguranca`,
+  `integracoes`, `nuvem-e-deploy` e `testes-que-provam`.
+
+**Fronteiras da 11d (valem desde a abertura):**
+- a chave da Pluggy alcança PIX: **nenhuma escrita, nunca**; qualquer chamada à Pluggy do VPS
+  (mesmo um GET) só com o pedido do dono naquele passo, e nunca com o valor da chave na saída;
+- um serviço novo, uma conta de serviço, um segredo (`viking-pluggy`) e cada deploy são recursos
+  ou custo: medir antes, e o ok do dono **naquele** passo;
+- o motor nunca vê a chave (a D51 diz serviço isolado), a menos que o dono decida outra coisa na
+  abertura;
+- o fuso dos bancos é Brasília (`financas/service.FUSO_DOS_BANCOS`); o do dono, Seattle até ~fim
+  de outubro, e depois o Brasil (perguntar a cidade).
+
 **Não pode ser esquecido (além da lista mais abaixo):** o dono ainda não usa o Viking ativamente e
 decidiu manter a ordem do roteiro (2026-10-07); o backup só cria arquivo quando algo muda (D63 3b).
 
