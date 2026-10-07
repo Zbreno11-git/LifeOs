@@ -16,9 +16,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **11d — finanças na nuvem, só leitura** (a próxima; a seção dela tem as perguntas da
-  abertura). A 11c fechou no Mac em 2026-10-07 (o backup restaurou 7 de 7 lembretes num banco
-  vazio); decisões D60–D63.
+- **Sessão:** **11d — finanças na nuvem, só leitura** (em curso desde 2026-10-07: aberta,
+  respondida e com o plano aprovado; o estado está no `PROGRESSO.md`). A 11c fechou no Mac em
+  2026-10-07 (o backup restaurou 7 de 7 lembretes num banco vazio); decisões D60–D64.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
@@ -32,10 +32,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D63), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D64), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as respostas da abertura da 11d (o serviço isolado, o que o chat da nuvem
-  pergunta, se o `viking chat` do Mac continua com as finanças).
+- **Depende do dono:** nada até o C4 da 11d (aberta e planejada em 2026-10-07): os oks do passo
+  `financas`, do segredo no Mac, do deploy e da `prova-financas`.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -875,7 +875,7 @@ O que estava escrito na abertura:
   chat --nuvem` (achado no teste do Mac de 2026-10-06).
 - **Libs:** só o `googleapiclient` (já no lock).
 
-## Sessão 11d — finanças na nuvem, só leitura (criada em 2026-10-06)
+## Sessão 11d — finanças na nuvem, só leitura (criada em 2026-10-06; aberta em 2026-10-07)
 
 - **Por quê:** a medição da D51 (2026-10-06 22:27Z, na abertura da 11c) deu "pode":
   - `GET /smart-transfers/preauthorizations` → **403 `PAYMENT_INITIATION_NOT_ALLOWED`**. É o único
@@ -892,13 +892,25 @@ O que estava escrito na abertura:
   criado, um pedido só move dinheiro com a autorização do dono no banco.
 - **Entrega prevista:**
   - as finanças no `viking chat --nuvem` por um **serviço isolado só de leitura**: um 2º serviço
-    do Cloud Run, com conta e segredo próprios (`viking-pluggy`), chamado pelo motor só nos `GET`
-    da lista fechada de `financas/pluggy.py`;
+    do Cloud Run, com conta e segredo próprios (`viking-pluggy`). Escrito em 2026-10-06 como "só
+    nos `GET` da lista fechada de `financas/pluggy.py`", mas o cliente aceita **qualquer** caminho
+    GET (lido em 2026-10-07): o plano trocou isso por 5 perguntas fechadas com texto pronto (D64);
   - o motor nunca vê a chave da Pluggy.
 - **Perguntas para a abertura:**
   - o serviço isolado ou a chave no motor (a D51 diz isolado);
   - o que o chat da nuvem pode perguntar (saldo, gastos, busca, fatura: as mesmas tools do Mac);
   - se o `viking chat` do Mac continua com as finanças locais.
+- **Respostas do dono na abertura (2026-10-07, D64):**
+  - **serviço isolado**: o `financas` (2º serviço do Cloud Run), com a conta `viking-financas@`,
+    a única que lê o segredo `viking-pluggy`; o motor pede texto pronto e nunca vê a chave;
+  - o chat da nuvem pergunta **as 4 do Mac** (saldo, gastos, busca, fatura);
+  - o `viking chat` do Mac **continua como hoje**, com as finanças locais;
+  - a nuance da D51 **medida de novo** (18:46:45Z, os mesmos 2 GETs): igual a 2026-10-06;
+  - o segredo **sobe do Mac** (os IDs das conexões só existem lá);
+  - as provas automáticas do deploy **não chamam a Pluggy**; a `prova-financas` só com o pedido
+    do dono.
+
+  Plano, medições e checkpoints no `PROGRESSO.md`.
 
 ## Sessão 11b — formulários: o Viking preenche, o dono envia (pedida em 2026-09-29)
 

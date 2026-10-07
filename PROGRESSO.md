@@ -5,65 +5,51 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 ~18:25Z: Sessão 11c fechada no Mac; a próxima é a 11d (abrir e planejar)
+## ▶️ RETOMAR AQUI — 2026-10-07 18:53Z: Sessão 11d aberta e planejada; o próximo é o C1
 
-**Estado (2026-10-07, portões às 18:23:55Z pelo relógio):**
-- **A 11c fechou no Mac:** `viking backup --conferir` → "7 de 7 lembrete(s), 8 de 8 ação(ões)",
-  "7 iguais", "✅ O backup restaura inteiro e bate com a nuvem.", `saida=0`; `viking chat --nuvem`
-  abriu sem o aviso de backup.
-- **No ar:** o motor `3a38d07` (19 ✅), a tarefa `viking-backup` (`0 9 * * *` UTC, o 1º backup
-  às 18:03:07Z), o agendador `viking-lembretes`; `python scripts/nuvem.py` → 12 ✅.
-- **O último defeito, achado no Mac e consertado no commit de fechamento:** a abertura do chat da
-  nuvem dizia "…ligado lá).  e finanças" com um item só fora (`chat_cliente._em_lista`, 2 testes,
-  1 mutação morta). É código do Mac: não pede deploy.
-- **Portões do fechamento:** `2508 passed in 52.39s` (emulador exigido); ruff "All checks
-  passed!"; format "158 files already formatted"; mypy "Success: no issues found in 40 source
-  files". Mutações de hoje: `backup:` 11/11 e a da abertura 1/1 (a rodada inteira, 366/366, foi
-  antes do compact).
+**Estado (2026-10-07):**
+- **A 11d abriu** depois do compact: leitura e conferências batendo com o bloco anterior
+  (`2508 passed in 52.09s`, 0 pulados; 12 ✅; o motor `3a38d07` com os 2 ❌ esperados; log 0
+  erro).
+- **O lock:** iniconfig 2.3.0 → 2.3.1, no commit `050b46e` (a suíte antes e depois `2508
+  passed`; CI `success` pelo SHA).
+- **A D51 medida de novo** (ok do dono, 18:46:45Z): `/smart-transfers/preauthorizations` → 403
+  `PAYMENT_INITIATION_NOT_ALLOWED`; `/payments/requests` → 200, 0 pedidos. Igual a 2026-10-06.
+- **As 6 respostas do dono e o plano aprovado** estão no "Plano — Sessão 11d", logo abaixo dos
+  registros. Em uma linha: um 2º serviço do Cloud Run (`financas`, conta `viking-financas@`,
+  segredo `viking-pluggy` subido do Mac) responde só 5 perguntas fechadas com texto pronto; o
+  motor nunca vê a chave; o chat do Mac não muda; as provas automáticas não tocam a Pluggy.
 - **Não há background nem trava.**
 
-**Próximo passo exato:** abrir a **Sessão 11d** (skill `software-build`): ler a seção dela em
-`sessoes.md`, a D51 e `docs/fontes/pluggy-open-finance.md`; medir na abertura (`uv lock --upgrade
---dry-run`, o CI do HEAD pelo SHA, `python scripts/nuvem.py` → 12 ✅, `deploy` só-leitura → os 2
-❌ esperados da lista "Antes de confiar" e o último backup em menos de 48 h); e fazer ao dono as
-perguntas da abertura da 11d, em rodadas curtas, antes de planejar.
+**Próximo passo exato:** C1 do plano. `config.pluggy_credenciais()`/`FINANCAS_URL`/
+`financas_no_motor()`, o `pluggy` sem `/connect_token` com `STORE == "firestore"`,
+`nuvem/identidade.py` (tirado de `motor._verificar`/`_quem`, sem mudar o motor) e o app
+`nuvem/financas.py` (`/responder`, `/saude`, `/conexoes`, só o `motor@`), com
+`tests/test_nuvem_financas.py`. Esperado: a suíte verde com os testes novos.
 
-**Depende do dono:** as respostas da abertura da 11d.
+**Depende do dono:** nada até o C4 (os oks: o passo `financas`, o segredo no Mac, o deploy, a
+`prova-financas`).
 
-**Medido no checkpoint do compact (2026-10-07 18:28Z):** árvore limpa; HEAD `b02c548` = remoto, CI
-`success` pelo SHA; sem `.mutacao.lock` nem background; `python scripts/nuvem.py` → 12 ✅;
-`deploy` só-leitura → o motor `3a38d07`, 1 commit desde ele nos caminhos da imagem, os 2 ❌
-esperados (a imagem e o `/versao`), "o último backup tem menos de 48 h: backup_em:
-2026-10-07T18:03:07.197761+00:00", log 0 erro.
+**Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; o plano da 11d
+abaixo; `docs/decisoes.md` (D51, D57–D61, D63, D64); `src/lifeos/financas/` (`pluggy.py`,
+`service.py`, `tools.py`), `src/lifeos/nuvem/motor.py` (`_verificar`, `_quem`, `QUEM_FALA`, as
+fumaças), `src/lifeos/assistant/na_nuvem.py` e `turno.py` (`_SECOES`), `scripts/nuvem.py`
+(`Segredo`, `SEGREDOS`, `comandos_do_deploy`, `segredo`, as provas); `tests/test_motor.py` (a
+identidade falsa) e `tests/test_financas*.py` (o dublê da Pluggy); `docs/erros.md` classes 2, 4,
+6 e 7; as skills `software-build`, `seguranca`, `nuvem-e-deploy` e `testes-que-provam`.
 
-**Reler para a 11d, nesta ordem:**
-- `CLAUDE.md`/`AGENTS.md` (a Pluggy em `financas/`, as armadilhas "Na Pluggy, transação é instante
-  e fatura é data" e "Segredo da nuvem é arquivo de volume");
-- `sessoes.md`, a seção da **11d** (a entrega prevista e as 3 perguntas da abertura) e o ▶️;
-- `docs/decisoes.md`: **D51** (a condição e a medição de 2026-10-06), D57 (o que mora onde),
-  D58–D61 (a nuvem, o motor, as identidades por rota), D63;
-- `docs/fontes/pluggy-open-finance.md` (a seção "Pagamentos", medida em 2026-10-06) e
-  `docs/fontes/gcp-cloud-run-firestore.md`;
-- o código: `src/lifeos/financas/pluggy.py` (a lista fechada de GET e a recusa de escrita antes
-  da rede), `service.py`, `tools.py`; `src/lifeos/assistant/na_nuvem.py` (`SO_NO_MAC`, onde as
-  finanças estão hoje, com o motivo); `src/lifeos/nuvem/motor.py` (`QUEM_FALA`);
-  `scripts/nuvem.py` (os passos, `SEGREDOS`, o deploy); `Dockerfile`;
-- o índice de `docs/erros.md` e as classes 2, 4, 6 e 7;
-- as skills `software-build` (abrir e planejar; `referencia/plano-de-sessao.md`), `seguranca`,
-  `integracoes`, `nuvem-e-deploy` e `testes-que-provam`.
-
-**Fronteiras da 11d (valem desde a abertura):**
+**Fronteiras da 11d (valem até o fechamento):**
 - a chave da Pluggy alcança PIX: **nenhuma escrita, nunca**; qualquer chamada à Pluggy do VPS
   (mesmo um GET) só com o pedido do dono naquele passo, e nunca com o valor da chave na saída;
-- um serviço novo, uma conta de serviço, um segredo (`viking-pluggy`) e cada deploy são recursos
-  ou custo: medir antes, e o ok do dono **naquele** passo;
-- o motor nunca vê a chave (a D51 diz serviço isolado), a menos que o dono decida outra coisa na
-  abertura;
+- a conta, o segredo, cada deploy e a `prova-financas`: medir antes, e o ok do dono **naquele**
+  passo;
+- o motor nunca vê a chave; o `motor@` nunca lê o `viking-pluggy`;
 - o fuso dos bancos é Brasília (`financas/service.FUSO_DOS_BANCOS`); o do dono, Seattle até ~fim
   de outubro, e depois o Brasil (perguntar a cidade).
 
-**Não pode ser esquecido (além da lista mais abaixo):** o dono ainda não usa o Viking ativamente e
-decidiu manter a ordem do roteiro (2026-10-07); o backup só cria arquivo quando algo muda (D63 3b).
+**Não pode ser esquecido:** o dono ainda não usa o Viking ativamente e manteve a ordem do roteiro
+(2026-10-07); o backup só cria arquivo quando algo muda (D63 3b); os 2 ❌ do deploy só-leitura
+são esperados até o deploy da 11d.
 
 ### Sessão 11c — o fechamento (2026-10-07, o registro)
 
@@ -491,6 +477,348 @@ D61). Medido na abertura: `2216 passed`, CI `success` em `687068d`, 10 ✅, o mo
   viking-gmail` → "viking-gmail: 0 versão(ões) habilitada(s); a fonte é o token do Gmail de
   secrets/ (no Mac)." e "Nada foi enviado (sem --executar)." O `gcloud` do Mac lê o Secret
   Manager do Viking: o passo do C6 não depende de login novo.
+
+## Plano — Sessão 11d: finanças na nuvem, só leitura, num serviço isolado (aprovado em 2026-10-07)
+
+### Context
+A D51 (2026-09-28) deixou as finanças fora da nuvem até uma medição. Medida em 2026-10-06 e de
+novo hoje (2026-10-07 18:46:45Z), ela dá "pode":
+- o caminho que paga sem o dono está fechado para a aplicação;
+- todo PIX avulso exige a autorização do dono no banco.
+
+O dono decidiu fazer a mudança numa sessão própria. Hoje o `viking chat --nuvem` diz que as
+finanças "só funcionam no `viking chat` do Mac" (`na_nuvem.SO_NO_MAC`).
+
+Aprovado este plano, o C0 o copia para o `PROGRESSO.md`, acima do plano da 11c. A execução segue
+até o fim sem pedir confirmação por fase. Os oks do que custa, cria recurso, publica ou toca a
+Pluggy são pedidos **na hora**.
+
+### O que esta sessão entrega (verificável)
+1. **Um 2º serviço do Cloud Run, `financas`:**
+   - conta própria (`viking-financas@`), a única que lê o segredo `viking-pluggy` (a chave, o
+     segredo e os IDs das conexões, num JSON);
+   - responde só a 5 perguntas fechadas: `saldo`, `gastos`, `buscar`, `fatura` e `conexoes`,
+     com os parâmetros validados;
+   - devolve só o texto que o chat do Mac já devolve (`financas/tools.responder_*`): nenhum
+     caminho livre da Pluggy, nenhum JSON cru;
+   - só o `viking-motor@` invoca: pelo IAM e, na 1ª instrução de toda rota, pelo e-mail do token;
+   - na nuvem, o cliente da Pluggy recusa até o `POST /connect_token`: sobra só o `POST /auth`.
+2. **O motor nunca vê a chave:**
+   - pede o texto ao serviço com um token de identidade (o servidor de metadados, com a audience
+     do serviço);
+   - a pergunta respeita o prazo do turno (220 s);
+   - um teste prova que, no modo motor, `pluggy.cliente()` nunca é chamado.
+3. **O `viking chat --nuvem`** ganha as 4 tools de finanças (as mesmas docstrings), só quando o
+   serviço está montado (`config.financas_no_motor()`, como o Gmail).
+   - O texto de sistema e a abertura passam a montar a lista do que a conversa tem e do que fica
+     no Mac a partir das capacidades presentes: navegador, e-mail e finanças, as 8 combinações
+     testadas.
+   - Some o "… e finanças: `viking chat`".
+4. **`viking financas --nuvem`** (com `--saldo`, `--gastos`, `--buscar`, `--fatura` ou nada para
+   as conexões) pede o mesmo texto pelo motor (rota `/financas`, só o `viking-cli@`).
+   - É a prova sem o Gemini: no Mac, o texto local e o da nuvem comparados por `cmp`, sem os
+     valores na conversa.
+5. **`scripts/nuvem.py`:**
+   - o passo `financas`: a conta, o segredo vazio e a leitura só para o `financas@`;
+   - `segredo viking-pluggy`, **no Mac**, pela entrada padrão: lê o `.env` e confere o formato;
+   - o `deploy` publica os dois serviços (o de finanças primeiro) quando o segredo tem versão, e
+     sem ele publica só o motor, sem as finanças;
+   - provas automáticas **sem tocar a Pluggy**;
+   - `prova-financas` (o login e o status das conexões, sem valores nem IDs) só quando o dono
+     pedir.
+
+### O que ela NÃO faz (e para onde foi)
+- **O `viking chat` do Mac continua com as finanças locais** (dono, hoje). A chave fica no
+  `.env` do Mac de qualquer jeito, porque `--conectar` precisa dela. Muda no app (17–18), se o
+  dono quiser.
+- **Conectar banco novo pela nuvem**: não. O `--conectar` segue só no Mac, e a nuvem recusa o
+  `/connect_token`.
+- **O MCP com finanças**: não (D21, decisão do dono).
+- **Rede privada entre os serviços (VPC)**: não. O IAM, o token conferido no código e a URL sem
+  conteúdo bastam, e uma VPC custa.
+
+### Respostas do dono (2026-10-07, ~18:45–18:50Z)
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| Onde fica a chave | serviço isolado | 2º serviço, conta `viking-financas@` e segredo `viking-pluggy` |
+| O que o chat da nuvem pergunta | as 4 do Mac | saldo, gastos, busca e fatura, com os textos de `financas/tools.py` |
+| O `viking chat` do Mac | continua como hoje | nada muda no caminho local |
+| A nuance da D51 | medir de novo, os 2 GETs | feito às 18:46:45Z: 403 `PAYMENT_INITIATION_NOT_ALLOWED` e 200 com 0 pedidos, igual a 06/10 |
+| De onde sobe o segredo | do Mac | `python scripts/nuvem.py segredo viking-pluggy --executar` no Mac (os IDs só estão lá) |
+| As provas do deploy e a Pluggy | só quando o dono pedir | as automáticas não chamam a Pluggy; `prova-financas` é à parte |
+
+### Decisões técnicas minhas (declaradas; o dono pode derrubar)
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **O serviço responde texto pronto**, não repassa caminhos da Pluggy | o motor (o Gemini, e-mails de terceiros) não consegue pedir nada fora das 5 perguntas, nem ver `paymentData` | precisar de um dado que nenhuma das 5 traz |
+| **A mesma imagem, outro comando** (`--command`/`--args` do `gcloud run deploy` → `uvicorn lifeos.nuvem.financas:app`) | um build, uma tag = o SHA; a prova "imagem = HEAD" vale para os dois | o serviço precisar de dependência que o motor não tem |
+| **`nuvem/identidade.py`**: a verificação do token sai do `motor.py` (assinatura, emissor, audience = `config.NUVEM_URL`, a lista por rota) e serve os dois apps | uma régua só; o teste "toda rota começa por `_quem`" vale nos dois | — |
+| **`VIKING_NUVEM_URL` é a audience de quem recebe**: no serviço de finanças, a URL dele; no motor, `VIKING_FINANCAS_URL` é a de quem ele chama | o motor já usa `NUVEM_URL` assim; no serviço de finanças `FINANCAS_URL` fica vazio, e as tools rodam local (sem laço) | — |
+| **O segredo `viking-pluggy`** é um JSON `{client_id, client_secret, item_ids}`, conferido antes de subir (os IDs no formato UUID, ≥ 1); `config.pluggy_credenciais()` lê o arquivo do volume no serviço e o `.env` no Mac | os IDs só existem no Mac; um arquivo só, lido uma vez por processo (`config._segredo`) | — |
+| **`Segredo` ganha `servico`** (`motor` ou `financas`): o passo `segredos` só cuida dos do motor, e o passo `financas` cuida do dele | o motor@ nunca ganha leitura do `viking-pluggy` | — |
+| **Serviço de finanças:** 0 instâncias mínimas, máximo 1, `--concurrency=4`, 1 CPU, 512Mi, `--timeout=120` | um usuário; as respostas de hoje levam alguns segundos no Mac | um `gastos` de um ano passar de 60 s no ar |
+| **A chamada do motor:** `requests` com prazo = o menor entre 60 s e o que resta do turno; a resposta até 64 KiB, com o campo `texto` obrigatório; a falha vira a frase "Não consegui falar com o serviço de finanças agora…  Nada foi alterado." | o turno nunca passa dos 220 s; uma resposta torta não chega ao Gemini | — |
+| **As duas fumaças:** `/fumaca/financas` (motor → `/saude`: o commit, as credenciais lidas e quantas conexões, **sem rede**) entra nas provas automáticas; `/financas {pergunta: conexoes}` (status e sincronização, sem IDs nem valores) é a `prova-financas` | é a resposta do dono sobre as provas | — |
+| **O texto de sistema e a abertura** montam a lista do que a conversa tem e do que fica no Mac (`_em_lista`), em vez de um texto fixo por combinação | 3 capacidades = 8 combinações; os textos fixos já eram 4 e iam virar 8 (a classe 4 de 2026-10-07) | — |
+
+### Medido na abertura (2026-10-07, VPS)
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repositório | `git status`, `rev-parse`, `ls-remote`, `ls .mutacao.lock` (18:41:05Z) | limpo; `cb6f6b5` = origin; sem trava | ok |
+| Suíte | `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q -rs` | `2508 passed in 52.09s`, 0 pulados | a base |
+| CI | `gh run list --commit cb6f6b5…` | `completed success` | ok |
+| Infraestrutura | `python scripts/nuvem.py` | 12 ✅ | ok |
+| No ar | `python scripts/nuvem.py deploy` | o motor `3a38d07`; os 2 ❌ esperados (a imagem e o `/versao`); `backup_em` 18:03:07Z; log 0 erro | ok |
+| Versões | `uv lock --upgrade --dry-run` (18:43:27Z) | iniconfig 2.3.0 → 2.3.1 | commit `050b46e`: a suíte antes e depois `2508 passed`, ruff, format (158), mypy (40) e `uv lock --check` ok; CI `success` pelo SHA |
+| **D51, de novo** (ok do dono) | dois `GET` pelo cliente que recusa escrita, só o código e a contagem (18:46:45Z) | `/smart-transfers/preauthorizations` → **403 `PAYMENT_INITIATION_NOT_ALLOWED`**; `/payments/requests` → **200**, 0 pedidos | igual a 2026-10-06; a D51 segue "pode" |
+| O `.env` do VPS | `grep -o '^PLUGGY_[A-Z_]*=' .env` | `PLUGGY_CLIENT_ID`, `_SECRET`, `PLUGGY_API`; **sem `PLUGGY_ITEM_IDS`** | o segredo sobe do Mac |
+| O cliente da Pluggy | leitura de `financas/pluggy.py` | `get(caminho)` aceita **qualquer** caminho GET; as escritas permitidas são `/auth` e `/connect_token` | o serviço não expõe caminho; a nuvem recusa o `/connect_token` |
+| O custo | `docs/fontes/gcp-cloud-run-firestore.md` (lido em 2026-09-29/30) | o grátis do Cloud Run é desconto a preço da faixa 1 (`southamerica-east1` é a 2); o Secret Manager tem 6 versões ativas grátis (o Viking usa 4) | a página de preço é **relida no C4**, antes do ok |
+
+### Mapa de checkpoints
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | o plano no `PROGRESSO.md`; `sessoes.md` (a 11d com as respostas, o ▶️); a D51 com a medição de hoje; `docs/fontes/pluggy-open-finance.md`; commit, push e CI | — | ⬜ |
+| C1 | `config` (as credenciais do arquivo, `FINANCAS_URL`, `financas_no_motor`); o `pluggy` sem `/connect_token` na nuvem; `nuvem/identidade.py`; o app `nuvem/financas.py` com as 3 rotas | C0 | ⬜ |
+| C2 | o motor: `financas/remoto.py`, as tools que perguntam ao serviço, `na_nuvem.FERRAMENTAS`, o texto de sistema montado, as rotas `/financas` e `/fumaca/financas`, o `/versao`; a abertura; `viking financas --nuvem`; o teste de ponta a ponta com os dois apps | C1 | ⬜ |
+| C3 | `scripts/nuvem.py`: `Segredo.servico`, o passo `financas`, `segredo viking-pluggy`, o deploy dos dois serviços, as provas, `prova-financas` | C1 | ⬜ |
+| C4 | portões, mutações, duas passadas, docs, commit, push e CI; os oks na hora (o passo, o segredo no Mac, o deploy, a `prova-financas`); o roteiro do Mac; o fechamento | C2, C3 | ⬜ |
+
+### Fase 0 — C0: os documentos
+**Faz:**
+- `PROGRESSO.md`: este plano acima do da 11c; o bloco RETOMAR aponta para o C1.
+- `sessoes.md`: a 11d com as 6 respostas; o ▶️.
+- `docs/decisoes.md`: a D51 ganha "medida de novo em 2026-10-07: igual"; a **D64** nasce com as
+  respostas e as decisões técnicas acima (fechada no C4 com o que mudar).
+- `docs/fontes/pluggy-open-finance.md`: a medição de hoje na seção "Pagamentos".
+
+**✅ Checkpoint:** `git log --oneline -1` com os docs; `gh run list --commit <sha>` → `success`; o
+diff dos `.md` relido.
+
+### Fase 1 — C1: o serviço de finanças
+**Faz:**
+- **`config`:**
+  - `PLUGGY_ARQUIVO` (`VIKING_PLUGGY_ARQUIVO`) e `FINANCAS_URL` (`VIKING_FINANCAS_URL`);
+  - `pluggy_credenciais()`: o JSON do volume, conferido sem ecoar valor, ou o `.env`;
+  - `financas_no_motor() = bool(FINANCAS_URL)`.
+  - `pluggy.cliente()` e o padrão de `Financas(item_ids=…)` passam a usar `pluggy_credenciais()`.
+- **`financas/pluggy.py`:** com `config.STORE == "firestore"` (os dois serviços), as escritas
+  permitidas são só `POST /auth`; o `/connect_token` é recusado antes da rede.
+- **`nuvem/identidade.py`:**
+  - `verificar(token)` e `quem(request, quem_pode)`, que saem de `motor._verificar` e
+    `motor._quem`;
+  - o motor passa a usá-los, sem mudar comportamento (os testes do motor seguem iguais).
+- **`nuvem/financas.py`** (Starlette), `QUEM_FALA = {"/responder", "/saude", "/conexoes"}: {MOTOR}`:
+  - `POST /responder {pergunta, desde, ate, texto, valor}` → `{texto}`. A pergunta é uma das 4,
+    os campos são texto com limite, e o resto do corpo é recusado com 400;
+  - `POST /saude` → `{commit, credenciais: bool, conexoes: n}`, sem rede;
+  - `POST /conexoes` → `{texto}`: status e sincronização por conexão, numerada ("conexão 1 de
+    2"), sem ID;
+  - o corpo até 16 KiB; o log nunca leva o texto, só o tipo do erro.
+
+**Testes:** `tests/test_nuvem_financas.py`:
+- só o `motor@` entra, rota a rota; o `cli@` e o dono em pessoa → 403; a audience errada → 401;
+- a pergunta fora da lista, um campo a mais e um texto longo → 400, sem ecoar;
+- `/responder` devolve exatamente `tools.responder_*` com o dublê da Pluggy dos testes de
+  finanças;
+- `/saude` não abre rede: a trava do `conftest` conta 0 pedidos;
+- `/conexoes` sem IDs (sentinela);
+- o `/connect_token` recusado no modo nuvem e aceito no Mac;
+- o JSON do segredo torto (sem campo, ID que não é UUID, vazio) → erro sem o valor.
+
+**✅ Checkpoint:** `pytest tests/test_nuvem_financas.py tests/test_financas*.py tests/test_motor*.py
+tests/test_config*.py -q` verde; a suíte verde.
+
+**Mutações:**
+
+| Mutação | Teste que tem de cair |
+|---|---|
+| `QUEM_FALA` do serviço com o `cli@` | "o `cli@` → 403" |
+| o `/connect_token` permitido na nuvem | "recusado no modo nuvem" |
+| `/saude` contando conexões pela rede | "0 pedidos" |
+| um campo a mais aceito | "campo a mais → 400" |
+
+**🐞 → Depurar:**
+- a classe 6: outra rota do motor ainda com a verificação velha →
+  `grep -n "_verificar\|_quem" src/lifeos/nuvem`;
+- a classe 2: o `--command`/`--args` do `gcloud run deploy` → ler `gcloud run deploy --help` antes
+  de escrever o C3.
+
+### Fase 2 — C2: o motor pergunta ao serviço
+**Faz:**
+- **`financas/remoto.py`:**
+  - `perguntar(pergunta, **campos) -> str`: o token de identidade do servidor de metadados
+    (`google.oauth2.id_token.fetch_id_token`, audience = `FINANCAS_URL`);
+  - `requests.post` com prazo = o menor entre 60 s e o que resta do turno (`prazo`);
+  - confere a resposta (JSON, `texto` str, até 64 KiB);
+  - falha → `pluggy.FalhaDaPluggy` com uma frase curta, que `tools.mensagem_de_erro` já traduz;
+  - `saude()` para a fumaça.
+- **`financas/tools.py`:** as 4 tools e os `responder_*` perguntam ao serviço quando
+  `config.financas_no_motor()`; senão, rodam aqui. As docstrings não mudam.
+- **`assistant/na_nuvem.py`:** as 4 entram em `FERRAMENTAS` e saem só sem o serviço (como
+  `_DO_GMAIL`); `SO_NO_MAC` fica vazio, com o comentário de para que serve.
+- **`assistant/turno.py`:** a intro e o "não tem" da nuvem montados das capacidades presentes,
+  com a seção `_FINANCAS` que o Mac já tem.
+- **`nuvem/motor.py`:**
+  - `POST /financas` (só o `cli@`): `{pergunta, …}` → o serviço → `{texto}`;
+  - `POST /fumaca/financas` (só o `cli@`) → `/saude`;
+  - `/versao` ganha `financas: bool`.
+- **`nuvem/chat_cliente.py`:** a abertura com as finanças da nuvem.
+- **`cli.py`:** `viking financas --nuvem` (com `--saldo`, `--gastos`, `--buscar`, `--valor`,
+  `--fatura`, `--desde` e `--ate`, ou sem nada para as conexões); recusa com `--conectar`.
+
+**Testes:**
+- **de ponta a ponta:** o motor em processo, o serviço em processo, o dublê da Pluggy e o
+  transporte do `remoto` ligado ao `TestClient` do serviço. O texto das 4 tools na nuvem é igual
+  ao do Mac com o mesmo dublê;
+- no modo motor, `pluggy.cliente` trocado por um que **levanta**: nenhuma das 4 o chama;
+- o serviço fora (timeout, 500, JSON torto, `texto` ausente, 65 KiB) → a frase "Nada foi
+  alterado." e nenhum valor;
+- o prazo do turno curto → o `timeout` passado ao `requests` é o que resta;
+- `/financas` só do `cli@`; o `maos@` e o `agendador@` → 403;
+- o texto de sistema e a abertura nas **8 combinações** (navegador, e-mail, finanças), com a do
+  ar (as 3) e a de hoje (sem finanças);
+- `viking financas --nuvem --saldo` imprime o texto da rota; com `--conectar`, recusa.
+
+**✅ Checkpoint:** `pytest tests/test_financas*.py tests/test_na_nuvem*.py tests/test_turno*.py
+tests/test_chat_nuvem_cliente.py tests/test_motor*.py tests/test_cli*.py -q` verde; a suíte verde.
+
+**Mutações:**
+
+| Mutação | Teste que tem de cair |
+|---|---|
+| a tool no motor chama `responder_saldo` local | "nenhuma chama `pluggy.cliente`" |
+| o `timeout` fixo em 60 | "o prazo do turno curto" |
+| a resposta sem limite de tamanho | "65 KiB" |
+| a lista do "não tem" sem a última vírgula/`e` | a combinação de 1, 2 e 3 itens |
+| `/financas` com o `maos@` | o 403 |
+
+**🐞 → Depurar:**
+- a classe 4: o teste de ponta a ponta verde porque o motor rodou local (o dublê também está
+  ali) → o `pluggy.cliente` que levanta dentro do mesmo teste;
+- a classe 6: outro texto que ainda diz "finanças só no Mac" →
+  `grep -rn "finanças" src/lifeos/assistant src/lifeos/nuvem`.
+
+### Fase 3 — C3: o script da nuvem
+**Faz:**
+- **`Segredo`** ganha `servico` ("motor" | "financas"). `Segredo("viking-pluggy",
+  "/segredos/pluggy/credenciais.json", "VIKING_PLUGGY_ARQUIVO", do_mac=True,
+  servico="financas")`. O passo `segredos` filtra os do motor.
+- **O passo `financas`** (depois do `backup`):
+  - mede a conta `viking-financas@`, o segredo `viking-pluggy` e quem o lê: **só** o
+    `financas@`, e o `motor@` **não**;
+  - `--executar` cria a conta, o segredo vazio e a leitura.
+- **`segredo viking-pluggy`** (no Mac): lê `PLUGGY_CLIENT_ID`, `_SECRET` e `_ITEM_IDS` do `.env`,
+  monta e confere o JSON, e o manda pela entrada padrão; nada é mostrado.
+- **`deploy`:**
+  - com o `viking-pluggy` com versão: o serviço `financas` primeiro (a mesma imagem;
+    `--command`/`--args`; a conta `financas@`; só esse volume; `VIKING_NUVEM_PROJETO`,
+    `VIKING_NUVEM_URL` = a URL dele, `VIKING_TIMEZONE`, `VIKING_PLUGGY_ARQUIVO`), depois o
+    `run.invoker` só para o `motor@`, e então o motor com `VIKING_FINANCAS_URL`;
+  - sem versão: só o motor, sem a variável.
+- **Provas automáticas** (sem a Pluggy):
+  - a imagem do `financas` = a esperada, e o comando é o dele;
+  - a conta é a `financas@`, os volumes são só o `viking-pluggy` e não há `valueFrom`;
+  - quem invoca é só o `motor@`;
+  - o `viking-pluggy` é lido só pelo `financas@`, e o motor não o monta;
+  - sem token → 403; o `cli@` direto → 403 (Google);
+  - via o motor: `/fumaca/financas` → `credenciais: True`, `conexoes ≥ 1` e o commit = o SHA;
+  - `/versao` → `financas: True`;
+  - o log do `financas` com 0 erro.
+- **`prova-financas`**: `cli@` → `/financas {pergunta: conexoes}` → o texto (sem IDs nem
+  valores), o tempo e o HTTP.
+
+**Testes:** em `tests/test_nuvem_script.py`:
+- os comandos dos dois deploys, com e sem o segredo;
+- o passo `financas` nos dois estados (nada existe e quase tudo existe, classe 7);
+- `segredo viking-pluggy` com o `.env` torto → não envia;
+- a régua "toda `VIKING_*_ARQUIVO` tem segredo" com o `servico`;
+- a prova reprova o `motor@` lendo o `viking-pluggy`.
+
+**✅ Checkpoint:** `pytest tests/test_nuvem_script.py -q` verde; a suíte verde; `python
+scripts/nuvem.py` → 12 ✅ e 1 ⬜ (`financas`), só lendo.
+
+**Mutações:**
+
+| Mutação | Teste que tem de cair |
+|---|---|
+| o `viking-pluggy` com `servico="motor"` | "o motor@ não lê" |
+| o deploy do `financas` sem `--no-allow-unauthenticated` | o teste dos comandos |
+| o motor publicado antes do `financas` | a ordem |
+| o `segredo` aceitando um ID que não é UUID | "o `.env` torto" |
+
+**🐞 → Depurar:**
+- a classe 7: o segredo do Mac vazio na 1ª vida do passo → os dois estados testados;
+- a classe 6 de 2026-10-01: a espera do IAM numa conta nova (o `motor@` invocando pela 1ª vez) →
+  a espera vale para os pedidos do motor ao serviço na 1ª prova.
+
+### Fase 4 — C4: fechar, publicar e testar no Mac
+**Faz:**
+- **Portões lidos:** pytest (emulador exigido), ruff, `ruff format --check` (o formatador só nos
+  arquivos editados), mypy (`financas/remoto.py` e `nuvem/identidade.py` na lista), gitleaks,
+  `uv lock --check` e o `docker build` em background.
+- **Mutações:** as novas em `scripts/mutacoes.py`, e depois a rodada inteira em background, sem
+  `timeout` e com a saída num arquivo. O esperado: 367 mais as novas, todas mortas.
+- **Duas passadas** (`referencia/revisao.md`). A 2ª pergunta: quem mais fala com a Pluggy na
+  nuvem, e o que acontece com o motor quando o serviço de finanças cai no meio de um turno.
+- **Docs:** `AGENTS.md` (a estrutura, os comandos, as variáveis e a armadilha se aparecer),
+  `docs/fontes/gcp-cloud-run-firestore.md` e `.env.example`.
+- **Commit, push e o CI pelo SHA.**
+- **Relida a página de preço do Cloud Run e do Secret Manager** (o custo do 2º serviço, com
+  data).
+- **Ok 1 → `--executar financas`** (a conta, o segredo vazio e a leitura; grátis).
+- **Roteiro do Mac 1:**
+  1. `cd ~/LifeOs && git pull && git log --oneline -1`
+  2. `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m
+     pytest -q`
+  3. `python scripts/nuvem.py segredo viking-pluggy`, e depois o mesmo com `--executar`
+- **Ok 2 → `deploy --executar`** (centavos; os dois serviços).
+- **Ok 3 → `prova-financas`** (o login e o status das 2 conexões, do ar).
+- **Roteiro do Mac 2** (sem os valores na conversa):
+  - `viking financas --saldo > /tmp/saldo-mac.txt && viking financas --saldo --nuvem >
+    /tmp/saldo-nuvem.txt && cmp -s /tmp/saldo-mac.txt /tmp/saldo-nuvem.txt && echo iguais ||
+    echo diferentes`;
+  - o mesmo para `--gastos` e `--fatura`;
+  - `viking chat --nuvem`: "quanto gastei este mês?", comparando com o `--gastos` de cima.
+- **Fechamento:** o diário (com "Erros desta sessão"), a barra (21 de 32), `sessoes.md` (a 11d
+  feita, o ▶️ na 12), a D64, commit, push e CI.
+
+**✅ Checkpoint:**
+- `python scripts/nuvem.py` → 13 ✅;
+- `deploy` → todas as provas ✅;
+- `prova-financas` → as 2 conexões `UPDATED`;
+- no Mac, "iguais" nos três e o chat respondendo com os mesmos números.
+
+**🐞 → Depurar:**
+- "diferentes" no `cmp` → a 1ª suspeita é o fuso: o `TIMEZONE` do Mac contra o
+  `VIKING_NUVEM_FUSO` (a linha "sincronizados em … às HH:MM" e o "hoje" do período). Pedir só a
+  linha que difere, sem valores (`diff` com os números trocados por `sed`);
+- o 403 do Google no motor → o serviço: a propagação do `run.invoker` (esperar, como na 11);
+- `SemCredenciais` no serviço → o volume e a variável (`/fumaca/financas`).
+
+### Riscos e o que é irreversível
+| Passo | Custo | Irreversível? | O ok |
+|---|---|---|---|
+| A conta `financas@`, o segredo e a leitura | grátis (a 5ª versão de 6) | não: apaga-se | ok 1, na hora |
+| O segredo com a chave da Pluggy na nuvem | — | a chave passa a existir no Secret Manager; a revogação é na Pluggy | o dono roda no Mac |
+| Deploy dos dois serviços | centavos; parado = 0 | a revisão anterior fica | ok 2, na hora |
+| `prova-financas` | uma chamada à Pluggy (GET) | não | ok 3, na hora |
+| O chat da nuvem com finanças | ~US$ 0,002 por turno (o teto vale) | — | o dono, no Mac |
+
+**Nada daqui escreve na Pluggy:** o cliente recusa antes da rede, e na nuvem sobra só o
+`/auth`.
+
+### Regra de conserto
+Todo defeito começa pela classe dele em `docs/erros.md`, e o conserto não para no ponto: o `grep`
+da forma inteira antes de dar por pronto. Os já previstos:
+- `pluggy.cliente(` fora do serviço no modo nuvem;
+- `_verificar` duplicado;
+- "finanças" nos textos do "só no Mac";
+- `QUEM_FALA` nas rotas novas;
+- `print(` nos dois apps.
+
+Nenhuma checagem antes de um commit leva `| tail`. Emenda por script ancora na linha inteira.
+Mutações vão com `run_in_background`.
 
 ## Plano — Sessão 11c: backup diário no Drive que restaura num banco vazio, e a D51 medida (aprovado em 2026-10-06)
 

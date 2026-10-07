@@ -49,6 +49,9 @@ dizia nessa data.
 - ⚠️ **A mesma chave alcança escrita:** `POST /payments/requests` (inclusive PIX), `PATCH
   /transactions/{id}`, `DELETE /items/{id}`, webhooks. O Viking só lê: o cliente precisa ser
   **só `GET` por construção** (lista fechada de caminhos), com teste que prove isso.
+  Como ficou (lido em 2026-10-07): `financas/pluggy._pedir` recusa todo método que não é `GET`,
+  fora de `POST /auth` e `POST /connect_token`, antes da rede; o `GET` aceita **qualquer**
+  caminho. Na nuvem (D64), o serviço só responde 5 perguntas fechadas e só aceita o `/auth`.
 
 ## Medido nas credenciais do dono (2026-09-26, VPS, sem imprimir valor)
 
@@ -106,6 +109,11 @@ Lido na mesma data (o MCP de documentação; `payments/overview` e o Q&A verific
 
 Consequência (D51): as duas condições se cumprem, e as finanças podem ir à nuvem num serviço
 isolado só de leitura. A mudança é a Sessão 11d.
+
+**Medido de novo em 2026-10-07 18:46:45Z** (abertura da 11d, VPS, ok do dono, o mesmo cliente e
+a mesma saída: só o código e a contagem): `GET /smart-transfers/preauthorizations` → **403
+`PAYMENT_INITIATION_NOT_ALLOWED`**; `GET /payments/requests` → **200**, `{page, results, total,
+totalPages}`, 0 pedidos. Igual ao dia anterior. Como fica na nuvem: D64.
 
 ## MCP de documentação
 
