@@ -183,6 +183,22 @@ def test_a_abertura_nao_promete_o_gmail_que_nao_esta_la():
     )
 
 
+def test_a_abertura_com_tudo_na_nuvem_menos_as_financas():
+    """O caso do dono desde 2026-10-06 (o Gmail e as mãos na nuvem): sobra um item fora, e a
+    abertura dizia "…ligado lá).  e finanças: `viking chat`." (visto no Mac em 2026-10-07)."""
+    tudo = chat_cliente.abertura({"commit": "x", "gmail": True, "maos": True})
+    assert tudo == (
+        "☁️  Viking na nuvem (agenda, lembretes, Gmail e o navegador do Mac, com o `viking maos` "
+        "ligado lá). Finanças: `viking chat`."
+    )
+
+
+def test_a_lista_da_abertura_com_um_dois_e_tres_itens():
+    assert chat_cliente._em_lista(["finanças"]) == "finanças"
+    assert chat_cliente._em_lista(["a", "b"]) == "a e b"
+    assert chat_cliente._em_lista(["a", "b", "c"]) == "a, b e c"
+
+
 def test_sem_o_primeiro_contato_nao_abre(monkeypatch, capsys):
     monkeypatch.setattr(cliente, "sessao_de_chat", lambda: object())
 

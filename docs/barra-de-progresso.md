@@ -7,15 +7,46 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-10-06 (Sessões 10c e 11 fechadas no seu Mac).**
+**Última atualização: 2026-10-07 (Sessão 11c fechada no seu Mac).**
 
-`████████████░░░░░░░░ 19 de 32 sessões fechadas`
+`████████████▌░░░░░░░ 20 de 32 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c e 11; parciais: nenhuma; em curso: 11c (backup no Drive; aberta em
-2026-10-06); na fila: 11d (finanças na nuvem), 11b (formulários) e 12 a 21. O total passou de 28
-para 29 quando a 10 foi dividida, para 30 quando a 10b foi dividida (2026-09-30), para 31 quando a
-11c saiu da 11 (2026-10-01), e para 32 quando a medição das finanças abriu a 11d (2026-10-06).
+10, 10b, 10c, 11 e 11c; parciais: nenhuma; em curso: nenhuma; na fila: 11d (finanças na nuvem, a
+próxima), 11b (formulários) e 12 a 21. O total passou de 28 para 29 quando a 10 foi dividida, para
+30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), e para 32
+quando a medição das finanças abriu a 11d (2026-10-06).
+
+## 2026-10-07 — Sessão 11c: uma cópia dos seus dados no seu Drive (fechada no seu Mac)
+
+**O que ficou pronto:**
+- **Backup no seu Drive, com o Mac desligado:** a nuvem confere todo dia às 09:00 UTC e guarda
+  na pasta "Viking — backups" os seus lembretes e notas, o que o Viking fez nos últimos 30 dias e
+  o que ele gastou. Como você ainda não usa o Viking todo dia, ela só cria um arquivo novo quando
+  algo mudou; se você apagar um arquivo, ela cria outro no dia seguinte. O Viking nunca apaga nada
+  lá.
+- **A prova de que o backup volta:** `viking backup --conferir` baixa o último arquivo, restaura
+  num banco vazio e compara com a nuvem, sem tocar no seu banco de verdade. Para um desastre,
+  `viking backup --restaurar` copia o arquivo de volta para a nuvem sem sobrescrever nada.
+- **Aviso se parar:** se o backup não for conferido em 48 h, a abertura do `viking chat --nuvem`
+  avisa.
+- **Finanças na nuvem: medido que pode.** A sua chave da Pluggy não consegue pagar sem você, e
+  todo PIX exige a sua autorização no banco. A mudança é a próxima sessão, a 11d.
+- **Dois textos consertados:** a recusa do Gmail sem terminal agora fala com você, e a abertura
+  do chat da nuvem não diz mais "  e finanças" (achado no seu teste de hoje).
+
+**Como sabemos:**
+- No seu Mac, o backup das 18:03 UTC voltou inteiro num banco vazio: 7 de 7 lembretes e 8 de 8
+  ações, todos iguais aos da nuvem.
+- 19 provas no ar, e os testes passando no VPS, com os defeitos plantados de propósito derrubados
+  pelo teste certo (366 de 366 na rodada inteira, e 12 de 12 nas mudanças de hoje).
+- Um dia inteiro medido da nuvem: 163 leituras e 1.481 gravações no banco, contra 50 mil e 20 mil
+  grátis por dia.
+
+**Custo:** a tarefa diária custa de US$ 0 a 0,10 por mês; o arquivo tem poucos KB.
+
+**Decidido hoje:** o roteiro mantém a ordem (as funções antes do app), porque você vai usar o
+Viking de verdade quando ele estiver completo, no app ou no hardware.
 
 ## 2026-10-06 — Sessões 10c e 11: o Gmail na nuvem, e o Viking trabalha com o Mac fechado (fechadas no seu Mac)
 

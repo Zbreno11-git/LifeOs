@@ -1046,6 +1046,48 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-07 — Sessão 11c fechada no Mac: o backup no Drive que restaura num banco vazio, e a D51 medida
+
+**O que entrou** (D63; plano e medições no `PROGRESSO.md`):
+- `backup/`: o arquivo versionado (lembretes no formato da migração, o registro de ações dos 30
+  dias, os gastos do teto; contagens e a impressão de cada lembrete, conferidos na leitura); o
+  Drive com o escopo `drive.file`, que **só cria, lista e baixa** (uma régua lê o código); a rodada
+  da nuvem (`POST /tarefas/backup`, só o `viking-agendador@`, todo dia às 09:00 UTC);
+  `viking backup --conferir` (restaura num `viking.db` temporário e compara com a nuvem) e
+  `--restaurar ARQUIVO` (o desastre, sem sobrescrever nada); o aviso de 48 h na abertura do chat.
+- **Um arquivo novo só quando algo mudou** (resposta do dono no meio do fechamento: "ainda não
+  estou usando o Viking ativamente"): a rodada baixa o mais novo do Drive, o lê de volta e só
+  sobe outro se o conteúdo mudou, se não há arquivo ou se ele não se lê.
+- As recusas sem terminal do Gmail falam com o dono e citam `viking chat --nuvem`.
+- **A D51 medida (2026-10-06):** pagamento sem o dono → 403 `PAYMENT_INITIATION_NOT_ALLOWED`;
+  todo PIX exige a autorização dele no banco. As finanças na nuvem viraram a **Sessão 11d**.
+
+**No ar, com os oks do dono no chat:**
+- o segredo `viking-drive` (vazio, depois com o token subido do Mac);
+- dois deploys: `a41cfa9` e `3a38d07`, 19 provas ✅ cada, o 2º com `'drive': True` e `backup: True`;
+- a tarefa `viking-backup`, cujo 1º backup foi às 18:03:07Z (HTTP 200 em 5,4 s);
+- `python scripts/nuvem.py` → 12 ✅.
+
+**A medição de 24 h do agendador:** 163 leituras e 1.481 gravações do Firestore, 1.491 pedidos 2xx
+e 26 4xx (todos das provas do deploy). A conta da D61 tinha posto as ~1,5 mil nas leituras.
+
+**No Mac (2026-10-07):** `2279 passed, 210 skipped` (2489); o login do Drive; o token subiu; `viking
+backup` → "conferido em 2026-10-07T18:03:07…"; **`viking backup --conferir` → 7 de 7 lembretes e 8
+de 8 ações restaurados num banco vazio, 7 iguais à nuvem, "✅ O backup restaura inteiro e bate com
+a nuvem.", saída 0**; `viking chat --nuvem` abriu sem aviso de backup.
+
+**Um defeito achado no Mac e consertado na hora:** com o Gmail e o navegador na nuvem, a abertura
+dizia "…ligado lá).  e finanças: `viking chat`." (a lista com um item só). `_em_lista`, dois testes,
+uma mutação morta. Não precisa de deploy: é texto do terminal do Mac, e chega com o `git pull`.
+
+**Em linguagem simples:** os seus lembretes, o que o Viking fez e o que ele gastou ganham uma
+cópia no seu Drive, conferida todo dia, sem o Mac ligado; e foi provado no seu Mac que essa cópia
+volta inteira num banco vazio.
+
+**Erros desta sessão (meus; em `docs/erros.md`):** horários escritos no `PROGRESSO.md` sem olhar o
+relógio, antes e depois do compact (classe 2); a conta de leituras da D61 que eram gravações
+(classe 3); o teste da abertura sem a combinação que está no ar (classe 4).
+
 ### 2026-10-06 — Sessões 10c e 11 fechadas no Mac: o Gmail na nuvem, as mãos e os lembretes com uma fonte só
 
 **O portão e o que subiu** (com os oks do dono no chat, nesta ordem):

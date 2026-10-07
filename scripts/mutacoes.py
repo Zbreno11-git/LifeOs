@@ -2593,6 +2593,13 @@ MUTACOES = [
         "tests/test_backup_formato.py::test_a_impressao_ignora_o_instante_o_commit_a_ordem_e_a_acao_do_proprio_backup",
     ),
     Mutacao(
+        "chat da nuvem: a abertura com um item fora volta a dizer '  e finanças'",
+        "src/lifeos/nuvem/chat_cliente.py",
+        '    return itens[0] if len(itens) == 1 else ", ".join(itens[:-1]) + f" e {itens[-1]}"\n',
+        '    return ", ".join(itens[:-1]) + f" e {itens[-1]}"\n',
+        "tests/test_chat_nuvem_cliente.py::test_a_abertura_com_tudo_na_nuvem_menos_as_financas",
+    ),
+    Mutacao(
         "motor: o terminal do dono dispara o backup",
         "src/lifeos/nuvem/motor.py",
         '    "/tarefas/backup": frozenset({AGENDADOR}),\n',

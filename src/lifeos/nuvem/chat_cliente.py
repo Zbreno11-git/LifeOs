@@ -59,9 +59,14 @@ def abertura(capacidades: dict[str, Any]) -> str:
     else:
         so_no_mac.insert(0, "navegador")
     so_no_mac.append("finanças")
-    lista = ", ".join(tem[:-1]) + f" e {tem[-1]}"
-    fora = ", ".join(so_no_mac[:-1]) + f" e {so_no_mac[-1]}"
-    return f"☁️  Viking na nuvem ({lista}). {fora[0].upper()}{fora[1:]}: `viking chat`."
+    fora = _em_lista(so_no_mac)
+    return f"☁️  Viking na nuvem ({_em_lista(tem)}). {fora[0].upper()}{fora[1:]}: `viking chat`."
+
+
+def _em_lista(itens: list[str]) -> str:
+    """Os itens como "a, b e c"; um item sozinho sai sem o " e " (com o Gmail e o navegador na
+    nuvem, sobram só as finanças: a abertura dizia "  e finanças", achado no Mac em 2026-10-07)."""
+    return itens[0] if len(itens) == 1 else ", ".join(itens[:-1]) + f" e {itens[-1]}"
 
 
 # Sem backup há mais que isto, a abertura avisa (resposta do dono, 2026-10-06; D63).

@@ -17,9 +17,9 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 24 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 7 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 21 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 2 | Afirmei sem abrir o lugar onde estaria | 25 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 3 | Estimei em vez de medir | 8 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 4 | Teste que não separava o certo do errado | 22 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 15 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 13 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -233,6 +233,15 @@ de `tarefas` faz parte do passo `ttl`, que fica ⬜ até o ok do C5: a medida da
 1 ⬜. O que tem de novo: um passo de infraestrutura que **eu mesmo** mudei no código mudou o
 número esperado, e o bloco foi escrito sem rodar o comando que ele manda rodar.
 
+**2026-10-06/07 — horários escritos no `PROGRESSO.md` sem olhar o relógio (Sessão 11c).** Antes
+do compact, os horários do C1 e do C2 foram escritos de cabeça e depois trocados pelos do
+`git log`. Depois do compact, o mesmo, quatro vezes no mesmo dia: "~17:20Z", "~17:15Z",
+"17:00–17:20Z" e "~18:10Z" num bloco cujo commit foi às 17:08:47Z e cujos portões rodaram às
+17:57Z. Pego na hora de ler a saída do gitleaks (que imprime a hora) e corrigido pelo `date -u` e
+pelo `git log --format=%cI` antes do commit. Sem efeito fora do documento, mas o bloco de
+retomada existe para ser o registro de uma medição. O que tem de novo: a regra já tinha um
+incidente **nesta** sessão; um horário é número, e passa pelo `date -u` antes de ser escrito.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -280,6 +289,15 @@ propósito); e escrevi num comentário de teste "com 16 threads, quase sempre ca
 seguinte desmentiu (4 de 4 passaram sozinho; com o arquivo inteiro, 5 de 10). Os dois pegos
 antes do commit, trocados pelo número medido. O que tem de novo: um comentário de código é
 documento; o número nele passa pela mesma régua.
+
+**2026-10-01 → 2026-10-07 — "~1,5 mil leituras por dia" do agendador eram gravações (Sessão
+11, medido na 11c).** A conta da D61 dava ≈ 1,5 mil leituras do Firestore por dia para a rodada
+do envio a cada minuto, e a fonte do GCP a repetia como "conta, não medição". A medida de 24 h
+(API do Cloud Monitoring, 2026-10-06 17:00Z a 2026-10-07 17:00Z) deu 163 leituras e 1.481
+gravações: a rodada **grava** o `estado` a cada minuto e, sem lembrete vencido, quase não lê.
+Dentro da cota nos dois casos, e a conta estava marcada como estimativa. O que tem de novo: eu
+contei a operação certa (uma por rodada) e atribuí ao tipo errado; a conta de custo de uma rotina
+pergunta "o que ela grava?" tanto quanto "o que ela lê?".
 
 ### 4. Teste que não separava o certo do errado
 
@@ -402,6 +420,14 @@ valor do Mac; no fim do teste, o `monkeypatch` devolvia o valor que viu ao troca
 motor, e os testes seguintes rodariam com um "token do Gmail" posto. Pego na releitura, antes de
 rodar a suíte. O que tem de novo: duas restaurações em camadas desfazem na ordem errada; dentro
 de um contexto que restaura, a troca é atribuição direta.
+
+**2026-10-01 → 2026-10-07 — a abertura do chat testada em três combinações, menos a do dono
+(Sessão 11, achado no Mac na 11c).** `test_a_abertura_nao_promete_o_gmail_que_nao_esta_la`
+conferia sem Gmail, com Gmail e com as mãos sem Gmail. O dono tem as duas coisas na nuvem desde
+2026-10-06; nesse caso sobra um item só fora ("finanças"), o `", ".join([])` dava vazio e a
+abertura dizia "…ligado lá).  e finanças: `viking chat`.". Visto pelo dono no `viking chat
+--nuvem` do fechamento da 11c. O que tem de novo: um texto montado de uma lista se testa com 1, 2
+e 3 itens, e as combinações de capacidade incluem a que está no ar.
 
 ### 5. A ferramenta fez outra coisa do que eu li
 

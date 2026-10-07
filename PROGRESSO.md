@@ -5,7 +5,35 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 ~18:05Z: Sessão 11c no ar (o motor `3a38d07`, a tarefa `viking-backup`, o 1º backup às 18:03:07Z); falta o `--conferir` no Mac e o fechamento
+## ▶️ RETOMAR AQUI — 2026-10-07 ~18:25Z: Sessão 11c fechada no Mac; a próxima é a 11d (abrir e planejar)
+
+**Estado (2026-10-07, portões às 18:23:55Z pelo relógio):**
+- **A 11c fechou no Mac:** `viking backup --conferir` → "7 de 7 lembrete(s), 8 de 8 ação(ões)",
+  "7 iguais", "✅ O backup restaura inteiro e bate com a nuvem.", `saida=0`; `viking chat --nuvem`
+  abriu sem o aviso de backup.
+- **No ar:** o motor `3a38d07` (19 ✅), a tarefa `viking-backup` (`0 9 * * *` UTC, o 1º backup
+  às 18:03:07Z), o agendador `viking-lembretes`; `python scripts/nuvem.py` → 12 ✅.
+- **O último defeito, achado no Mac e consertado no commit de fechamento:** a abertura do chat da
+  nuvem dizia "…ligado lá).  e finanças" com um item só fora (`chat_cliente._em_lista`, 2 testes,
+  1 mutação morta). É código do Mac: não pede deploy.
+- **Portões do fechamento:** `2508 passed in 52.39s` (emulador exigido); ruff "All checks
+  passed!"; format "158 files already formatted"; mypy "Success: no issues found in 40 source
+  files". Mutações de hoje: `backup:` 11/11 e a da abertura 1/1 (a rodada inteira, 366/366, foi
+  antes do compact).
+- **Não há background nem trava.**
+
+**Próximo passo exato:** abrir a **Sessão 11d** (skill `software-build`): ler a seção dela em
+`sessoes.md`, a D51 e `docs/fontes/pluggy-open-finance.md`; medir na abertura (`uv lock --upgrade
+--dry-run`, o CI do HEAD pelo SHA, `python scripts/nuvem.py` → 12 ✅, `deploy` só-leitura → os 2
+❌ esperados da lista "Antes de confiar" e o último backup em menos de 48 h); e fazer ao dono as
+perguntas da abertura da 11d, em rodadas curtas, antes de planejar.
+
+**Depende do dono:** as respostas da abertura da 11d.
+
+**Não pode ser esquecido (além da lista mais abaixo):** o dono ainda não usa o Viking ativamente e
+decidiu manter a ordem do roteiro (2026-10-07); o backup só cria arquivo quando algo muda (D63 3b).
+
+### Sessão 11c — o fechamento (2026-10-07, o registro)
 
 **Depois do compact (2026-10-07, ~16:58Z até o commit `751bed4` às 17:08:47Z):**
 - As conferências bateram com o bloco abaixo: `a41cfa9` = remoto, CI `success` pelo SHA,
@@ -70,7 +98,7 @@
   - O agendador `viking-lembretes`: `ENABLED`, última execução 16:40:02Z, sem erro.
 - **No ar sem mudança:** o Gmail, as mãos, o envio de lembretes.
 
-**Próximo passo exato:**
+**Os passos que restavam no compact (todos ✅ em 2026-10-07):**
 1. ✅ (2026-10-07, antes das 17:08Z, acima) **O deploy.** O ok foi dado em 2026-10-07 ~16:39Z, antes do compact. Diga ao dono que vai
    publicar e rode `python scripts/nuvem.py deploy --executar` (só com o HEAD limpo, no GitHub e
    CI verde). Esperado: todas as provas ✅, `backup: False` (o token ainda não subiu), `drive`
@@ -87,13 +115,13 @@
    2. `python scripts/nuvem.py --executar backup` (cria a tarefa `viking-backup` e roda uma; de
       US$ 0 a 0,10/mês);
    3. `deploy` só-leitura: o último backup com menos de 48 h.
-4. **No Mac:** `viking backup` (a data), `viking backup --conferir` (esperado "✅ O backup
+4. ✅ (no topo) **No Mac:** `viking backup` (a data), `viking backup --conferir` (esperado "✅ O backup
    restaura inteiro e bate com a nuvem", saída 0) e `viking chat --nuvem` (a abertura sem aviso
    de backup).
 5. ✅ (acima) **A medição de 24 h do agendador (C0b)**, que já dá a partir de 2026-10-07 17:00Z: as leituras
    e escritas do Firestore e os pedidos do Cloud Run do dia, pela API do Cloud Monitoring (só
    leitura), contra os ~1,5 mil/dia da D61 (gatilho: 25 mil).
-6. **O fechamento:**
+6. ✅ (2026-10-07, ~18:25Z) **O fechamento:**
    - o diário (com "Erros desta sessão": os horários do C1/C2 escritos sem medir, classe 2, e
      de novo depois do compact: ~17:20Z, ~17:15Z e ~18:10Z no bloco, corrigidos pelo relógio e
      pelo `git log` antes do commit);
@@ -132,19 +160,15 @@
   - migração publicada não se edita.
 - **O fuso do dono:** Seattle até ~fim de outubro, depois o Brasil (perguntar a cidade).
 
-**Depende do dono:**
-- a confirmação do deploy (o ok já dado);
-- o roteiro do Mac (o login e o segredo do Drive);
-- os oks do 2º deploy e do `--executar backup`;
-- a saída do `--conferir`.
-
-**Antes de confiar neste bloco:**
+**Antes de confiar no bloco do topo (a próxima sessão):**
 - `git status --short` vazio, HEAD = remoto, `ls .mutacao.lock` → não existe;
-- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2489 passed` (o VPS reiniciou:
-  confira que o emulador sobe, com 0 pulados);
+- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2508 passed`, 0 pulados;
 - `gh run list --commit $(git rev-parse HEAD)` → `success`;
-- `python scripts/nuvem.py` → 11 ✅ e ⬜ `backup`;
-- `python scripts/nuvem.py deploy` → o motor `bbcba1a` e os 5 ❌ esperados acima.
+- `python scripts/nuvem.py` → 12 ✅;
+- `python scripts/nuvem.py deploy` → o motor `3a38d07`, com **2 ❌ esperados** (a imagem e o
+  commit no `/versao` ≠ HEAD: o commit de fechamento mudou `src/lifeos/nuvem/chat_cliente.py`, que
+  só roda no Mac) e o resto ✅, com "o último backup tem menos de 48 h". O próximo deploy (o da
+  11d, ou antes com o ok do dono) os cura.
 
 ### Sessão 11c — os checkpoints feitos (o registro)
 - C0 ✅: o lock em `d4f5127`, os docs em `8db5ab7`.
