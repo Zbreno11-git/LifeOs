@@ -5,7 +5,29 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 ~16:45Z: Sessão 11c, código pronto (C0–C4 ✅, C5 do VPS ✅); falta publicar e testar no Mac
+## ▶️ RETOMAR AQUI — 2026-10-07 ~17:20Z: Sessão 11c, o 1º deploy no ar e a C0b medida; falta o Mac (o token do Drive)
+
+**Depois do compact (2026-10-07, ~17:00–17:20Z):**
+- As conferências bateram com o bloco abaixo: `a41cfa9` = remoto, CI `success` pelo SHA,
+  `2489 passed in 58.71s` (emulador exigido, 0 pulados, depois do reinício do VPS), 11 ✅ e ⬜
+  `backup`, o `deploy` só-leitura com o motor `bbcba1a` e os 5 ❌ esperados.
+- **O 1º deploy ✅** (o ok de ~16:39Z, avisado ao dono na hora): `deploy --executar` → o motor
+  **`a41cfa9`** no ar; **19 ✅**: `/fumaca/segredos` `{'gemini': True, 'agenda': True, 'gmail':
+  True, 'drive': False}`, `backup: False (esperado False)`, `cli@` em `/tarefas/backup` → 403,
+  `envio_de_lembretes: True`, log 0 erro; "Fora desta revisão (sem versão; sobe do Mac):
+  viking-drive".
+- **C0b ✅ (a medição de 24 h do agendador)**: a API do Cloud Monitoring, só leitura, de
+  2026-10-06 17:00Z a 2026-10-07 17:00Z, `ALIGN_SUM` em 86400 s:
+  - `firestore…/document/read_count` = **163**; `write_count` = **1.481**; `delete_count` = sem
+    série (0);
+  - `run…/request_count` = **1.491 2xx** e **26 4xx**. Os 26 são todos das provas do `deploy`
+    (`gcloud logging read` por status e rota: 10× 403 `/versao`, 5× 401 `/versao`, 5× 403 e 5×
+    400 `/maos/pegar`, 1× 404 `/tarefas/backup`), nenhum de fora.
+  - **A estimativa da D61 errou de lado:** "~1,5 mil leituras/dia" eram as **gravações** (o
+    `estado` do envio, uma por minuto: 1.440 + as do uso); as leituras ficaram em 163, contra as
+    50 mil grátis (e as 1.481 gravações contra as 20 mil). **Não medido:** se a cobrança conta
+    uma leitura mínima por consulta vazia (duas buscas na documentação não acharam a frase); se
+    contar, são ~+1,5 mil/dia, ainda longe do gatilho de 25 mil.
 
 **Estado (2026-10-07 ~16:45Z, medido antes do compact):**
 - **Repositório:** o HEAD é este checkpoint (depois de `afd568c`, o C5, CI `success` pelo SHA) =
@@ -24,7 +46,7 @@
 - **No ar sem mudança:** o Gmail, as mãos, o envio de lembretes.
 
 **Próximo passo exato:**
-1. **O deploy.** O ok foi dado em 2026-10-07 ~16:39Z, antes do compact. Diga ao dono que vai
+1. ✅ (2026-10-07 ~17:15Z, acima) **O deploy.** O ok foi dado em 2026-10-07 ~16:39Z, antes do compact. Diga ao dono que vai
    publicar e rode `python scripts/nuvem.py deploy --executar` (só com o HEAD limpo, no GitHub e
    CI verde). Esperado: todas as provas ✅, `backup: False` (o token ainda não subiu), `drive`
    fora da revisão ("Fora desta revisão (sem versão; sobe do Mac): viking-drive"), `cli@`
@@ -43,7 +65,7 @@
 4. **No Mac:** `viking backup` (a data), `viking backup --conferir` (esperado "✅ O backup
    restaura inteiro e bate com a nuvem", saída 0) e `viking chat --nuvem` (a abertura sem aviso
    de backup).
-5. **A medição de 24 h do agendador (C0b)**, que já dá a partir de 2026-10-07 17:00Z: as leituras
+5. ✅ (acima) **A medição de 24 h do agendador (C0b)**, que já dá a partir de 2026-10-07 17:00Z: as leituras
    e escritas do Firestore e os pedidos do Cloud Run do dia, pela API do Cloud Monitoring (só
    leitura), contra os ~1,5 mil/dia da D61 (gatilho: 25 mil).
 6. **O fechamento:**
@@ -99,7 +121,7 @@
 
 ### Sessão 11c — os checkpoints feitos (o registro)
 - C0 ✅: o lock em `d4f5127`, os docs em `8db5ab7`.
-- C0b ⬜: a medição de 24 h, só depois de 2026-10-07 ~17:00Z.
+- C0b ✅ (2026-10-07 ~17:10Z): 163 leituras, 1.481 gravações, 1.491 pedidos 2xx e 26 4xx (das provas) em 24 h; o detalhe no topo do bloco.
 - C1 ✅ (2026-10-06, commit às 23:39Z):
   - `backup/formato.py`: o arquivo versionado, que `ler` confere inteiro;
   - a cópia do registro (`registro_interface.CAMPOS_DA_COPIA`, `exportar`/`importar` nos dois
