@@ -455,7 +455,7 @@ def test_as_variaveis_dos_segredos_sao_as_que_o_config_le(nuvem):
     from lifeos import config
 
     fonte = Path(config.__file__).read_text()
-    for s in nuvem.SEGREDOS:
+    for s in nuvem.TODOS_OS_SEGREDOS:
         assert f'os.getenv("{s.variavel}")' in fonte
 
 
@@ -470,7 +470,7 @@ def test_todo_arquivo_de_segredo_que_o_config_le_tem_um_segredo_no_deploy(nuvem)
         re.findall(r'os\.getenv\("(VIKING_\w+_ARQUIVO)"\)', Path(config.__file__).read_text())
     )
     assert len(lidas) >= 3
-    assert lidas == {s.variavel for s in nuvem.SEGREDOS}
+    assert lidas == {s.variavel for s in nuvem.TODOS_OS_SEGREDOS}
 
 
 class _Gcloud:

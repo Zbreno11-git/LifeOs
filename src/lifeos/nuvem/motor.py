@@ -3,8 +3,9 @@
 Fechado por duas paredes, e a segunda não confia na primeira:
 1. **o IAM do Cloud Run** (`--no-allow-unauthenticated`, `run.invoker` só para o `viking-cli@`):
    um pedido sem token válido nem chega aqui, e não é cobrado;
-2. **este código**, na primeira instrução de toda rota (`_quem`): verifica a assinatura do token
-   de identidade (emitido pelo Google, com a audience = a URL deste serviço) e confere o e-mail
+2. **este código**, na primeira instrução de toda rota (`_quem`, que é `nuvem/identidade.quem`
+   desde a 11d, a mesma régua do serviço de finanças): verifica a assinatura do token de
+   identidade (emitido pelo Google, com a audience = a URL deste serviço) e confere o e-mail
    na lista **daquela rota** (`QUEM_FALA`, `quem_pode`; Sessão 11, D61): o terminal do dono, as
    mãos do Mac e o agendador têm cada um a sua porta, e rota fora do mapa não tem ninguém. Se
    alguém afrouxasse o IAM, um token forjado ou de outra conta continuaria recusado.
@@ -33,18 +34,17 @@ from typing import Any
 
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
-from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from lifeos import config, registro
+from lifeos.nuvem import identidade
 from lifeos.reminders import service
 from lifeos.reminders.models import Reminder
 
 log = logging.getLogger("viking.motor")
 COMMIT = os.getenv("VIKING_COMMIT", "")
-EMISSORES = ("https://accounts.google.com", "accounts.google.com")
 MAX_CORPO = 4 * 1024 * 1024  # o histórico medido chegou a 7 KB em 5 turnos (2026-09-30)
 MAX_CORPO_DAS_MAOS = 64 * 1024  # o resultado de uma tarefa tem até 20 mil caracteres
 
@@ -54,50 +54,13 @@ CLI, MAOS, AGENDADOR = "viking-cli", "viking-maos", "viking-agendador"
 
 def quem_pode(rota: str) -> frozenset[str]:
     """Os e-mails que falam com esta rota (`QUEM_FALA`, no fim do módulo, junto das rotas)."""
-    if not config.NUVEM_PROJETO:
-        return frozenset()
-    contas = QUEM_FALA.get(rota, frozenset())
-    return frozenset(f"{c}@{config.NUVEM_PROJETO}.iam.gserviceaccount.com" for c in contas)
-
-
-_SESSAO: Any = None
-
-
-def _verificar(token: str) -> dict[str, Any]:
-    """Os dados do token, depois de conferir assinatura (os certificados do Google), emissor,
-    validade e audience. Levanta `ValueError` se qualquer um falhar."""
-    global _SESSAO
-    import google.auth.transport.requests
-    import requests
-    from google.oauth2 import id_token
-
-    if not config.NUVEM_URL:
-        raise ValueError("VIKING_NUVEM_URL vazio: sem audience, nenhum token vale")
-    if _SESSAO is None:
-        _SESSAO = requests.Session()  # reaproveita a conexão com os certificados do Google
-    requisicao = google.auth.transport.requests.Request(session=_SESSAO)
-    dados = dict(id_token.verify_token(token, requisicao, audience=config.NUVEM_URL))
-    if dados.get("iss") not in EMISSORES:
-        raise ValueError("emissor que não é o Google")
-    return dados
+    return identidade.contas(QUEM_FALA.get(rota, frozenset()))
 
 
 async def _quem(request: Request) -> str:
-    """A primeira instrução de toda rota: o e-mail de quem pediu, ou 401/403. A verificação busca
-    os certificados do Google (rede): roda numa thread."""
-    cabecalho = request.headers.get("authorization", "")
-    tipo, _, token = cabecalho.partition(" ")
-    if tipo.lower() != "bearer" or not token:
-        raise HTTPException(401, "sem token")
-    try:
-        dados = await run_in_threadpool(_verificar, token)
-    except ValueError:
-        raise HTTPException(401, "token recusado") from None
-    email = dados.get("email", "")
-    if not dados.get("email_verified") or email not in quem_pode(request.url.path):
-        log.warning("identidade recusada")  # sem o e-mail: o log é do projeto, não do dono
-        raise HTTPException(403, "identidade sem acesso")
-    return email
+    """A primeira instrução de toda rota: o e-mail de quem pediu, ou 401/403
+    (`nuvem/identidade.py`, a mesma régua do serviço de finanças)."""
+    return await identidade.quem(request, quem_pode)
 
 
 def _instante(momento: Any) -> str | None:

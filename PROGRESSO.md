@@ -21,11 +21,25 @@
   motor nunca vê a chave; o chat do Mac não muda; as provas automáticas não tocam a Pluggy.
 - **Não há background nem trava.**
 
-**Próximo passo exato:** C1 do plano. `config.pluggy_credenciais()`/`FINANCAS_URL`/
-`financas_no_motor()`, o `pluggy` sem `/connect_token` com `STORE == "firestore"`,
-`nuvem/identidade.py` (tirado de `motor._verificar`/`_quem`, sem mudar o motor) e o app
-`nuvem/financas.py` (`/responder`, `/saude`, `/conexoes`, só o `motor@`), com
-`tests/test_nuvem_financas.py`. Esperado: a suíte verde com os testes novos.
+**Feito no C1 (2026-10-07):** `config` (`PLUGGY_ARQUIVO`, `FINANCAS_URL`, `financas_no_motor`,
+`pluggy_segredo`); `financas/pluggy.py` (`credenciais()`, o JSON do segredo conferido, na nuvem
+só o `/auth`); `financas/pergunta.py` (o formato fechado das 5 perguntas; `PerguntaInvalida` é
+`EntradaInvalida`); `financas/tools.py` (cada `responder_*` pergunta ao serviço no motor;
+`responder_conexoes`); `financas/remoto.py` (o lado do motor, escrito, testado no C2);
+`nuvem/identidade.py` (a régua do token, tirada do motor); `nuvem/financas.py` (`/responder` e
+`/saude`; **desvio declarado**: 2 rotas, não 3: `conexoes` é uma das perguntas);
+`scripts/nuvem.py` ganhou `SEGREDO_DAS_FINANCAS` **fora** de `SEGREDOS` (desvio declarado: no
+lugar do campo `servico`, para o `motor@` nunca enxergar o segredo). `tests/test_nuvem_financas.py`
+(55); a suíte `2563 passed`; mutações `financas:`/`pluggy:`/`pergunta:`/`motor:` 29/29 mortas
+(uma âncora antiga da Pluggy e a do `QUEM_FALA` do motor reancoradas).
+
+**Próximo passo exato:** C2. `na_nuvem.FERRAMENTAS` com as 4 de finanças (fora sem
+`financas_no_motor`), `SO_NO_MAC` vazio; `turno.py`: a abertura da nuvem gerada (largura 80
+reproduz os 4 textos de hoje) e o "não tem…" numa tabela pelo que falta (os 4 textos de hoje
+intactos + 3 novos; o sha256 de `test_os_textos_de_antes_nao_mudam_nem_num_byte` não muda);
+motor: `/financas` e `/fumaca/financas` (só o `cli@`), `/versao.financas`; `chat_cliente.abertura`
+(e a lista vazia); `cliente.perguntar_financas`; `viking financas --nuvem`; o teste de ponta a
+ponta com os dois apps (o serviço num contexto com a URL e o volume dele).
 
 **Depende do dono:** nada até o C4 (os oks: o passo `financas`, o segredo no Mac, o deploy, a
 `prova-financas`).

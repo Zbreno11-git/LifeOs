@@ -213,10 +213,8 @@ class Financas:
     """Uma consulta: guarda contas e categorias enquanto responde uma pergunta."""
 
     def __init__(self, cliente: pluggy.Cliente, item_ids=None) -> None:
-        from lifeos import config  # lido na hora, não na importação
-
         self._cliente = cliente
-        self._ids = tuple(item_ids if item_ids is not None else config.PLUGGY_ITEM_IDS)
+        self._ids = tuple(item_ids if item_ids is not None else pluggy.credenciais().item_ids)
         if not self._ids:
             raise SemConexoes(
                 "nenhuma conexão no .env (PLUGGY_ITEM_IDS); rode `viking financas --conectar`"

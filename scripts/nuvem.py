@@ -449,6 +449,14 @@ SEGREDOS = (
         "viking-drive", "/segredos/drive/token.json", "VIKING_DRIVE_TOKEN_ARQUIVO", do_mac=True
     ),
 )
+# O segredo do serviço de finanças (Sessão 11d, D64): a chave, o segredo e os IDs das conexões da
+# Pluggy, num JSON subido do Mac. Fica FORA de `SEGREDOS` de propósito: os passos e o deploy do
+# motor só enxergam aquela tupla, e o `motor@` nunca ganha a leitura deste (o passo `financas` dá
+# a leitura só ao `financas@`, e a prova reprova o contrário).
+SEGREDO_DAS_FINANCAS = Segredo(
+    "viking-pluggy", "/segredos/pluggy/credenciais.json", "VIKING_PLUGGY_ARQUIVO", do_mac=True
+)
+TODOS_OS_SEGREDOS = (*SEGREDOS, SEGREDO_DAS_FINANCAS)
 LER_SEGREDO = "roles/secretmanager.secretAccessor"
 
 

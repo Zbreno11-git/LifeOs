@@ -10,6 +10,10 @@ de não confiável. Documento da contraparte, número de conta e CPF do titular 
 (`service.py` não os carrega).
 
 A conta (sinal, fatura em dobro, parcela futura) é de `service.py`; aqui só o texto.
+
+No motor da nuvem (Sessão 11d, D64) cada `responder_*` pergunta o mesmo texto ao serviço de
+finanças (`financas/remoto.py`), que tem a chave: o motor nunca a vê, e as tools e as docstrings
+são as mesmas dos dois lados.
 """
 
 # NÃO adicionar `from __future__ import annotations` aqui: o google-genai valida os argumentos
@@ -19,6 +23,7 @@ A conta (sinal, fatura em dobro, parcela futura) é de `service.py`; aqui só o 
 import math
 from datetime import date, datetime, timedelta
 
+from lifeos import config
 from lifeos.browser import _redacao
 from lifeos.financas import pluggy, service
 from lifeos.nao_confiavel import bloco
@@ -161,18 +166,30 @@ def mensagem_de_erro(exc: Exception) -> str:
     return f"Não consegui falar com a Pluggy agora: {detalhe}. Nada foi alterado."
 
 
-def _responder(montar, levantar: bool) -> str:
+def _responder(montar, levantar: bool, *, rodape: bool = True) -> str:
     """O chat recebe a frase do erro; a CLI (`levantar=True`) recebe o erro, para sair com 2."""
     try:
         financas = _abrir()
         agora = _agora()
         corpo = montar(financas, agora)
-        rodape = _sincronizacao(financas, agora)
+        sincronizacao = _sincronizacao(financas, agora) if rodape else ""
     except pluggy.ErroPluggy as exc:
         if levantar:
             raise
         return mensagem_de_erro(exc)
-    return "\n".join(p for p in (corpo, rodape) if p)
+    return "\n".join(p for p in (corpo, sincronizacao) if p)
+
+
+def _no_servico(pedido: dict[str, str], levantar: bool) -> str:
+    """No motor: o mesmo texto, pedido ao serviço de finanças (D64)."""
+    from lifeos.financas import remoto
+
+    try:
+        return remoto.perguntar(pedido)
+    except pluggy.ErroPluggy as exc:
+        if levantar:
+            raise
+        return mensagem_de_erro(exc)
 
 
 # --- respostas --------------------------------------------------------------------------------
@@ -203,6 +220,8 @@ def _texto_do_saldo(financas: service.Financas, _momento: datetime) -> str:
 
 
 def responder_saldo(*, levantar: bool = False) -> str:
+    if config.financas_no_motor():
+        return _no_servico({"pergunta": "saldo"}, levantar)
     return _responder(_texto_do_saldo, levantar)
 
 
@@ -244,6 +263,9 @@ def _texto_dos_gastos(g: service.Gastos, hoje: date) -> str:
 
 
 def responder_gastos(desde: str = "", ate: str = "", *, levantar: bool = False) -> str:
+    if config.financas_no_motor():
+        return _no_servico({"pergunta": "gastos", "desde": desde, "ate": ate}, levantar)
+
     def montar(financas, agora):
         hoje = agora.date()
         inicio, fim = periodo(desde, ate, hoje=hoje, padrao_desde=lambda fim: fim.replace(day=1))
@@ -255,6 +277,10 @@ def responder_gastos(desde: str = "", ate: str = "", *, levantar: bool = False) 
 def responder_buscar(
     texto: str = "", desde: str = "", ate: str = "", valor: str = "", *, levantar: bool = False
 ) -> str:
+    if config.financas_no_motor():
+        pedido = {"pergunta": "buscar", "texto": texto, "desde": desde, "ate": ate, "valor": valor}
+        return _no_servico(pedido, levantar)
+
     def montar(financas, agora):
         hoje = agora.date()
         inicio, fim = periodo(
@@ -329,6 +355,9 @@ def _texto_da_fatura(f: service.Fatura, hoje: date) -> str:
 
 
 def responder_fatura(*, levantar: bool = False) -> str:
+    if config.financas_no_motor():
+        return _no_servico({"pergunta": "fatura"}, levantar)
+
     def montar(financas, agora):
         hoje = agora.date()
         cartoes = [c for c in financas.contas() if c.cartao]
@@ -342,6 +371,26 @@ def responder_fatura(*, levantar: bool = False) -> str:
         return "\n".join(partes)
 
     return _responder(montar, levantar)
+
+
+def _texto_das_conexoes(financas: service.Financas, _momento: datetime) -> str:
+    """O estado de cada conexão, numerada: sem o ID, sem o banco, sem valor (a `prova-financas`
+    do `scripts/nuvem.py` mostra isto no VPS)."""
+    conexoes = financas.conexoes()
+    linhas = [f"{len(conexoes)} conexão(ões) com o banco:"]
+    for n, c in enumerate(conexoes, 1):
+        quando = "sem data de sincronização"
+        if c.atualizado:
+            momento = c.atualizado.astimezone(service.TIMEZONE)
+            quando = f"sincronizada em {momento:%d/%m/%Y} às {momento:%H:%M}"
+        linhas.append(f"- Conexão {n} de {len(conexoes)}: {c.status or 'desconhecido'} · {quando}")
+    return "\n".join(linhas)
+
+
+def responder_conexoes(*, levantar: bool = False) -> str:
+    if config.financas_no_motor():
+        return _no_servico({"pergunta": "conexoes"}, levantar)
+    return _responder(_texto_das_conexoes, levantar, rodape=False)
 
 
 # --- tools do Gemini: docstring = o que o modelo lê; o corpo só devolve o texto ------------

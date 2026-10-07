@@ -209,6 +209,10 @@ GEMINI_CHAVE_ARQUIVO = os.getenv("VIKING_GEMINI_CHAVE_ARQUIVO") or ""
 AGENDA_TOKEN_ARQUIVO = os.getenv("VIKING_AGENDA_TOKEN_ARQUIVO") or ""
 GMAIL_TOKEN_ARQUIVO = os.getenv("VIKING_GMAIL_TOKEN_ARQUIVO") or ""  # Sessão 10c, D60
 DRIVE_TOKEN_ARQUIVO = os.getenv("VIKING_DRIVE_TOKEN_ARQUIVO") or ""  # Sessão 11c, D63
+# Só no serviço de finanças (Sessão 11d, D64): o motor nunca recebe este volume.
+PLUGGY_ARQUIVO = os.getenv("VIKING_PLUGGY_ARQUIVO") or ""
+# Só no motor: a URL do serviço de finanças, a quem ele pergunta (e a audience do token que manda).
+FINANCAS_URL = (os.getenv("VIKING_FINANCAS_URL") or "").rstrip("/")
 _SEGREDOS: dict[str, str] = {}
 
 
@@ -264,3 +268,19 @@ def drive_token() -> str:
     if not DRIVE_TOKEN_ARQUIVO:
         raise RuntimeError("VIKING_DRIVE_TOKEN_ARQUIVO vazio: o token do Drive não está aqui")
     return _segredo(DRIVE_TOKEN_ARQUIVO)
+
+
+def financas_no_motor() -> bool:
+    """O motor tem o serviço de finanças (Sessão 11d, D64)? O deploy só põe a URL dele quando o
+    segredo `viking-pluggy` tem versão: sem ela, o chat da nuvem não tem as tools de finanças. O
+    motor nunca tem a chave: pergunta ao serviço (`financas/remoto.py`)."""
+    return bool(FINANCAS_URL)
+
+
+def pluggy_segredo() -> str:
+    """O JSON das credenciais da Pluggy (a chave, o segredo e os IDs das conexões) do volume do
+    serviço de finanças, subido do Mac (D64). Só existe nesse serviço; quem o lê é
+    `financas/pluggy.credenciais`."""
+    if not PLUGGY_ARQUIVO:
+        raise RuntimeError("VIKING_PLUGGY_ARQUIVO vazio: as credenciais da Pluggy não estão aqui")
+    return _segredo(PLUGGY_ARQUIVO)
