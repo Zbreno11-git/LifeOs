@@ -99,6 +99,7 @@ async def versao(request: Request) -> JSONResponse:
             "envio_de_lembretes": ligado,
             "backup": config.drive_no_motor(),
             "backup_em": _instante(backup_em),
+            "financas": config.financas_no_motor(),
         }
     )
 
@@ -228,6 +229,8 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/tarefas/lembretes": frozenset({AGENDADOR}),
     "/tarefas/backup": frozenset({AGENDADOR}),
     "/backup/importar": frozenset({CLI}),
+    "/financas": frozenset({CLI}),
+    "/fumaca/financas": frozenset({CLI}),
 }
 
 
@@ -478,6 +481,57 @@ async def maos_entregar(request: Request) -> JSONResponse:
         return JSONResponse({"erro": str(exc)}, 400)
 
 
+# --- as finanças, pelo serviço que tem a chave (Sessão 11d, D64) -------------------------------
+
+SEM_FINANCAS = "o serviço de finanças não está ligado nesta nuvem"
+
+
+def _financas(dados: Any) -> dict[str, Any]:
+    from lifeos.financas import pergunta, remoto
+
+    return {"texto": remoto.perguntar(pergunta.conferir(dados))}
+
+
+async def financas(request: Request) -> JSONResponse:
+    """O terminal do dono pergunta as finanças sem o Gemini (`viking financas --nuvem`): o motor
+    repassa uma das perguntas fechadas ao serviço de finanças e devolve o texto. O motor nunca vê a
+    chave; nem a pergunta nem o texto vão ao log."""
+    await _quem(request)
+    if not config.financas_no_motor():
+        return JSONResponse({"erro": SEM_FINANCAS}, 409)
+    from lifeos.financas import pergunta, pluggy
+
+    dados = await _corpo_pequeno(request, MAX_CORPO_DAS_MAOS)
+    try:
+        return JSONResponse(await run_in_threadpool(_financas, dados))
+    except pergunta.PerguntaInvalida as exc:  # a mensagem não ecoa conteúdo
+        return JSONResponse({"erro": str(exc)}, 400)
+    except pluggy.ErroPluggy as exc:  # as frases de `remoto`: sem corpo, sem token
+        log.error("finanças: %s", type(exc).__name__)
+        return JSONResponse({"erro": str(exc)}, 502)
+
+
+def _saude_das_financas() -> dict[str, Any]:
+    from lifeos.financas import remoto
+
+    return remoto.saude()
+
+
+async def fumaca_financas(request: Request) -> JSONResponse:
+    """O serviço de finanças responde, lê as credenciais e conta as conexões, **sem chamar a
+    Pluggy** (as provas automáticas do deploy; o dono, 2026-10-07)."""
+    await _quem(request)
+    if not config.financas_no_motor():
+        return JSONResponse({"erro": SEM_FINANCAS}, 409)
+    from lifeos.financas import pluggy
+
+    try:
+        return JSONResponse(await run_in_threadpool(_saude_das_financas))
+    except pluggy.ErroPluggy as exc:
+        log.error("fumaça das finanças: %s", type(exc).__name__)
+        return JSONResponse({"erro": str(exc)}, 502)
+
+
 ROTAS = [
     Route("/versao", versao, methods=["GET"]),
     Route("/lembretes", lembretes, methods=["GET"]),
@@ -494,5 +548,7 @@ ROTAS = [
     Route("/tarefas/lembretes", tarefas_lembretes, methods=["POST"]),
     Route("/tarefas/backup", tarefas_backup, methods=["POST"]),
     Route("/backup/importar", backup_importar, methods=["POST"]),
+    Route("/financas", financas, methods=["POST"]),
+    Route("/fumaca/financas", fumaca_financas, methods=["GET"]),
 ]
 app = Starlette(routes=ROTAS)

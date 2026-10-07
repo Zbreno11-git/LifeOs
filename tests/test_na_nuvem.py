@@ -125,9 +125,15 @@ def test_toda_tool_do_mac_decide_onde_mora():
     assert do_mac == na_nuvem_nomes | set(na_nuvem.SO_NO_MAC)
 
 
-def test_a_nuvem_nao_tem_tool_do_mac():
-    nomes = {f.__name__ for f in na_nuvem.FERRAMENTAS}
-    assert not {"saldos_das_contas", "fatura_do_cartao"} & nomes
+def test_as_financas_da_nuvem_sao_as_do_mac_e_so_com_o_servico(monkeypatch):
+    """Sessão 11d (D64): as mesmas 4 tools (o mesmo texto ao Gemini), e só quando o deploy pôs a
+    URL do serviço de finanças; sem ela, nenhuma, como o Gmail sem o token."""
+    do_mac = {f for f in agent.FERRAMENTAS if f.__name__ in na_nuvem._DAS_FINANCAS}
+    assert len(do_mac) == 4 and do_mac <= set(na_nuvem.FERRAMENTAS)
+    monkeypatch.setattr(config, "FINANCAS_URL", "")
+    assert not {f.__name__ for f in na_nuvem.ferramentas()} & na_nuvem._DAS_FINANCAS
+    monkeypatch.setattr(config, "FINANCAS_URL", "https://financas-1.example.run.app")
+    assert na_nuvem._DAS_FINANCAS <= {f.__name__ for f in na_nuvem.ferramentas()}
     # o navegador é o do Mac, pelas mãos (Sessão 11): a tool da nuvem não é a do Mac
     assert na_nuvem.navegar_e_executar is not agent.navegar_e_executar
 
@@ -144,16 +150,12 @@ def test_o_gmail_mora_na_nuvem_desde_a_10c():
         "responder_email",
     }
     assert gmail <= nomes
-    assert set(na_nuvem.SO_NO_MAC) == {
-        "saldos_das_contas",
-        "gastos_do_periodo",
-        "buscar_transacoes",
-        "fatura_do_cartao",
-    }
+    assert na_nuvem.SO_NO_MAC == {}  # desde a 11d, nada do chat do Mac fica só lá
 
 
 def test_instrucao_da_nuvem_so_fala_do_que_ela_tem():
-    texto = turno.instrucao(na_nuvem.FERRAMENTAS, "HOJE", onde="nuvem")
+    sem_financas = [f for f in na_nuvem.FERRAMENTAS if f.__name__ not in na_nuvem._DAS_FINANCAS]
+    texto = turno.instrucao(sem_financas, "HOJE", onde="nuvem")
     for ausente in ("Browser Harness", "FINANÇAS", "PIX", "e-mail nem finanças"):
         assert ausente not in texto, ausente
     for presente in ("APAGAR", "REAGENDAR", "`desfaz`", "acoes_recentes", "lembrete", "HOJE"):
@@ -164,6 +166,66 @@ def test_instrucao_da_nuvem_so_fala_do_que_ela_tem():
     for presente in ("navegador do Mac", "`viking maos`", "não tem finanças", "não confiável"):
         assert presente in texto, presente
     assert "não tem navegador" not in texto
+
+
+def test_instrucao_da_nuvem_com_tudo_fala_das_financas_e_de_nada_que_falte():
+    """Sessão 11d: o motor com o Gmail, as mãos e as finanças, que é o que vai ao ar."""
+    texto = turno.instrucao(na_nuvem.FERRAMENTAS, "HOJE", onde="nuvem")
+    for presente in ("FINANÇAS", "PIX", "consulta as finanças", "lê o Gmail", "navegador do Mac"):
+        assert presente in texto, presente
+    assert "não tem" not in texto and "só funciona no `viking chat`" not in texto
+
+
+_CAPACIDADES = {
+    "navegador": {"navegar_e_executar"},
+    "e-mail": set(na_nuvem._DO_GMAIL),
+    "finanças": set(na_nuvem._DAS_FINANCAS),
+}
+
+
+@pytest.mark.parametrize(
+    "presentes",
+    [
+        frozenset(),
+        frozenset({"navegador"}),
+        frozenset({"e-mail"}),
+        frozenset({"finanças"}),
+        frozenset({"navegador", "e-mail"}),
+        frozenset({"navegador", "finanças"}),
+        frozenset({"e-mail", "finanças"}),
+        frozenset({"navegador", "e-mail", "finanças"}),
+    ],
+)
+def test_as_8_combinacoes_dizem_o_que_tem_e_o_que_falta(presentes):
+    """Erros, classe 4 (2026-10-07): um texto montado de capacidades se testa em todas as
+    combinações, com a do ar dentro. A abertura cita o que há; o "não tem" cita exatamente o que
+    falta (e não existe quando nada falta)."""
+    fora = set().union(*(_CAPACIDADES[c] for c in _CAPACIDADES if c not in presentes))
+    tools = [f for f in na_nuvem.FERRAMENTAS if f.__name__ not in fora]
+    texto = turno.instrucao(tools, "HOJE", onde="nuvem")
+    abertura = " ".join(texto.split("\n- ")[0].split())  # sem as quebras do texto
+    assert ("lê o Gmail" in abertura) == ("e-mail" in presentes)
+    assert ("consulta as finanças" in abertura) == ("finanças" in presentes)
+    assert ("usa o navegador do Mac" in abertura) == ("navegador" in presentes)
+    assert abertura.count(" do usuário") == (1 if presentes else 0)
+    assert "  e " not in abertura and ",," not in abertura and " e e " not in abertura
+    linhas = [linha for linha in texto.split("\n- ") if linha.startswith("Nesta conversa")]
+    faltam = set(_CAPACIDADES) - presentes
+    if not faltam:
+        assert linhas == []
+        return
+    (linha,) = linhas
+    linha = " ".join(linha.split())
+    citados = linha.split("não tem ", 1)[1].split(":", 1)[0].replace(" nem ", ", ").split(", ")
+    assert set(citados) == faltam
+
+
+def test_o_nao_tem_tem_uma_entrada_por_combinacao_com_falta():
+    from itertools import combinations
+
+    nomes = ("navegador", "e-mail", "finanças")
+    esperado = {frozenset(c) for n in range(1, 4) for c in combinations(nomes, n)}
+    assert set(turno._SO_NO_MAC_POR_FALTA) == esperado
 
 
 def test_instrucao_da_nuvem_sem_o_gmail_continua_a_da_10b():

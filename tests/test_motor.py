@@ -94,6 +94,7 @@ def test_o_terminal_do_dono_entra(cliente, monkeypatch):
         "envio_de_lembretes": False,
         "backup": False,
         "backup_em": None,
+        "financas": False,
     }
     monkeypatch.setattr(config, "GMAIL_TOKEN_ARQUIVO", "/segredos/gmail/token.json")
     assert _get(cliente, "/versao", _token()).json()["gmail"] is True

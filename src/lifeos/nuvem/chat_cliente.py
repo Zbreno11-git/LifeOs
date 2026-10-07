@@ -58,7 +58,12 @@ def abertura(capacidades: dict[str, Any]) -> str:
         tem.append("o navegador do Mac, com o `viking maos` ligado lá")
     else:
         so_no_mac.insert(0, "navegador")
-    so_no_mac.append("finanças")
+    if capacidades.get("financas") is True:  # Sessão 11d: o serviço de finanças, só leitura
+        tem.append("finanças, só leitura")
+    else:
+        so_no_mac.append("finanças")
+    if not so_no_mac:  # tudo na nuvem: nada a mandar para o Mac
+        return f"☁️  Viking na nuvem ({_em_lista(tem)})."
     fora = _em_lista(so_no_mac)
     return f"☁️  Viking na nuvem ({_em_lista(tem)}). {fora[0].upper()}{fora[1:]}: `viking chat`."
 

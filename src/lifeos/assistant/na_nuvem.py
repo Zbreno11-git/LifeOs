@@ -13,7 +13,8 @@ volta a conversa nova: o motor não guarda a conversa (decisão do dono, 2026-09
    (`FERRAMENTAS`; o que fica no Mac está em `SO_NO_MAC`, com o motivo). O Gemini tem prazo por
    chamada e um limite de chamadas de tool por turno. Das tools da nuvem, as do Gmail só entram
    com o token dele no motor (`ferramentas()`; Sessão 11, D61): sem o segredo, o deploy não monta
-   o volume, e o chat da nuvem não tem e-mail.
+   o volume, e o chat da nuvem não tem e-mail. As de finanças, só com o serviço de finanças
+   ligado (`config.financas_no_motor`; Sessão 11d, D64): o motor nunca tem a chave da Pluggy.
 
 Tudo que só o dono vê (o código, a lista de uma limpeza, o e-mail antes de sair, e as respostas
 da barreira) volta no campo `ao_dono` da resposta (`lifeos/ao_dono.py`): nunca no texto do
@@ -97,6 +98,12 @@ FERRAMENTAS: list[Callable[..., Any]] = [
     agent.enviar_email,
     agent.responder_email,
     navegar_e_executar,
+    # As finanças (Sessão 11d, D64): as mesmas tools do Mac; no motor, cada uma pergunta o texto ao
+    # serviço de finanças, que é quem tem a chave da Pluggy (`financas/remoto.py`).
+    agent.saldos_das_contas,
+    agent.gastos_do_periodo,
+    agent.buscar_transacoes,
+    agent.fatura_do_cartao,
 ]
 _DO_GMAIL = frozenset(
     {
@@ -109,22 +116,25 @@ _DO_GMAIL = frozenset(
         "responder_email",
     }
 )
+_DAS_FINANCAS = frozenset(
+    {"saldos_das_contas", "gastos_do_periodo", "buscar_transacoes", "fatura_do_cartao"}
+)
 # As tools do chat do Mac que não vêm para a nuvem, e por quê. `tests/test_na_nuvem.py` exige que
-# toda tool do Mac esteja numa das duas listas: uma tool nova tem de decidir onde mora.
-SO_NO_MAC = {
-    "saldos_das_contas": "as finanças seguem a D51",
-    "gastos_do_periodo": "as finanças seguem a D51",
-    "buscar_transacoes": "as finanças seguem a D51",
-    "fatura_do_cartao": "as finanças seguem a D51",
-}
+# toda tool do Mac esteja numa das duas listas: uma tool nova tem de decidir onde mora. Vazia
+# desde a 11d (as finanças vieram, D64); a próxima tool só do Mac entra aqui com o motivo.
+SO_NO_MAC: dict[str, str] = {}
 
 
 def ferramentas() -> list[Callable[..., Any]]:
     """As tools deste motor: as da nuvem, sem as do Gmail quando o token dele não está aqui
-    (`config.gmail_no_motor`, a mesma pergunta que o `/versao` responde)."""
-    if config.gmail_no_motor():
-        return list(FERRAMENTAS)
-    return [f for f in FERRAMENTAS if f.__name__ not in _DO_GMAIL]
+    (`config.gmail_no_motor`) e sem as de finanças quando o serviço delas não está ligado
+    (`config.financas_no_motor`): as mesmas perguntas que o `/versao` responde."""
+    fora: set[str] = set()
+    if not config.gmail_no_motor():
+        fora |= _DO_GMAIL
+    if not config.financas_no_motor():
+        fora |= _DAS_FINANCAS
+    return [f for f in FERRAMENTAS if f.__name__ not in fora]
 
 
 def barreira(linha: str) -> tuple[str, str] | None:

@@ -33,13 +33,23 @@ lugar do campo `servico`, para o `motor@` nunca enxergar o segredo). `tests/test
 (55); a suíte `2563 passed`; mutações `financas:`/`pluggy:`/`pergunta:`/`motor:` 29/29 mortas
 (uma âncora antiga da Pluggy e a do `QUEM_FALA` do motor reancoradas).
 
-**Próximo passo exato:** C2. `na_nuvem.FERRAMENTAS` com as 4 de finanças (fora sem
-`financas_no_motor`), `SO_NO_MAC` vazio; `turno.py`: a abertura da nuvem gerada (largura 80
-reproduz os 4 textos de hoje) e o "não tem…" numa tabela pelo que falta (os 4 textos de hoje
-intactos + 3 novos; o sha256 de `test_os_textos_de_antes_nao_mudam_nem_num_byte` não muda);
-motor: `/financas` e `/fumaca/financas` (só o `cli@`), `/versao.financas`; `chat_cliente.abertura`
-(e a lista vazia); `cliente.perguntar_financas`; `viking financas --nuvem`; o teste de ponta a
-ponta com os dois apps (o serviço num contexto com a URL e o volume dele).
+**Feito no C2 (2026-10-07):** `na_nuvem.FERRAMENTAS` com as 4 de finanças (só com
+`financas_no_motor`), `SO_NO_MAC` vazio; `turno.py`: `_intro_na_nuvem` (gerada, largura 80; o
+sha256 dos textos de antes não mudou) e `_SO_NO_MAC_POR_FALTA` (os 4 de antes + 3 novos; um teste
+exige as 7 combinações); motor `/financas` e `/fumaca/financas` (só o `cli@`; 409 sem o serviço,
+400 torto, 502 com a frase), `/versao.financas`; `chat_cliente.abertura` (com tudo na nuvem, sem
+o "`viking chat`"); `cliente.perguntar_financas` (prazo 90 s); `viking financas --nuvem` (recusa
+com `--conectar`); mypy com `financas/pergunta.py` e `remoto.py` (44 arquivos).
+`tests/test_financas_na_nuvem.py` (42: de ponta a ponta com o serviço num contexto dele, e
+`pluggy.cliente` levantando fora dele); a suíte `2615 passed`; mutações 21/21 (13 novas; duas
+antigas do `na_nuvem` reancoradas, uma reescrita: as finanças agora entram de propósito).
+
+**Próximo passo exato:** C3, `scripts/nuvem.py`: o passo `financas` (a conta `viking-financas@`,
+o segredo `viking-pluggy` vazio e a leitura só dele; a medida reprova o `motor@` lendo); `segredo
+viking-pluggy` (no Mac: `pluggy.segredo_para_json` do `.env`); `comandos_do_deploy` com o serviço
+`financas` primeiro (`--command=/app/.venv/bin/uvicorn`, `--args=lifeos.nuvem.financas:app,…`,
+conta `financas@`, só o volume dele, `run.invoker` só do `motor@`) e o motor com
+`VIKING_FINANCAS_URL`; `em_dia` sabe das finanças; as provas sem a Pluggy; `prova-financas`.
 
 **Depende do dono:** nada até o C4 (os oks: o passo `financas`, o segredo no Mac, o deploy, a
 `prova-financas`).

@@ -225,6 +225,41 @@ def _financas_consulta(args: argparse.Namespace) -> int | None:
     return 0
 
 
+def _financas_na_nuvem(args: argparse.Namespace) -> int:
+    """`viking financas --nuvem`: o mesmo texto, pedido ao motor, que pergunta ao serviço de
+    finanças (Sessão 11d, D64). Conectar um banco continua só no Mac."""
+    from lifeos.financas import pergunta
+    from lifeos.nuvem import cliente
+
+    if args.conectar:
+        print("❌ Conectar um banco é só no Mac: `viking financas --conectar`.", file=sys.stderr)
+        return 2
+    desde, ate = args.desde or "", args.ate or ""
+    if args.saldo:
+        pedido = {"pergunta": "saldo"}
+    elif args.gastos:
+        pedido = {"pergunta": "gastos", "desde": desde, "ate": ate}
+    elif args.buscar is not None or args.valor:
+        pedido = {
+            "pergunta": "buscar",
+            "texto": args.buscar or "",
+            "desde": desde,
+            "ate": ate,
+            "valor": args.valor or "",
+        }
+    elif args.fatura:
+        pedido = {"pergunta": "fatura"}
+    else:
+        pedido = {"pergunta": "conexoes"}
+    try:
+        texto = cliente.perguntar_financas(pergunta.conferir(pedido))
+    except (pergunta.PerguntaInvalida, cliente.ErroDaNuvem) as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        return 2
+    print(texto)
+    return 0
+
+
 def _financas(args: argparse.Namespace) -> int:
     """Conectar, conferir as conexões e (com --saldo/--gastos/--buscar/--fatura) consultar."""
     import webbrowser
@@ -232,6 +267,8 @@ def _financas(args: argparse.Namespace) -> int:
     from lifeos.config import PLUGGY_ITEM_IDS
     from lifeos.financas import conectar, pluggy
 
+    if args.nuvem:
+        return _financas_na_nuvem(args)
     consulta = _financas_consulta(args)
     if consulta is not None:
         return consulta
@@ -629,6 +666,11 @@ def main() -> None:
     financas.add_argument("--valor", help="Com --buscar (ou sozinho): valor, ex.: 1500 ou 89,90")
     financas.add_argument("--desde", metavar="AAAA-MM-DD", help="Início do período")
     financas.add_argument("--ate", metavar="AAAA-MM-DD", help="Fim do período (padrão: hoje)")
+    financas.add_argument(
+        "--nuvem",
+        action="store_true",
+        help="A mesma pergunta ao serviço de finanças da nuvem, pelo motor (sem o Gemini)",
+    )
 
     subparsers.add_parser(
         "aprovar", help="Aprova (com código) pedidos que outros apps fizeram pelo MCP"

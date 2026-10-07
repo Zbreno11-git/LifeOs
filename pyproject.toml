@@ -84,4 +84,6 @@ files = [
     "src/lifeos/nuvem",
     "src/lifeos/maos",
     "src/lifeos/backup",
+    "src/lifeos/financas/pergunta.py",
+    "src/lifeos/financas/remoto.py",
 ]

@@ -27,6 +27,8 @@ from lifeos.reminders.models import Reminder
 PRAZO_S = 30.0
 # O `--timeout` do motor (300 s, `scripts/nuvem.py`) mais 20 s: a resposta dele chega antes.
 PRAZO_CHAT_S = 320.0
+# O motor espera o serviço de finanças até 60 s (`financas/remoto.PRAZO_MAX_S`), mais a folga.
+PRAZO_FINANCAS_S = 90.0
 ESCOPO = "https://www.googleapis.com/auth/cloud-platform"
 
 
@@ -125,6 +127,16 @@ def capacidades(sessao: Any) -> dict[str, Any]:
 def turno_de_chat(sessao: Any, pedido: dict[str, Any]) -> dict[str, Any]:
     """Um turno do chat da nuvem (`POST /chat`). O prazo é o do motor mais uma folga."""
     return _chamar(sessao, "POST", "/chat", corpo=pedido, prazo=PRAZO_CHAT_S)
+
+
+def perguntar_financas(pedido: dict[str, str]) -> str:
+    """Uma pergunta fechada de finanças (`financas/pergunta.py`) ao motor, que pergunta ao serviço
+    de finanças (Sessão 11d, D64): o mesmo texto do `viking financas` do Mac, sem o Gemini."""
+    dados = _chamar(_sessao(), "POST", "/financas", corpo=pedido, prazo=PRAZO_FINANCAS_S)
+    texto = dados.get("texto")
+    if not isinstance(texto, str):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return texto
 
 
 def sessao_das_maos() -> Any:
