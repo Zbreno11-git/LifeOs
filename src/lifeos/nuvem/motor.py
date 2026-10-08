@@ -129,6 +129,25 @@ async def fumaca_vencidos(request: Request) -> JSONResponse:
     return JSONResponse({"vencidos_24h": await run_in_threadpool(_vencidos_24h)})
 
 
+def _busca_da_memoria() -> dict[str, int]:
+    from lifeos.memoria import store, vetores
+
+    eixo = [1.0] + [0.0] * (vetores.DIMENSAO - 1)
+    return {"achados": len(store.parecidos(eixo, k=1))}
+
+
+async def fumaca_memoria(request: Request) -> JSONResponse:
+    """Só leitura e sem o Gemini (Sessão 13, D66): exerce o `find_nearest` com o filtro `ativo`,
+    que na produção pede o índice vetorial (o emulador não pede). Devolve só a contagem; sem o
+    índice, o erro diz só o tipo."""
+    await _quem(request)
+    try:
+        return JSONResponse(await run_in_threadpool(_busca_da_memoria))
+    except Exception as exc:  # noqa: BLE001 - só o tipo: a prova do deploy reprova
+        log.error("fumaça da memória falhou: %s", type(exc).__name__)
+        return JSONResponse({"erro": f"a busca da memória falhou ({type(exc).__name__})"}, 500)
+
+
 def _consultas_do_registro() -> dict[str, int]:
     """Cada consulta do registro com parâmetros que não acham nada: prova, na produção, que os
     índices que ela pede existem. Só leitura."""
@@ -238,6 +257,7 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/backup/importar": frozenset({CLI}),
     "/financas": frozenset({CLI}),
     "/fumaca/financas": frozenset({CLI}),
+    "/fumaca/memoria": frozenset({CLI}),
     # A memória (Sessão 13, D66): só o terminal do dono lista, corrige, esquece e reindexa.
     "/memoria": frozenset({CLI}),
     "/memoria/esquecer": frozenset({CLI}),
@@ -657,6 +677,7 @@ ROTAS = [
     Route("/backup/importar", backup_importar, methods=["POST"]),
     Route("/financas", financas, methods=["POST"]),
     Route("/fumaca/financas", fumaca_financas, methods=["GET"]),
+    Route("/fumaca/memoria", fumaca_memoria, methods=["GET"]),
     Route("/memoria", memoria_listar, methods=["GET"]),
     Route("/memoria/esquecer", memoria_esquecer, methods=["POST"]),
     Route("/memoria/desfazer", memoria_desfazer, methods=["POST"]),

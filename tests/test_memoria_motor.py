@@ -334,3 +334,44 @@ def test_uma_falha_do_resumo_nao_para_os_lembretes(gmail, monkeypatch):
     assert resposta.status_code == 200
     assert resposta.json()["resumo"] == "falhou (RuntimeError)"
     assert "sábados" not in resposta.text
+
+
+# --- a fumaça do deploy: o índice vetorial no ar, sem o Gemini --------------------------------
+
+
+def test_a_fumaca_da_memoria_so_conta(monkeypatch):
+    assert _pedir("GET", "/fumaca/memoria").json() == {"achados": 0}
+    _gravar("O usuário corre aos sábados.")
+    resposta = _pedir("GET", "/fumaca/memoria")
+    assert resposta.json() == {"achados": 1} and "sábados" not in resposta.text
+    assert _pedir("GET", "/fumaca/memoria", conta="maos").status_code == 403
+
+
+def test_sem_o_indice_a_fumaca_da_memoria_falha_alto_so_com_o_tipo(monkeypatch):
+    def sem_indice(*_a, **_k):
+        raise RuntimeError("FAILED_PRECONDITION: O usuário corre aos sábados.")
+
+    monkeypatch.setattr(store, "parecidos", sem_indice)
+    resposta = _pedir("GET", "/fumaca/memoria")
+    assert resposta.status_code == 500
+    assert resposta.json() == {"erro": "a busca da memória falhou (RuntimeError)"}
+
+
+def test_um_fato_torto_na_restauracao_e_400_e_nada_grava():
+    fato = {
+        "id": "../gastos/2026-10",
+        "texto": "O usuário corre aos sábados.",
+        "origem": "chat",
+        "sessao": "",
+        "turno": "",
+        "criado_em": "2026-10-06T17:00:00.000000+00:00",
+        "ativo": True,
+        "invalida_em": None,
+        "substituido_por": None,
+        "esquecido_em": None,
+        "apagar_em": None,
+    }
+    resposta = _pedir("POST", "/backup/importar", {"acoes": [], "gastos": [], "memoria": [fato]})
+    assert resposta.status_code == 400 and "UUID" in resposta.json()["erro"]
+    with _do_lado_da_nuvem():
+        assert store.todos() == []

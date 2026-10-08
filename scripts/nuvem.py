@@ -1324,7 +1324,8 @@ def provas(
     commit = versao.json().get("commit") if versao.status_code == 200 else None
     detalhe = f"HTTP {versao.status_code}" + (f", depois de {esperou} s" if esperou else "")
     resultado.append(Prova("viking-cli@: /versao = a imagem no ar", commit == sha, detalhe))
-    for rota in ("/lembretes", "/fumaca/vencidos", "/fumaca/registro"):
+    # A busca vetorial da memória (Sessão 13): o índice que o emulador não pede, exercido no ar.
+    for rota in ("/lembretes", "/fumaca/vencidos", "/fumaca/registro", "/fumaca/memoria"):
         resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
         resultado.append(
             Prova(
