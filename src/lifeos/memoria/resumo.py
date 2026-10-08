@@ -14,6 +14,10 @@ Roda na rodada do envio de lembretes (a cada minuto, `POST /tarefas/lembretes`),
 - **uma segunda inteira sem rodada** (o motor fora o dia todo) pula aquela semana: não há como
   saber se o dono ainda quer o resumo velho, e o `viking memoria --semana` mostra o mesmo.
 
+Desde a 13b (D67, o dono: "sim"), o resumo mostra também as receitas guardadas e esquecidas na
+semana, com os passos: é mais uma chance de pegar uma que entrou sem querer (um e-mail colado). As
+propostas ignoradas não entram. "Só se houve anotação" passa a contar as receitas.
+
 O e-mail, lido de volta pelo Viking, é conteúdo de terceiro (D53): a marca dele vira só a etiqueta.
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
@@ -25,6 +29,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from lifeos import config, firestore_comum
+from lifeos.memoria import receitas as memoria_receitas
 from lifeos.memoria import store
 
 COLECAO = "estado"
@@ -49,8 +54,14 @@ def _dia(momento: datetime) -> str:
     return f"{momento.astimezone(config.TIMEZONE):%d/%m}"
 
 
-def corpo(fatos: list[store.Fato], inicio: datetime, fim: datetime) -> str:
-    """O texto do e-mail: cada anotação da semana com o id curto e o estado de hoje."""
+def corpo(
+    fatos: list[store.Fato],
+    inicio: datetime,
+    fim: datetime,
+    receitas: list[memoria_receitas.Receita] | None = None,
+) -> str:
+    """O texto do e-mail: cada anotação da semana com o id curto e o estado de hoje, e as receitas
+    com os passos."""
     linhas = [f"O que o Viking anotou de {_dia(inicio)} a {_dia(fim)}:", ""]
     for fato in fatos:
         if fato.esquecido_em is not None:
@@ -60,6 +71,17 @@ def corpo(fatos: list[store.Fato], inicio: datetime, fim: datetime) -> str:
         else:
             estado = ""
         linhas.append(f"- [{fato.curto}] {fato.texto}{estado}")
+    if receitas:
+        linhas += ["", "Receitas:"]
+        for receita in receitas:
+            if receita.esquecido_em is not None:
+                estado = " (esquecida)"
+            elif receita.invalida_em is not None:
+                estado = " (já trocada por outra)"
+            else:
+                estado = ""
+            linhas.append(f"- [{receita.curto}] {receita.nome}{estado}:")
+            linhas += [f"  {n}. {passo}" for n, passo in enumerate(receita.passos, 1)]
     linhas += [
         "",
         (
@@ -95,11 +117,12 @@ def rodar(agora: datetime | None = None) -> str:
         return "já feito"
     try:
         fatos = store.criados_entre(inicio, fim)
-        if not fatos:
+        receitas = memoria_receitas.da_semana(inicio, fim)
+        if not fatos and not receitas:
             ref.update({"estado": "vazio"})
             return "nada anotado"
-        assunto = f"Viking: o que anotei esta semana ({len(fatos)})"
-        pedido = gmail_envio.novo("eu", assunto, corpo(fatos, inicio, fim))
+        assunto = f"Viking: o que anotei esta semana ({len(fatos) + len(receitas)})"
+        pedido = gmail_envio.novo("eu", assunto, corpo(fatos, inicio, fim, receitas))
     except gmail_service.ErroGmail as exc:
         if exc.incerta:
             ref.update({"estado": "incerto"})

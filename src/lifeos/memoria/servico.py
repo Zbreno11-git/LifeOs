@@ -9,6 +9,10 @@ Corrigir é um fato novo que substitui o antigo (`origem="viking memoria"`), pel
 o vetor novo; reindexar refaz o vetor de quem não tem (o restaurado do backup) ou tem outro
 modelo. Os dois chamam o Gemini: pelo cliente instrumentado, com o teto do chat e um prazo.
 
+Desde a 13b (D67), as receitas moram ao lado (`receitas.py`): a lista leva as duas, e esquecer e
+desfazer acham o id em qualquer uma (um prefixo que casa nas duas é ambíguo e nunca escolhe).
+Receita não se corrige: ensinar de novo com o mesmo nome substitui.
+
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
 
@@ -17,23 +21,42 @@ from __future__ import annotations
 from typing import Any
 
 from lifeos import config, custos, prazo
-from lifeos.memoria import regras, store, vetores
+from lifeos.memoria import receitas, regras, store, vetores
 
 PRAZO_S = 200  # abaixo dos 300 s do Cloud Run, como o turno do chat
 LOTE = 20  # textos por pedido de embedding: 20 fatos de até 200 caracteres cabem nos 8.192 tokens
 
 
-def _id(dados: Any) -> str:
+FATO, RECEITA = "fato", "receita"
+
+
+def _qual(dados: Any) -> tuple[str, str]:
+    """(o tipo, o id completo) do que o dono digitou: um fato ou uma receita."""
     prefixo = dados.get("id") if isinstance(dados, dict) else None
     if not isinstance(prefixo, str):
         raise ValueError("o pedido precisa do id do fato")  # noqa: TRY004 - o motor: 400
-    fato_id = store.por_prefixo(prefixo)
-    if fato_id is None:
-        raise ValueError(
-            f"nenhum fato com esse id, ou mais de um (use ao menos {store.PREFIXO_MINIMO} "
-            "caracteres, como o `viking memoria --todos` mostra)"
+    achados = [
+        (tipo, achado)
+        for tipo, achado in (
+            (FATO, store.por_prefixo(prefixo)),
+            (RECEITA, receitas.por_prefixo(prefixo, store.PREFIXO_MINIMO)),
         )
-    return fato_id
+        if achado is not None
+    ]
+    if len(achados) != 1:
+        raise ValueError(
+            f"nenhum fato ou receita com esse id, ou mais de um (use ao menos "
+            f"{store.PREFIXO_MINIMO} caracteres, como o `viking memoria --todos` mostra)"
+        )
+    return achados[0]
+
+
+def _id(dados: Any) -> str:
+    """O id de um fato (corrigir): uma receita não se corrige."""
+    tipo, achado = _qual(dados)
+    if tipo == RECEITA:
+        raise ValueError("receita não se corrige: ensine de novo com o mesmo nome no chat")
+    return achado
 
 
 def _cliente() -> Any:
@@ -51,12 +74,22 @@ def _cliente() -> Any:
 
 
 def listar(_dados: Any = None) -> dict[str, Any]:
-    """Todos os fatos guardados (os esquecidos até a TTL os apagar), do mais novo ao mais velho."""
-    return {"fatos": [store.copia(f) for f in store.todos()]}
+    """Todos os fatos e as receitas guardados (os esquecidos até a TTL os apagar, e as propostas
+    ainda vivas), do mais novo ao mais velho."""
+    return {
+        "fatos": [store.copia(f) for f in store.todos()],
+        "receitas": [receitas.copia(r) for r in receitas.todas()],
+    }
 
 
 def esquecer(dados: Any) -> dict[str, Any]:
-    fato = store.esquecer(_id(dados))
+    tipo, achado = _qual(dados)
+    if tipo == RECEITA:
+        receita = receitas.esquecer(achado)
+        if receita is None:
+            raise ValueError("a receita não existe mais")
+        return {"receita": receitas.copia(receita)}
+    fato = store.esquecer(achado)
     if fato is None:
         raise ValueError("o fato não existe mais")
     return {"fato": store.copia(fato)}
@@ -65,7 +98,16 @@ def esquecer(dados: Any) -> dict[str, Any]:
 def devolver(dados: Any) -> dict[str, Any]:
     """O `viking memoria --desfazer`. Chama-se `devolver` aqui de propósito: `desfazer` é o nome
     que `tests/test_gmail_aprovacao.py` vigia (só o laço do chat e a CLI desfazem uma limpeza)."""
-    fato = store.devolver(_id(dados))
+    tipo, achado = _qual(dados)
+    if tipo == RECEITA:
+        receita = receitas.devolver(achado)
+        if receita is None:
+            raise ValueError(
+                "nada a desfazer: a receita está ativa, é só uma proposta, ou o esquecimento "
+                "passou dos 30 dias"
+            )
+        return {"receita": receitas.copia(receita)}
+    fato = store.devolver(achado)
     if fato is None:
         raise ValueError("nada a desfazer: o fato está ativo, ou o esquecimento passou dos 30 dias")
     return {"fato": store.copia(fato)}

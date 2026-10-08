@@ -378,3 +378,83 @@ def test_um_fato_torto_na_restauracao_e_400_e_nada_grava():
     assert resposta.status_code == 400 and "ativo" in resposta.json()["erro"]
     with _do_lado_da_nuvem():
         assert store.todos() == []
+
+
+# --- as receitas pelo motor (Sessão 13b, D67) ----------------------------------------------------
+
+
+def _guardar_receita(
+    nome="fechamento", passos=("veja a agenda", "mande por e-mail"), *, agora=None
+):
+    from lifeos.memoria import receitas
+
+    with _do_lado_da_nuvem():
+        receitas.propor(nome, list(passos), sessao="s9", agora=agora)
+        guardada, _ = receitas.guardar("s9", agora)
+        return guardada
+
+
+def test_listar_traz_as_receitas_ao_lado_dos_fatos():
+    from lifeos.memoria import receitas
+
+    _gravar("O usuário corre aos sábados.")
+    guardada = _guardar_receita()
+    resposta = _pedir("GET", "/memoria").json()
+    assert [f["texto"] for f in resposta["fatos"]] == ["O usuário corre aos sábados."]
+    (receita,) = resposta["receitas"]
+    assert receita["id"] == guardada.id and receita["passos"] == [
+        "veja a agenda",
+        "mande por e-mail",
+    ]
+    assert set(receita) == set(receitas.CAMPOS_DA_COPIA)
+
+
+def test_esquecer_e_desfazer_uma_receita_pelo_id_curto():
+    guardada = _guardar_receita()
+    resposta = _pedir("POST", "/memoria/esquecer", {"id": guardada.curto})
+    assert resposta.status_code == 200 and resposta.json()["receita"]["ativo"] is False
+    resposta = _pedir("POST", "/memoria/desfazer", {"id": guardada.curto})
+    assert resposta.status_code == 200 and resposta.json()["receita"]["ativo"] is True
+
+
+def test_receita_nao_se_corrige(embedding):
+    guardada = _guardar_receita()
+    resposta = _pedir("POST", "/memoria/corrigir", {"id": guardada.curto, "texto": "outra"})
+    assert resposta.status_code == 400 and "ensine de novo" in resposta.json()["erro"]
+    assert embedding.textos == []  # recusou antes de gastar
+
+
+def test_o_prefixo_que_casa_num_fato_e_numa_receita_nunca_escolhe(monkeypatch):
+    from lifeos.memoria import receitas
+
+    fato = _gravar("O usuário corre aos sábados.")
+    guardada = _guardar_receita()
+    monkeypatch.setattr(receitas, "por_prefixo", lambda _p, _m=6: guardada.id)
+    resposta = _pedir("POST", "/memoria/esquecer", {"id": fato.curto})
+    assert resposta.status_code == 400 and "mais de um" in resposta.json()["erro"]
+    with _do_lado_da_nuvem():
+        assert store.obter(fato.id).ativo and receitas.obter(guardada.id).ativo
+
+
+def test_o_resumo_mostra_as_receitas_da_semana(gmail):
+    _guardar_receita("fechamento", agora=SEGUNDA - timedelta(days=2))
+    _guardar_receita("velha", agora=SEGUNDA - timedelta(days=9))  # a semana anterior
+    with _do_lado_da_nuvem():
+        assert resumo.rodar(SEGUNDA) == "enviado"
+    (enviado,) = gmail["enviados"]
+    assert enviado["mensagem"]["Subject"] == "Viking: o que anotei esta semana (1)"
+    corpo = enviado["mensagem"].get_body(("plain",)).get_content()
+    assert "Receitas:" in corpo and "fechamento:" in corpo
+    assert "  1. veja a agenda" in corpo and "  2. mande por e-mail" in corpo
+    assert "velha" not in corpo
+
+
+def test_a_proposta_ignorada_nao_entra_no_resumo(gmail):
+    from lifeos.memoria import receitas
+
+    with _do_lado_da_nuvem():
+        receitas.propor(
+            "ignorada", ["veja a agenda"], sessao="s1", agora=SEGUNDA - timedelta(days=1)
+        )
+        assert resumo.rodar(SEGUNDA) == "nada anotado"
+    assert gmail["enviados"] == []

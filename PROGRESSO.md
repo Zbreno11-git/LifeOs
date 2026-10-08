@@ -39,12 +39,18 @@ US$ 0,0351 no pior caso):**
 **C3 feito:** o extrator propõe a receita (a mesma chamada, só a mensagem digitada); `na_nuvem`
 lê `guarda receita` e `roda NOME` antes do modelo, manda os nomes no bloco e a regra `_RECEITAS`
 medida; o `roda` manda os passos e ninguém anota; o `chat_cliente` mostra a proposta com o aviso
-do endereço; o `/versao` diz `receitas`. Testes: `tests/test_na_nuvem_receitas.py` (26), um passo
+do endereço; o `/versao` diz `receitas`. Testes: `tests/test_na_nuvem_receitas.py` (25), um passo
 de receita que envia a outra pessoa ainda pede o código (`test_na_nuvem_gmail.py`). Duas âncoras
 de mutação de `na_nuvem.py` reancoradas. A suíte `3000 passed`.
 
-**Próximo passo exato:** o C4 (`servico`, rotas, `terminal --receitas`, esquecer e desfazer nas
-duas coleções, o resumo com as receitas), depois o C5 sem pedir confirmação a cada fase.
+**C4 feito:** `servico` (a lista com as receitas; esquecer e desfazer acham o id nas duas
+coleções, e um prefixo que casa nas duas é ambíguo; receita não se corrige), o cliente
+(`da_memoria`), `viking memoria` (📋 na lista, `--receitas` com os passos), o resumo de segunda
+com as receitas da semana. A suíte `3011 passed` antes do teste do cliente.
+
+**Próximo passo exato:** o C5 — portões, mutações novas e a rodada inteira em background, as duas
+passadas, os docs, `nuvem.py` (a TTL `receitas.apagar_em`, as provas); depois os oks (TTL e
+deploy), o roteiro do Mac e o fechamento.
 
 **Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto;
 `.mutacao.lock` não existe; `gh run list --commit $(git rev-parse HEAD)` → `success`.

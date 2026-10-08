@@ -725,11 +725,16 @@ def main() -> None:
     modo_memoria.add_argument(
         "--semana", action="store_true", help="O que entrou nos últimos 7 dias"
     )
-    modo_memoria.add_argument("--esquecer", metavar="ID", help="Esquece um fato (30 dias)")
+    modo_memoria.add_argument(
+        "--esquecer", metavar="ID", help="Esquece um fato ou uma receita (30 dias)"
+    )
     modo_memoria.add_argument("--desfazer", metavar="ID", help="Devolve um esquecido ou trocado")
     modo_memoria.add_argument("--corrigir", metavar="ID", help="Troca um fato pelo --texto")
     modo_memoria.add_argument(
         "--reindexar", action="store_true", help="Refaz os vetores (depois de restaurar)"
+    )
+    modo_memoria.add_argument(
+        "--receitas", action="store_true", help="As receitas guardadas, com os passos"
     )
     memoria_cli.add_argument("--texto", help="Com --corrigir: o fato certo")
     registro_cli = subparsers.add_parser(

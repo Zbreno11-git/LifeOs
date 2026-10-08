@@ -99,6 +99,7 @@ def _args(**kw):
         "desfazer": None,
         "corrigir": None,
         "reindexar": False,
+        "receitas": False,
         "texto": None,
     }
     base.update(kw)
@@ -107,7 +108,7 @@ def _args(**kw):
 
 def test_corrigir_sem_texto_e_texto_sem_corrigir_saem_com_1(capsys, monkeypatch):
     monkeypatch.setattr(cliente, "acao_da_memoria", lambda *_a: pytest.fail("não devia chamar"))
-    monkeypatch.setattr(cliente, "fatos_da_memoria", lambda: pytest.fail("não devia chamar"))
+    monkeypatch.setattr(cliente, "da_memoria", lambda: pytest.fail("não devia chamar"))
     assert terminal.executar(_args(corrigir="abcdef01")) == 1
     assert terminal.executar(_args(texto="x")) == 1
     assert "--texto" in capsys.readouterr().err
@@ -139,7 +140,7 @@ def test_erro_da_nuvem_e_resposta_torta_saem_com_1(capsys, monkeypatch):
     def falha():
         raise cliente.ErroDaNuvem("a nuvem não respondeu")
 
-    monkeypatch.setattr(cliente, "fatos_da_memoria", falha)
+    monkeypatch.setattr(cliente, "da_memoria", falha)
     assert terminal.executar(_args()) == 1
     monkeypatch.setattr(cliente, "acao_da_memoria", lambda *_a: {"outra": 1})
     assert terminal.executar(_args(esquecer="abcdef01")) == 1
@@ -150,3 +151,102 @@ def test_erro_da_nuvem_e_resposta_torta_saem_com_1(capsys, monkeypatch):
 def test_o_cliente_so_aceita_as_acoes_conhecidas():
     with pytest.raises(ValueError, match="desconhecida"):
         cliente.acao_da_memoria("apagar", {})
+
+
+# --- as receitas (Sessão 13b, D67) ---------------------------------------------------------------
+
+
+def _receita(nome, *, dias=0, **marcas):
+    criado = AGORA - timedelta(days=dias)
+    receita = {
+        "id": f"{abs(hash(nome)) % 10**8:08d}-1111-4000-8000-000000000000",
+        "nome": nome,
+        "passos": ["veja a agenda", "mande por e-mail"],
+        "estado": "guardada",
+        "ativo": True,
+        "origem": "chat",
+        "sessao": "",
+        "turno": "",
+        "criado_em": criado.isoformat(),
+        "guardada_em": criado.isoformat(),
+        "invalida_em": None,
+        "substituido_por": None,
+        "esquecido_em": None,
+        "apagar_em": None,
+    }
+    receita.update(marcas)
+    return receita
+
+
+GUARDADA = _receita("fechamento", dias=1)
+PROPOSTA = _receita(
+    "ignorada",
+    estado="proposta",
+    ativo=False,
+    guardada_em=None,
+    apagar_em=(AGORA + timedelta(days=1)).isoformat(),
+)
+ESQUECIDA = _receita(
+    "velha",
+    dias=2,
+    ativo=False,
+    esquecido_em=(AGORA - timedelta(days=1)).isoformat(),
+    apagar_em=(AGORA + timedelta(days=29)).isoformat(),
+)
+RECEITAS = [GUARDADA, PROPOSTA, ESQUECIDA]
+
+
+def test_a_lista_mostra_as_receitas_guardadas_marcadas():
+    linhas = terminal.lista([ATIVO], RECEITAS, agora=AGORA).splitlines()
+    assert linhas[1] == f"{GUARDADA['id'][:8]}  07/10/2026  📋 fechamento (2 passo(s))"
+    assert len(linhas) == 2
+
+
+def test_todos_mostra_a_proposta_e_a_esquecida():
+    linhas = terminal.lista([], RECEITAS, todos=True, agora=AGORA).splitlines()
+    assert linhas[1].endswith(
+        "📋 ignorada (2 passo(s)) (proposta, não guardada; some em 09/10/2026)"
+    )
+    assert linhas[2].endswith("📋 velha (2 passo(s)) (esquecido; some em 06/11/2026)")
+
+
+def test_so_com_receita_a_lista_nao_diz_vazia():
+    assert "📋 fechamento" in terminal.lista([], [GUARDADA], agora=AGORA)
+
+
+def test_receitas_mostra_os_passos_inteiros_e_limpos():
+    suja = _receita("bom\x1b[2J dia", passos=["mostre\x07 a agenda"])
+    texto = terminal.so_receitas([suja, PROPOSTA])
+    assert texto.splitlines()[1:] == ["   1. mostre a agenda"]
+    assert "\x1b" not in texto and "ignorada" not in texto
+    assert "Nenhuma receita guardada" in terminal.so_receitas([PROPOSTA])
+
+
+def test_receitas_e_esquecer_uma_receita_pelo_terminal(capsys, monkeypatch):
+    monkeypatch.setattr(cliente, "da_memoria", lambda: ([ATIVO], [GUARDADA]))
+    monkeypatch.setattr(cliente, "acao_da_memoria", lambda *_a: {"receita": ESQUECIDA})
+    assert terminal.executar(_args(receitas=True)) == 0
+    assert terminal.executar(_args(esquecer="abcdef01")) == 0
+    saida = capsys.readouterr().out
+    assert "   1. veja a agenda" in saida and "O usuário corre" not in saida
+    assert "🗑️ esquecido" in saida and "📋 velha" in saida
+
+
+@pytest.mark.parametrize(
+    ("resposta", "esperado"),
+    [
+        ({"fatos": [ATIVO]}, ([ATIVO], [])),  # um motor de antes da 13b
+        ({"fatos": [ATIVO], "receitas": [GUARDADA]}, ([ATIVO], [GUARDADA])),
+        ({"fatos": [ATIVO], "receitas": "x"}, None),
+        ({"fatos": [ATIVO], "receitas": [3]}, None),
+        ({"receitas": []}, None),
+    ],
+)
+def test_o_cliente_confere_a_lista_da_memoria(monkeypatch, resposta, esperado):
+    monkeypatch.setattr(cliente, "_sessao", lambda: None)
+    monkeypatch.setattr(cliente, "_chamar", lambda *_a, **_k: resposta)
+    if esperado is None:
+        with pytest.raises(cliente.ErroDaNuvem, match="formato inesperado"):
+            cliente.da_memoria()
+    else:
+        assert cliente.da_memoria() == esperado

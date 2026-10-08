@@ -299,13 +299,16 @@ def importar_do_backup(
 ACOES_DA_MEMORIA = ("esquecer", "desfazer", "corrigir", "reindexar")
 
 
-def fatos_da_memoria() -> list[dict[str, Any]]:
-    """Todos os fatos guardados na nuvem (os esquecidos até sumirem), do mais novo ao mais velho."""
+def da_memoria() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """(os fatos, as receitas) guardados na nuvem (os esquecidos até sumirem), do mais novo ao mais
+    velho. Um motor de antes da 13b não manda as receitas: lista vazia."""
     dados = _chamar(_sessao(), "GET", "/memoria")
-    itens = dados.get("fatos")
-    if not isinstance(itens, list) or not all(isinstance(i, dict) for i in itens):
+    fatos, receitas = dados.get("fatos"), dados.get("receitas", [])
+    if not isinstance(fatos, list) or not isinstance(receitas, list):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
-    return itens
+    if not all(isinstance(i, dict) for i in [*fatos, *receitas]):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return fatos, receitas
 
 
 def acao_da_memoria(acao: str, corpo: dict[str, Any]) -> dict[str, Any]:
