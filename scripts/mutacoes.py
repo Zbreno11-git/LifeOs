@@ -2824,6 +2824,27 @@ MUTACOES = [
         "tests/test_financas_na_nuvem.py::test_uma_busca_longa_do_gemini_nao_sai_do_motor",
     ),
     Mutacao(
+        "remoto: o 429 do Cloud Run não se repete",
+        "src/lifeos/financas/remoto.py",
+        "        if status != 429 or not esperas:\n",
+        "        if True:\n",
+        "tests/test_financas_na_nuvem.py::test_o_429_se_repete_e_a_resposta_chega",
+    ),
+    Mutacao(
+        "remoto: qualquer erro do serviço se repete",
+        "src/lifeos/financas/remoto.py",
+        "        if status != 429 or not esperas:\n",
+        "        if status == 200 or not esperas:\n",
+        "tests/test_financas_na_nuvem.py::test_so_o_429_se_repete",
+    ),
+    Mutacao(
+        "remoto: o 429 se repete além do prazo do turno",
+        "src/lifeos/financas/remoto.py",
+        "        if segundos_do_pedido() - esperas[0] < PRAZO_MIN_S:\n",
+        "        if False:\n",
+        "tests/test_financas_na_nuvem.py::test_o_429_nao_se_repete_alem_do_prazo_do_turno",
+    ),
+    Mutacao(
         "motor: as mãos perguntam as finanças",
         "src/lifeos/nuvem/motor.py",
         '    "/financas": frozenset({CLI}),\n',

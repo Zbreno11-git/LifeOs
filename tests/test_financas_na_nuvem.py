@@ -113,6 +113,7 @@ def nuvem(monkeypatch, tmp_path, falsa):
         return resposta.status_code, resposta.content
 
     monkeypatch.setattr(remoto, "_post", post)
+    estado["post"] = post
     estado["no_servico_ctx"] = no_servico
     return estado
 
@@ -230,6 +231,62 @@ def test_o_pedido_cabe_no_que_resta_do_turno(nuvem):
 
     tools.saldos_das_contas()  # sem prazo (a rota do terminal): o teto
     assert nuvem["posts"][-1][3] == remoto.PRAZO_MAX_S
+
+
+# --- o 429 do Cloud Run (sem instância; o pedido não chegou ao serviço) ----------------------------
+
+
+@pytest.fixture
+def esperas(monkeypatch):
+    feitas = []
+    monkeypatch.setattr(remoto, "_esperar", feitas.append)
+    return feitas
+
+
+def _antes(status, vezes, post):
+    """`vezes` respostas `status` do Cloud Run, depois o serviço de verdade."""
+    restam = [vezes]
+
+    def antes(url, corpo, token, segundos):
+        if restam[0]:
+            restam[0] -= 1
+            return status, b"Rate exceeded."
+        return post(url, corpo, token, segundos)
+
+    return antes
+
+
+def test_o_429_se_repete_e_a_resposta_chega(nuvem, monkeypatch, esperas):
+    monkeypatch.setattr(remoto, "_post", _antes(429, 2, nuvem["post"]))
+    no_motor = tools.saldos_das_contas()
+    assert esperas == [2.0, 4.0]
+    assert len(nuvem["posts"]) == 1  # só o terceiro chegou ao serviço
+    assert no_motor == _texto_do_mac(monkeypatch, tools.saldos_das_contas)
+
+
+def test_o_429_que_nao_passa_para_em_tres_pedidos(nuvem, monkeypatch, esperas):
+    pedidos = []
+    monkeypatch.setattr(remoto, "_post", lambda *a: pedidos.append(a) or (429, b""))
+    texto = tools.saldos_das_contas()
+    assert "respondeu 429" in texto
+    assert len(pedidos) == 3 and esperas == [2.0, 4.0]
+
+
+def test_o_429_nao_se_repete_alem_do_prazo_do_turno(nuvem, monkeypatch, esperas):
+    pedidos = []
+    monkeypatch.setattr(remoto, "_post", lambda *a: pedidos.append(a) or (429, b""))
+    with prazo.ate(66):  # 6 s para o pedido: esperar 2 deixaria menos que o mínimo
+        texto = tools.saldos_das_contas()
+    assert "respondeu 429" in texto
+    assert len(pedidos) == 1 and esperas == []
+
+
+@pytest.mark.parametrize("status", [500, 403, 503])
+def test_so_o_429_se_repete(nuvem, monkeypatch, esperas, status):
+    pedidos = []
+    monkeypatch.setattr(remoto, "_post", lambda *a: pedidos.append(a) or (status, b""))
+    assert f"respondeu {status}" in tools.saldos_das_contas()
+    assert len(pedidos) == 1 and esperas == []
 
 
 # --- as rotas do motor ---------------------------------------------------------------------------

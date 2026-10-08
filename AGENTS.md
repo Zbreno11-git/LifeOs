@@ -89,8 +89,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     Desde a Sessão 11d (D64), no chat da nuvem também, por um **serviço isolado**:
     `pergunta.py` é o formato fechado das 5 perguntas que atravessam a rede (saldo, gastos,
     busca, fatura, conexões); `remoto.py` é o motor perguntando ao serviço (o token do servidor
-    de metadados, dentro do prazo do turno); no motor cada `tools.responder_*` pede o texto
-    pronto ao serviço, e o motor nunca tem a chave. `pluggy.credenciais()`: o `.env` no Mac, o
+    de metadados, dentro do prazo do turno; o 429 do Cloud Run, "no available instance", que
+    nunca chegou ao serviço, se repete até duas vezes, desde 2026-10-08); no motor cada
+    `tools.responder_*` pede o texto pronto ao serviço, e o motor nunca tem a chave. `pluggy.credenciais()`: o `.env` no Mac, o
     JSON do segredo `viking-pluggy` no serviço; na nuvem, a única escrita é o `/auth`
   - `gmail/` — Gmail pela API: ler (buscar, ler, não lidos de hoje, raio-x da caixa) e, desde a
     Gmail 2, **arquivar com aprovação** (`limpeza.py`: o Gemini só propõe; o dono digita o código;

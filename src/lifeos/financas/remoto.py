@@ -17,6 +17,7 @@ Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 from lifeos import config, prazo
@@ -26,6 +27,12 @@ PRAZO_MAX_S = 60.0  # um `gastos` de um ano: alguns segundos no Mac (a Pluggy, 2
 PROXIMO_MODELO_S = 60.0  # a chamada ao Gemini que lê a resposta (`na_nuvem.PRAZO_DO_GEMINI_MS`)
 PRAZO_MIN_S = 5.0  # menos que isso não vale começar
 MAX_RESPOSTA = 64 * 1024  # bytes: a maior resposta (20 transações de uma busca) tem poucos KB
+# O 429 é do Cloud Run, nunca do serviço (que só responde 200, 400, 500 e a recusa de identidade):
+# "The request was aborted because there was no available instance" (medido em 2026-10-08, com a
+# instância única acordando), e o pedido não chegou ao serviço. A página de troubleshooting manda
+# repetir com espera crescente; aqui no máximo duas vezes, e só se couber no prazo do turno (as
+# perguntas são só de leitura).
+ESPERAS_DO_429_S = (2.0, 4.0)
 
 
 def _token() -> str:
@@ -44,6 +51,11 @@ def _post(url: str, corpo: dict[str, Any], token: str, segundos: float) -> tuple
         url, json=corpo, headers={"Authorization": f"Bearer {token}"}, timeout=segundos
     )
     return resposta.status_code, resposta.content
+
+
+def _esperar(segundos: float) -> None:
+    """A espera antes de repetir um 429 (os testes a trocam)."""
+    time.sleep(segundos)
 
 
 def segundos_do_pedido() -> float:
@@ -66,12 +78,20 @@ def _chamar(rota: str, corpo: dict[str, Any]) -> dict[str, Any]:
         raise pluggy.FalhaDaPluggy(
             f"sem o token para o serviço de finanças ({type(exc).__name__})"
         ) from None
-    try:
-        status, bruto = _post(config.FINANCAS_URL + rota, corpo, token, segundos)
-    except Exception as exc:  # noqa: BLE001 - tempo esgotado, conexão: só o tipo
-        raise pluggy.FalhaDaPluggy(
-            f"o serviço de finanças não respondeu ({type(exc).__name__})"
-        ) from None
+    esperas = list(ESPERAS_DO_429_S)
+    while True:
+        try:
+            status, bruto = _post(config.FINANCAS_URL + rota, corpo, token, segundos)
+        except Exception as exc:  # noqa: BLE001 - tempo esgotado, conexão: só o tipo
+            raise pluggy.FalhaDaPluggy(
+                f"o serviço de finanças não respondeu ({type(exc).__name__})"
+            ) from None
+        if status != 429 or not esperas:
+            break
+        if segundos_do_pedido() - esperas[0] < PRAZO_MIN_S:
+            break
+        _esperar(esperas.pop(0))
+        segundos = segundos_do_pedido()
     if status != 200:
         raise pluggy.FalhaDaPluggy(f"o serviço de finanças respondeu {status}", status)
     if len(bruto) > MAX_RESPOSTA:
