@@ -274,18 +274,23 @@ def importar_do_backup(
     acoes: list[dict[str, Any]],
     gastos: list[dict[str, Any]],
     memoria: list[dict[str, Any]] | None = None,
+    receitas: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Um lote da restauração (`/backup/importar`): o que foi criado, o que já estava igual e os
-    ids que já estavam diferentes. A memória (Sessão 13) só vai quando há fatos no lote: um motor
-    de antes da 13 continua aceitando os lotes sem ela."""
+    ids que já estavam diferentes. A memória (Sessão 13) e as receitas (13b) só vão quando há itens
+    no lote: um motor de antes continua aceitando os lotes sem elas."""
     corpo: dict[str, Any] = {"acoes": acoes, "gastos": gastos}
     if memoria:
         corpo["memoria"] = memoria
+    if receitas:
+        corpo["receitas"] = receitas
     dados = _chamar(sessao, "POST", "/backup/importar", corpo=corpo)
     if not isinstance(dados.get("acoes"), dict) or not isinstance(dados.get("gastos"), dict):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
     if memoria and not isinstance(dados.get("memoria"), dict):
         raise ErroDaNuvem("a nuvem não restaurou a memória (o motor é de antes da Sessão 13?)")
+    if receitas and not isinstance(dados.get("receitas"), dict):
+        raise ErroDaNuvem("a nuvem não restaurou as receitas (o motor é de antes da Sessão 13b?)")
     return dados
 
 

@@ -15,8 +15,29 @@
 - **C0:** o lock em `44024ba` (a suíte `2892 passed` depois); este plano; `sessoes.md`; D67.
 - **Não há background nem trava.**
 
-**Próximo passo exato:** o C1 — pedir o ok do dono para as medições (< US$ 0,02, só texto
-inventado), com o script no scratchpad; depois C2…C5 sem pedir confirmação a cada fase.
+**C1 feito (2026-10-08, ~22:58Z; oks do dono: "Pode rodar" e "Pode medir"; só texto inventado;
+US$ 0,0351 no pior caso):**
+- **M1, o extrator com `receita`** (14 mensagens): JSON válido nas 14, 0,5–0,9 s, ~450–510
+  tokens de entrada e 19–145 de saída (~US$ 0,0003 no pior caso, igual ao da 13). As 6 receitas
+  certas viraram receita, com os passos nas palavras do dono; **não** viraram: o e-mail colado, o
+  costume ("quando chove…"), o pedido de rodar, a pergunta e a emenda ("lembra que…era pra
+  incluir…"). O que o filtro tem de pegar veio do modelo: um passo "confirma 4821", um com
+  "R$ 3.000" e uma de 12 passos. "Eu sou vegetariano. E quando eu disser bom dia…" deu o fato
+  **e** a receita.
+- **M2, a prosa com a 1ª regra** (só proibia): em 5 de 7 procedimentos ensinados o modelo disse
+  que guardou ou que vai fazer ("Pronto, receita anotada."), e em 1 **executou os passos na hora**
+  (chamou a agenda). **M2b, a regra que diz o que responder** (a de `_RECEITAS`): 6 de 7 com a
+  frase certa ("se o Viking mostrar a proposta logo abaixo, basta digitar `guarda receita`"),
+  nenhuma diz que guardou; sobram 1 promessa ("eu te mostro a agenda") e 1 que executou um passo
+  de leitura (`listar_lembretes`). A régua de palavras só achou o próprio comando: as 16 respostas
+  foram lidas inteiras.
+- **M3, o turno de `roda`** (2 receitas inventadas): a primeira resposta chamou as tools certas na
+  ordem (a agenda e os lembretes juntos; a busca na web).
+
+**C2 feito:** `regras.recusa_receita` (36 casos dos dois lados), `memoria/receitas.py` (17 no emulador), o backup v3 (rodada, conferir, restaurar, `/backup/importar`); a suíte `2966 passed`.
+
+**Próximo passo exato:** o C3 (o extrator com `receita`, o turno da nuvem, o `chat_cliente`),
+depois C3…C5 sem pedir confirmação a cada fase.
 
 **Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto;
 `.mutacao.lock` não existe; `gh run list --commit $(git rev-parse HEAD)` → `success`.

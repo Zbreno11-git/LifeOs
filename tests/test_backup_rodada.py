@@ -80,6 +80,7 @@ def test_o_backup_sobe_um_arquivo_que_se_le_de_volta(falso, caplog):
         "acoes": 1,
         "gastos": 1,
         "memoria": 0,
+        "receitas": 0,
     }
     assert not aparece("5823", resposta.text) and not aparece("5823", caplog.text)
     backup = formato.de_bytes(arquivo["conteudo"])
@@ -168,7 +169,14 @@ def _fato_novo():
         memoria_store.gravar("O usuário corre aos sábados.", origem="chat", vetor=None)
 
 
-@pytest.mark.parametrize("mudar", [_lembrete_novo, _concluir, _gasto, _fato_novo])
+def _receita_nova():
+    from lifeos.memoria import receitas
+
+    with _do_lado_da_nuvem():
+        receitas.propor("fechamento", ["veja a agenda"], sessao="s1")
+
+
+@pytest.mark.parametrize("mudar", [_lembrete_novo, _concluir, _gasto, _fato_novo, _receita_nova])
 def test_qualquer_mudanca_cria_um_arquivo_novo(falso, mudar):
     _um_de_cada()
     assert _backup().json()["novo"] is True
@@ -177,7 +185,8 @@ def test_qualquer_mudanca_cria_um_arquivo_novo(falso, mudar):
     assert resposta["novo"] is True
     assert len(falso.de_backup()) == 2
     novo = formato.de_bytes(falso.de_backup()[-1]["conteudo"])
-    assert novo.contagens() == {k: resposta[k] for k in ("lembretes", "acoes", "gastos", "memoria")}
+    colecoes = ("lembretes", "acoes", "gastos", "memoria", "receitas")
+    assert novo.contagens() == {k: resposta[k] for k in colecoes}
 
 
 def test_o_mais_novo_apagado_a_mao_vira_um_novo(falso):

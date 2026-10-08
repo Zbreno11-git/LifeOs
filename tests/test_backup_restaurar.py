@@ -20,6 +20,7 @@ from tests.test_lembretes_nuvem import _do_lado_da_nuvem
 
 from lifeos import custos, registro
 from lifeos.backup import formato, restaurar
+from lifeos.memoria import receitas as memoria_receitas
 from lifeos.memoria import store as memoria_store
 from lifeos.reminders import transporte
 
@@ -61,6 +62,8 @@ def arquivo(mac, falso, tmp_path, emulador_firestore):
         memoria_store.gravar(  # Sessão 13: um fato, com vetor (o backup o leva sem)
             FATO, origem="chat", vetor=[1.0] + [0.0] * 767, sessao="s1", turno="s1:1"
         )
+        memoria_receitas.propor("fechamento", ["veja a agenda", "mande por e-mail"], sessao="s1")
+        memoria_receitas.guardar("s1")  # Sessão 13b: uma receita guardada
     antes = _estado_da_nuvem()
     assert _backup().status_code == 200
     (feito,) = falso.de_backup()
@@ -81,9 +84,17 @@ def test_o_ensaio_conta_e_nao_grava(arquivo):
 def test_restaura_as_tres_colecoes_num_banco_vazio(arquivo):
     caminho, (lembretes, acoes, gastos) = arquivo
     relatorio = restaurar.restaurar(caminho, executar=True)
-    assert relatorio.copiados == {"lembretes": 2, "acoes": len(acoes), "gastos": 1, "memoria": 1}
+    assert relatorio.copiados == {
+        "lembretes": 2,
+        "acoes": len(acoes),
+        "gastos": 1,
+        "memoria": 1,
+        "receitas": 1,
+    }
     with _do_lado_da_nuvem():
         (fato,) = memoria_store.todos()
+        (receita,) = memoria_receitas.ativas()
+    assert (receita.nome, receita.passos) == ("fechamento", ("veja a agenda", "mande por e-mail"))
     assert (fato.texto, fato.sessao, fato.ativo) == (FATO, "s1", True)
     assert fato.vetor_modelo is None  # sem vetor: o texto final manda reindexar
     assert "viking memoria --reindexar" in restaurar.texto(relatorio, executou=True)
@@ -101,8 +112,14 @@ def test_restaurar_de_novo_nao_duplica(arquivo):
     restaurar.restaurar(caminho, executar=True)
     relatorio = restaurar.restaurar(caminho, executar=True)
     assert relatorio.lembretes_iguais == 2
-    assert relatorio.copiados == {"lembretes": 0, "acoes": 0, "gastos": 0, "memoria": 0}
-    assert relatorio.ja_iguais == {"acoes": len(acoes), "gastos": 1, "memoria": 1}
+    assert relatorio.copiados == {
+        "lembretes": 0,
+        "acoes": 0,
+        "gastos": 0,
+        "memoria": 0,
+        "receitas": 0,
+    }
+    assert relatorio.ja_iguais == {"acoes": len(acoes), "gastos": 1, "memoria": 1, "receitas": 1}
     assert _estado_da_nuvem()[0] == lembretes
 
 

@@ -32,15 +32,22 @@ class Relatorio:
     lembretes_diferentes: int = 0
     lembretes_a_copiar: int = 0
     copiados: dict[str, int] = field(
-        default_factory=lambda: {"lembretes": 0, "acoes": 0, "gastos": 0, "memoria": 0}
+        default_factory=lambda: {
+            "lembretes": 0,
+            "acoes": 0,
+            "gastos": 0,
+            "memoria": 0,
+            "receitas": 0,
+        }
     )
     ja_iguais: dict[str, int] = field(
-        default_factory=lambda: {"acoes": 0, "gastos": 0, "memoria": 0}
+        default_factory=lambda: {"acoes": 0, "gastos": 0, "memoria": 0, "receitas": 0}
     )
     ja_diferentes: dict[str, int] = field(
-        default_factory=lambda: {"acoes": 0, "gastos": 0, "memoria": 0}
+        default_factory=lambda: {"acoes": 0, "gastos": 0, "memoria": 0, "receitas": 0}
     )
     fatos_recusados: int = 0  # o filtro de hoje recusou (uma regra nova)
+    receitas_recusadas: int = 0
 
 
 def _lotes(itens: list, tamanho: int) -> list[list]:
@@ -70,13 +77,14 @@ def restaurar(caminho: Path, *, executar: bool) -> Relatorio:
     for lote in _lotes(backup.lembretes, transporte.MAX_LOTE):
         resposta = cliente.importar_lembretes(sessao, [transporte.para_dict(r) for r in lote])
         relatorio.copiados["lembretes"] += len(resposta["criados"])
-    pedidos: list[tuple[list, list, list]] = [
-        (lote, [], []) for lote in _lotes(backup.acoes, formato.LOTE_DO_BACKUP)
+    pedidos: list[tuple[list, list, list, list]] = [
+        (lote, [], [], []) for lote in _lotes(backup.acoes, formato.LOTE_DO_BACKUP)
     ]
-    pedidos += [([], lote, []) for lote in _lotes(backup.gastos, formato.LOTE_DO_BACKUP)]
-    pedidos += [([], [], lote) for lote in _lotes(backup.memoria, formato.LOTE_DO_BACKUP)]
-    for acoes, gastos, fatos in pedidos:
-        contas = cliente.importar_do_backup(sessao, acoes, gastos, fatos)
+    pedidos += [([], lote, [], []) for lote in _lotes(backup.gastos, formato.LOTE_DO_BACKUP)]
+    pedidos += [([], [], lote, []) for lote in _lotes(backup.memoria, formato.LOTE_DO_BACKUP)]
+    pedidos += [([], [], [], lote) for lote in _lotes(backup.receitas, formato.LOTE_DO_BACKUP)]
+    for acoes, gastos, fatos, receitas in pedidos:
+        contas = cliente.importar_do_backup(sessao, acoes, gastos, fatos, receitas)
         relatorio.copiados["acoes"] += int(contas["acoes"].get("criadas", 0))
         relatorio.copiados["gastos"] += int(contas["gastos"].get("criados", 0))
         colecoes = ["acoes", "gastos"]
@@ -84,6 +92,10 @@ def restaurar(caminho: Path, *, executar: bool) -> Relatorio:
             relatorio.copiados["memoria"] += int(contas["memoria"].get("criados", 0))
             relatorio.fatos_recusados += int(contas["memoria"].get("recusados", 0))
             colecoes.append("memoria")
+        if receitas:
+            relatorio.copiados["receitas"] += int(contas["receitas"].get("criadas", 0))
+            relatorio.receitas_recusadas += int(contas["receitas"].get("recusadas", 0))
+            colecoes.append("receitas")
         for colecao in colecoes:
             relatorio.ja_iguais[colecao] += int(contas[colecao].get("iguais", 0))
             relatorio.ja_diferentes[colecao] += len(contas[colecao].get("diferentes", []))
@@ -104,7 +116,7 @@ def texto(r: Relatorio, *, executou: bool) -> str:
         (
             f"📦 {r.arquivo} (de {r.criado_em:%Y-%m-%d %H:%M} UTC): {n['lembretes']} lembrete(s), "
             f"{n['acoes']} ação(ões), {n['gastos']} mês(es) de gastos, "
-            f"{n.get('memoria', 0)} fato(s) da memória."
+            f"{n.get('memoria', 0)} fato(s) da memória, {n.get('receitas', 0)} receita(s)."
         ),
         (
             f"☁️  Na nuvem antes: {r.lembretes_iguais} lembrete(s) iguais, "
@@ -129,5 +141,11 @@ def texto(r: Relatorio, *, executou: bool) -> str:
             f"🧠 Memória: {c['memoria']} fato(s) criados, {r.ja_iguais['memoria']} já iguais, "
             f"{r.ja_diferentes['memoria']} diferentes (mantidos), {r.fatos_recusados} recusados "
             "pelo filtro de hoje. Os vetores voltam com: viking memoria --reindexar"
+        )
+    if r.no_arquivo.get("receitas", 0):
+        linhas.append(
+            f"📋 Receitas: {c['receitas']} criadas, {r.ja_iguais['receitas']} já iguais, "
+            f"{r.ja_diferentes['receitas']} diferentes (mantidas), {r.receitas_recusadas} "
+            "recusadas pelo filtro de hoje."
         )
     return "\n".join(linhas)

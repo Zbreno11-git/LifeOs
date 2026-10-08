@@ -121,3 +121,81 @@ def recusa(texto: str) -> str | None:
         if padrao.search(lido):
             return motivo
     return None
+
+
+# --- as receitas (Sessão 13b, D67) ---------------------------------------------------------------
+# Uma receita É uma ordem ("quando eu pedir X, faça Y"): a forma de ordem acima recusaria todas. O
+# que a protege é outra coisa (D48): ela só nasce proposta por quem lê a mensagem digitada, só se
+# guarda com o `guarda receita` do dono, e rodar não dá permissão nova. O filtro daqui fica com o
+# que nunca pode morar numa receita: segredo, dinheiro e uma linha com cara de aprovação (o código
+# nunca vai ao Gemini, D26: um passo "confirma 4821" iria, ao rodar). Medido em 2026-10-08 (C1):
+# o extrator devolveu um passo "confirma 4821", um com "R$ 3.000" e uma receita de 12 passos.
+
+MAX_PASSOS = 8  # o dono, 2026-10-08
+MAX_RECEITA = 800  # caracteres somando os passos
+MAX_NOME = 40
+
+_SEGREDO = _RECUSAS[0][1]
+_DINHEIRO = _RECUSAS[1][1]
+_EMAIL = _RECUSAS[2][1]
+_VERBO_DE_APROVAR = re.compile(r"\b(?:confirm|desfa[zcç]|aprov|liber)\w*\b")
+_NUMERO_DE_CODIGO = re.compile(r"(?<![0-9])[0-9]{4}(?![0-9])")
+_SO_NUMERO = re.compile(r"^[\d\s.!-]+$")
+_SO_PALAVRA = re.compile(r"^(?:confirm|desfa[zcç]|aprov)\w*[\s.!]*$")
+
+
+def nome_lido(texto: str) -> str:
+    """O nome como o `roda` o compara: sem acento, minúsculo, só letras, números e espaços
+    simples ("Relatório  do chefe!" e "relatorio do chefe" são o mesmo)."""
+    sem_acento = unicodedata.normalize("NFKD", limpo(texto))
+    letras = "".join(c for c in sem_acento if not unicodedata.combining(c)).lower()
+    return " ".join("".join(c if c.isalnum() else " " for c in letras).split())
+
+
+def _recusa_passo(passo: str) -> str | None:
+    lido = normalizar(passo)
+    if _SEGREDO.search(lido):
+        return "senha ou código"
+    if _DINHEIRO.search(lido):
+        return "valor em dinheiro"
+    if _SO_NUMERO.match(lido) or _SO_PALAVRA.match(lido):
+        return "cara de aprovação"
+    if _VERBO_DE_APROVAR.search(lido) and _NUMERO_DE_CODIGO.search(lido):
+        return "cara de aprovação"
+    return None
+
+
+def recusa_receita(nome: str, passos: list[str]) -> str | None:
+    """Por que esta receita não pode ser proposta nem guardada (o motivo, sem o texto), ou
+    `None`. Vale no extrator, no `receitas.propor`, no `guardar` e no restaurar do backup."""
+    if not isinstance(nome, str) or not isinstance(passos, list):
+        return "fora do formato"
+    if any(not isinstance(p, str) for p in passos):
+        return "fora do formato"
+    nome_limpo, limpos = limpo(nome), [limpo(p) for p in passos]
+    if not nome_lido(nome_limpo):
+        return "sem nome"
+    if len(nome_limpo) > MAX_NOME:
+        return f"nome com mais de {MAX_NOME} caracteres"
+    if not limpos or any(not p for p in limpos):
+        return "passo vazio"
+    if len(limpos) > MAX_PASSOS:
+        return f"mais de {MAX_PASSOS} passos"
+    if sum(len(p) for p in limpos) > MAX_RECEITA:
+        return f"mais de {MAX_RECEITA} caracteres"
+    for texto in (nome_limpo, *limpos):
+        motivo = _recusa_passo(texto)
+        if motivo is not None:
+            return motivo
+    return None
+
+
+def enderecos(passos: list[str]) -> list[str]:
+    """Os endereços de e-mail nos passos, na ordem, sem repetir: a proposta avisa o dono antes
+    de ele guardar (o resto de risco de um e-mail colado que vira receita)."""
+    vistos: list[str] = []
+    for passo in passos:
+        for achado in _EMAIL.findall(normalizar(limpo(passo))):
+            if achado not in vistos:
+                vistos.append(achado)
+    return vistos

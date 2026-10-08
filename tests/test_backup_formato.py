@@ -85,7 +85,28 @@ def _fato(**mudar) -> dict:
     return copia
 
 
-def _bom(memoria=None) -> dict:
+def _receita(**mudar) -> dict:
+    copia = {
+        "id": "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d",
+        "nome": "fechamento da semana",
+        "passos": ["veja a agenda da semana que vem", "mande tudo por e-mail"],
+        "estado": "guardada",
+        "ativo": True,
+        "origem": "chat",
+        "sessao": "ab12cd34",
+        "turno": "ab12cd34:4",
+        "criado_em": "2026-10-06T17:00:00.000000+00:00",
+        "guardada_em": "2026-10-06T17:01:00.000000+00:00",
+        "invalida_em": None,
+        "substituido_por": None,
+        "esquecido_em": None,
+        "apagar_em": None,
+    }
+    copia.update(mudar)
+    return copia
+
+
+def _bom(memoria=None, receitas=None) -> dict:
     return formato.montar(
         [_lembrete(), _lembrete(id="9e8d7c6b-5a49-4382-9172-6a5b4c3d2e1f", title="outro")],
         [_acao()],
@@ -93,12 +114,22 @@ def _bom(memoria=None) -> dict:
         agora=AGORA,
         commit="abc1234",
         memoria=memoria,
+        receitas=receitas,
     )
+
+
+def _versao_2(dados: dict) -> dict:
+    """O mesmo arquivo como a 13 o escrevia (sem as receitas)."""
+    v2 = copy.deepcopy(dados)
+    assert v2.pop("receitas") == []
+    del v2["contagens"]["receitas"]
+    v2["versao"] = 2
+    return v2
 
 
 def _versao_1(dados: dict) -> dict:
     """O mesmo arquivo como a 11c o escrevia (sem a memória)."""
-    v1 = copy.deepcopy(dados)
+    v1 = _versao_2(dados)
     assert v1.pop("memoria") == []
     del v1["contagens"]["memoria"]
     v1["versao"] = 1
@@ -108,7 +139,13 @@ def _versao_1(dados: dict) -> dict:
 def test_ida_e_volta_preserva_tudo():
     dados = _bom()
     backup = formato.de_bytes(formato.para_bytes(dados))
-    assert backup.contagens() == {"lembretes": 2, "acoes": 1, "gastos": 1, "memoria": 0}
+    assert backup.contagens() == {
+        "lembretes": 2,
+        "acoes": 1,
+        "gastos": 1,
+        "memoria": 0,
+        "receitas": 0,
+    }
     assert backup.criado_em == AGORA and backup.commit == "abc1234"
     assert [transporte.impressao(r) for r in backup.lembretes] == [
         transporte.impressao(_lembrete()),
@@ -140,7 +177,7 @@ def test_campo_a_mais_no_arquivo_e_recusado():
 
 def test_versao_desconhecida_e_recusada():
     dados = _bom()
-    dados["versao"] = 3
+    dados["versao"] = 4
     _recusado(dados, "versão do backup desconhecida")
     dados["versao"] = True  # bool é int no Python: não pode passar por 1
     _recusado(dados, "versão do backup desconhecida")
@@ -158,7 +195,7 @@ def test_a_versao_1_nao_aceita_o_campo_da_memoria_nem_a_2_sem_ele():
     v1 = _versao_1(_bom())
     v1["memoria"] = []
     _recusado(v1, "exatamente os campos")
-    v2 = _bom()
+    v2 = _versao_2(_bom())
     del v2["memoria"]
     _recusado(v2, "exatamente os campos")
 
@@ -179,7 +216,7 @@ def test_a_memoria_vai_e_volta_sem_vetor():
 
 def test_a_memoria_vazia_nao_muda_a_impressao_de_um_arquivo_da_versao_1():
     """O primeiro backup depois do deploy da 13, sem fato nenhum, não sobe um arquivo à toa."""
-    v2 = formato.ler(_bom())
+    v2 = formato.ler(_versao_2(_bom()))
     v1 = formato.ler(_versao_1(_bom()))
     assert formato.impressao_do_conteudo(v2) == formato.impressao_do_conteudo(v1)
     com_fato = formato.ler(_bom([_fato()]))
@@ -405,3 +442,85 @@ def test_a_impressao_de_um_arquivo_lido_de_volta_e_a_do_que_se_montou():
     )
     lido = formato.de_bytes(formato.para_bytes(dados))
     assert formato.impressao_do_conteudo(lido) == formato.impressao_do_conteudo(formato.ler(dados))
+
+
+# --- as receitas (Sessão 13b, D67): a versão 3 ---------------------------------------------------
+
+
+def test_o_arquivo_da_versao_2_continua_se_lendo():
+    backup = formato.ler(_versao_2(_bom([_fato()])))
+    assert backup.receitas == [] and backup.memoria == [_fato()]
+
+
+def test_a_versao_2_nao_aceita_o_campo_das_receitas_nem_a_3_sem_ele():
+    v2 = _versao_2(_bom())
+    v2["receitas"] = []
+    _recusado(v2, "exatamente os campos")
+    v3 = _bom()
+    del v3["receitas"]
+    _recusado(v3, "exatamente os campos")
+
+
+def test_as_receitas_vao_e_voltam_com_todos_os_estados():
+    proposta = _receita(
+        id="2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+        estado="proposta",
+        ativo=False,
+        guardada_em=None,
+        apagar_em="2026-10-07T17:00:00.000000+00:00",
+    )
+    backup = formato.de_bytes(formato.para_bytes(_bom(receitas=[_receita(), proposta])))
+    assert backup.receitas == [_receita(), proposta]
+    assert backup.contagens()["receitas"] == 2
+
+
+def test_as_receitas_vazias_nao_mudam_a_impressao_de_um_arquivo_da_versao_2():
+    """O primeiro backup depois do deploy da 13b, sem receita, não sobe um arquivo à toa."""
+    v3 = formato.ler(_bom([_fato()]))
+    v2 = formato.ler(_versao_2(_bom([_fato()])))
+    assert formato.impressao_do_conteudo(v3) == formato.impressao_do_conteudo(v2)
+    com_receita = formato.ler(_bom([_fato()], [_receita()]))
+    assert formato.impressao_do_conteudo(com_receita) != formato.impressao_do_conteudo(v3)
+
+
+@pytest.mark.parametrize(
+    ("mudar", "trecho"),
+    [
+        ({"id": "../gastos"}, "UUID"),
+        ({"nome": " "}, "nome"),
+        ({"passos": []}, "passos"),
+        ({"passos": "veja a agenda"}, "passos"),
+        ({"passos": ["ok", 3]}, "passos"),
+        ({"estado": "ativa"}, "estado"),
+        ({"origem": "email"}, "origem"),
+        ({"ativo": "sim"}, "ativo"),
+        ({"sessao": None}, "sessao"),
+        ({"substituido_por": "x"}, "substituido_por"),
+        ({"criado_em": None}, "criado_em"),
+        ({"guardada_em": "2026-10-07T10:00:00+00:00"}, "guardada_em"),
+        ({"vetor": [1.0]}, "exatamente os campos"),
+    ],
+)
+def test_receita_torta_recusa_o_arquivo(mudar, trecho):
+    dados = _bom(receitas=[_receita()])
+    dados["receitas"][0].update(mudar)
+    _recusado(dados, trecho)
+
+
+def test_receita_repetida_recusa_o_arquivo():
+    dados = _bom(receitas=[_receita()])
+    dados["receitas"].append(dict(dados["receitas"][0]))
+    dados["contagens"]["receitas"] = 2
+    _recusado(dados, "aparece duas vezes")
+
+
+def test_o_formato_da_receita_e_o_do_store():
+    from lifeos.memoria import receitas
+
+    assert set(_receita()) == set(receitas.CAMPOS_DA_COPIA)
+
+
+def test_a_contagem_das_receitas_confere():
+    dados = _bom(receitas=[_receita()])
+    dados["contagens"]["receitas"] = 0
+    _recusado(dados, "contagens")

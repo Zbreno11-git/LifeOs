@@ -348,22 +348,28 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
     conferido pelo formato antes de gravar; nunca sobrescreve."""
     from lifeos import custos
     from lifeos.backup import formato
+    from lifeos.memoria import receitas as memoria_receitas
     from lifeos.memoria import store as memoria_store
 
     if not isinstance(dados, dict) or not {"acoes", "gastos"} <= set(dados) <= {
         "acoes",
         "gastos",
         "memoria",
+        "receitas",
     }:
-        raise ValueError("o pedido tem de ter acoes e gastos (e, desde a 13, memoria)")
-    acoes, gastos, fatos = dados["acoes"], dados["gastos"], dados.get("memoria", [])
-    if not all(isinstance(lista, list) for lista in (acoes, gastos, fatos)):
-        raise ValueError("acoes, gastos e memoria têm de ser listas")
-    if not 1 <= len(acoes) + len(gastos) + len(fatos) <= formato.LOTE_DO_BACKUP:
+        raise ValueError(
+            "o pedido tem de ter acoes e gastos (e, desde a 13, memoria; desde a 13b, receitas)"
+        )
+    acoes, gastos = dados["acoes"], dados["gastos"]
+    fatos, receitas = dados.get("memoria", []), dados.get("receitas", [])
+    if not all(isinstance(lista, list) for lista in (acoes, gastos, fatos, receitas)):
+        raise ValueError("acoes, gastos, memoria e receitas têm de ser listas")
+    if not 1 <= len(acoes) + len(gastos) + len(fatos) + len(receitas) <= formato.LOTE_DO_BACKUP:
         raise ValueError(f"o lote tem de ter de 1 a {formato.LOTE_DO_BACKUP} itens")
     acoes = [formato.acao_conferida(a, f"ação {n}") for n, a in enumerate(acoes, 1)]
     gastos = [formato.gasto_conferido(g, f"gasto {n}") for n, g in enumerate(gastos, 1)]
     fatos = [formato.fato_conferido(f, f"fato {n}") for n, f in enumerate(fatos, 1)]
+    receitas = [formato.receita_conferida(r, f"receita {n}") for n, r in enumerate(receitas, 1)]
     registro.ORIGEM.set("mac")
     resposta: dict[str, Any] = {
         "acoes": {"criadas": 0, "iguais": 0, "diferentes": []},
@@ -371,7 +377,14 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
     }
     if "memoria" in dados:
         resposta["memoria"] = {"criados": 0, "iguais": 0, "diferentes": [], "recusados": 0}
-    parametros = {"acoes": len(acoes), "gastos": len(gastos), "memoria": len(fatos)}
+    if "receitas" in dados:
+        resposta["receitas"] = {"criadas": 0, "iguais": 0, "diferentes": [], "recusadas": 0}
+    parametros = {
+        "acoes": len(acoes),
+        "gastos": len(gastos),
+        "memoria": len(fatos),
+        "receitas": len(receitas),
+    }
     with registro.acao("backup.restaurar", parametros) as marca:
         for acao in acoes:
             resultado = registro.importar(acao)
@@ -396,11 +409,23 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
             else:
                 chave = "criados" if resultado == memoria_store.CRIADO else "iguais"
                 resposta["memoria"][chave] += 1
+        for receita in receitas:
+            try:
+                resultado = memoria_receitas.importar(receita)
+            except memoria_receitas.Recusada:  # o filtro de hoje recusa: conta, sem o texto
+                resposta["receitas"]["recusadas"] += 1
+                continue
+            if resultado == memoria_receitas.DIFERENTE:
+                resposta["receitas"]["diferentes"].append(receita["id"])
+            else:
+                chave = "criadas" if resultado == memoria_receitas.CRIADO else "iguais"
+                resposta["receitas"][chave] += 1
         marca.feito(
             {
                 "acoes_criadas": resposta["acoes"]["criadas"],
                 "gastos_criados": resposta["gastos"]["criados"],
                 "fatos_criados": resposta.get("memoria", {}).get("criados", 0),
+                "receitas_criadas": resposta.get("receitas", {}).get("criadas", 0),
             }
         )
     return resposta
