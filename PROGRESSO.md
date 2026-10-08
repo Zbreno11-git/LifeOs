@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 02:15Z: Sessão 12 fechada no Mac; a próxima é a 13 (abrir e planejar)
+## ▶️ RETOMAR AQUI — 2026-10-08 14:12Z: Sessão 12 fechada no Mac; a próxima é a 13 (abrir e planejar)
 
 **Estado (2026-10-08, medido):**
 - **A 12 fechou no Mac.**
@@ -22,7 +22,21 @@
   - a suíte: `2685 passed`, 0 pulados (emulador exigido);
   - ruff, format (168), mypy (44), gitleaks e `uv lock --check` verdes;
   - mutações: 419 de 419 na rodada inteira, mais 1 de 1 (420 no total).
+- **Medido de novo às 14:12Z (antes do compact):**
+  - o HEAD `840959c` igual ao remoto, CI `success`, sem `.mutacao.lock`;
+  - `python scripts/nuvem.py` → 13 ✅;
+  - o `deploy` só lendo → **33 ✅ e 0 ❌**: o motor `ed92a0c`, 0 commits desde ele nos caminhos da
+    imagem, o backup de 2026-10-08 09:00Z, o log limpo nos dois serviços;
+  - `uv lock --upgrade --dry-run` → platformdirs 4.12.3 → 4.12.4 e pycparser 3.0 → 3.1, o
+    primeiro passo da abertura da 13, num commit próprio.
 - **Não há background nem trava.**
+
+**Verificações antes de confiar neste bloco:**
+- `git status` limpo; HEAD = `840959c` ou depois, igual ao remoto; `.mutacao.lock` não existe;
+- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2685 passed`, 0 pulados;
+- `gh run list --commit $(git rev-parse HEAD)` → `success`;
+- `python scripts/nuvem.py` → 13 ✅;
+- `python scripts/nuvem.py deploy` → 33 ✅ e 0 ❌, o último backup com menos de 48 h.
 
 **Próximo passo exato:** abrir a **Sessão 13 — memória de fatos e receitas** (skill
 `software-build`).
