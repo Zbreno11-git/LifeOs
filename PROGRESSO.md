@@ -5,7 +5,54 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-07 23:27Z: Sessão 12 aberta e planejada; C0 e C1 feitos, o próximo é o C2
+## ▶️ RETOMAR AQUI — 2026-10-08 00:25Z: Sessão 12 no ar (`f1b47b0`); falta o teste no Mac e o fechamento
+
+**Estado (2026-10-08, medido):**
+- **C0 a C5 feitos.** Commits: `15e7dd9` (o lock), `3394f96` (o plano, a D65 e as medições),
+  `fa2f966` (tarifas, cotas, o forte e a busca) e `f1b47b0` (a prova do chat, as mutações, os
+  docs e o teste do backup). O CI deu `success` nos quatro, conferido pelo SHA.
+- **Portões do `f1b47b0`:**
+  - a suíte: `2684 passed`, com o emulador exigido;
+  - ruff, format (168), mypy (44), `uv lock --check` e gitleaks verdes;
+  - mutações: **419 de 419** mortas pelo teste esperado (a rodada inteira, 23:42Z–00:15Z; eram
+    401, e 18 são novas).
+- **Dívida achada e consertada:** `test_o_ultimo_backup_aparece_no_versao` (11c) comparava com
+  "hoje, trocando só a hora por 0". Entre 00:00 e 01:00 UTC isso é o próprio agora, e o teste
+  caiu às 00:16Z. Agora compara com o instante de antes da rodada.
+- **No ar** (o ok do dono no chat: "pode seguir com o deploy sim"): o `deploy --executar` de
+  `f1b47b0` (o motor e o serviço de finanças) deu **33 ✅ e 0 ❌**.
+  - A prova nova diz `{'busca': True, 'modelo': 'gemini-3.5-flash-lite', 'forte':
+    'gemini-3.8-flash'}`.
+  - O log está limpo nos dois serviços.
+  - Nenhuma prova chama o Gemini ou a Pluggy.
+- **Não há background nem trava.**
+
+**Próximo passo exato:** o roteiro do Mac, que o dono roda e cuja saída cola aqui:
+- `git pull`;
+- a suíte;
+- no `viking chat --nuvem`: uma pergunta factual (a busca igual, com as fontes), uma difícil (o
+  💸 com o `gemini-3.8-flash`), uma da agenda e o `/custos`;
+- no `viking chat`: o Flash-Lite e o tom novo.
+
+Depois, o fechamento: o diário (com "Erros desta sessão"), a barra (22 de 32), `sessoes.md` (a 12
+feita e o ▶️ na 13), `docs/erros.md`, commit, push e o CI pelo SHA.
+
+**Depende do dono:** a saída do roteiro do Mac. Gasto estimado: menos de US$ 0,05.
+
+**Medições do C1 (2026-10-07 23:26:54Z; o registro está na seção 9 da pesquisa):**
+- o schema das 23 tools custa 3.568 tokens no Flash-Lite e 3.472 no 2.5;
+- a busca leva ~2 s, com fontes por redirecionamento `vertexaisearch` e o título igual ao domínio;
+- o 3.8 continua a conversa do Flash-Lite, e o Flash-Lite a do 3.8.
+
+**Reler antes de continuar:** `CLAUDE.md`/`AGENTS.md`; este bloco; o "Plano — Sessão 12"; a D65;
+`src/lifeos/assistant/busca.py`, `na_nuvem.py` e `custos.py`; `docs/erros.md` (classes 4 e 6).
+
+**Não pode ser esquecido:**
+- nenhum resultado de busca vai a documento, log ou commit; da saída do Mac, só forma e números;
+- o 3.8 Flash dobra de preço em 2027-01-01;
+- o fuso do dono é Seattle até ~fim de outubro.
+
+### 2026-10-07 23:27Z — o bloco de retomada do C1 (o registro)
 
 **Estado (2026-10-07, medido):**
 - **A abertura da 12** (depois do compact): leitura e conferências batendo com o bloco anterior.
