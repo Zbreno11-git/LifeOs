@@ -44,13 +44,22 @@ def _gasto(gasto: Any) -> str:
     if not isinstance(gasto, dict):
         return "Gasto da nuvem: ainda não sei (nenhum turno respondeu)."
     try:
-        return (
+        texto = (
             f"Gasto do Gemini na nuvem (estimativa): hoje ~{dinheiro(float(gasto['dia']))} de "
             f"{dinheiro(float(gasto['teto_dia']))} · no mês ~{dinheiro(float(gasto['mes']))} de "
             f"{dinheiro(float(gasto['teto_mes']))}"
         )
     except (KeyError, TypeError, ValueError):
         return "Gasto da nuvem: a resposta veio num formato inesperado."
+    try:  # as cotas do dia (Sessão 12, D65); um motor antigo não as manda
+        texto += (
+            f"\nHoje: o modelo forte ~{dinheiro(float(gasto['forte_dia']))} de "
+            f"{dinheiro(float(gasto['teto_forte_dia']))} · buscas na web "
+            f"{int(gasto['buscas_dia'])} de {int(gasto['teto_buscas_dia'])}"
+        )
+    except (KeyError, TypeError, ValueError):
+        pass
+    return texto
 
 
 def abertura(capacidades: dict[str, Any]) -> str:

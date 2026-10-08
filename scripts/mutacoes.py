@@ -3029,6 +3029,13 @@ MUTACOES = [
         "tests/test_na_nuvem.py::test_o_tom_e_o_mesmo_nos_dois_chats",
     ),
     Mutacao(
+        "nuvem: o /custos esconde o gasto do forte do dia",
+        "src/lifeos/assistant/na_nuvem.py",
+        '        "forte_dia": hoje["forte"],',
+        '        "forte_dia": 0.0,',
+        "tests/test_busca.py::test_o_custos_mostra_as_cotas_do_dia",
+    ),
+    Mutacao(
         "nuvem: a prova do chat não confere os modelos no ar",
         "scripts/nuvem.py",
         '    esperado = {"busca": True, "modelo": turno.MODELO, "forte": turno.MODELO_FORTE}',

@@ -230,6 +230,18 @@ def _cotas() -> custos.Cotas:
     )
 
 
+def _cotas_de_hoje() -> dict[str, Any]:
+    """As cotas do dia ao lado do gasto (o `/custos` do terminal; D65: o forte e a busca visíveis)."""
+    cotas = _cotas()
+    hoje = cotas.hoje()
+    return {
+        "forte_dia": hoje["forte"],
+        "teto_forte_dia": cotas.forte_dia,
+        "buscas_dia": hoje["buscas"],
+        "teto_buscas_dia": cotas.buscas_dia,
+    }
+
+
 def _cliente() -> Any:
     from google import genai
 
@@ -271,7 +283,7 @@ def _resposta(
         "aviso": aviso,
         "nota": nota,
         "historico": historico,
-        "gasto": teto.gasto().como_dict(),
+        "gasto": teto.gasto().como_dict() | _cotas_de_hoje(),
         "consumo": consumo,
     }
 

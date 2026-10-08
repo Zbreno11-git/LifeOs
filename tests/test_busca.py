@@ -285,3 +285,18 @@ def test_o_terminal_mostra_a_busca_igual_mesmo_sem_ser_interativo(monkeypatch, c
 def test_busca_sem_fontes_diz_que_nao_vieram():
     blocos = chat_cliente.buscas({"busca": [{"texto": "x", "fontes": [], "consultas": []}]})
     assert blocos == ["🔎 Busca na web (Google):\nx\nFontes:\n  (a busca não informou fontes)"]
+
+
+def test_o_custos_mostra_as_cotas_do_dia(gemini, monkeypatch, capsys):
+    """D65: o forte e a busca visíveis no `/custos` (o gasto do dia contra a cota de cada um)."""
+    monkeypatch.setattr(config, "TETO_FORTE_DIA", 0.30)
+    na_nuvem._cotas().somar_forte(0.12)
+    na_nuvem._cotas().reservar_busca()
+    gemini(_texto("oi"))
+    gasto = na_nuvem.turno(_pedido("oi"))["gasto"]
+    assert (gasto["forte_dia"], gasto["teto_forte_dia"]) == (pytest.approx(0.12), 0.30)
+    assert (gasto["buscas_dia"], gasto["teto_buscas_dia"]) == (1, 30)
+    texto = chat_cliente._gasto(gasto)
+    assert "o modelo forte ~US$ 0,12 de US$ 0,30" in texto and "buscas na web 1 de 30" in texto
+    sem_cotas = {k: v for k, v in gasto.items() if "forte" not in k and "buscas" not in k}
+    assert "modelo forte" not in chat_cliente._gasto(sem_cotas)  # um motor antigo
