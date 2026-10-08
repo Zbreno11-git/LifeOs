@@ -5,7 +5,58 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 00:25Z: Sessão 12 no ar (`f1b47b0`); falta o teste no Mac e o fechamento
+## ▶️ RETOMAR AQUI — 2026-10-08 02:15Z: Sessão 12 fechada no Mac; a próxima é a 13 (abrir e planejar)
+
+**Estado (2026-10-08, medido):**
+- **A 12 fechou no Mac.**
+  - a suíte: `2439 passed, 245 skipped`;
+  - a pergunta do Nobel: o bloco 🔎 igual, com 3 fontes e 2 consultas;
+  - a conta dos voos: o Viking pediu o forte sozinho, e o 💸 mostrou o `gemini-3.8-flash`;
+  - a agenda: no Flash-Lite;
+  - o `viking chat` do Mac: o tom novo;
+  - o `/custos`: "o modelo forte ~US$ 0,005348 de US$ 0,30 · buscas na web 2 de 30".
+  - O conteúdo da busca e da agenda colado pelo dono **não vai para documento**.
+- **No ar:** o motor e o serviço `financas` em `ed92a0c`; o `deploy` com o `--executar` às ~02:00Z
+  deu **33 ✅ e 0 ❌**, com o log limpo nos dois serviços.
+- **Portões:**
+  - a suíte: `2685 passed`, 0 pulados (emulador exigido);
+  - ruff, format (168), mypy (44), gitleaks e `uv lock --check` verdes;
+  - mutações: 419 de 419 na rodada inteira, mais 1 de 1 (420 no total).
+- **Não há background nem trava.**
+
+**Próximo passo exato:** abrir a **Sessão 13 — memória de fatos e receitas** (skill
+`software-build`).
+- Ler a seção dela em `sessoes.md` e a D48: aprende sozinha só do que o dono escreve; nada de
+  e-mail, página ou documento; receita com pergunta.
+- Medir na abertura:
+  - `uv lock --upgrade --dry-run`;
+  - o CI do HEAD pelo SHA;
+  - `python scripts/nuvem.py` → 13 ✅;
+  - `deploy` só lendo → 33 ✅.
+- Reler as fontes que a seção cita (a pesquisa da memória, seção 3; o preço da consulta vetorial
+  do Firestore), porque mudam.
+- Fazer as perguntas da abertura ao dono, em rodadas curtas, antes de planejar.
+
+**Depende do dono:** as respostas da abertura da 13.
+
+**Reler para a 13, nesta ordem:**
+- `CLAUDE.md`/`AGENTS.md` (a armadilha nova "A resposta da busca na web não se guarda nem se
+  reescreve");
+- `sessoes.md` (a 13 e o ▶️);
+- `docs/decisoes.md` (D48, D53, D59, D65);
+- `docs/fontes/pesquisa-roteiro.md` (seções 3 e 9);
+- o código: `assistant/turno.py`, `na_nuvem.py` e `busca.py`, `custos.py` (`Cotas`) e
+  `nao_confiavel.py`;
+- `docs/erros.md`, classes 2, 4, 6 e 7;
+- as skills `software-build`, `seguranca`, `dados-e-banco`, `integracoes` e `testes-que-provam`.
+
+**Não pode ser esquecido:**
+- nenhum resultado de busca vai a documento, log, teste ou commit;
+- o 3.8 Flash dobra de preço em 2027-01-01 (a tabela de `custos.TARIFAS` já cobra);
+- o fuso do dono é Seattle até ~fim de outubro; depois, perguntar a cidade;
+- a 11b (formulários) está na fila, sem posição decidida.
+
+### 2026-10-08 00:25Z — o bloco de retomada do deploy da 12 (o registro)
 
 **Estado (2026-10-08, medido):**
 - **C0 a C5 feitos.** Commits: `15e7dd9` (o lock), `3394f96` (o plano, a D65 e as medições),
@@ -783,10 +834,10 @@ No `viking chat --nuvem`:
 |---|---|---|---|
 | C0 | o lock num commit próprio (suíte antes e depois, CI pelo SHA); o plano no `PROGRESSO.md`; `sessoes.md` (12 com as respostas; google-genai; a 3ª rota pendente); D65; `pesquisa-roteiro.md` (a releitura de hoje) | — | ✅ (`15e7dd9`) |
 | C1 | **ok do dono (~US$ 0,05)** → as três medições, com números no `PROGRESSO.md` e na fonte | C0 | ✅ (plano A) |
-| C2 | tarifas por modelo; `Cotas` (forte e busca) no Firestore; config | C1 | ⬜ |
-| C3 | Flash-Lite nos dois chats; `_TOM`; `usar_modelo_forte` e a troca no gancho; `/custos` por modelo | C2 | ⬜ |
-| C4 | `buscar_na_web`; o campo `busca`; o `chat_cliente` imprime; seções `_BUSCA`/`_FORTE` | C2 | ⬜ |
-| C5 | portões, mutações, duas passadas, docs, commit, CI; **ok** → deploy; roteiro do Mac; fechamento (22 de 32) | C3, C4 | ⬜ |
+| C2 | tarifas por modelo; `Cotas` (forte e busca) no Firestore; config | C1 | ✅ (`fa2f966`) |
+| C3 | Flash-Lite nos dois chats; `_TOM`; `usar_modelo_forte` e a troca no gancho; `/custos` por modelo | C2 | ✅ (`fa2f966`; o `/custos` da nuvem só em `ed92a0c`) |
+| C4 | `buscar_na_web`; o campo `busca`; o `chat_cliente` imprime; seções `_BUSCA`/`_FORTE` | C2 | ✅ (`fa2f966`) |
+| C5 | portões, mutações, duas passadas, docs, commit, CI; **ok** → deploy; roteiro do Mac; fechamento (22 de 32) | C3, C4 | ✅ (no Mac em 2026-10-08) |
 
 ### Fase 0 — C0
 **Faz:** `uv lock --upgrade` + `uv sync --locked --extra dev --extra nuvem`; suíte e portões antes e

@@ -16,17 +16,16 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **12 — agente geral, em curso** (aberta e planejada em 2026-10-07; a ordem que o
-  dono manteve em 2026-10-07: 12–16 e então o app). O estado está no `PROGRESSO.md`. A 11d fechou no Mac em 2026-10-07 (as finanças no chat da nuvem por um serviço
-  isolado; local e nuvem iguais pelo `cmp`); decisões D60–D64. A 11b (formulários) segue na fila,
-  sem posição decidida pelo dono.
+- **Sessão:** **13 — memória de fatos e receitas** (a próxima, pela ordem que o dono manteve em
+  2026-10-07: 12–16 e então o app). A 12 fechou no Mac em 2026-10-08 (a busca com fontes, o
+  Flash-Lite e o forte; D65). A 11b (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-07):** 21 de 32 sessões fechadas. O dono ainda não usa o Viking ativamente
+- **Agora (2026-10-08):** 22 de 32 sessões fechadas. O dono ainda não usa o Viking ativamente
   ("só vou usar ativo quando eu tiver ele em hardware ou em app/site com ele completo") e decidiu
   **manter a ordem**: 11d, 12–16 e então o app (17–18).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
@@ -35,8 +34,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D65), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** o ok do deploy da 12 e o teste no Mac (as respostas da abertura já estão na
-  seção dela e na D65).
+- **Depende do dono:** as respostas da abertura da 13 (a seção dela tem as perguntas; a D48 diz
+  o que a memória pode anotar sozinha).
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -952,7 +951,10 @@ O que estava escrito na abertura:
   Viking pode perguntar um dado que falta e guardá-lo; quais formulários reais ele quer usar no
   teste.
 
-## Sessão 12 — agente geral (planejada em 2026-09-28; aberta em 2026-10-07)
+## Sessão 12 — agente geral (planejada em 2026-09-28; feita e testada no Mac em 2026-10-08)
+
+- **Feita (2026-10-08):** a busca com fontes, o Flash-Lite, o forte pedido pelo Viking, as cotas
+  do dia e o tom, no ar (`ed92a0c`) e testados no Mac (o diário e a barra têm o detalhe; D65).
 
 - **Abertura (2026-10-07), as respostas do dono (D65):**
   - **Modelos:** o 3.5 Flash-Lite no dia a dia, nos dois chats. O 3.8 Flash é o forte, e quem o

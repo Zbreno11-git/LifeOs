@@ -1046,6 +1046,81 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-08 — Sessão 12 fechada no Mac: o agente geral (busca com fontes, Flash-Lite, o forte quando precisa)
+
+**A abertura** (2026-10-07, depois do compact; leitura e conferências batendo com o bloco):
+- o lock com o google-auth 2.61.0 e o google-genai 2.29.0 (`15e7dd9`);
+- as páginas do Gemini relidas no dia:
+  - o 2.5 restrito a quem já usava;
+  - o 3.5 Flash-Lite indicado para projeto novo, no mesmo preço;
+  - o 3.8 Flash, que dobra em 2027-01-01;
+  - a busca dos modelos 3 cobrada por consulta, 5.000 por mês grátis;
+  - a combinação busca + tools só em preview, na Interactions API;
+  - os termos mandando mostrar a resposta da busca igual, com as sugestões, sem guardar.
+- **8 respostas do dono (D65):**
+  - o Flash-Lite no dia a dia; o 3.8 Flash como forte, pedido pelo próprio Viking;
+  - a busca e o forte só na nuvem;
+  - os tetos: US$ 0,30 por dia no forte e 30 buscas por dia;
+  - o tom caloroso e direto;
+  - a busca mostrada igual, com as fontes à parte.
+- **As medições** (ok do dono, ~US$ 0,005):
+  - o schema das tools custa +2,8% no Flash-Lite;
+  - a busca leva ~2 s, com fontes por redirecionamento;
+  - o 3.8 continua a conversa do Flash-Lite, o que permitiu o plano A.
+
+**O que entrou** (D65; plano, checkpoints e medições no `PROGRESSO.md`):
+- `custos`:
+  - a tarifa do modelo que respondeu e do dia (`TARIFAS`; fora da tabela, a mais cara);
+  - o modelo em cada consumo;
+  - o gancho que escolhe o modelo da chamada;
+  - as cotas do dia (`cotas/AAAA-MM-DD`), fora do backup.
+- `turno`: o `gemini-3.5-flash-lite` nos dois chats; o tom novo (o resto do texto de sistema
+  igual byte a byte); as seções da busca e do forte.
+- `na_nuvem`:
+  - `usar_modelo_forte` liga a marca do turno, e as chamadas seguintes do mesmo turno vão ao
+    `gemini-3.8-flash` enquanto a cota deixa; acabou no meio, o resto volta ao barato;
+  - `SO_NA_NUVEM`;
+  - o `/custos` com as cotas do dia.
+- `assistant/busca.py`:
+  - uma chamada separada, só com o `google_search`, sem as nossas tools nem a conversa;
+  - as fontes só do `grounding_metadata`;
+  - o dono vê a resposta igual, no campo `busca`;
+  - o modelo a recebe no bloco de não confiável.
+- **Motor e script:** o `/versao` diz a busca e os modelos; `scripts/nuvem.py` ganhou a prova
+  disso, grátis.
+- **Dívida achada e consertada:** um teste do backup (11c) que caía entre 00:00 e 01:00 UTC.
+
+**No ar, com os oks do dono no chat:**
+- o deploy de `f1b47b0` → 33 ✅ e 0 ❌;
+- o de `ed92a0c` (o `/custos`) → 33 ✅ e 0 ❌, com o log limpo nos dois serviços.
+
+**No Mac (2026-10-08):**
+- a suíte: `2439 passed, 245 skipped` (2684);
+- a pergunta factual: o bloco 🔎 igual, com 3 fontes e as 2 consultas, e o comentário à parte;
+- a conta dos voos: o Viking pediu o forte sozinho, e o 💸 mostrou o Flash-Lite e o
+  `gemini-3.8-flash` (~US$ 0,0053 no forte);
+- a agenda: no Flash-Lite;
+- o `viking chat` do Mac: o tom novo, no Flash-Lite;
+- o `/custos`: "o modelo forte ~US$ 0,005348 de US$ 0,30 · buscas na web 2 de 30";
+- gasto do dia: ~US$ 0,03.
+
+**Portões:**
+- a suíte: `2685 passed`, 0 pulados (emulador exigido);
+- ruff, format (168), mypy (44), gitleaks e `uv lock --check` verdes;
+- mutações: **419 de 419** na rodada inteira, mais 1 de 1 do `/custos` (401 → 420 na sessão).
+
+**Em linguagem simples:** o Viking da nuvem agora busca na internet e mostra a resposta com as
+fontes, do jeito que o Google exige. Ele usa um modelo novo e barato no dia a dia e, quando a
+pergunta pede mais raciocínio, chama sozinho um modelo mais forte. Cada um tem um limite por dia,
+para que um e-mail mal-intencionado não gaste por você. E conversa de um jeito mais caloroso.
+
+**Erros desta sessão (meus; em `docs/erros.md`):**
+- o "/custos por modelo" dado por feito sem abrir o `/custos` da nuvem (classe 2);
+- um teste que assumia o texto de sistema numa linha só, e o teste do backup da 11c que caía à
+  meia-noite UTC (classe 4);
+- duas âncoras de mutação quebradas pelas minhas mudanças, pegas pelo teste das âncoras antes da
+  rodada (classe 6).
+
 ### 2026-10-07 — Sessão 11d fechada no Mac: as finanças no chat da nuvem, por um serviço isolado
 
 **A abertura** (depois do compact; leitura e conferências batendo com o bloco): o lock com o

@@ -17,11 +17,11 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 26 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 27 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 8 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 23 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 4 | Teste que não separava o certo do errado | 25 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 15 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 16 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
@@ -251,6 +251,16 @@ com texto pronto (D64), e a frase foi corrigida no `sessoes.md` e na fonte da Pl
 de novo: uma garantia de segurança escrita num roteiro **de outra sessão**, sobre um código que eu
 não abri ao escrever.
 
+**2026-10-07 → 2026-10-08 — "/custos por modelo" dado por feito sem abrir o `/custos` da nuvem
+(Sessão 12, C3).** O plano prometia "o `/custos` e a linha 💸 dizem qual modelo respondeu". Fiz a
+💸 (o `consumo` do turno) e o `total_formatado` do chat do Mac, e marquei o C3. O `/custos` do
+`viking chat --nuvem` é outro código (`chat_cliente._gasto`, que só mostra o teto do mês e do
+dia), e eu não o abri. Pego ao ler a saída do Mac colada pelo dono: o 💸 dizia o
+`gemini-3.8-flash`, o `/custos` não. Consertado com as cotas do dia na resposta do motor e uma
+linha nova no `/custos` (`ed92a0c`), com mutação e um 2º deploy (ok do dono). O que tem de novo:
+a frase do plano nomeava um comando, e o checkpoint foi conferido pelo teste do vizinho; o
+checkpoint de uma frase com nome de comando se confere **naquele** comando.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -446,6 +456,21 @@ com "viking-cli@" no nome, o que escondia junto a prova da `/fumaca/financas`, a
 Pego ao reler o teste antes do commit: o dublê passou a dar um token por conta, e a checagem
 voltou a ser "nenhuma prova reprova" (11). O que tem de novo: um filtro feito para calar uma
 falha do dublê calou também um caso verdadeiro; o filtro por nome é um `or` disfarçado.
+
+**2026-10-07 — o teste que assumia o texto de sistema numa linha só (Sessão 12, C4).** Escrevi
+`"busca na web com fontes" in texto` sobre a abertura da nuvem, que é montada com
+`textwrap.fill`; a quebra caiu no meio da frase e o teste deu vermelho falso. É o mesmo da 11d
+(normalizar os espaços antes de comparar), na mesma área. Pego na primeira rodada; normalizado.
+O que tem de novo: a lição estava no próprio arquivo de testes vizinho e eu não a copiei.
+
+**2026-10-06 → 2026-10-08 — o teste do backup que caía entre 00:00 e 01:00 UTC (escrito na 11c,
+achado na 12).** `test_o_ultimo_backup_aparece_no_versao` comparava o instante do backup com
+`datetime.now(UTC).replace(hour=0)`: "hoje" trocando só a hora, com os minutos e segundos de
+agora. Entre 00:00 e 01:00 UTC isso é o próprio agora, e o backup feito um instante antes fica
+"antes de hoje". Caiu na suíte das 00:16Z de 2026-10-08. O conserto compara com o instante de
+antes da rodada; o `grep` de `replace(hour`/`minute`/`day=` achou só dois usos certos no código
+(zerando até o microssegundo, e o dia de uma data). O que tem de novo: um teste que lê o relógio
+precisa passar a qualquer hora; "o começo do dia" se escreve zerando tudo, ou se evita.
 
 ### 5. A ferramenta fez outra coisa do que eu li
 
@@ -667,6 +692,14 @@ vale para o passo que cria a conta. Conserto de estrutura: `_rodar_esperando_a_c
 `add-iam-policy-binding` de todo passo, só nesse erro. O que tem de novo: a mesma propagação, num
 terceiro lugar (o deploy da 11d também esperou 15 s pelo `run.invoker` do `motor@` no serviço
 de finanças, e a prova de log pegou o 502 dessa espera).
+
+**2026-10-07 — duas âncoras de mutação quebradas pelas minhas mudanças, de novo (Sessão 12,
+C3).** O `antes()` do `custos.instrumentar` virou `antes(modelo)` e a lista de tools da nuvem
+ganhou o `usar_modelo_forte`: as âncoras "teto conferido depois da chamada" e "uma tool do Mac
+some da nuvem" deixaram de casar. Desta vez `test_mutacoes_ancoras` pegou na suíte, antes da
+rodada, e as duas foram reancoradas na linha inteira. O que tem de novo: a estrutura (o teste
+das âncoras na suíte) pegou o que a disciplina da 11d dizia para fazer à mão; o `grep` das
+âncoras dos arquivos mexidos continua sendo o passo antes da suíte.
 
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 

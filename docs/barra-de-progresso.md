@@ -7,15 +7,49 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-10-07 (Sessão 11d fechada no seu Mac).**
+**Última atualização: 2026-10-08 (Sessão 12 fechada no seu Mac).**
 
-`█████████████░░░░░░░ 21 de 32 sessões fechadas`
+`██████████████░░░░░░ 22 de 32 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c e 11d; parciais: nenhuma; em curso: nenhuma; na fila: 12 (agente geral, a
-próxima), 13 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
+10, 10b, 10c, 11, 11c, 11d e 12; parciais: nenhuma; em curso: nenhuma; na fila: 13 (memória,
+a próxima), 14 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
 30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), e para 32
 quando a medição das finanças abriu a 11d (2026-10-06).
+
+## 2026-10-08 — Sessão 12: o Viking busca na internet, com as fontes (fechada no seu Mac)
+
+**O que ficou pronto:**
+- **Busca na web com fontes**, no chat da nuvem.
+  - Uma pergunta sobre o mundo ("quem ganhou o Nobel?") faz o Viking buscar no Google.
+  - A resposta da busca aparece igual, com as fontes numeradas e o que foi buscado, como os
+    termos do Google pedem.
+  - O Viking comenta separado.
+- **Um modelo novo no dia a dia:**
+  - o Google está fechando o modelo antigo para quem é novo;
+  - o novo custa o mesmo e vale nos dois chats.
+- **Um modelo mais forte quando precisa:**
+  - numa pergunta que pede conta ou comparação, o próprio Viking chama o modelo mais caro;
+  - a linha 💸 e o `/custos` mostram quando isso acontece.
+- **Limites por dia:**
+  - o modelo forte gasta no máximo US$ 0,30 por dia;
+  - a busca faz no máximo 30 consultas por dia;
+  - o teto geral continua US$ 1 por dia e US$ 10 por mês;
+  - assim, um e-mail mal-intencionado não consegue gastar por você.
+- **O tom:** mais caloroso e direto, nos dois chats.
+
+**Como sabemos:**
+- **No seu Mac:**
+  - a pergunta do Nobel veio com 3 fontes;
+  - a conta dos voos foi para o modelo forte sozinha;
+  - a agenda e o chat do Mac funcionaram no modelo novo;
+  - o `/custos` mostrou o forte e as 2 buscas do dia.
+- **No ar:** 33 provas, nenhuma gastando com o modelo.
+- **Os testes:** 2685 passando, e os 420 defeitos plantados de propósito foram derrubados pelo
+  teste certo.
+
+**Custo:** uma pergunta comum, ~US$ 0,002 a 0,004; uma com o modelo forte, ~US$ 0,007; a busca
+fica dentro do grátis. O dia do teste todo: ~US$ 0,03.
 
 ## 2026-10-07 — Sessão 11d: as suas finanças no chat da nuvem (fechada no seu Mac)
 
