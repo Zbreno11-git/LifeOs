@@ -715,6 +715,23 @@ def main() -> None:
     backup_cli.add_argument(
         "--executar", action="store_true", help="Com --restaurar: copia de verdade e confere"
     )
+    memoria_cli = subparsers.add_parser(
+        "memoria", help="O que o Viking anotou de você (na nuvem): listar, corrigir, esquecer"
+    )
+    modo_memoria = memoria_cli.add_mutually_exclusive_group()
+    modo_memoria.add_argument(
+        "--todos", action="store_true", help="Também os trocados e os esquecidos"
+    )
+    modo_memoria.add_argument(
+        "--semana", action="store_true", help="O que entrou nos últimos 7 dias"
+    )
+    modo_memoria.add_argument("--esquecer", metavar="ID", help="Esquece um fato (30 dias)")
+    modo_memoria.add_argument("--desfazer", metavar="ID", help="Devolve um esquecido ou trocado")
+    modo_memoria.add_argument("--corrigir", metavar="ID", help="Troca um fato pelo --texto")
+    modo_memoria.add_argument(
+        "--reindexar", action="store_true", help="Refaz os vetores (depois de restaurar)"
+    )
+    memoria_cli.add_argument("--texto", help="Com --corrigir: o fato certo")
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
     )
@@ -772,6 +789,10 @@ def main() -> None:
         sys.exit(_lembretes(args))
     elif args.command == "backup":
         sys.exit(_backup(args))
+    elif args.command == "memoria":
+        from lifeos.memoria import terminal
+
+        sys.exit(terminal.executar(args))
 
 
 if __name__ == "__main__":

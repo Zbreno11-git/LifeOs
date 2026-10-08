@@ -1,8 +1,9 @@
 """O arquivo do backup (Sessão 11c, D63): o formato, só regras, sem rede nem banco.
 
-Um JSON versionado com as três coleções que a nuvem guarda e o dono quer de volta num desastre:
-os lembretes (no formato fechado da migração, `reminders/transporte.py`), o registro de ações dos
-últimos 30 dias (a linha inteira, `registro_interface.CAMPOS_DA_COPIA`) e os gastos do teto. Ele
+Um JSON versionado com as coleções que a nuvem guarda e o dono quer de volta num desastre: os
+lembretes (no formato fechado da migração, `reminders/transporte.py`), o registro de ações dos
+últimos 30 dias (a linha inteira, `registro_interface.CAMPOS_DA_COPIA`), os gastos do teto e, desde
+a versão 2 (Sessão 13, D66), os fatos da memória sem o vetor (`memoria/store.CAMPOS_DA_COPIA`). Ele
 leva as contagens e a impressão sha256 de cada lembrete: `ler` confere tudo e recusa o arquivo
 inteiro se algo não bate (uma versão que não conhece, um campo a mais, uma contagem ou uma
 impressão errada), sem ecoar conteúdo na mensagem.
@@ -23,16 +24,20 @@ import hashlib
 import json
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
 from lifeos import registro_interface
+from lifeos.memoria import store as memoria_store
 from lifeos.reminders import transporte
 from lifeos.reminders.models import Reminder
 
-FORMATO, VERSAO = "viking-backup", 1
-CAMPOS = (
+# A versão 2 (Sessão 13, D66) leva a memória: os textos e as marcas, sem o vetor (que se
+# reconstrói com `viking memoria --reindexar`). Um arquivo da versão 1 continua se lendo, sem ela.
+FORMATO, VERSAO = "viking-backup", 2
+VERSOES_LIDAS = (1, 2)
+CAMPOS_V1 = (
     "formato",
     "versao",
     "criado_em",
@@ -43,7 +48,10 @@ CAMPOS = (
     "acoes",
     "gastos",
 )
-COLECOES = ("lembretes", "acoes", "gastos")
+CAMPOS = (*CAMPOS_V1, "memoria")
+COLECOES_V1 = ("lembretes", "acoes", "gastos")
+COLECOES = (*COLECOES_V1, "memoria")
+_ORIGENS_DO_FATO = memoria_store.ORIGENS
 # Um pedido da restauração leva até isto de ações e meses (as ações têm a cópia para desfazer).
 LOTE_DO_BACKUP = 50
 CAMPOS_DO_GASTO = ("mes", "total", "dias")
@@ -66,12 +74,14 @@ class Backup:
     lembretes: list[Reminder]
     acoes: list[dict[str, Any]]
     gastos: list[dict[str, Any]]
+    memoria: list[dict[str, Any]] = field(default_factory=list)
 
     def contagens(self) -> dict[str, int]:
         return {
             "lembretes": len(self.lembretes),
             "acoes": len(self.acoes),
             "gastos": len(self.gastos),
+            "memoria": len(self.memoria),
         }
 
 
@@ -141,6 +151,33 @@ def gasto_conferido(copia: Any, onde: str = "gasto") -> dict[str, Any]:
     return {"mes": mes, "total": _numero(copia["total"], f"{onde}: o total"), "dias": dias}
 
 
+def fato_conferido(copia: Any, onde: str = "fato") -> dict[str, Any]:
+    """Um fato da memória no formato da cópia (`memoria.store.copia`), conferido campo a campo.
+    O filtro do que pode virar fato não roda aqui (uma regra nova não pode fazer o backup do dia
+    falhar): roda ao restaurar, no `store.importar`."""
+    if not isinstance(copia, dict) or set(copia) != set(memoria_store.CAMPOS_DA_COPIA):
+        raise BackupInvalido(
+            f"{onde}: tem de ter exatamente os campos {list(memoria_store.CAMPOS_DA_COPIA)}"
+        )
+    if not memoria_store.id_valido(copia["id"]):
+        raise BackupInvalido(f"{onde}: o id tem de ser um UUID")
+    if not isinstance(copia["texto"], str) or not copia["texto"].strip():
+        raise BackupInvalido(f"{onde}: o texto tem de ser um texto não vazio")
+    if copia["origem"] not in _ORIGENS_DO_FATO:
+        raise BackupInvalido(f"{onde}: origem desconhecida")
+    for campo in ("sessao", "turno"):
+        if not isinstance(copia[campo], str):
+            raise BackupInvalido(f"{onde}: {campo} tem de ser texto")
+    if not isinstance(copia["ativo"], bool):
+        raise BackupInvalido(f"{onde}: ativo tem de ser verdadeiro ou falso")
+    substituido_por = copia["substituido_por"]
+    if substituido_por is not None and not memoria_store.id_valido(substituido_por):
+        raise BackupInvalido(f"{onde}: substituido_por tem de ser um UUID ou nulo")
+    for campo in ("criado_em", "invalida_em", "esquecido_em", "apagar_em"):
+        _instante(copia[campo], f"{onde}: {campo}", obrigatorio=campo == "criado_em")
+    return dict(copia)
+
+
 def _sem_repetir(ids: list[Any], colecao: str) -> None:
     if len(set(ids)) != len(ids):
         raise BackupInvalido(f"{colecao}: um id aparece duas vezes")
@@ -150,15 +187,17 @@ def ler(dados: Any) -> Backup:
     """O backup conferido inteiro, ou `BackupInvalido` (sem ecoar conteúdo)."""
     if not isinstance(dados, dict) or dados.get("formato") != FORMATO:
         raise BackupInvalido("não é um arquivo de backup do Viking")
-    if dados.get("versao") != VERSAO:
-        raise BackupInvalido(f"versão do backup desconhecida (esta lê a {VERSAO})")
-    if set(dados) != set(CAMPOS):
-        raise BackupInvalido(f"o backup tem de ter exatamente os campos {list(CAMPOS)}")
+    versao = dados.get("versao")
+    if isinstance(versao, bool) or versao not in VERSOES_LIDAS:
+        raise BackupInvalido(f"versão do backup desconhecida (esta lê {list(VERSOES_LIDAS)})")
+    campos, colecoes = (CAMPOS_V1, COLECOES_V1) if versao == 1 else (CAMPOS, COLECOES)
+    if set(dados) != set(campos):
+        raise BackupInvalido(f"o backup tem de ter exatamente os campos {list(campos)}")
     criado_em = _instante(dados["criado_em"], "criado_em", obrigatorio=True)
     assert criado_em is not None
     if not isinstance(dados["commit"], str):
         raise BackupInvalido("commit tem de ser texto")
-    for colecao in COLECOES:
+    for colecao in colecoes:
         if not isinstance(dados[colecao], list):
             raise BackupInvalido(f"{colecao} tem de ser uma lista")
 
@@ -170,9 +209,11 @@ def ler(dados: Any) -> Backup:
             raise BackupInvalido(f"lembrete {n}: {exc}") from None
     acoes = [acao_conferida(a, f"ação {n}") for n, a in enumerate(dados["acoes"], 1)]
     gastos = [gasto_conferido(g, f"gasto {n}") for n, g in enumerate(dados["gastos"], 1)]
+    memoria = [fato_conferido(f, f"fato {n}") for n, f in enumerate(dados.get("memoria", []), 1)]
     _sem_repetir([r.id for r in lembretes], "lembretes")
     _sem_repetir([a["id"] for a in acoes], "ações")
     _sem_repetir([g["mes"] for g in gastos], "gastos")
+    _sem_repetir([f["id"] for f in memoria], "memória")
 
     backup = Backup(
         criado_em=datetime.fromisoformat(criado_em).astimezone(UTC),
@@ -180,8 +221,12 @@ def ler(dados: Any) -> Backup:
         lembretes=lembretes,
         acoes=acoes,
         gastos=gastos,
+        memoria=memoria,
     )
-    if dados["contagens"] != backup.contagens():
+    contagens = backup.contagens()
+    if versao == 1:
+        del contagens["memoria"]
+    if dados["contagens"] != contagens:
         raise BackupInvalido("as contagens do backup não batem com o conteúdo")
     impressoes = {str(r.id): transporte.impressao(r) for r in lembretes}
     if dados["impressoes"] != impressoes:
@@ -196,18 +241,26 @@ def montar(
     *,
     agora: datetime,
     commit: str,
+    memoria: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """O conteúdo do arquivo, já lido de volta (`ler`) antes de sair daqui."""
+    memoria = list(memoria or [])
     dados = {
         "formato": FORMATO,
         "versao": VERSAO,
         "criado_em": registro_interface.texto_do_instante(agora),
         "commit": commit,
-        "contagens": {"lembretes": len(lembretes), "acoes": len(acoes), "gastos": len(gastos)},
+        "contagens": {
+            "lembretes": len(lembretes),
+            "acoes": len(acoes),
+            "gastos": len(gastos),
+            "memoria": len(memoria),
+        },
         "impressoes": {str(r.id): transporte.impressao(r) for r in lembretes},
         "lembretes": [transporte.para_dict(r) for r in lembretes],
         "acoes": [dict(a) for a in acoes],
         "gastos": [dict(g) for g in gastos],
+        "memoria": [dict(f) for f in memoria],
     }
     ler(dados)
     return dados
@@ -224,6 +277,7 @@ def impressao_do_conteudo(backup: Backup) -> str:
             (a for a in backup.acoes if a["operacao"] != OPERACAO_DO_BACKUP), key=lambda a: a["id"]
         ),
         "gastos": sorted(backup.gastos, key=lambda g: g["mes"]),
+        "memoria": sorted(backup.memoria, key=lambda f: f["id"]),
     }
     texto = json.dumps(conteudo, ensure_ascii=False, sort_keys=True, default=str)
     return hashlib.sha256(texto.encode("utf-8")).hexdigest()

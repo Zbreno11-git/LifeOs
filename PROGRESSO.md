@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 15:40Z: Sessão 13, C3 feito (o turno da nuvem lembra e anota); o próximo é o C4 (terminal, resumo, backup)
+## ▶️ RETOMAR AQUI — 2026-10-08 15:52Z: Sessão 13, C4 feito (terminal, resumo, backup); o próximo é o C5 (fechar e publicar)
 
 **Estado (2026-10-08, medido):**
 - **A abertura da 13** (depois do compact): leitura e conferências batendo com o bloco anterior.
@@ -49,9 +49,18 @@
   chat com `memoria`; o `chat_cliente` imprime "📝 anotei". Uma âncora de mutação reancorada (a
   prova do chat; classe 6). A suíte: `2819 passed`.
 
-**Próximo passo exato:** o C4: as rotas `/memoria*` do motor (só o `viking-cli@`), o `viking
-memoria` no Mac (`nuvem/cliente.py`, `cli.py`), o `--reindexar`, o resumo semanal na rodada do
-agendador (`memoria/resumo.py`) e o backup versão 2.
+- **O C4:** as rotas `/memoria*` (só o `viking-cli@`; `memoria/servico.py`, com `devolver` no
+  lugar de `desfazer` para a régua da D26 continuar precisa); `viking memoria` (`memoria/
+  terminal.py`); o resumo da semana (`memoria/resumo.py`) na rodada dos lembretes do motor, sem
+  parar os lembretes se falhar; o backup versão 2 (`ler` aceita a 1; o `conferir` contava a
+  memória no arquivo e não no restaurado: achado pelo teste, consertado). Duas âncoras de
+  mutação do formato reancoradas (classe 6). A suíte: `2879 passed`; mypy (52).
+
+**Próximo passo exato:** o C5: as mutações novas em `scripts/mutacoes.py` (o `grep` das âncoras
+dos arquivos que mudei antes) e a rodada inteira em background; as duas passadas; os docs
+(AGENTS, `.env.example`, `gcp-cloud-run-firestore.md`, D66); a `/fumaca/memoria` (o
+`find_nearest` com filtro, grátis) e a prova dela no `deploy`; commit, CI; **ok** → `python
+scripts/nuvem.py --executar` (o índice e a TTL); **ok** → `deploy --executar`; o roteiro do Mac.
 
 **Depende do dono:** o ok do índice e da TTL, e o do deploy (no C5).
 
@@ -920,7 +929,7 @@ No `viking chat --nuvem`:
 | C1 | **ok do dono (< US$ 0,01)** → extrator em ~12 mensagens inventadas, `embed_content` (forma, tokens, tempo), o conjunto de ouro gravado como fixture | C0 | ✅ (~US$ 0,002) |
 | C2 | `memoria/regras.py`, `memoria/store.py` (Firestore), `memoria/vetores.py`, tarifas do embedding | C1 | ✅ |
 | C3 | `memoria/extrator.py`; o turno da nuvem (recuperar, a seção, a thread, o campo `memoria`, "esquece isso"); `chat_cliente` | C2 | ✅ |
-| C4 | rotas do motor, `viking memoria`, `--reindexar`, resumo semanal, backup v2 | C2 | ⬜ |
+| C4 | rotas do motor, `viking memoria`, `--reindexar`, resumo semanal, backup v2 | C2 | ✅ |
 | C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, TTL, provas); **ok** → índice + TTL; **ok** → deploy; roteiro do Mac; fechamento (23 de 33) | C3, C4 | ⬜ |
 
 ### Fase 0 — C0

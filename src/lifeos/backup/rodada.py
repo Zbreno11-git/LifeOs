@@ -44,6 +44,7 @@ def _ref() -> Any:
 def rodar(agora: datetime | None = None, *, commit: str = "") -> dict[str, Any]:
     from lifeos import custos, registro
     from lifeos.backup import drive, formato
+    from lifeos.memoria import store as memoria_store
     from lifeos.reminders import store_firestore
 
     agora = (agora or datetime.now(UTC)).astimezone(UTC)
@@ -53,6 +54,7 @@ def rodar(agora: datetime | None = None, *, commit: str = "") -> dict[str, Any]:
         custos.exportar_gastos(),
         agora=agora,
         commit=commit,
+        memoria=memoria_store.exportar(),  # Sessão 13 (D66): os textos e as marcas, sem o vetor
     )
     no_drive = _o_mais_novo_do_drive()
     if no_drive is not None and no_drive[1] == formato.impressao_do_conteudo(formato.ler(dados)):

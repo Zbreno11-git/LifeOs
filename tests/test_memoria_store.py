@@ -113,7 +113,7 @@ def test_esquecer_um_id_que_nao_existe():
 def test_desfazer_o_esquecido_antes_do_prazo():
     fato = _gravar()
     store.esquecer(fato.id, AGORA)
-    voltou = store.desfazer(fato.id, AGORA + timedelta(days=29))
+    voltou = store.devolver(fato.id, AGORA + timedelta(days=29))
     assert voltou is not None and voltou.ativo
     assert voltou.esquecido_em is None and voltou.apagar_em is None
     assert [f.id for f in store.parecidos(_vetor())] == [fato.id]
@@ -122,7 +122,7 @@ def test_desfazer_o_esquecido_antes_do_prazo():
 def test_desfazer_depois_do_prazo_nao_devolve():
     fato = _gravar()
     store.esquecer(fato.id, AGORA)
-    assert store.desfazer(fato.id, AGORA + store.APAGAR_DEPOIS) is None
+    assert store.devolver(fato.id, AGORA + store.APAGAR_DEPOIS) is None
     relido = store.obter(fato.id)
     assert relido is not None and not relido.ativo
 
@@ -131,14 +131,14 @@ def test_desfazer_um_esquecido_que_tinha_sido_substituido_nao_o_reativa():
     antigo = _gravar()
     _gravar("O usuário treina às 6h.", substitui=antigo.id)
     store.esquecer(antigo.id, AGORA)
-    voltou = store.desfazer(antigo.id, AGORA)
+    voltou = store.devolver(antigo.id, AGORA)
     assert voltou is not None and not voltou.ativo and voltou.esquecido_em is None
 
 
 def test_desfazer_a_substituicao_devolve_o_antigo_e_esquece_o_novo():
     antigo = _gravar("O usuário treina às 7h.")
     novo = _gravar("O usuário treina às 6h.", substitui=antigo.id, vetor=_vetor(1))
-    voltou = store.desfazer(antigo.id, AGORA)
+    voltou = store.devolver(antigo.id, AGORA)
     assert voltou is not None and voltou.ativo and voltou.substituido_por is None
     relido = store.obter(novo.id)
     assert relido is not None and not relido.ativo and relido.esquecido_em is not None
@@ -147,7 +147,7 @@ def test_desfazer_a_substituicao_devolve_o_antigo_e_esquece_o_novo():
 
 def test_desfazer_um_ativo_nao_faz_nada():
     fato = _gravar()
-    assert store.desfazer(fato.id, AGORA) is None
+    assert store.devolver(fato.id, AGORA) is None
 
 
 def test_id_que_nao_e_uuid_nunca_vira_caminho():

@@ -6,7 +6,7 @@ Regras (D48), cada uma com teste em `tests/test_memoria_store.py`:
 - **o filtro está aqui também** (`regras.recusa`): todo caminho que grava (o extrator, o `viking
   memoria --corrigir`, o restaurar do backup) passa por `gravar`/`importar`, e nenhum escapa dele;
 - **o substituído fica** (histórico, dá para desfazer); **o esquecido some** em 30 dias, pela TTL do
-  Firestore em `apagar_em` (o dono, 2026-10-08), e até lá o `desfazer` o devolve;
+  Firestore em `apagar_em` (o dono, 2026-10-08), e até lá o `devolver` o traz de volta;
 - **a busca por significado** é `find_nearest` com o filtro `ativo == true`: o emulador aceita sem
   índice (medido em 2026-10-08), a produção exige o índice vetorial composto de `INDICES`, que
   `scripts/nuvem.py` cria e a prova do deploy exerce;
@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-from lifeos import firestore_comum
+from lifeos import firestore_comum, registro_interface
 from lifeos.memoria import regras, vetores
 
 if TYPE_CHECKING:
@@ -229,7 +229,7 @@ def esquecer(fato_id: str, agora: datetime | None = None) -> Fato | None:
     return obter(fato_id)
 
 
-def desfazer(fato_id: str, agora: datetime | None = None) -> Fato | None:
+def devolver(fato_id: str, agora: datetime | None = None) -> Fato | None:
     """Devolve um fato esquecido (antes de sumir) ou substituído. No substituído, o que entrou no
     lugar dele é esquecido (os dois juntos contradiriam). `None` se não há o que desfazer."""
     momento = _agora(agora)
@@ -347,7 +347,8 @@ def trocar_vetor(fato_id: str, vetor: list[float]) -> None:
 
 
 def _iso(momento: datetime | None) -> str | None:
-    return momento.astimezone(UTC).isoformat() if momento is not None else None
+    """O instante na cópia: o formato do backup (UTC, microssegundos sempre escritos)."""
+    return registro_interface.texto_do_instante(momento)
 
 
 def copia(fato: Fato) -> dict[str, Any]:

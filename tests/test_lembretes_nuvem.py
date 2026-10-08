@@ -445,6 +445,7 @@ def test_a_rodada_envia_responde_so_contagens_e_liga_o_envio(firestore_limpo, gm
         "ficaram": 0,
         "parou": False,
         "limite": False,
+        "resumo": "memória desligada",  # o resumo da semana (Sessão 13): os testes a desligam
     }
     assert not aparece("4417", resposta.text)
     assert [e["mensagem"]["Subject"] for e in gmail["enviados"]] == [titulo]

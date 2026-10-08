@@ -13,6 +13,7 @@ import pytest
 
 from lifeos import custos
 from lifeos.backup import formato
+from lifeos.memoria import store as memoria_store
 from lifeos.reminders import interface, transporte
 from lifeos.reminders.models import Reminder
 
@@ -66,20 +67,48 @@ def _gasto(**mudar) -> dict:
     return copia
 
 
-def _bom() -> dict:
+def _fato(**mudar) -> dict:
+    copia = {
+        "id": "0c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
+        "texto": "O usuário corre aos sábados.",
+        "origem": "chat",
+        "sessao": "ab12cd34",
+        "turno": "ab12cd34:3",
+        "criado_em": "2026-10-06T17:00:00.000000+00:00",
+        "ativo": True,
+        "invalida_em": None,
+        "substituido_por": None,
+        "esquecido_em": None,
+        "apagar_em": None,
+    }
+    copia.update(mudar)
+    return copia
+
+
+def _bom(memoria=None) -> dict:
     return formato.montar(
         [_lembrete(), _lembrete(id="9e8d7c6b-5a49-4382-9172-6a5b4c3d2e1f", title="outro")],
         [_acao()],
         [_gasto()],
         agora=AGORA,
         commit="abc1234",
+        memoria=memoria,
     )
+
+
+def _versao_1(dados: dict) -> dict:
+    """O mesmo arquivo como a 11c o escrevia (sem a memória)."""
+    v1 = copy.deepcopy(dados)
+    assert v1.pop("memoria") == []
+    del v1["contagens"]["memoria"]
+    v1["versao"] = 1
+    return v1
 
 
 def test_ida_e_volta_preserva_tudo():
     dados = _bom()
     backup = formato.de_bytes(formato.para_bytes(dados))
-    assert backup.contagens() == {"lembretes": 2, "acoes": 1, "gastos": 1}
+    assert backup.contagens() == {"lembretes": 2, "acoes": 1, "gastos": 1, "memoria": 0}
     assert backup.criado_em == AGORA and backup.commit == "abc1234"
     assert [transporte.impressao(r) for r in backup.lembretes] == [
         transporte.impressao(_lembrete()),
@@ -111,8 +140,85 @@ def test_campo_a_mais_no_arquivo_e_recusado():
 
 def test_versao_desconhecida_e_recusada():
     dados = _bom()
-    dados["versao"] = 2
+    dados["versao"] = 3
     _recusado(dados, "versão do backup desconhecida")
+    dados["versao"] = True  # bool é int no Python: não pode passar por 1
+    _recusado(dados, "versão do backup desconhecida")
+
+
+# --- a memória (Sessão 13, D66): a versão 2 ------------------------------------------------------
+
+
+def test_o_arquivo_da_versao_1_continua_se_lendo():
+    backup = formato.ler(_versao_1(_bom()))
+    assert backup.memoria == [] and backup.contagens()["lembretes"] == 2
+
+
+def test_a_versao_1_nao_aceita_o_campo_da_memoria_nem_a_2_sem_ele():
+    v1 = _versao_1(_bom())
+    v1["memoria"] = []
+    _recusado(v1, "exatamente os campos")
+    v2 = _bom()
+    del v2["memoria"]
+    _recusado(v2, "exatamente os campos")
+
+
+def test_a_memoria_vai_e_volta_sem_vetor():
+    esquecido = _fato(
+        id="1d2e3f4a-5b6c-4d7e-8f90-1a2b3c4d5e6f",
+        texto="O usuário toca violão.",
+        ativo=False,
+        esquecido_em="2026-10-07T10:00:00.000000+00:00",
+        apagar_em="2026-11-06T10:00:00.000000+00:00",
+    )
+    backup = formato.de_bytes(formato.para_bytes(_bom([_fato(), esquecido])))
+    assert backup.memoria == [_fato(), esquecido]
+    assert backup.contagens()["memoria"] == 2
+    assert all("vetor" not in f for f in backup.memoria)
+
+
+def test_a_memoria_vazia_nao_muda_a_impressao_de_um_arquivo_da_versao_1():
+    """O primeiro backup depois do deploy da 13, sem fato nenhum, não sobe um arquivo à toa."""
+    v2 = formato.ler(_bom())
+    v1 = formato.ler(_versao_1(_bom()))
+    assert formato.impressao_do_conteudo(v2) == formato.impressao_do_conteudo(v1)
+    com_fato = formato.ler(_bom([_fato()]))
+    assert formato.impressao_do_conteudo(com_fato) != formato.impressao_do_conteudo(v2)
+    esquecido = formato.ler(_bom([_fato(ativo=False)]))
+    assert formato.impressao_do_conteudo(esquecido) != formato.impressao_do_conteudo(com_fato)
+
+
+@pytest.mark.parametrize(
+    ("mudar", "trecho"),
+    [
+        ({"id": "../gastos"}, "UUID"),
+        ({"texto": "  "}, "texto"),
+        ({"origem": "email"}, "origem"),
+        ({"ativo": "sim"}, "ativo"),
+        ({"substituido_por": "x"}, "substituido_por"),
+        ({"criado_em": None}, "criado_em"),
+        ({"invalida_em": "2026-10-07T10:00:00+00:00"}, "invalida_em"),
+        ({"vetor": [0.1]}, "exatamente os campos"),
+    ],
+)
+def test_um_fato_torto_recusa_o_arquivo(mudar, trecho):
+    dados = _bom([_fato()])
+    dados["memoria"][0].update(mudar)
+    _recusado(dados, trecho)
+
+
+def test_a_contagem_da_memoria_e_conferida_e_o_id_nao_repete():
+    dados = _bom([_fato()])
+    dados["contagens"]["memoria"] = 2
+    _recusado(dados, "contagens")
+    dados = _bom([_fato()])
+    dados["memoria"].append(dict(dados["memoria"][0]))
+    dados["contagens"]["memoria"] = 2
+    _recusado(dados, "aparece duas vezes")
+
+
+def test_o_formato_do_fato_e_o_do_store():
+    assert set(_fato()) == set(memoria_store.CAMPOS_DA_COPIA)
 
 
 def test_outro_formato_e_recusado():

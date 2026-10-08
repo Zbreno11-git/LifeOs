@@ -2489,14 +2489,14 @@ MUTACOES = [
     Mutacao(
         "backup: o arquivo com um campo a mais passa",
         "src/lifeos/backup/formato.py",
-        "    if set(dados) != set(CAMPOS):\n",
-        "    if not set(CAMPOS) <= set(dados):\n",
+        "    if set(dados) != set(campos):\n",
+        "    if not set(campos) <= set(dados):\n",
         "tests/test_backup_formato.py::test_campo_a_mais_no_arquivo_e_recusado",
     ),
     Mutacao(
         "backup: a contagem do arquivo não é conferida",
         "src/lifeos/backup/formato.py",
-        '    if dados["contagens"] != backup.contagens():\n',
+        '    if dados["contagens"] != contagens:\n',
         "    if False:\n",
         "tests/test_backup_formato.py::test_contagem_errada_e_recusada",
     ),

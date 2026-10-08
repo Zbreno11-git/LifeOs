@@ -38,7 +38,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from lifeos import config, registro
+from lifeos import config, prazo, registro
 from lifeos.nuvem import identidade
 from lifeos.reminders import service
 from lifeos.reminders.models import Reminder
@@ -238,6 +238,12 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/backup/importar": frozenset({CLI}),
     "/financas": frozenset({CLI}),
     "/fumaca/financas": frozenset({CLI}),
+    # A memória (Sessão 13, D66): só o terminal do dono lista, corrige, esquece e reindexa.
+    "/memoria": frozenset({CLI}),
+    "/memoria/esquecer": frozenset({CLI}),
+    "/memoria/desfazer": frozenset({CLI}),
+    "/memoria/corrigir": frozenset({CLI}),
+    "/memoria/reindexar": frozenset({CLI}),
 }
 
 
@@ -322,22 +328,31 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
     conferido pelo formato antes de gravar; nunca sobrescreve."""
     from lifeos import custos
     from lifeos.backup import formato
+    from lifeos.memoria import store as memoria_store
 
-    if not isinstance(dados, dict) or set(dados) != {"acoes", "gastos"}:
-        raise ValueError("o pedido tem de ter acoes e gastos")
-    acoes, gastos = dados["acoes"], dados["gastos"]
-    if not isinstance(acoes, list) or not isinstance(gastos, list):
-        raise ValueError("acoes e gastos têm de ser listas")  # noqa: TRY004 - o motor: 400
-    if not 1 <= len(acoes) + len(gastos) <= formato.LOTE_DO_BACKUP:
+    if not isinstance(dados, dict) or not {"acoes", "gastos"} <= set(dados) <= {
+        "acoes",
+        "gastos",
+        "memoria",
+    }:
+        raise ValueError("o pedido tem de ter acoes e gastos (e, desde a 13, memoria)")
+    acoes, gastos, fatos = dados["acoes"], dados["gastos"], dados.get("memoria", [])
+    if not all(isinstance(lista, list) for lista in (acoes, gastos, fatos)):
+        raise ValueError("acoes, gastos e memoria têm de ser listas")
+    if not 1 <= len(acoes) + len(gastos) + len(fatos) <= formato.LOTE_DO_BACKUP:
         raise ValueError(f"o lote tem de ter de 1 a {formato.LOTE_DO_BACKUP} itens")
     acoes = [formato.acao_conferida(a, f"ação {n}") for n, a in enumerate(acoes, 1)]
     gastos = [formato.gasto_conferido(g, f"gasto {n}") for n, g in enumerate(gastos, 1)]
+    fatos = [formato.fato_conferido(f, f"fato {n}") for n, f in enumerate(fatos, 1)]
     registro.ORIGEM.set("mac")
     resposta: dict[str, Any] = {
         "acoes": {"criadas": 0, "iguais": 0, "diferentes": []},
         "gastos": {"criados": 0, "iguais": 0, "diferentes": []},
     }
-    with registro.acao("backup.restaurar", {"acoes": len(acoes), "gastos": len(gastos)}) as marca:
+    if "memoria" in dados:
+        resposta["memoria"] = {"criados": 0, "iguais": 0, "diferentes": [], "recusados": 0}
+    parametros = {"acoes": len(acoes), "gastos": len(gastos), "memoria": len(fatos)}
+    with registro.acao("backup.restaurar", parametros) as marca:
         for acao in acoes:
             resultado = registro.importar(acao)
             if resultado == "diferente":
@@ -350,10 +365,22 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
                 resposta["gastos"]["diferentes"].append(gasto["mes"])
             else:
                 resposta["gastos"]["criados" if resultado == "criado" else "iguais"] += 1
+        for fato in fatos:  # sem vetor: o `viking memoria --reindexar` refaz
+            try:
+                resultado = memoria_store.importar(fato)
+            except memoria_store.Recusado:  # o filtro de hoje recusa: conta, sem o texto
+                resposta["memoria"]["recusados"] += 1
+                continue
+            if resultado == memoria_store.DIFERENTE:
+                resposta["memoria"]["diferentes"].append(fato["id"])
+            else:
+                chave = "criados" if resultado == memoria_store.CRIADO else "iguais"
+                resposta["memoria"][chave] += 1
         marca.feito(
             {
                 "acoes_criadas": resposta["acoes"]["criadas"],
                 "gastos_criados": resposta["gastos"]["criados"],
+                "fatos_criados": resposta.get("memoria", {}).get("criados", 0),
             }
         )
     return resposta
@@ -402,7 +429,23 @@ def _rodada() -> dict[str, Any]:
     from lifeos.reminders import agendador
 
     registro.ORIGEM.set("agendador")
-    return agendador.rodar()
+    resultado = agendador.rodar()
+    resultado["resumo"] = _resumo_da_semana()
+    return resultado
+
+
+def _resumo_da_semana() -> str:
+    """O e-mail da semana da memória (Sessão 13, D66), na mesma rodada. Uma falha dele não para o
+    envio de lembretes: a resposta diz o tipo, e o log também (nunca um fato)."""
+    if not config.MEMORIA:
+        return "memória desligada"
+    from lifeos.memoria import resumo
+
+    try:
+        return resumo.rodar()
+    except Exception as exc:  # noqa: BLE001 - só o tipo; os lembretes já saíram
+        log.error("resumo da semana falhou: %s", type(exc).__name__)
+        return f"falhou ({type(exc).__name__})"
 
 
 async def tarefas_lembretes(request: Request) -> JSONResponse:
@@ -433,6 +476,63 @@ async def tarefas_backup(request: Request) -> JSONResponse:
     except Exception as exc:  # noqa: BLE001 - o log leva só o tipo, nunca um título
         log.error("o backup falhou: %s", type(exc).__name__)
         return JSONResponse({"erro": f"o backup falhou ({type(exc).__name__})"}, 500)
+
+
+# --- a memória do terminal do Mac (Sessão 13, D66) --------------------------------------------
+
+
+async def _memoria(request: Request, fazer: Any) -> JSONResponse:
+    """Uma operação do `viking memoria`. Pedido torto → 400; o teto, o prazo ou um vetor errado →
+    503 com o tipo (nada de fato vai à resposta de erro nem ao log)."""
+    from lifeos import custos as custos_
+    from lifeos.memoria import vetores
+
+    if not config.MEMORIA:
+        return JSONResponse({"erro": "a memória está desligada neste motor"}, 503)
+    dados = await _corpo_pequeno(request, MAX_CORPO_DAS_MAOS) if request.method == "POST" else {}
+    if dados is None:
+        return JSONResponse({"erro": "o pedido passou do tamanho ou não é JSON"}, 400)
+    try:
+        return JSONResponse(await run_in_threadpool(fazer, dados))
+    except ValueError as exc:  # o pedido veio torto: a mensagem não ecoa conteúdo
+        return JSONResponse({"erro": str(exc)}, 400)
+    except (custos_.TetoAtingido, prazo.TempoEsgotado, vetores.VetorInvalido) as exc:
+        return JSONResponse({"erro": f"não deu agora ({type(exc).__name__})"}, 503)
+
+
+async def memoria_listar(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.memoria import servico
+
+    return await _memoria(request, servico.listar)
+
+
+async def memoria_esquecer(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.memoria import servico
+
+    return await _memoria(request, servico.esquecer)
+
+
+async def memoria_desfazer(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.memoria import servico
+
+    return await _memoria(request, servico.devolver)
+
+
+async def memoria_corrigir(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.memoria import servico
+
+    return await _memoria(request, servico.corrigir)
+
+
+async def memoria_reindexar(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.memoria import servico
+
+    return await _memoria(request, servico.reindexar)
 
 
 async def _corpo_pequeno(request: Request, teto: int) -> Any:
@@ -557,5 +657,10 @@ ROTAS = [
     Route("/backup/importar", backup_importar, methods=["POST"]),
     Route("/financas", financas, methods=["POST"]),
     Route("/fumaca/financas", fumaca_financas, methods=["GET"]),
+    Route("/memoria", memoria_listar, methods=["GET"]),
+    Route("/memoria/esquecer", memoria_esquecer, methods=["POST"]),
+    Route("/memoria/desfazer", memoria_desfazer, methods=["POST"]),
+    Route("/memoria/corrigir", memoria_corrigir, methods=["POST"]),
+    Route("/memoria/reindexar", memoria_reindexar, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)

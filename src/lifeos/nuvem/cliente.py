@@ -270,11 +270,43 @@ def estado_dos_lembretes(sessao: Any) -> dict[str, EstadoDoLembrete]:
 
 
 def importar_do_backup(
-    sessao: Any, acoes: list[dict[str, Any]], gastos: list[dict[str, Any]]
+    sessao: Any,
+    acoes: list[dict[str, Any]],
+    gastos: list[dict[str, Any]],
+    memoria: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Um lote da restauração (`/backup/importar`): o que foi criado, o que já estava igual e os
-    ids que já estavam diferentes."""
-    dados = _chamar(sessao, "POST", "/backup/importar", corpo={"acoes": acoes, "gastos": gastos})
+    ids que já estavam diferentes. A memória (Sessão 13) só vai quando há fatos no lote: um motor
+    de antes da 13 continua aceitando os lotes sem ela."""
+    corpo: dict[str, Any] = {"acoes": acoes, "gastos": gastos}
+    if memoria:
+        corpo["memoria"] = memoria
+    dados = _chamar(sessao, "POST", "/backup/importar", corpo=corpo)
     if not isinstance(dados.get("acoes"), dict) or not isinstance(dados.get("gastos"), dict):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    if memoria and not isinstance(dados.get("memoria"), dict):
+        raise ErroDaNuvem("a nuvem não restaurou a memória (o motor é de antes da Sessão 13?)")
     return dados
+
+
+# --- a memória (Sessão 13, D66): o `viking memoria` do Mac -------------------------------------
+
+ACOES_DA_MEMORIA = ("esquecer", "desfazer", "corrigir", "reindexar")
+
+
+def fatos_da_memoria() -> list[dict[str, Any]]:
+    """Todos os fatos guardados na nuvem (os esquecidos até sumirem), do mais novo ao mais velho."""
+    dados = _chamar(_sessao(), "GET", "/memoria")
+    itens = dados.get("fatos")
+    if not isinstance(itens, list) or not all(isinstance(i, dict) for i in itens):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
+    return itens
+
+
+def acao_da_memoria(acao: str, corpo: dict[str, Any]) -> dict[str, Any]:
+    """Esquecer, desfazer, corrigir ou reindexar (os dois últimos chamam o Gemini no motor: o
+    prazo é o do chat)."""
+    if acao not in ACOES_DA_MEMORIA:
+        raise ValueError(f"ação desconhecida: {acao!r}")
+    prazo = PRAZO_CHAT_S if acao in ("corrigir", "reindexar") else PRAZO_S
+    return _chamar(_sessao(), "POST", f"/memoria/{acao}", corpo=corpo, prazo=prazo)
