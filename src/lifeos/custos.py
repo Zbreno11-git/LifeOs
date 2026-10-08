@@ -194,6 +194,12 @@ class Sessao:
         for contas in (self.por_modelo, self._turno_por_modelo):
             contas[consumo.modelo] = contas.get(consumo.modelo, Consumo()) + consumo
 
+    def juntar(self, outra: "Sessao") -> None:
+        """Soma o turno de outra sessão a esta, modelo a modelo (a anotação da memória roda numa
+        thread com a sua, e o 💸 do turno mostra as duas; Sessão 13)."""
+        for consumo in outra._turno_por_modelo.values():
+            self.registrar_gemini(consumo)
+
     def turno(self) -> Consumo:
         """Consumo acumulado desde o último `iniciar_turno()` — inclui chamadas que já custaram
         mesmo que uma chamada posterior do mesmo turno tenha falhado."""

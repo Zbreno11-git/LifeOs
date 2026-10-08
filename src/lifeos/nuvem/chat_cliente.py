@@ -18,6 +18,10 @@ Desde a 12 (D65), a resposta de uma busca na web chega no campo `busca` e aparec
 as fontes e as consultas à parte, antes da resposta do modelo (os termos do Google pedem mostrá-la
 a quem perguntou, sem modificar). Não é segredo: aparece mesmo sem terminal interativo.
 
+Desde a 13 (D66), o campo `memoria` diz o que o Viking anotou da mensagem ("📝 anotei: …", do que
+foi gravado e relido no motor) e avisa se a memória não respondeu. Também aparece sem terminal
+interativo: são frases do próprio dono.
+
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
 
@@ -101,6 +105,26 @@ def buscas(resposta: dict[str, Any]) -> list[str]:
             linhas.append("Buscado no Google: " + "; ".join(f"“{c}”" for c in consultas))
         blocos.append("\n".join(linhas))
     return blocos
+
+
+def memoria(resposta: dict[str, Any]) -> list[str]:
+    """O que a memória fez neste turno (Sessão 13, D66): cada fato gravado, como o motor o releu
+    do store (nunca a prosa do modelo), e o aviso se ela não respondeu. Fora do formato, pulado."""
+    dados = resposta.get("memoria")
+    if not isinstance(dados, dict):
+        return []
+    linhas = []
+    for item in dados.get("anotei") or []:
+        if not isinstance(item, dict) or not _texto(item.get("texto")):
+            continue
+        antes = _texto(item.get("no_lugar_de"))
+        linhas.append(
+            f"📝 anotei: {_texto(item.get('texto'))}"
+            + (f" (no lugar de: {antes})" if antes else "")
+        )
+    if _texto(dados.get("aviso")):
+        linhas.append(f"⚠️ memória: {_texto(dados.get('aviso'))}")
+    return linhas
 
 
 def _em_lista(itens: list[str]) -> str:
@@ -205,5 +229,7 @@ def iniciar(entrada: Any = input) -> int:
             print(f"❌ {_texto(resposta.get('erro')) or 'a nuvem não respondeu o turno'}\n")
         if _texto(resposta.get("aviso")):
             print(f"{_texto(resposta.get('aviso'))}\n")
+        for linha_da_memoria in memoria(resposta):
+            print(linha_da_memoria)
         if _texto(resposta.get("consumo")):
             print(f"   💸 gemini (nuvem): {_texto(resposta.get('consumo'))}", file=sys.stderr)

@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 16:00Z: Sessão 13, C2 feito (regras, store, vetores); o próximo é o C3 (o turno da nuvem)
+## ▶️ RETOMAR AQUI — 2026-10-08 15:40Z: Sessão 13, C3 feito (o turno da nuvem lembra e anota); o próximo é o C4 (terminal, resumo, backup)
 
 **Estado (2026-10-08, medido):**
 - **A abertura da 13** (depois do compact): leitura e conferências batendo com o bloco anterior.
@@ -41,10 +41,17 @@
   `memoria.apagar_em` em `scripts/nuvem.py` (o `vector-config={dimension=768,flat}` da ajuda do
   `gcloud`, ainda não exercido no ar). A suíte: `2791 passed`; mypy (48), ruff e format verdes.
 
-**Próximo passo exato:** o C3: `memoria/extrator.py` (a instrução medida no C1 mais "não repita um
-fato já anotado"; a validação dos ids); no `assistant/na_nuvem.py`, a busca dos 8 antes do turno,
-a seção `_MEMORIA` no bloco, a thread do extrator, o campo `memoria` e o "esquece isso" na
-barreira; o `chat_cliente` imprime "📝 anotei".
+- **O C3:** `memoria/extrator.py` (ids curtos `f1`…`f8`; um id inventado derruba a proposta);
+  no `na_nuvem`, os 8 parecidos no texto de sistema (`turno.instrucao(memoria=…)`; sem ela, o
+  texto de antes byte a byte), a anotação numa thread com cliente próprio (só a `mensagem`, nunca
+  o `prompt`), o campo `memoria` e o "esquece isso" antes da barreira; `config.MEMORIA`
+  (`VIKING_MEMORIA`, ligada; os testes de antes a desligam no `conftest`); `/versao` e a prova do
+  chat com `memoria`; o `chat_cliente` imprime "📝 anotei". Uma âncora de mutação reancorada (a
+  prova do chat; classe 6). A suíte: `2819 passed`.
+
+**Próximo passo exato:** o C4: as rotas `/memoria*` do motor (só o `viking-cli@`), o `viking
+memoria` no Mac (`nuvem/cliente.py`, `cli.py`), o `--reindexar`, o resumo semanal na rodada do
+agendador (`memoria/resumo.py`) e o backup versão 2.
 
 **Depende do dono:** o ok do índice e da TTL, e o do deploy (no C5).
 
@@ -912,7 +919,7 @@ No `viking chat --nuvem`:
 | C0 | o plano no `PROGRESSO.md`; `sessoes.md` (13 com as respostas, sem a migração; a 13b; a sugestão na 14); D66; `pesquisa-roteiro.md` seção 10 (a releitura e o emulador); barra 22 de 33 | — | ✅ (`0766f05`) |
 | C1 | **ok do dono (< US$ 0,01)** → extrator em ~12 mensagens inventadas, `embed_content` (forma, tokens, tempo), o conjunto de ouro gravado como fixture | C0 | ✅ (~US$ 0,002) |
 | C2 | `memoria/regras.py`, `memoria/store.py` (Firestore), `memoria/vetores.py`, tarifas do embedding | C1 | ✅ |
-| C3 | `memoria/extrator.py`; o turno da nuvem (recuperar, a seção, a thread, o campo `memoria`, "esquece isso"); `chat_cliente` | C2 | ⬜ |
+| C3 | `memoria/extrator.py`; o turno da nuvem (recuperar, a seção, a thread, o campo `memoria`, "esquece isso"); `chat_cliente` | C2 | ✅ |
 | C4 | rotas do motor, `viking memoria`, `--reindexar`, resumo semanal, backup v2 | C2 | ⬜ |
 | C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, TTL, provas); **ok** → índice + TTL; **ok** → deploy; roteiro do Mac; fechamento (23 de 33) | C3, C4 | ⬜ |
 

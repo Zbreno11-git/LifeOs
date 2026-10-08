@@ -25,17 +25,23 @@ NÃO adicionar `from __future__ import annotations` aqui: `criar_lembrete` é to
 google-genai valida argumentos com `isinstance(valor, anotação)`.
 """
 
+import contextvars
 import re
+import threading
 from collections.abc import Callable, Sequence
 from contextvars import ContextVar
+from dataclasses import dataclass, field
 from typing import Any
 
 from google.genai import types
 
-from lifeos import ao_dono, config, confirmacao, custos, prazo, registro
+from lifeos import ao_dono, config, confirmacao, custos, nao_confiavel, prazo, registro
 from lifeos.assistant import agent, busca
 from lifeos.assistant import turno as turno_nucleo
 from lifeos.browser._redacao import limpar_controles
+from lifeos.memoria import extrator as memoria_extrator
+from lifeos.memoria import store as memoria_store
+from lifeos.memoria import vetores as memoria_vetores
 from lifeos.registro_texto import acoes_recentes
 
 PRAZO_DO_GEMINI_MS = 60_000  # por chamada; o turno medido levou até 3 s (2026-09-30)
@@ -165,6 +171,110 @@ SO_NA_NUVEM: dict[str, str] = {
 }
 
 
+# A memória de fatos (Sessão 13, D48 e D66): só neste chat. Antes do turno, os fatos parecidos com
+# a mensagem entram no texto de sistema (no bloco delimitado); durante o turno, numa thread com um
+# cliente próprio (o mesmo teto e prazo), o extrator lê SÓ a mensagem que o dono digitou (nunca a
+# nota, o histórico ou um resultado de tool) e grava; a linha "📝 anotei" sai do que foi gravado. O
+# "esquece isso" é lido aqui, antes do modelo, como a aprovação. Ligada por `config.MEMORIA` (os
+# testes de antes da 13 a desligam; `tests/test_na_nuvem_memoria.py` a liga).
+_ESQUECE_ISSO = re.compile(
+    r"^\s*(?:pode\s+)?esque(?:cer|ce|ça|ca)\s+(?:isso|isto)(?:\s+a[ií])?\s*[.!]*\s*$",
+    re.IGNORECASE,
+)
+NADA_A_ESQUECER = "Não achei nesta conversa uma anotação para esquecer. Nada mudou."
+
+
+def _esquece_isso(linha: str, sessao: str) -> tuple[str, str] | None:
+    """(texto para o dono, nota para o Gemini) se a linha é o "esquece isso"; senão `None`."""
+    if not config.MEMORIA or not _ESQUECE_ISSO.match(linha or ""):
+        return None
+    try:
+        fato = memoria_store.ultima_da_sessao(sessao)
+        if fato is None:
+            return NADA_A_ESQUECER, ""
+        memoria_store.esquecer(fato.id)
+    except Exception as exc:  # noqa: BLE001 - o dono precisa saber que não esqueceu
+        erro = (
+            f"Não consegui esquecer agora ({type(exc).__name__}). Nada mudou; tente de novo ou use "
+            "`viking memoria` no Mac."
+        )
+        return erro, ""
+    texto = limpar_controles(fato.texto)
+    ao_dono_ = (
+        f"🗑️ esqueci: {texto} (some de vez em 30 dias; para desfazer, no Mac: viking memoria "
+        f"--desfazer {fato.curto})"
+    )
+    nota = (
+        f"O usuário pediu, e o Viking esqueceu a anotação «{nao_confiavel.neutralizar(texto)}»: "
+        "não a use mais nesta conversa."
+    )
+    return ao_dono_, nota
+
+
+def _lembrar(cliente: Any, mensagem: str) -> tuple[list[memoria_store.Fato], str]:
+    """Os fatos parecidos com a mensagem, e um aviso se a memória não respondeu (o turno segue
+    sem ela: a resposta não depende dela, e o dono fica sabendo)."""
+    try:
+        (vetor,) = memoria_vetores.embutir(cliente, [mensagem], pergunta=True)
+        return memoria_store.parecidos(vetor), ""
+    except Exception as exc:  # noqa: BLE001 - o turno não para; o aviso diz o tipo, sem conteúdo
+        return [], f"a memória não respondeu agora ({type(exc).__name__}): respondi sem ela"
+
+
+@dataclass
+class _Anotando:
+    """A anotação desta mensagem, numa thread: o resultado, o erro e o gasto dela."""
+
+    linha: threading.Thread | None = None
+    anotacao: memoria_extrator.Anotacao | None = None
+    erro: BaseException | None = None
+    consumo: custos.Sessao = field(default_factory=custos.Sessao)
+
+
+def _anotar_em_paralelo(
+    mensagem: str,
+    conhecidos: list[memoria_store.Fato],
+    sessao: str,
+    turno_id: str,
+    teto: custos.Teto,
+) -> _Anotando:
+    estado = _Anotando()
+
+    def trabalho() -> None:
+        try:
+            cliente = _cliente()
+            custos.instrumentar(
+                cliente,
+                sessao=estado.consumo,
+                antes=lambda _modelo: _antes_do_modelo(teto),
+                depois=lambda c: teto.somar(c.custo),
+            )
+            estado.anotacao = memoria_extrator.anotar(
+                cliente, mensagem, conhecidos, sessao=sessao, turno=turno_id
+            )
+        except Exception as exc:  # noqa: BLE001 - recolhida: uma exceção em thread some sozinha
+            estado.erro = exc
+
+    # O contexto copiado leva o prazo do turno, a origem e o turno do registro.
+    estado.linha = threading.Thread(
+        target=contextvars.copy_context().run, args=(trabalho,), name="viking-memoria", daemon=True
+    )
+    estado.linha.start()
+    return estado
+
+
+def _terminar_anotacao(estado: _Anotando, consumo: custos.Sessao, aviso: str) -> dict[str, Any]:
+    """Espera a thread (cada chamada dela tem o prazo do Gemini e confere o do turno) e monta o
+    campo `memoria` da resposta."""
+    if estado.linha is not None:
+        estado.linha.join()
+    consumo.juntar(estado.consumo)
+    anotei = estado.anotacao.como_dict() if estado.anotacao is not None else []
+    if estado.erro is not None:
+        aviso = aviso or f"não anotei esta mensagem ({type(estado.erro).__name__})"
+    return {"anotei": anotei, "aviso": aviso}
+
+
 def ferramentas() -> list[Callable[..., Any]]:
     """As tools deste motor: as da nuvem, sem as do Gmail quando o token dele não está aqui
     (`config.gmail_no_motor`) e sem as de finanças quando o serviço delas não está ligado
@@ -251,11 +361,13 @@ def _cliente() -> Any:
     return genai.Client(api_key=chave, http_options=types.HttpOptions(timeout=PRAZO_DO_GEMINI_MS))
 
 
-def _config() -> types.GenerateContentConfig:
+def _config(memoria: list[str] | None = None) -> types.GenerateContentConfig:
     presentes = ferramentas()
     return types.GenerateContentConfig(
         tools=[*presentes],
-        system_instruction=turno_nucleo.instrucao(presentes, agent._hoje(), onde="nuvem"),
+        system_instruction=turno_nucleo.instrucao(
+            presentes, agent._hoje(), onde="nuvem", memoria=memoria
+        ),
         temperature=turno_nucleo.TEMPERATURA,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(
             maximum_remote_calls=MAX_CHAMADAS_DE_TOOL
@@ -274,10 +386,12 @@ def _resposta(
     consumo: str = "",
     so_ao_dono: list[str],
     buscas: Sequence[busca.Busca] = (),
+    memoria: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "ao_dono": list(so_ao_dono),
         "busca": [b.como_dict() for b in buscas],
+        "memoria": memoria or {"anotei": [], "aviso": ""},
         "resposta": resposta,
         "erro": erro,
         "aviso": aviso,
@@ -342,7 +456,7 @@ def _turno(
     registro.TURNO.set(turno_id)
     teto = _teto()
 
-    local = barreira(mensagem)
+    local = _esquece_isso(mensagem, sessao) or barreira(mensagem)
     if local is not None:  # nunca ao modelo, nunca no histórico; a resposta, só ao dono
         texto, nota_nova = local
         ao_dono.mostrar(texto)
@@ -367,10 +481,20 @@ def _turno(
         antes=lambda _modelo: _antes_do_modelo(teto),
         depois=lambda c: _depois_do_modelo(teto, cotas, c),
     )
-    chat = cliente.chats.create(model=turno_nucleo.MODELO, config=_config(), history=historico)
+    com_memoria = config.MEMORIA  # lida uma vez: o turno inteiro com ela ou sem ela
+    lembrados, aviso_da_memoria = _lembrar(cliente, mensagem) if com_memoria else ([], "")
+    fatos = [f.texto for f in lembrados] if com_memoria else None
+    chat = cliente.chats.create(model=turno_nucleo.MODELO, config=_config(fatos), history=historico)
     prompt = f"{nota}\n\n{mensagem}" if nota else mensagem
+    # Só a mensagem digitada vai a quem anota: nunca o `prompt` (a nota do Viking vem junto).
+    anotando = (
+        _anotar_em_paralelo(mensagem, lembrados, sessao, turno_id, teto) if com_memoria else None
+    )
     with busca.no_turno(cliente, cotas) as buscas:
         resultado = turno_nucleo.executar(chat, prompt, turno_id)
+    memoria = (
+        _terminar_anotacao(anotando, consumo, aviso_da_memoria) if anotando is not None else None
+    )
     gasto_do_turno = consumo.resumo_do_turno() if consumo.turno().chamadas else ""
     if resultado.erro is None:
         return _resposta(
@@ -381,6 +505,7 @@ def _turno(
             consumo=gasto_do_turno,
             so_ao_dono=so_ao_dono,
             buscas=buscas,
+            memoria=memoria,
         )
     if isinstance(resultado.erro, custos.TetoAtingido):
         erro = f"Parei no meio: o teto de gasto foi atingido ({resultado.erro.gasto.texto()})."
@@ -401,4 +526,5 @@ def _turno(
         consumo=gasto_do_turno,
         so_ao_dono=so_ao_dono,
         buscas=buscas,  # o que já apareceu numa busca antes do erro continua do dono
+        memoria=memoria,  # a mensagem é do dono mesmo com o turno falhando: o que anotou, aparece
     )

@@ -1395,13 +1395,21 @@ def provas(
 
 def _prova_do_chat(dados_versao: dict) -> Prova:
     """Sessão 12 (D65): o motor no ar busca na web e usa os modelos desta árvore (o dia a dia e o
-    forte). Grátis: só o `/versao`, nenhuma chamada ao Gemini."""
+    forte); desde a 13 (D66), com a memória ligada. Grátis: só o `/versao`, nenhuma chamada ao
+    Gemini."""
     from lifeos.assistant import turno
 
-    esperado = {"busca": True, "modelo": turno.MODELO, "forte": turno.MODELO_FORTE}
+    esperado = {
+        "busca": True,
+        "modelo": turno.MODELO,
+        "forte": turno.MODELO_FORTE,
+        "memoria": True,
+    }
     no_ar = {chave: dados_versao.get(chave) for chave in esperado}
     return Prova(
-        "viking-cli@: /versao diz a busca e os modelos do chat", no_ar == esperado, f"{no_ar}"
+        "viking-cli@: /versao diz a busca, os modelos e a memória do chat",
+        no_ar == esperado,
+        f"{no_ar}",
     )
 
 

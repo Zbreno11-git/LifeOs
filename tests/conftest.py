@@ -30,6 +30,9 @@ for _nome in ("GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_PROJECT", "FIRESTO
 for _nome in ("VIKING_NUVEM_PROJETO", "VIKING_NUVEM_URL"):
     os.environ[_nome] = ""
 os.environ["VIKING_STORE"] = "sqlite"
+# A memória do chat da nuvem (Sessão 13): o cliente falso dos testes de antes não tem o embedding.
+# `tests/test_na_nuvem_memoria.py` liga `config.MEMORIA` nos dela.
+os.environ["VIKING_MEMORIA"] = "0"
 
 import httplib2
 import pytest

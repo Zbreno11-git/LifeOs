@@ -190,6 +190,18 @@ TETO_GEMINI_DIA = _float_env("VIKING_TETO_GEMINI_DIA", "1")
 TETO_FORTE_DIA = _float_env("VIKING_TETO_FORTE_DIA", "0.30")
 BUSCAS_DIA = _int_env("VIKING_BUSCAS_DIA", "30")
 
+
+def _ligado(nome: str, padrao: str) -> bool:
+    valor = (os.getenv(nome) or padrao).strip()
+    if valor not in ("0", "1"):
+        raise ValueError(f"{nome} tem de ser 0 ou 1")
+    return valor == "1"
+
+
+# A memória de fatos do chat da nuvem (Sessão 13, D66): ligada por padrão. Só os testes de antes da
+# 13 a desligam (`tests/conftest.py`), porque o cliente falso deles não tem o embedding.
+MEMORIA = _ligado("VIKING_MEMORIA", "1")
+
 # Nuvem (Sessão 10, D58). O ID do projeto, a URL do motor e a conta de faturamento moram só no
 # `.env`, nunca no repo. A região é decisão do dono (a casa dele, 2026-09-29).
 NUVEM_PROJETO = os.getenv("VIKING_NUVEM_PROJETO") or ""

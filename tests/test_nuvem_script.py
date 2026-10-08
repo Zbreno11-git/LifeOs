@@ -1508,8 +1508,15 @@ def test_a_prova_do_chat_confere_a_busca_e_os_modelos_da_arvore(nuvem):
     antigo (sem os campos) ou com outro modelo reprova."""
     from lifeos.assistant import turno
 
-    certo = {"busca": True, "modelo": turno.MODELO, "forte": turno.MODELO_FORTE, "gmail": True}
+    certo = {
+        "busca": True,
+        "modelo": turno.MODELO,
+        "forte": turno.MODELO_FORTE,
+        "memoria": True,
+        "gmail": True,
+    }
     assert nuvem._prova_do_chat(certo).passou
+    assert not nuvem._prova_do_chat(certo | {"memoria": False}).passou  # a 13 desligada no ar
     assert not nuvem._prova_do_chat({"commit": "velho", "gmail": True}).passou
     assert not nuvem._prova_do_chat(certo | {"modelo": "gemini-2.5-flash"}).passou
     assert not nuvem._prova_do_chat(certo | {"forte": "gemini-3.1-pro-preview"}).passou

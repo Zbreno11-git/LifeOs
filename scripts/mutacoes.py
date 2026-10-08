@@ -3038,8 +3038,8 @@ MUTACOES = [
     Mutacao(
         "nuvem: a prova do chat não confere os modelos no ar",
         "scripts/nuvem.py",
-        '    esperado = {"busca": True, "modelo": turno.MODELO, "forte": turno.MODELO_FORTE}',
-        '    esperado = {"busca": True}',
+        '        "modelo": turno.MODELO,\n',
+        "",
         "tests/test_nuvem_script.py::test_a_prova_do_chat_confere_a_busca_e_os_modelos_da_arvore",
     ),
 ]
