@@ -131,10 +131,11 @@ async def fumaca_vencidos(request: Request) -> JSONResponse:
 
 
 def _busca_da_memoria() -> dict[str, int]:
-    from lifeos.memoria import store, vetores
+    from lifeos.memoria import receitas, store, vetores
 
     eixo = [1.0] + [0.0] * (vetores.DIMENSAO - 1)
-    return {"achados": len(store.parecidos(eixo, k=1))}
+    # Sessão 13b (D67): a coleção das receitas também se lê no ar (a consulta do `roda`)
+    return {"achados": len(store.parecidos(eixo, k=1)), "receitas": len(receitas.ativas())}
 
 
 async def fumaca_memoria(request: Request) -> JSONResponse:

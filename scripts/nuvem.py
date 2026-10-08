@@ -538,12 +538,14 @@ def _c_segredos(ctx: Contexto) -> list[list[str]]:
 # (coleção, campo) que a TTL apaga: o registro de ações e as confirmações vivem 30 dias na nuvem
 # (Sessões 10b e 10c; a das confirmações passa das janelas que ainda as leem, 8 e 7 dias); as
 # tarefas das mãos, 1 dia (Sessão 11: o turno já as apaga; isto leva o que sobrar); o fato
-# esquecido da memória, 30 dias depois do "esquece isso" (Sessão 13, D66: o dono, 2026-10-08).
+# esquecido da memória, 30 dias depois do "esquece isso" (Sessão 13, D66: o dono, 2026-10-08); a
+# receita esquecida, 30 dias, e a proposta ignorada, 1 dia (Sessão 13b, D67: o dono, 2026-10-08).
 TTLS = (
     ("acoes", "expira_em"),
     ("confirmacoes", "apagar_em"),
     ("tarefas", "apagar_em"),
     ("memoria", "apagar_em"),
+    ("receitas", "apagar_em"),
 )
 
 
@@ -1396,8 +1398,8 @@ def provas(
 
 def _prova_do_chat(dados_versao: dict) -> Prova:
     """Sessão 12 (D65): o motor no ar busca na web e usa os modelos desta árvore (o dia a dia e o
-    forte); desde a 13 (D66), com a memória ligada. Grátis: só o `/versao`, nenhuma chamada ao
-    Gemini."""
+    forte); desde a 13 (D66), com a memória ligada; desde a 13b (D67), com as receitas. Grátis: só o
+    `/versao`, nenhuma chamada ao Gemini."""
     from lifeos.assistant import turno
 
     esperado = {
@@ -1405,10 +1407,11 @@ def _prova_do_chat(dados_versao: dict) -> Prova:
         "modelo": turno.MODELO,
         "forte": turno.MODELO_FORTE,
         "memoria": True,
+        "receitas": True,
     }
     no_ar = {chave: dados_versao.get(chave) for chave in esperado}
     return Prova(
-        "viking-cli@: /versao diz a busca, os modelos e a memória do chat",
+        "viking-cli@: /versao diz a busca, os modelos, a memória e as receitas do chat",
         no_ar == esperado,
         f"{no_ar}",
     )

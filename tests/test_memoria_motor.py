@@ -340,10 +340,10 @@ def test_uma_falha_do_resumo_nao_para_os_lembretes(gmail, monkeypatch):
 
 
 def test_a_fumaca_da_memoria_so_conta(monkeypatch):
-    assert _pedir("GET", "/fumaca/memoria").json() == {"achados": 0}
+    assert _pedir("GET", "/fumaca/memoria").json() == {"achados": 0, "receitas": 0}
     _gravar("O usuário corre aos sábados.")
     resposta = _pedir("GET", "/fumaca/memoria")
-    assert resposta.json() == {"achados": 1} and "sábados" not in resposta.text
+    assert resposta.json() == {"achados": 1, "receitas": 0} and "sábados" not in resposta.text
     assert _pedir("GET", "/fumaca/memoria", conta="maos").status_code == 403
 
 

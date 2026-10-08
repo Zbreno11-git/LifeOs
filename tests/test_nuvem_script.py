@@ -616,11 +616,13 @@ def _ttl(colecao, campo, estado):
 @pytest.mark.parametrize(
     ("estados", "pronto"),
     [
-        (("ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"), True),
-        (("ACTIVE", "CREATING", "ACTIVE", "ACTIVE"), False),
-        (("CREATING", "ACTIVE", "ACTIVE", "ACTIVE"), False),
-        (("ACTIVE", "ACTIVE", "ACTIVE", None), False),
-        (("ACTIVE", "ACTIVE", None, "ACTIVE"), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"), True),
+        (("ACTIVE", "CREATING", "ACTIVE", "ACTIVE", "ACTIVE"), False),
+        (("CREATING", "ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE", None, "ACTIVE"), False),
+        (("ACTIVE", "ACTIVE", None, "ACTIVE", "ACTIVE"), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", "CREATING"), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE", None), False),
     ],
 )
 def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, pronto):
@@ -630,21 +632,23 @@ def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, p
 
 
 def test_ttl_liga_so_a_que_falta(nuvem, ctx, monkeypatch):
-    """A da memória é nova (13); as outras três já estão ligadas e não se pedem de novo."""
+    """A das receitas é nova (13b); as outras quatro já estão ligadas e não se pedem de novo."""
     ttl = [
         _ttl("acoes", "expira_em", "ACTIVE"),
         _ttl("confirmacoes", "apagar_em", "ACTIVE"),
         _ttl("tarefas", "apagar_em", "ACTIVE"),
+        _ttl("memoria", "apagar_em", "ACTIVE"),
     ]
     monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
     pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
     (comando,) = nuvem._c_ttl(pronto)
-    assert "--collection-group=memoria" in comando and "apagar_em" in comando
+    assert "--collection-group=receitas" in comando and "apagar_em" in comando
 
 
 def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
     from lifeos import confirmacao_firestore, registro_firestore
     from lifeos.maos import fila_firestore
+    from lifeos.memoria import receitas as memoria_receitas
     from lifeos.memoria import store as memoria_store
 
     assert nuvem.TTLS == (
@@ -652,11 +656,13 @@ def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
         (confirmacao_firestore.COLECAO, "apagar_em"),
         (fila_firestore.COLECAO, "apagar_em"),
         (memoria_store.COLECAO, "apagar_em"),
+        (memoria_receitas.COLECAO, "apagar_em"),
     )
     assert "expira_em" in registro_firestore._CAMPOS
     assert "apagar_em" in confirmacao_firestore._CAMPOS
     assert "apagar_em" in fila_firestore._CAMPOS
     assert "apagar_em" in memoria_store._CAMPOS
+    assert "apagar_em" in memoria_receitas._CAMPOS
 
 
 # --- o token do Gmail sobe do Mac (Sessão 10c, D60) ----------------------------------------------
@@ -1513,9 +1519,11 @@ def test_a_prova_do_chat_confere_a_busca_e_os_modelos_da_arvore(nuvem):
         "modelo": turno.MODELO,
         "forte": turno.MODELO_FORTE,
         "memoria": True,
+        "receitas": True,
         "gmail": True,
     }
     assert nuvem._prova_do_chat(certo).passou
+    assert not nuvem._prova_do_chat(certo | {"receitas": None}).passou  # um motor de antes da 13b
     assert not nuvem._prova_do_chat(certo | {"memoria": False}).passou  # a 13 desligada no ar
     assert not nuvem._prova_do_chat({"commit": "velho", "gmail": True}).passou
     assert not nuvem._prova_do_chat(certo | {"modelo": "gemini-2.5-flash"}).passou
