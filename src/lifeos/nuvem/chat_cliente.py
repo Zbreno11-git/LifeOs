@@ -20,7 +20,8 @@ a quem perguntou, sem modificar). Não é segredo: aparece mesmo sem terminal in
 
 Desde a 13 (D66), o campo `memoria` diz o que o Viking anotou da mensagem ("📝 anotei: …", do que
 foi gravado e relido no motor) e avisa se a memória não respondeu. Também aparece sem terminal
-interativo: são frases do próprio dono.
+interativo: são frases do próprio dono. Desde a 13b (D67), também a receita proposta ("📋 receita
+proposta «…»", com todos os passos e o aviso de um endereço de outra pessoa), relida do store.
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
@@ -83,6 +84,8 @@ def abertura(capacidades: dict[str, Any]) -> str:
         tem.append("busca na web com fontes")
     if capacidades.get("memoria") is True:  # Sessão 13: anota o que o dono conta (📝)
         tem.append("memória do que você conta (vale só a linha 📝; `esquece isso` apaga a última)")
+    if capacidades.get("receitas") is True:  # Sessão 13b: as receitas que o dono ensina (📋)
+        tem.append("receitas que você ensina (`guarda receita` guarda a proposta; `roda NOME`)")
     if not so_no_mac:  # tudo na nuvem: nada a mandar para o Mac
         return f"☁️  Viking na nuvem ({_em_lista(tem)})."
     fora = _em_lista(so_no_mac)
@@ -124,8 +127,32 @@ def memoria(resposta: dict[str, Any]) -> list[str]:
             f"📝 anotei: {_texto(item.get('texto'))}"
             + (f" (no lugar de: {antes})" if antes else "")
         )
+    linhas += _receita(dados.get("receita"))
     if _texto(dados.get("aviso")):
         linhas.append(f"⚠️ memória: {_texto(dados.get('aviso'))}")
+    return linhas
+
+
+def _receita(dados: Any) -> list[str]:
+    """A receita proposta neste turno (Sessão 13b, D67), com todos os passos: é o que o dono lê antes
+    de digitar `guarda receita`. Um endereço de e-mail nos passos ganha o aviso (um e-mail colado
+    pode ter virado proposta). Fora do formato, pulada."""
+    if not isinstance(dados, dict):
+        return []
+    if _texto(dados.get("recusada")):
+        return [f"⚠️ receita não proposta: {_texto(dados.get('recusada'))}"]
+    proposta = dados.get("proposta")
+    if not isinstance(proposta, dict) or not _texto(proposta.get("nome")):
+        return []
+    passos = [_texto(p) for p in proposta.get("passos") or [] if _texto(p)]
+    if not passos:
+        return []
+    linhas = [f"📋 receita proposta «{_texto(proposta.get('nome'))}»:"]
+    linhas += [f"   {n}. {p}" for n, p in enumerate(passos, 1)]
+    enderecos = [_texto(e) for e in proposta.get("enderecos") or [] if _texto(e)]
+    if enderecos:
+        linhas.append(f"   ⚠️ envia para outro endereço: {', '.join(enderecos)}")
+    linhas.append("   Para guardar, digite: guarda receita (ignorada, ela some em 1 dia)")
     return linhas
 
 

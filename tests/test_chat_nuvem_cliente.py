@@ -266,3 +266,51 @@ def test_a_abertura_diz_que_a_memoria_esta_ligada():
     com = chat_cliente.abertura(tudo | {"memoria": True})
     assert "memória do que você conta (vale só a linha 📝; `esquece isso` apaga a última)" in com
     assert "memória" not in chat_cliente.abertura(tudo)
+
+
+def test_a_abertura_diz_como_guardar_e_rodar_receitas():
+    """Sessão 13b (D67): os dois comandos aparecem antes da primeira proposta; um motor de antes da
+    13b (sem o campo) não os promete."""
+    tudo = {"gmail": True, "maos": True, "financas": True, "busca": True, "memoria": True}
+    com = chat_cliente.abertura(tudo | {"receitas": True})
+    assert "receitas que você ensina (`guarda receita` guarda a proposta; `roda NOME`)" in com
+    assert "receitas" not in chat_cliente.abertura(tudo)
+
+
+@pytest.mark.parametrize(
+    "receita",
+    [
+        None,
+        "texto",
+        {"proposta": "x"},
+        {"proposta": {"nome": "", "passos": ["a"]}},
+        {"proposta": {"nome": "x", "passos": []}},
+        {"proposta": {"nome": "x", "passos": [3, None]}},
+    ],
+)
+def test_a_receita_fora_do_formato_e_pulada(receita):
+    resposta = {"memoria": {"anotei": [], "aviso": "", "receita": receita}}
+    assert chat_cliente.memoria(resposta) == []
+
+
+def test_a_proposta_sai_limpa_com_o_aviso_do_endereco():
+    resposta = {
+        "memoria": {
+            "anotei": [],
+            "aviso": "",
+            "receita": {
+                "proposta": {
+                    "nome": "relatório\x1b[2J",
+                    "passos": ["junte as faturas", "mande para x@exemplo.com\x07"],
+                    "enderecos": ["x@exemplo.com"],
+                }
+            },
+        }
+    }
+    assert chat_cliente.memoria(resposta) == [
+        "📋 receita proposta «relatório[2J»:",
+        "   1. junte as faturas",
+        "   2. mande para x@exemplo.com",
+        "   ⚠️ envia para outro endereço: x@exemplo.com",
+        "   Para guardar, digite: guarda receita (ignorada, ela some em 1 dia)",
+    ]

@@ -40,6 +40,7 @@ from lifeos.assistant import agent, busca
 from lifeos.assistant import turno as turno_nucleo
 from lifeos.browser._redacao import limpar_controles
 from lifeos.memoria import extrator as memoria_extrator
+from lifeos.memoria import receitas as memoria_receitas
 from lifeos.memoria import store as memoria_store
 from lifeos.memoria import vetores as memoria_vetores
 from lifeos.registro_texto import acoes_recentes
@@ -211,6 +212,89 @@ def _esquece_isso(linha: str, sessao: str) -> tuple[str, str] | None:
     return ao_dono_, nota
 
 
+# As receitas (Sessão 13b, D67): o extrator propõe (a linha 📋 sai da proposta gravada), e o dono
+# guarda digitando `guarda receita` e roda digitando `roda NOME`. As duas linhas são lidas aqui,
+# antes do modelo, como o "esquece isso": um e-mail lido por uma tool nunca digita por ele. Rodar
+# manda os passos ao modelo como texto do dono (ele os viu inteiros antes de guardar), e cada tool
+# pede a aprovação de sempre: a receita não dá permissão nova (D48).
+_GUARDA_RECEITA = re.compile(
+    r"^\s*(?:pode\s+)?guard(?:a|e|ar)\s+(?:a\s+|essa\s+|esta\s+)?receita\s*[.!]*\s*$",
+    re.IGNORECASE,
+)
+_RODA = re.compile(
+    r"^\s*rod(?:a|e|ar)\s+(?:a\s+receita\s+)?(?P<nome>\S.*?)\s*[.!]*\s*$", re.IGNORECASE
+)
+NADA_A_GUARDAR = (
+    "Não achei nesta conversa uma receita proposta para guardar (a proposta vale 1 dia). "
+    "Nada mudou."
+)
+
+
+def _guarda_receita(linha: str, sessao: str) -> tuple[str, str] | None:
+    """(texto para o dono, nota para o Gemini) se a linha é o `guarda receita`; senão `None`."""
+    if not config.MEMORIA or not _GUARDA_RECEITA.match(linha or ""):
+        return None
+    try:
+        resultado = memoria_receitas.guardar(sessao)
+    except memoria_receitas.Recusada as exc:
+        return f"Não guardei a receita: {exc}. Nada mudou.", ""
+    except Exception as exc:  # noqa: BLE001 - o dono precisa saber que não guardou
+        return (
+            f"Não consegui guardar agora ({type(exc).__name__}). Nada mudou; tente de novo.",
+            "",
+        )
+    if resultado is None:
+        return NADA_A_GUARDAR, ""
+    receita, substituida = resultado
+    nome = limpar_controles(receita.nome)
+    troca = ", no lugar da de mesmo nome" if substituida is not None else ""
+    ao_dono_ = (
+        f"📋 guardei a receita «{nome}» ({len(receita.passos)} passo(s)){troca}. Para rodar: "
+        f"roda {nome}"
+    )
+    nota = (
+        f"O Viking guardou a receita «{nao_confiavel.neutralizar(nome)}» que o usuário ensinou; "
+        "para rodar, ele digita `roda` e o nome."
+    )
+    return ao_dono_, nota
+
+
+def _roda(linha: str) -> memoria_receitas.Receita | str | None:
+    """A receita que o `roda NOME` pede; um texto para o dono quando ambíguo ou quando a memória
+    falhou; `None` quando não é um `roda` de receita nenhuma (segue ao modelo como sempre: "roda o
+    vídeo" não é receita)."""
+    achado = _RODA.match(linha or "")
+    if not config.MEMORIA or achado is None:
+        return None
+    try:
+        candidatas = memoria_receitas.por_nome(achado.group("nome"))
+    except Exception as exc:  # noqa: BLE001 - o dono precisa saber que não rodou
+        return f"Não consegui ler as receitas agora ({type(exc).__name__}). Nada foi feito."
+    if not candidatas:
+        return None
+    if len(candidatas) > 1:
+        nomes = ", ".join(f"«{limpar_controles(r.nome)}»" for r in candidatas)
+        return f"Mais de uma receita começa assim: {nomes}. Digite o nome inteiro. Nada foi feito."
+    return candidatas[0]
+
+
+def _prompt_da_receita(receita: memoria_receitas.Receita) -> str:
+    passos = "\n".join(f"{n}. {p}" for n, p in enumerate(receita.passos, 1))
+    return (
+        f"O usuário pediu para rodar a receita «{receita.nome}», que ele mesmo ensinou e guardou. "
+        "Faça os passos nesta ordem, com as ferramentas e as confirmações de sempre, e no fim diga "
+        f"o que fez em cada um:\n{passos}"
+    )
+
+
+def _nomes_das_receitas() -> tuple[list[str], str]:
+    """Os nomes das receitas guardadas (o modelo sugere o `roda`), e um aviso se falhou."""
+    try:
+        return [r.nome for r in memoria_receitas.ativas()], ""
+    except Exception as exc:  # noqa: BLE001 - o turno segue sem os nomes
+        return [], f"as receitas não responderam agora ({type(exc).__name__})"
+
+
 def _lembrar(cliente: Any, mensagem: str) -> tuple[list[memoria_store.Fato], str]:
     """Os fatos parecidos com a mensagem, e um aviso se a memória não respondeu (o turno segue
     sem ela: a resposta não depende dela, e o dono fica sabendo)."""
@@ -270,9 +354,10 @@ def _terminar_anotacao(estado: _Anotando, consumo: custos.Sessao, aviso: str) ->
         estado.linha.join()
     consumo.juntar(estado.consumo)
     anotei = estado.anotacao.como_dict() if estado.anotacao is not None else []
+    receita = estado.anotacao.receita_dict() if estado.anotacao is not None else None
     if estado.erro is not None:
         aviso = aviso or f"não anotei esta mensagem ({type(estado.erro).__name__})"
-    return {"anotei": anotei, "aviso": aviso}
+    return {"anotei": anotei, "aviso": aviso, "receita": receita}
 
 
 def ferramentas() -> list[Callable[..., Any]]:
@@ -361,12 +446,14 @@ def _cliente() -> Any:
     return genai.Client(api_key=chave, http_options=types.HttpOptions(timeout=PRAZO_DO_GEMINI_MS))
 
 
-def _config(memoria: list[str] | None = None) -> types.GenerateContentConfig:
+def _config(
+    memoria: list[str] | None = None, receitas: list[str] | None = None
+) -> types.GenerateContentConfig:
     presentes = ferramentas()
     return types.GenerateContentConfig(
         tools=[*presentes],
         system_instruction=turno_nucleo.instrucao(
-            presentes, agent._hoje(), onde="nuvem", memoria=memoria
+            presentes, agent._hoje(), onde="nuvem", memoria=memoria, receitas=receitas
         ),
         temperature=turno_nucleo.TEMPERATURA,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(
@@ -391,7 +478,7 @@ def _resposta(
     return {
         "ao_dono": list(so_ao_dono),
         "busca": [b.como_dict() for b in buscas],
-        "memoria": memoria or {"anotei": [], "aviso": ""},
+        "memoria": memoria or {"anotei": [], "aviso": "", "receita": None},
         "resposta": resposta,
         "erro": erro,
         "aviso": aviso,
@@ -456,7 +543,14 @@ def _turno(
     registro.TURNO.set(turno_id)
     teto = _teto()
 
-    local = _esquece_isso(mensagem, sessao) or barreira(mensagem)
+    local = _esquece_isso(mensagem, sessao) or _guarda_receita(mensagem, sessao)
+    local = local or barreira(mensagem)
+    achado = _roda(mensagem) if local is None else None
+    rodar: memoria_receitas.Receita | None = None
+    if isinstance(achado, str):
+        local = (achado, "")
+    else:
+        rodar = achado
     if local is not None:  # nunca ao modelo, nunca no histórico; a resposta, só ao dono
         texto, nota_nova = local
         ao_dono.mostrar(texto)
@@ -482,19 +576,37 @@ def _turno(
         depois=lambda c: _depois_do_modelo(teto, cotas, c),
     )
     com_memoria = config.MEMORIA  # lida uma vez: o turno inteiro com ela ou sem ela
-    lembrados, aviso_da_memoria = _lembrar(cliente, mensagem) if com_memoria else ([], "")
+    # Um `roda NOME`: os passos guardados vão ao modelo no lugar da linha digitada (13b).
+    pedido = _prompt_da_receita(rodar) if rodar is not None else mensagem
+    if rodar is not None:
+        ao_dono.mostrar(
+            f"📋 rodando a receita «{limpar_controles(rodar.nome)}» ({len(rodar.passos)} passo(s))"
+        )
+    lembrados, aviso_da_memoria = _lembrar(cliente, pedido) if com_memoria else ([], "")
     fatos = [f.texto for f in lembrados] if com_memoria else None
-    chat = cliente.chats.create(model=turno_nucleo.MODELO, config=_config(fatos), history=historico)
-    prompt = f"{nota}\n\n{mensagem}" if nota else mensagem
-    # Só a mensagem digitada vai a quem anota: nunca o `prompt` (a nota do Viking vem junto).
+    nomes, aviso_das_receitas = _nomes_das_receitas() if com_memoria else ([], "")
+    aviso_da_memoria = aviso_da_memoria or aviso_das_receitas
+    chat = cliente.chats.create(
+        model=turno_nucleo.MODELO,
+        config=_config(fatos, nomes if com_memoria else None),
+        history=historico,
+    )
+    prompt = f"{nota}\n\n{pedido}" if nota else pedido
+    # Só a mensagem digitada vai a quem anota: nunca o `prompt` (a nota do Viking vem junto). Num
+    # `roda`, ninguém anota: os passos já foram revistos pelo dono ao guardar.
     anotando = (
-        _anotar_em_paralelo(mensagem, lembrados, sessao, turno_id, teto) if com_memoria else None
+        _anotar_em_paralelo(mensagem, lembrados, sessao, turno_id, teto)
+        if com_memoria and rodar is None
+        else None
     )
     with busca.no_turno(cliente, cotas) as buscas:
         resultado = turno_nucleo.executar(chat, prompt, turno_id)
-    memoria = (
-        _terminar_anotacao(anotando, consumo, aviso_da_memoria) if anotando is not None else None
-    )
+    if anotando is not None:
+        memoria = _terminar_anotacao(anotando, consumo, aviso_da_memoria)
+    elif com_memoria:
+        memoria = {"anotei": [], "aviso": aviso_da_memoria, "receita": None}
+    else:
+        memoria = None
     gasto_do_turno = consumo.resumo_do_turno() if consumo.turno().chamadas else ""
     if resultado.erro is None:
         return _resposta(

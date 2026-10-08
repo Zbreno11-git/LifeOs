@@ -183,3 +183,31 @@ def test_o_coletor_so_vale_dentro_do_bloco():
         assert ao_dono.pela_rede() and ao_dono.interativo()
     assert lista == ["a"]
     assert not ao_dono.pela_rede()
+
+
+# --- uma receita não dá permissão nova (Sessão 13b, D48 e D67) ----------------------------------
+
+
+def test_um_passo_de_receita_que_envia_a_outra_pessoa_ainda_pede_o_codigo(
+    nuvem, gemini, monkeypatch
+):
+    """Rodar a receita manda os passos ao modelo como texto do dono; o envio a outra pessoa segue o
+    caminho de sempre: o código só no `ao_dono`, e nada sai antes do `confirma`."""
+    from lifeos.memoria import receitas
+
+    monkeypatch.setattr(config, "MEMORIA", True)
+    monkeypatch.setattr(na_nuvem, "_lembrar", lambda _cliente, _texto: ([], ""))  # sem embedding
+    receitas.propor("almoço", [f"mande um e-mail para {ANA} chamando para almoçar"], sessao="s1")
+    receitas.guardar("s1")
+    roteiro = gemini(
+        _chama("enviar_email", para=ANA, assunto="Almoço", corpo="Amanhã às 12h?"),
+        _texto("Confira o e-mail e aprove."),
+    )
+    saida = na_nuvem.turno(_pedido("roda almoço"))
+    rodando, so_dele = saida["ao_dono"]
+    assert rodando.startswith("📋 rodando a receita «almoço»")
+    assert f"confirma {CODIGO}" in so_dele and "Amanhã às 12h?" in so_dele
+    assert not aparece(CODIGO, _sem_ao_dono(saida))
+    assert not any(aparece(CODIGO, enviado) for enviado in roteiro.enviados)
+    assert ANA in roteiro.enviados[0]  # o passo guardado foi ao modelo
+    assert nuvem["enviados"] == []  # nada saiu sem o código

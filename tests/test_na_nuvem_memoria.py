@@ -193,16 +193,21 @@ def test_o_extrator_filtra_antes_de_embutir(gemini):
             (TREINO, ""),
         )
     ]
-    propostas, recusas = extrator.propor(gemini.cliente(), "qualquer", [])
-    assert [p.texto for p in propostas] == [TREINO]
-    assert recusas == ["forma de ordem", "valor em dinheiro"]
+    extraido = extrator.propor(gemini.cliente(), "qualquer", [])
+    assert [p.texto for p in extraido.fatos] == [TREINO]
+    assert extraido.recusas == ["forma de ordem", "valor em dinheiro"]
+    assert extraido.receita is None and extraido.receita_recusada == ""
 
 
 def test_um_fato_dito_e_anotado_e_a_linha_sai_do_que_foi_gravado(gemini):
     gemini.chat = [_texto("Boa! Treinar cedo é ótimo. Anotei que você treina às 5h.")]
     gemini.extrator = [_fatos((TREINO, ""))]
     saida = na_nuvem.turno(_pedido("Eu treino todo dia às 7h da manhã."))
-    assert saida["memoria"] == {"anotei": [{"texto": TREINO, "no_lugar_de": ""}], "aviso": ""}
+    assert saida["memoria"] == {
+        "anotei": [{"texto": TREINO, "no_lugar_de": ""}],
+        "aviso": "",
+        "receita": None,
+    }
     (fato,) = store.ativos()
     assert (fato.texto, fato.origem, fato.sessao, fato.turno) == (
         TREINO,
@@ -337,7 +342,7 @@ def test_um_id_inventado_derruba_a_proposta(gemini):
     gemini.chat = [_texto("ok")]
     gemini.extrator = [_fatos(("O usuário treina às 6h da manhã.", "f9"))]
     saida = na_nuvem.turno(_pedido("Agora eu treino às 6h."))
-    assert saida["memoria"] == {"anotei": [], "aviso": ""}  # recusado, não quebrado
+    assert saida["memoria"] == {"anotei": [], "aviso": "", "receita": None}  # recusado
     assert [f.texto for f in store.ativos()] == [TREINO]
 
 
@@ -404,6 +409,7 @@ def test_o_extrator_fora_do_formato_avisa_e_o_turno_responde(gemini):
     assert saida["memoria"] == {
         "anotei": [],
         "aviso": "não anotei esta mensagem (RespostaInvalida)",
+        "receita": None,
     }
     assert store.todos() == []
 

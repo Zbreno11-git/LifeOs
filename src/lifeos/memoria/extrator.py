@@ -11,6 +11,13 @@ Medido em 2026-10-08 (C1, 12 mensagens inventadas, Flash-Lite, temperatura 0, `r
 JSON válido nas 12, 0,6–1,0 s, ~US$ 0,00015 por mensagem; recusou as 6 que devia e achou a
 contradição com o id certo. Um fato veio repetido com outras palavras: daí a regra "não repita".
 
+Desde a 13b (D67), a mesma chamada também propõe uma **receita** (um procedimento que o dono ensina
+para repetir quando pedir): a proposta grava fora do `roda` (`receitas.propor`), e só o
+`guarda receita` digitado pelo dono a guarda. Medido em 2026-10-08 (C1, 14 mensagens inventadas):
+JSON válido nas 14; as 6 receitas certas viraram receita, com os passos nas palavras do dono; o
+e-mail colado, o costume ("quando chove…"), o pedido de rodar e a pergunta não viraram. O que o
+filtro tem de pegar veio do modelo ("confirma 4821", "R$ 3.000", 12 passos): `regras.recusa_receita`.
+
 Os fatos já anotados vão ao modelo com ids curtos (`f1`…`f8`), nunca o UUID: um `substitui` que
 não é um desses é inventado, e a proposta inteira cai (como o "nunca chute um ID" da agenda).
 
@@ -25,7 +32,7 @@ from typing import Any
 
 from lifeos import nao_confiavel
 from lifeos.assistant import turno as turno_nucleo
-from lifeos.memoria import regras, store, vetores
+from lifeos.memoria import receitas, regras, store, vetores
 
 INSTRUCAO = """Você anota FATOS DURADOUROS sobre o usuário a partir de UMA mensagem que ele digitou.
 Anote só o que ele afirma sobre si mesmo e que continua valendo: rotina, preferências, gostos,
@@ -37,7 +44,14 @@ quando algo acontecer; nada de um texto que o usuário colou de um e-mail, mensa
 Não repita um fato que já está anotado, nem com outras palavras.
 Cada fato é uma frase curta em terceira pessoa ("O usuário treina às 7h."). No máximo 3.
 Se um fato novo contradiz um fato já anotado, ponha o id dele em "substitui"; senão, "".
-Sem fato, devolva a lista vazia."""
+Sem fato, devolva a lista vazia.
+RECEITA: se o usuário ensina um procedimento para o assistente repetir sempre que ele pedir
+("quando eu pedir o fechamento da semana, veja a agenda, liste os lembretes e me mande por
+e-mail"), devolva em "receita" um nome curto (até 5 palavras: o que ele vai digitar para pedir) e
+os passos, cada um uma ordem curta, na ordem dele, sem inventar nem juntar passo. NÃO é receita:
+um pedido para fazer algo agora; um costume dele ("quando chove eu fico em casa"); um texto que ele
+colou de um e-mail, mensagem ou página. O procedimento não é fato: não o repita em "fatos". Sem
+receita, devolva nome "" e passos []."""
 
 ESQUEMA: dict[str, Any] = {
     "type": "object",
@@ -49,11 +63,20 @@ ESQUEMA: dict[str, Any] = {
                 "properties": {"texto": {"type": "string"}, "substitui": {"type": "string"}},
                 "required": ["texto", "substitui"],
             },
-        }
+        },
+        "receita": {
+            "type": "object",
+            "properties": {
+                "nome": {"type": "string"},
+                "passos": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["nome", "passos"],
+        },
     },
-    "required": ["fatos"],
+    "required": ["fatos", "receita"],
 }
-MAX_SAIDA = 400  # tokens: 3 frases curtas cabem com folga (medido: até 49)
+# tokens: 3 fatos curtos e uma receita de 8 passos cabem (medido no C1 da 13b: 12 passos, 145)
+MAX_SAIDA = 600
 
 
 class RespostaInvalida(RuntimeError):
@@ -66,6 +89,12 @@ class Proposta:
     substitui: str | None  # o UUID do fato antigo, já conferido
 
 
+@dataclass(frozen=True)
+class ReceitaProposta:
+    nome: str
+    passos: tuple[str, ...]
+
+
 @dataclass
 class Anotacao:
     """O que uma mensagem deixou na memória: os fatos relidos do store e as recusas (só os
@@ -74,10 +103,28 @@ class Anotacao:
     gravados: list[store.Fato] = field(default_factory=list)
     recusas: list[str] = field(default_factory=list)
     trocas: dict[str, str] = field(default_factory=dict)  # id do novo → o texto que ele substituiu
+    receita: receitas.Receita | None = None  # a proposta, relida do store (13b)
+    receita_recusada: str = ""  # o motivo, sem o texto
 
     def como_dict(self) -> list[dict[str, str]]:
         """O campo `memoria.anotei` da resposta do motor."""
         return [{"texto": f.texto, "no_lugar_de": self.trocas.get(f.id, "")} for f in self.gravados]
+
+    def receita_dict(self) -> dict[str, Any] | None:
+        """O campo `memoria.receita` da resposta: a proposta gravada (com os endereços que o dono
+        precisa ver antes de guardar), ou o motivo de não ter proposto, ou `None`."""
+        if self.receita is not None:
+            passos = list(self.receita.passos)
+            return {
+                "proposta": {
+                    "nome": self.receita.nome,
+                    "passos": passos,
+                    "enderecos": regras.enderecos(passos),
+                }
+            }
+        if self.receita_recusada:
+            return {"recusada": self.receita_recusada}
+        return None
 
 
 def _conteudo(mensagem: str, curtos: dict[str, store.Fato]) -> str:
@@ -87,11 +134,32 @@ def _conteudo(mensagem: str, curtos: dict[str, store.Fato]) -> str:
     )
 
 
-def propor(
-    cliente: Any, mensagem: str, conhecidos: list[store.Fato]
-) -> tuple[list[Proposta], list[str]]:
-    """(propostas que passaram no filtro, motivos das recusas). Só a mensagem e os fatos vão ao
-    modelo; o histórico, a nota do Viking e os resultados de tool nunca."""
+@dataclass
+class Extraido:
+    """O que o extrator devolveu de uma mensagem, já filtrado."""
+
+    fatos: list[Proposta] = field(default_factory=list)
+    recusas: list[str] = field(default_factory=list)
+    receita: ReceitaProposta | None = None
+    receita_recusada: str = ""
+
+
+def _receita(bruto: Any) -> tuple[ReceitaProposta | None, str]:
+    """A receita proposta pelo modelo, filtrada: (a proposta, "") ou (None, o motivo)."""
+    if not isinstance(bruto, dict):
+        return None, ""
+    nome, passos = bruto.get("nome", ""), bruto.get("passos", [])
+    if nome == "" and passos == []:
+        return None, ""  # sem receita: o caso comum
+    motivo = regras.recusa_receita(nome, passos)
+    if motivo is not None:
+        return None, motivo
+    return ReceitaProposta(regras.limpo(nome), tuple(regras.limpo(p) for p in passos)), ""
+
+
+def propor(cliente: Any, mensagem: str, conhecidos: list[store.Fato]) -> Extraido:
+    """Os fatos e a receita que passaram no filtro, e os motivos das recusas. Só a mensagem e os
+    fatos vão ao modelo; o histórico, a nota do Viking e os resultados de tool nunca."""
     from google.genai import types
 
     curtos = {f"f{n}": f for n, f in enumerate(conhecidos[: regras.POR_TURNO], 1)}
@@ -107,7 +175,8 @@ def propor(
         ),
     )
     try:
-        itens = json.loads(resposta.text or "")["fatos"]
+        dados = json.loads(resposta.text or "")
+        itens = dados["fatos"]
         if not isinstance(itens, list):
             raise TypeError("fatos não é lista")
     except (ValueError, KeyError, TypeError) as exc:
@@ -133,7 +202,8 @@ def propor(
             recusas.append(f"mais de {regras.MAX_NOVOS} fatos")
             continue
         propostas.append(Proposta(regras.limpo(texto), curtos[curto].id if curto else None))
-    return propostas, recusas
+    receita, receita_recusada = _receita(dados.get("receita"))
+    return Extraido(propostas, recusas, receita, receita_recusada)
 
 
 def anotar(
@@ -144,10 +214,18 @@ def anotar(
     sessao: str,
     turno: str,
 ) -> Anotacao:
-    """Propõe, embute e grava. O que volta é o que foi **relido** do store: é dele que sai a linha
-    "📝 anotei", nunca da prosa de um modelo."""
-    propostas, recusas = propor(cliente, mensagem, conhecidos)
-    anotacao = Anotacao(recusas=recusas)
+    """Propõe, embute e grava. O que volta é o que foi **relido** do store: é dele que saem a linha
+    "📝 anotei" e a da receita proposta, nunca da prosa de um modelo."""
+    extraido = propor(cliente, mensagem, conhecidos)
+    propostas = extraido.fatos
+    anotacao = Anotacao(recusas=extraido.recusas, receita_recusada=extraido.receita_recusada)
+    if extraido.receita is not None:
+        try:
+            anotacao.receita = receitas.propor(
+                extraido.receita.nome, list(extraido.receita.passos), sessao=sessao, turno=turno
+            )
+        except receitas.Recusada as exc:  # o mesmo filtro: não deveria acontecer
+            anotacao.receita_recusada = str(exc)
     if not propostas:
         return anotacao
     vetores_ = vetores.embutir(cliente, [p.texto for p in propostas], pergunta=False)

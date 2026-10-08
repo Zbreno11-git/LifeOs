@@ -3165,15 +3165,15 @@ MUTACOES = [
     Mutacao(
         "memoria: quem anota recebe a nota do Viking junto",
         "src/lifeos/assistant/na_nuvem.py",
-        "        _anotar_em_paralelo(mensagem, lembrados, sessao, turno_id, teto) if com_memoria else None\n",
-        "        _anotar_em_paralelo(prompt, lembrados, sessao, turno_id, teto) if com_memoria else None\n",
+        "        _anotar_em_paralelo(mensagem, lembrados, sessao, turno_id, teto)\n",
+        "        _anotar_em_paralelo(prompt, lembrados, sessao, turno_id, teto)\n",
         "tests/test_na_nuvem_memoria.py::test_quem_anota_ve_so_a_mensagem_digitada",
     ),
     Mutacao(
         "memoria: o esquece isso vai ao modelo",
         "src/lifeos/assistant/na_nuvem.py",
-        "    local = _esquece_isso(mensagem, sessao) or barreira(mensagem)\n",
-        "    local = barreira(mensagem)\n",
+        "    local = _esquece_isso(mensagem, sessao) or _guarda_receita(mensagem, sessao)\n",
+        "    local = _guarda_receita(mensagem, sessao)\n",
         "tests/test_na_nuvem_memoria.py::test_esquece_isso_nunca_vai_ao_modelo",
     ),
     Mutacao(

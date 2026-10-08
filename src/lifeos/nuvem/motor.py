@@ -107,6 +107,7 @@ async def versao(request: Request) -> JSONResponse:
             "forte": turno.MODELO_FORTE,
             # Sessão 13 (D66): a memória de fatos deste chat
             "memoria": config.MEMORIA,
+            "receitas": config.MEMORIA,  # Sessão 13b (D67): as receitas vêm com a memória
         }
     )
 
