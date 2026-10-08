@@ -166,6 +166,24 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
   - uma busca leva ~2 s e de 96 a 206 tokens de saída, e as consultas entram nas 5.000 grátis
     por mês dos modelos 3.
 
+## A memória (Sessão 13, D66)
+
+- **Dois recursos novos, com o ok do dono:** o índice vetorial composto da coleção `memoria`
+  (`ativo` crescente e `vetor` com `vector-config={dimension=768,flat}`) e a TTL em
+  `memoria.apagar_em` (o fato esquecido some 30 dias depois). Os dois estão em
+  `scripts/nuvem.py` (`INDICES`, `TTLS`). O emulador aceita `find_nearest` com filtro **sem**
+  índice (medido em 2026-10-08): a fumaça `/fumaca/memoria` exerce a busca no ar, e o `deploy`
+  reprova sem o índice.
+- **Leituras e gravações por mensagem do dono:** a busca dos 8 parecidos (1 leitura a cada 100
+  entradas do índice, mais os documentos devolvidos, lido em 2026-10-08) e, quando há fato, 1
+  gravação por fato (mais 1 se substitui). Com centenas de fatos, poucas leituras por turno.
+- **O vetor no documento:** 768 números (~6 KiB) cabem no limite de 7,5 KiB por entrada de
+  índice mesmo que o Firestore o indexe sozinho; **não conferido** se ele indexa (as páginas de
+  2026-10-08 não dizem). A primeira anotação no ar é a prova; se falhar, o turno avisa.
+- **Custo do Gemini medido no C1** (2026-10-08, ok do dono): o extrator ~US$ 0,00015 por mensagem
+  (~300 tokens de entrada, até 49 de saída); o embedding a US$ 0,20 por 1M de tokens.
+- **Fora do backup?** Não: o backup versão 2 leva os textos e as marcas, sem o vetor.
+
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find

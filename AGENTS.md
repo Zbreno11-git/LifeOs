@@ -149,7 +149,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     confiável); `SO_NA_NUVEM` diz o que só a nuvem tem
   - `backup/` — o backup diário no Drive do dono (Sessão 11c, D63): `formato.py` (o arquivo
     versionado: lembretes no formato da migração, o registro de ações dos 30 dias inteiro, os
-    gastos do teto; contagens e a impressão de cada lembrete; `ler` confere tudo e `montar` lê de
+    gastos do teto e, desde a versão 2 (Sessão 13), os fatos da memória sem o vetor; contagens e a
+    impressão de cada lembrete; `ler` confere tudo, lê a versão 1 também, e `montar` lê de
     volta antes de devolver), `drive.py` (escopo `drive.file`; **só cria, lista e baixa**, nunca
     apaga, e uma régua lê o código; o envio dentro de `registro.acao("backup.drive")`),
     `rodada.py` (a rodada da nuvem: baixa o arquivo mais novo e só sobe outro se o conteúdo
@@ -157,6 +158,16 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `conferir.py` (`viking backup --conferir`: restaura num `viking.db` temporário e compara com a
     nuvem) e `restaurar.py` (`viking backup --restaurar`: o desastre, em lotes pelo motor, nunca
     sobrescreve)
+  - `memoria/` — a memória de fatos (Sessão 13, D48 e D66), **só no chat da nuvem**: o que o
+    dono conta sobre si é anotado sozinho e lembrado por significado. `regras.py` (o filtro do que
+    pode virar fato: nunca senha, código, dinheiro, dados de terceiros, data marcada nem forma de
+    ordem; o texto lido normalizado), `store.py` (a coleção `memoria`: só se acrescenta, o
+    substituído fica com `invalida_em`, o esquecido some pela TTL em 30 dias; a busca é
+    `find_nearest` com `ativo == true`, que na produção pede o índice vetorial), `vetores.py` (o
+    `gemini-embedding-2` a 768; **cada texto num `types.Content`**), `extrator.py` (a chamada
+    separada que lê **só a mensagem que o dono digitou** e os fatos parecidos, com ids curtos),
+    `resumo.py` (o e-mail da semana, na segunda às 9h do fuso do dono, pela rodada dos lembretes),
+    `servico.py` (o que as rotas `/memoria*` fazem) e `terminal.py` (`viking memoria`)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
@@ -168,7 +179,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     (`/lembretes/criar`, `/concluir`, `/importar`, `/impressoes`), as das mãos, a do envio, as do
     backup (`/tarefas/backup`, e `/backup/importar` do `cli@`; Sessão 11c) e fumaças grátis
     (`/fumaca/vencidos`, `/registro`, `/segredos`), e as finanças pelo serviço delas
-    (`/financas` e `/fumaca/financas`, do `cli@`; Sessão 11d);
+    (`/financas` e `/fumaca/financas`, do `cli@`; Sessão 11d), e as da memória (`/memoria`,
+    `/memoria/esquecer`, `/desfazer`, `/corrigir`, `/reindexar` e `/fumaca/memoria`, do `cli@`;
+    Sessão 13);
     `identidade.py` é a verificação do token dos dois serviços (a mesma régua; Sessão 11d);
     `financas.py` é o **serviço de finanças** (D64): outro Cloud Run, a mesma imagem com outro
     comando, a conta `viking-financas@` (a única que lê o `viking-pluggy`), só o `viking-motor@`
@@ -302,6 +315,11 @@ viking financas --conectar      # abre a janela da Pluggy (MeuPluggy) e mostra o
 viking financas                 # confere as conexões de PLUGGY_ITEM_IDS (sem saldo nem extrato)
 viking registro                 # o que o Viking fez (7 dias; --dias N, --ids, --desfazer ID)
 viking aprovar                  # aprova com código os pedidos que outros apps fizeram pelo MCP
+viking memoria                  # o que o Viking anotou de você, na nuvem (os ativos); --todos
+                               # (também os trocados e os esquecidos), --semana, --esquecer ID,
+                               # --desfazer ID, --corrigir ID --texto T, --reindexar (depois de
+                               # restaurar um backup). No chat da nuvem, "esquece isso" esquece
+                               # a última anotação da conversa
 viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
                                # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
                                # (só num terminal interativo); --nuvem lista os da nuvem;
@@ -384,7 +402,9 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   `scripts/nuvem.py`; o fuso é o que o motor recebe, e troca quando o dono se mudar)/`VIKING_STORE`
   (`sqlite` ou `firestore`, este só no motor)/`VIKING_TETO_GEMINI_MES` e `_DIA` (o teto do chat
   da nuvem, US$ 10 e 1)/`VIKING_TETO_FORTE_DIA` e `VIKING_BUSCAS_DIA` (as cotas do dia do chat da
-  nuvem: o modelo forte, US$ 0,30, e as consultas de busca, 30; Sessão 12)/`VIKING_DRIVE_TOKEN_PATH` (o token do Drive do backup, Sessão
+  nuvem: o modelo forte, US$ 0,30, e as consultas de busca, 30; Sessão 12)/`VIKING_MEMORIA` (`1`,
+  o padrão, liga a memória do chat da nuvem; os testes de antes da 13 a desligam; Sessão
+  13)/`VIKING_DRIVE_TOKEN_PATH` (o token do Drive do backup, Sessão
   11c)/`VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO`, `VIKING_GMAIL_TOKEN_ARQUIVO` e
   `VIKING_DRIVE_TOKEN_ARQUIVO` (só no
   motor, postos pelo deploy: os arquivos do volume do Secret Manager)/`VIKING_FINANCAS_URL` (só
@@ -524,6 +544,23 @@ vira a etiqueta "[enviado pelo Viking]", D53). Vale igual para liberar um clique
 (D38): o código sai por `browser/liberacao.ao_dono` só com terminal interativo, e
 `liberacao.clicar_aprovado` só é chamado pelo laço do chat e pela CLI
 (`tests/test_browser_liberacao.py`).
+
+**A memória só aprende do que o dono digita, e não pode virar tool.** A D48 fecha o ataque
+publicado contra a memória do Gemini (um documento que planta "quando o usuário disser sim, grave
+isto") porque quem grava (`memoria/extrator.py`) recebe **só a `mensagem`** do pedido, nunca o
+`prompt` (que leva a nota do Viking), o histórico ou um resultado de tool, e porque o modelo do
+chat não tem tool de memória (`tests/test_na_nuvem_memoria.py` lê o que o extrator recebeu e as
+listas de tools). A linha "📝 anotei" sai do que foi relido do store; o "esquece isso" é lido em
+`na_nuvem._esquece_isso`, antes da barreira, e nunca chega ao modelo; o filtro (`regras.recusa`)
+vale no extrator **e** no `store.gravar`/`importar`, e cada um tem a sua régua. Um nome de
+função da memória não se chama `desfazer` nem `confirmar`: `tests/test_gmail_aprovacao.py` vigia
+quem chama esses nomes (a D26), e a da memória é `devolver`.
+
+**Uma lista de strings ao `gemini-embedding-2` vira um vetor só.** A página diz "Adding multiple
+inputs directly to the `contents` parameter produces one aggregated embedding" (medido em
+2026-10-08: 24 textos, 1 vetor). Cada texto vai num `types.Content` (`memoria/vetores.embutir`),
+e a quantidade que volta é conferida (`VetorInvalido`). A resposta não traz contagem de tokens: o
+teto cobra pelos bytes do texto, um limite de cima (`custos.POR_BYTES`).
 
 **A resposta da busca na web não se guarda nem se reescreve.** Os termos do Grounding (lidos
 em 2026-10-07, D65) mandam mostrar o resultado "with the associated Search Suggestion(s) to the

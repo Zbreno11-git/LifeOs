@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 15:52Z: Sessão 13, C4 feito (terminal, resumo, backup); o próximo é o C5 (fechar e publicar)
+## ▶️ RETOMAR AQUI — 2026-10-08 16:40Z: Sessão 13, C5 em curso: portões e mutações verdes; falta o ok do índice e da TTL, o do deploy e o Mac
 
 **Estado (2026-10-08, medido):**
 - **A abertura da 13** (depois do compact): leitura e conferências batendo com o bloco anterior.
@@ -56,11 +56,18 @@
   memória no arquivo e não no restaurado: achado pelo teste, consertado). Duas âncoras de
   mutação do formato reancoradas (classe 6). A suíte: `2879 passed`; mypy (52).
 
-**Próximo passo exato:** o C5: as mutações novas em `scripts/mutacoes.py` (o `grep` das âncoras
-dos arquivos que mudei antes) e a rodada inteira em background; as duas passadas; os docs
-(AGENTS, `.env.example`, `gcp-cloud-run-firestore.md`, D66); a `/fumaca/memoria` (o
-`find_nearest` com filtro, grátis) e a prova dela no `deploy`; commit, CI; **ok** → `python
-scripts/nuvem.py --executar` (o índice e a TTL); **ok** → `deploy --executar`; o roteiro do Mac.
+- **O C5 até aqui:** a `/fumaca/memoria` e a prova dela no `deploy`; 28 mutações novas (448);
+  a rodada inteira (16:00–16:35Z) deu 446 de 448, e as 2 vivas eram verdade: o teste da
+  restauração caía por outro motivo (o id que o store também recusa; agora `ativo` em texto) e a
+  remoção dos invisíveis em `normalizar` era código morto (já saem em `limpo`; tirada); as 3
+  refeitas morreram. Docs: AGENTS (o pacote, as rotas, o comando, a variável, duas armadilhas),
+  `.env.example`, `gcp-cloud-run-firestore.md`; a abertura do chat diz que a memória está ligada.
+  Portões: `2884 passed`; ruff, format (182), mypy (52), gitleaks, lock; a imagem constrói.
+
+**Próximo passo exato:** pedir ao dono o ok de `python scripts/nuvem.py --executar` (o índice
+vetorial e a TTL `memoria.apagar_em`, recursos grátis); medir com `python scripts/nuvem.py` até o
+índice ficar READY; então o ok do `deploy --executar`; `deploy` → todas ✅ (34 com a
+`/fumaca/memoria`); o roteiro do Mac.
 
 **Depende do dono:** o ok do índice e da TTL, e o do deploy (no C5).
 

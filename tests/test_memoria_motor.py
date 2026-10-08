@@ -358,20 +358,23 @@ def test_sem_o_indice_a_fumaca_da_memoria_falha_alto_so_com_o_tipo(monkeypatch):
 
 
 def test_um_fato_torto_na_restauracao_e_400_e_nada_grava():
+    """O campo torto é um que só o formato confere (o store aceitaria `ativo` em texto): um id que
+    não é UUID cairia no store também, e o teste ficaria verde por outro motivo (erros, classe 4;
+    a mutação sobreviveu assim na 1ª rodada)."""
     fato = {
-        "id": "../gastos/2026-10",
+        "id": "0c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
         "texto": "O usuário corre aos sábados.",
         "origem": "chat",
         "sessao": "",
         "turno": "",
         "criado_em": "2026-10-06T17:00:00.000000+00:00",
-        "ativo": True,
+        "ativo": "sim",
         "invalida_em": None,
         "substituido_por": None,
         "esquecido_em": None,
         "apagar_em": None,
     }
     resposta = _pedir("POST", "/backup/importar", {"acoes": [], "gastos": [], "memoria": [fato]})
-    assert resposta.status_code == 400 and "UUID" in resposta.json()["erro"]
+    assert resposta.status_code == 400 and "ativo" in resposta.json()["erro"]
     with _do_lado_da_nuvem():
         assert store.todos() == []

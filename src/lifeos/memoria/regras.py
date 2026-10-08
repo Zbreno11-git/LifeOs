@@ -98,10 +98,9 @@ _INVISIVEIS = {c: None for c in range(0x110000) if unicodedata.category(chr(c)) 
 
 
 def normalizar(texto: str) -> str:
-    """O texto como a regra o lê: NFKC, sem os invisíveis de formatação, minúsculo, espaços
-    simples."""
-    texto = unicodedata.normalize("NFKC", texto).translate(_INVISIVEIS)
-    return " ".join(texto.lower().split())
+    """O texto como a regra o lê: NFKC (a largura dupla vira a letra comum), minúsculo, espaços
+    simples. Os invisíveis já saíram em `limpo`, que vem antes (`recusa`)."""
+    return " ".join(unicodedata.normalize("NFKC", texto).lower().split())
 
 
 def limpo(texto: str) -> str:

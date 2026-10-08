@@ -3060,15 +3060,15 @@ MUTACOES = [
     Mutacao(
         "memoria: o filtro não normaliza a largura dupla",
         "src/lifeos/memoria/regras.py",
-        '    texto = unicodedata.normalize("NFKC", texto).translate(_INVISIVEIS)\n',
-        "    texto = texto.translate(_INVISIVEIS)\n",
+        '    return " ".join(unicodedata.normalize("NFKC", texto).lower().split())\n',
+        '    return " ".join(texto.lower().split())\n',
         "tests/test_memoria_regras.py::test_disfarce_e_recusado_pelo_motivo_certo",
     ),
     Mutacao(
         "memoria: o filtro não tira o invisível",
         "src/lifeos/memoria/regras.py",
-        '    texto = unicodedata.normalize("NFKC", texto).translate(_INVISIVEIS)\n',
-        '    texto = unicodedata.normalize("NFKC", texto)\n',
+        '    texto = limpar_controles(unicodedata.normalize("NFC", texto or "")).translate(_INVISIVEIS)\n',
+        '    texto = limpar_controles(unicodedata.normalize("NFC", texto or ""))\n',
         "tests/test_memoria_regras.py::test_disfarce_e_recusado_pelo_motivo_certo",
     ),
     Mutacao(
