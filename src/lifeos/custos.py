@@ -24,7 +24,13 @@ TARIFAS: dict[str, tuple[tuple[date, float, float], ...]] = {
     "gemini-3.5-flash-lite": ((_SEMPRE, PRECO_GEMINI_ENTRADA, PRECO_GEMINI_SAIDA),),
     "gemini-3.8-flash": ((_SEMPRE, 0.75, 3.75), (date(2027, 1, 1), 1.50, 7.50)),
     "gemini-2.5-flash": ((_SEMPRE, 0.30, 2.50),),
+    # A memória (Sessão 13, D66): lido em 2026-10-08, "$0.20" por 1M de tokens de texto. A resposta
+    # do embedding não traz contagem de tokens (medido em 2026-10-08): a entrada é contada em bytes
+    # do texto, um limite de cima (um token nunca tem menos de um byte), e o teto erra para parar.
+    "gemini-embedding-2": ((_SEMPRE, 0.20, 0.0),),
 }
+# Os modelos cuja entrada é contada em bytes (o limite de cima), não em tokens.
+POR_BYTES = frozenset({"gemini-embedding-2"})
 
 
 def tarifa(modelo: str, quando: date | None = None) -> tuple[float, float]:
@@ -80,6 +86,8 @@ class Consumo:
         )
 
     def resumo(self) -> str:
+        if self.modelo in POR_BYTES:  # sem contagem de tokens na resposta: o limite de cima
+            return f"≤{self.entrada} tokens (bytes do texto) · ~{dinheiro(self.custo)}"
         tokens = f"{self.entrada + self.saida} tokens ({self.entrada} in / {self.saida} out)"
         prefixo = "~" if self.estimado else ""
         return f"{tokens} · {prefixo}{dinheiro(self.custo)}"
@@ -106,6 +114,38 @@ def do_gemini(usage_metadata, modelo: str, quando: date | None = None) -> Consum
     modelo = modelo.removeprefix("models/")
     return Consumo(
         entrada=entrada, saida=saida, custo=custo, estimado=True, chamadas=1, modelo=modelo
+    )
+
+
+def _bytes_do_texto(contents) -> int:
+    """Os bytes UTF-8 do texto de um pedido de embedding (strings, `Content` ou `Part`). Outra
+    forma erra alto: contar zero seria subcontar o teto."""
+    itens = contents if isinstance(contents, list | tuple) else [contents]
+    total = 0
+    for item in itens:
+        if isinstance(item, str):
+            total += len(item.encode())
+            continue
+        partes = getattr(item, "parts", None)
+        for parte in partes if partes is not None else [item]:
+            texto = getattr(parte, "text", None)
+            if not isinstance(texto, str):
+                raise TypeError(f"pedido de embedding numa forma que não sei contar: {type(item)}")
+            total += len(texto.encode())
+    return total
+
+
+def do_embedding(contents, modelo: str, quando: date | None = None) -> Consumo:
+    """O custo de um pedido de embedding pelos bytes do texto (o limite de cima: `POR_BYTES`)."""
+    entrada = _bytes_do_texto(contents)
+    preco_entrada, _saida = tarifa(modelo, quando)
+    modelo = modelo.removeprefix("models/")
+    return Consumo(
+        entrada=entrada,
+        custo=entrada * preco_entrada / 1_000_000,
+        estimado=True,
+        chamadas=1,
+        modelo=modelo,
     )
 
 
@@ -229,6 +269,23 @@ def instrumentar(
         return resposta
 
     modelos._generate_content = contabilizado
+
+    # O embedding da memória (Sessão 13): o mesmo teto antes e a mesma conta depois.
+    original_embed = getattr(modelos, "_embed_content", None)
+    if original_embed is not None:
+
+        def embutido(**kwargs):
+            modelo = str(kwargs.get("model") or "")
+            if antes is not None:
+                antes(modelo)
+            consumo = do_embedding(kwargs.get("contents"), modelo)
+            resposta = original_embed(**kwargs)
+            alvo.registrar_gemini(consumo)
+            if depois is not None:
+                depois(consumo)
+            return resposta
+
+        modelos._embed_content = embutido
     modelos._viking_instrumentado = True
     return True
 

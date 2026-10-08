@@ -212,18 +212,54 @@ def test_orcamento_com_outro_valor_nao_esta_pronto(nuvem, ctx, monkeypatch):
 
 def test_indices_vem_do_store(nuvem, ctx, monkeypatch):
     """Uma fonte só: o script cria exatamente os índices que os stores declaram para as consultas
-    (os lembretes e, desde a 10b, o registro de ações)."""
+    (os lembretes, desde a 10b o registro de ações, e desde a 13 o vetorial da memória)."""
     from lifeos import registro_firestore
+    from lifeos.memoria import store as memoria_store
     from lifeos.reminders import store_firestore
 
-    assert nuvem.INDICES == store_firestore.INDICES + registro_firestore.INDICES
+    assert nuvem.INDICES == (
+        store_firestore.INDICES + registro_firestore.INDICES + memoria_store.INDICES
+    )
     monkeypatch.setattr(nuvem, "_ler", lambda _c: [])
     comandos = nuvem._c_indices(ctx)
-    assert len(comandos) == len(nuvem.INDICES) == 2
-    for comando, (colecao, esperados) in zip(comandos, nuvem.INDICES, strict=True):
+    assert len(comandos) == len(nuvem.INDICES) == 3
+    for comando, (colecao, esperados) in zip(comandos[:2], nuvem.INDICES[:2], strict=True):
         assert f"--collection-group={colecao}" in comando
         campos = [a.split("field-path=")[1] for a in comando if "field-path=" in a]
         assert campos == [f"{c},order={o.lower()}" for c, o in esperados]
+    vetorial = comandos[2]
+    assert "--collection-group=memoria" in vetorial
+    assert [a for a in vetorial if a.startswith("--field-config=")] == [
+        "--field-config=field-path=ativo,order=ascending",
+        "--field-config=field-path=vetor,vector-config={dimension=768,flat}",
+    ]
+
+
+def test_o_indice_vetorial_listado_conta_como_existente(nuvem, ctx, monkeypatch):
+    """A listagem do `gcloud` traz o campo vetorial com `vectorConfig`, sem `order` (a forma da
+    API do Firestore): lido como "VECTOR:N", ele casa com o declarado e não se cria de novo."""
+    from lifeos.memoria import store as memoria_store
+
+    ((colecao, _campos),) = memoria_store.INDICES
+    listado = {
+        "name": f"projects/p/databases/(default)/collectionGroups/{colecao}/indexes/9",
+        "state": "READY",
+        "fields": [
+            {"fieldPath": "ativo", "order": "ASCENDING"},
+            {"fieldPath": "vetor", "vectorConfig": {"dimension": 768, "flat": {}}},
+            {"fieldPath": "__name__", "order": "ASCENDING"},
+        ],
+    }
+    monkeypatch.setattr(nuvem, "_ler", lambda _c: [listado])
+    pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
+    comandos = nuvem._c_indices(pronto)
+    assert not any("--collection-group=memoria" in c for c in comandos)
+    outra = dict(
+        listado,
+        fields=[listado["fields"][0], {"fieldPath": "vetor", "vectorConfig": {"dimension": 3072}}],
+    )
+    monkeypatch.setattr(nuvem, "_ler", lambda _c: [outra])
+    assert any("--collection-group=memoria" in c for c in nuvem._c_indices(pronto))
 
 
 def test_ids_das_contas_de_servico_cabem_na_regra_do_google(nuvem):
@@ -580,10 +616,11 @@ def _ttl(colecao, campo, estado):
 @pytest.mark.parametrize(
     ("estados", "pronto"),
     [
-        (("ACTIVE", "ACTIVE", "ACTIVE"), True),
-        (("ACTIVE", "CREATING", "ACTIVE"), False),
-        (("CREATING", "ACTIVE", "ACTIVE"), False),
-        (("ACTIVE", "ACTIVE", None), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE", "ACTIVE"), True),
+        (("ACTIVE", "CREATING", "ACTIVE", "ACTIVE"), False),
+        (("CREATING", "ACTIVE", "ACTIVE", "ACTIVE"), False),
+        (("ACTIVE", "ACTIVE", "ACTIVE", None), False),
+        (("ACTIVE", "ACTIVE", None, "ACTIVE"), False),
     ],
 )
 def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, pronto):
@@ -593,27 +630,33 @@ def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, p
 
 
 def test_ttl_liga_so_a_que_falta(nuvem, ctx, monkeypatch):
-    """A das tarefas das mãos é nova (11); a do registro e a das confirmações já estão ligadas e
-    não se pedem de novo."""
-    ttl = [_ttl("acoes", "expira_em", "ACTIVE"), _ttl("confirmacoes", "apagar_em", "ACTIVE")]
+    """A da memória é nova (13); as outras três já estão ligadas e não se pedem de novo."""
+    ttl = [
+        _ttl("acoes", "expira_em", "ACTIVE"),
+        _ttl("confirmacoes", "apagar_em", "ACTIVE"),
+        _ttl("tarefas", "apagar_em", "ACTIVE"),
+    ]
     monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
     pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
     (comando,) = nuvem._c_ttl(pronto)
-    assert "--collection-group=tarefas" in comando and "apagar_em" in comando
+    assert "--collection-group=memoria" in comando and "apagar_em" in comando
 
 
 def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
     from lifeos import confirmacao_firestore, registro_firestore
     from lifeos.maos import fila_firestore
+    from lifeos.memoria import store as memoria_store
 
     assert nuvem.TTLS == (
         (registro_firestore.COLECAO, "expira_em"),
         (confirmacao_firestore.COLECAO, "apagar_em"),
         (fila_firestore.COLECAO, "apagar_em"),
+        (memoria_store.COLECAO, "apagar_em"),
     )
     assert "expira_em" in registro_firestore._CAMPOS
     assert "apagar_em" in confirmacao_firestore._CAMPOS
     assert "apagar_em" in fila_firestore._CAMPOS
+    assert "apagar_em" in memoria_store._CAMPOS
 
 
 # --- o token do Gmail sobe do Mac (Sessão 10c, D60) ----------------------------------------------
@@ -837,8 +880,9 @@ def test_indices_cria_so_o_que_nao_existe(nuvem, ctx, monkeypatch):
     }
     monkeypatch.setattr(nuvem, "_ler", lambda _c: [existente])
     pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
-    (comando,) = nuvem._c_indices(pronto)
-    assert "--collection-group=acoes" in comando
+    comandos = nuvem._c_indices(pronto)
+    assert [c for c in comandos if "--collection-group=lembretes" in c] == []
+    assert any("--collection-group=acoes" in c for c in comandos)
     assert not nuvem._m_indices(pronto).pronto  # construindo não é pronto
 
 

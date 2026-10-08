@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 15:25Z: Sessão 13, C1 feito (medições); o próximo é o C2 (regras, store e vetores)
+## ▶️ RETOMAR AQUI — 2026-10-08 16:00Z: Sessão 13, C2 feito (regras, store, vetores); o próximo é o C3 (o turno da nuvem)
 
 **Estado (2026-10-08, medido):**
 - **A abertura da 13** (depois do compact): leitura e conferências batendo com o bloco anterior.
@@ -35,9 +35,16 @@
   - o conjunto de ouro em `tests/dados/memoria_ouro.json`: recall@8 = MRR = 1,000.
 - **Não há background nem trava.**
 
-**Próximo passo exato:** o C2: `src/lifeos/memoria/regras.py` (o filtro, com os vizinhos e os
-disfarces escritos antes, classe 7), `memoria/store.py` (Firestore), `memoria/vetores.py` e o
-`gemini-embedding-2` em `custos.TARIFAS`; testes em `tests/test_memoria_*.py`.
+- **O C2:** `src/lifeos/memoria/` (`regras.py`, o filtro com 26 vizinhos e 43 disfarces;
+  `store.py`, a coleção `memoria`; `vetores.py`, cada texto num `Content`); o embedding no
+  `custos.instrumentar` (`_embed_content`, pelos bytes); o índice vetorial em `INDICES` e a TTL
+  `memoria.apagar_em` em `scripts/nuvem.py` (o `vector-config={dimension=768,flat}` da ajuda do
+  `gcloud`, ainda não exercido no ar). A suíte: `2791 passed`; mypy (48), ruff e format verdes.
+
+**Próximo passo exato:** o C3: `memoria/extrator.py` (a instrução medida no C1 mais "não repita um
+fato já anotado"; a validação dos ids); no `assistant/na_nuvem.py`, a busca dos 8 antes do turno,
+a seção `_MEMORIA` no bloco, a thread do extrator, o campo `memoria` e o "esquece isso" na
+barreira; o `chat_cliente` imprime "📝 anotei".
 
 **Depende do dono:** o ok do índice e da TTL, e o do deploy (no C5).
 
@@ -904,7 +911,7 @@ No `viking chat --nuvem`:
 |---|---|---|---|
 | C0 | o plano no `PROGRESSO.md`; `sessoes.md` (13 com as respostas, sem a migração; a 13b; a sugestão na 14); D66; `pesquisa-roteiro.md` seção 10 (a releitura e o emulador); barra 22 de 33 | — | ✅ (`0766f05`) |
 | C1 | **ok do dono (< US$ 0,01)** → extrator em ~12 mensagens inventadas, `embed_content` (forma, tokens, tempo), o conjunto de ouro gravado como fixture | C0 | ✅ (~US$ 0,002) |
-| C2 | `memoria/regras.py`, `memoria/store.py` (Firestore), `memoria/vetores.py`, tarifas do embedding | C1 | ⬜ |
+| C2 | `memoria/regras.py`, `memoria/store.py` (Firestore), `memoria/vetores.py`, tarifas do embedding | C1 | ✅ |
 | C3 | `memoria/extrator.py`; o turno da nuvem (recuperar, a seção, a thread, o campo `memoria`, "esquece isso"); `chat_cliente` | C2 | ⬜ |
 | C4 | rotas do motor, `viking memoria`, `--reindexar`, resumo semanal, backup v2 | C2 | ⬜ |
 | C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, TTL, provas); **ok** → índice + TTL; **ok** → deploy; roteiro do Mac; fechamento (23 de 33) | C3, C4 | ⬜ |

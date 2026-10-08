@@ -37,6 +37,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from lifeos import config, registro_firestore
+from lifeos.memoria import store as memoria_store
 from lifeos.reminders import store_firestore
 
 APIS = (
@@ -57,8 +58,9 @@ ALERTAS = (0.5, 0.9, 1.0)
 # `maos@` (o `viking maos`, Sessão 11, D61); o do `agendador@` é o Cloud Scheduler que pede.
 MOTOR, CLI, MAOS, AGENDADOR = "viking-motor", "viking-cli", "viking-maos", "viking-agendador"
 DO_DONO = (CLI, MAOS)
-# Os índices compostos que as consultas pedem, declarados por cada store (uma fonte só).
-INDICES = store_firestore.INDICES + registro_firestore.INDICES
+# Os índices compostos que as consultas pedem, declarados por cada store (uma fonte só). O da
+# memória é vetorial (Sessão 13, D66): o emulador não o exige, a produção sim.
+INDICES = store_firestore.INDICES + registro_firestore.INDICES + memoria_store.INDICES
 
 
 class ErroDoGcloud(RuntimeError):
@@ -374,11 +376,23 @@ def _c_contas(ctx: Contexto) -> list[list[str]]:
 
 
 def _campos_do_indice(indice: dict) -> tuple[tuple[str, str], ...]:
+    """Os campos de um índice listado, na forma de `INDICES` (um vetorial vira "VECTOR:N")."""
+
+    def forma(campo: dict) -> str:
+        vetor = campo.get("vectorConfig")
+        if vetor is not None:
+            return f"VECTOR:{vetor.get('dimension', '?')}"
+        return campo.get("order", "")
+
     return tuple(
-        (c["fieldPath"], c.get("order", ""))
-        for c in indice.get("fields", [])
-        if c["fieldPath"] != "__name__"
+        (c["fieldPath"], forma(c)) for c in indice.get("fields", []) if c["fieldPath"] != "__name__"
     )
+
+
+def _field_config(campo: str, ordem: str) -> str:
+    if ordem.startswith("VECTOR:"):
+        return f"--field-config=field-path={campo},vector-config={{dimension={ordem[7:]},flat}}"
+    return f"--field-config=field-path={campo},order={ordem.lower()}"
 
 
 def _indices(ctx: Contexto) -> dict[tuple[str, tuple[tuple[str, str], ...]], str]:
@@ -412,10 +426,7 @@ def _c_indices(ctx: Contexto) -> list[list[str]]:
             "--database=(default)",
             f"--collection-group={colecao}",
             "--async",  # construir leva minutos (medido: passou de 300 s); a medida diz quando fica pronto
-            *(
-                f"--field-config=field-path={campo},order={ordem.lower()}"
-                for campo, ordem in campos
-            ),
+            *(_field_config(campo, ordem) for campo, ordem in campos),
         )
         for colecao, campos in INDICES
         # Só o que não existe: criar de novo um índice que existe (mesmo construindo) é
@@ -526,8 +537,14 @@ def _c_segredos(ctx: Contexto) -> list[list[str]]:
 
 # (coleção, campo) que a TTL apaga: o registro de ações e as confirmações vivem 30 dias na nuvem
 # (Sessões 10b e 10c; a das confirmações passa das janelas que ainda as leem, 8 e 7 dias); as
-# tarefas das mãos, 1 dia (Sessão 11: o turno já as apaga; isto leva o que sobrar).
-TTLS = (("acoes", "expira_em"), ("confirmacoes", "apagar_em"), ("tarefas", "apagar_em"))
+# tarefas das mãos, 1 dia (Sessão 11: o turno já as apaga; isto leva o que sobrar); o fato
+# esquecido da memória, 30 dias depois do "esquece isso" (Sessão 13, D66: o dono, 2026-10-08).
+TTLS = (
+    ("acoes", "expira_em"),
+    ("confirmacoes", "apagar_em"),
+    ("tarefas", "apagar_em"),
+    ("memoria", "apagar_em"),
+)
 
 
 def _estados_ttl(ctx: Contexto) -> dict[tuple[str, str], str]:

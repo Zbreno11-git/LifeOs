@@ -83,6 +83,7 @@ files = [
     "src/lifeos/cli.py",
     "src/lifeos/nuvem",
     "src/lifeos/maos",
+    "src/lifeos/memoria",
     "src/lifeos/backup",
     "src/lifeos/financas/pergunta.py",
     "src/lifeos/financas/remoto.py",
