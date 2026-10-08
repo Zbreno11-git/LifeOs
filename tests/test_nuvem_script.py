@@ -1457,3 +1457,15 @@ def test_outro_erro_ou_outro_comando_nao_espera(nuvem, monkeypatch, comando, err
     monkeypatch.setattr(nuvem.time, "sleep", lambda _s: pytest.fail("esperou"))
     assert nuvem._rodar_esperando_a_conta(comando).returncode == 1
     assert len(chamadas) == 1
+
+
+def test_a_prova_do_chat_confere_a_busca_e_os_modelos_da_arvore(nuvem):
+    """Sessão 12 (D65): o `/versao` no ar tem de dizer a busca e os modelos desta árvore; um motor
+    antigo (sem os campos) ou com outro modelo reprova."""
+    from lifeos.assistant import turno
+
+    certo = {"busca": True, "modelo": turno.MODELO, "forte": turno.MODELO_FORTE, "gmail": True}
+    assert nuvem._prova_do_chat(certo).passou
+    assert not nuvem._prova_do_chat({"commit": "velho", "gmail": True}).passou
+    assert not nuvem._prova_do_chat(certo | {"modelo": "gemini-2.5-flash"}).passou
+    assert not nuvem._prova_do_chat(certo | {"forte": "gemini-3.1-pro-preview"}).passou

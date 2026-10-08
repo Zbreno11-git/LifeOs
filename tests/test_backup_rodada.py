@@ -90,10 +90,13 @@ def test_o_backup_sobe_um_arquivo_que_se_le_de_volta(falso, caplog):
 def test_o_ultimo_backup_aparece_no_versao(falso):
     antes = _versao().json()
     assert (antes["backup"], antes["backup_em"]) == (True, None)
+    # o instante de antes da rodada (até 2026-10-08 era "hoje com a hora trocada por 0", que entre
+    # 00:00 e 01:00 UTC é o próprio agora: o teste caía nessa hora)
+    inicio = datetime.now(UTC)
     assert _backup().status_code == 200
     depois = _versao().json()
     assert depois["backup"] is True
-    assert datetime.fromisoformat(depois["backup_em"]) > datetime.now(UTC).replace(hour=0)
+    assert datetime.fromisoformat(depois["backup_em"]) >= inicio
 
 
 def test_sem_o_token_do_drive_o_versao_diz_que_nao_ha_backup(falso, monkeypatch):

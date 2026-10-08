@@ -149,6 +149,23 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
 - **O motor fala com ele** pelo token de identidade do servidor de metadados (a conta
   `viking-motor@`, sem papel novo: só o `run.invoker` no serviço `financas`).
 
+## A busca e o modelo forte (Sessão 12, D65)
+
+- **Nenhum recurso novo.** A coleção `cotas` nasce no primeiro uso: um documento por dia do
+  dono (`cotas/AAAA-MM-DD`, com `forte` em US$ e `buscas` em consultas), lido por id (sem
+  índice), sem TTL (~365 documentos por ano) e fora do backup (um contador de um dia não se
+  restaura).
+- **Leituras e gravações:** cada busca reserva por comparar e trocar (1 leitura e 1 gravação,
+  mais 1 de cada se o modelo fez mais de uma consulta). Num turno do forte, cada chamada ao
+  modelo lê a cota antes e grava depois. Com o uso de hoje, fica longe da cota grátis do
+  Firestore.
+- **Custo do Gemini medido em 2026-10-07** (VPS, ok do dono; `docs/fontes/pesquisa-roteiro.md`,
+  seção 9):
+  - o texto de sistema com as 23 tools da nuvem tem 4.650 tokens no 3.5 Flash-Lite (4.554 no
+    2.5 Flash), o mesmo preço por token;
+  - uma busca leva ~2 s e de 96 a 206 tokens de saída, e as consultas entram nas 5.000 grátis
+    por mês dos modelos 3.
+
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find

@@ -45,12 +45,16 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     lembretes, registro e confirmações só consomem
   - `custos.py` — contabilidade de uso dos modelos (real para o Jev, estimada para o Gemini) e o
     teto de gasto do chat da nuvem (`Teto`: `gastos/AAAA-MM` no Firestore, no fuso do dono,
-    conferido antes de cada chamada ao modelo pelo gancho de `instrumentar`; Sessão 10b, D59)
+    conferido antes de cada chamada ao modelo pelo gancho de `instrumentar`; Sessão 10b, D59).
+    Desde a Sessão 12 (D65), a tarifa é a **do modelo que respondeu e do dia** (`TARIFAS`; um
+    modelo fora da tabela cobra a mais cara) e há as **cotas do dia** do chat da nuvem (`Cotas`:
+    `cotas/AAAA-MM-DD`, o gasto do modelo forte e as consultas de busca, fora do backup)
   - `google_auth.py` — login OAuth do Google compartilhado pelo calendário e pelo Gmail (confere o
     escopo gravado no token; grava com permissão 600). Na nuvem (`VIKING_STORE=firestore`),
     `credenciais_da_nuvem`: o token do segredo, renovado em memória, nunca gravado, e o login
     nunca se abre
-  - `nao_confiavel.py` — o bloco delimitado de conteúdo de terceiros (página, e-mail) para o modelo
+  - `nao_confiavel.py` — o bloco delimitado de conteúdo de terceiros (página, e-mail, resultado
+    de busca) para o modelo
   - `aprovacoes.py` — os tipos de ação que se aprovam com código (só dados: ação, janela do
     desfazer, se aprova no chat ou só em `viking aprovar`); quem executa é o laço do chat ou a CLI
   - `registro.py` — registro de ações (30 dias): todo efeito externo passa por `with
@@ -135,7 +139,14 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     REPL do Mac e `na_nuvem.py` o turno no motor (a barreira que não deixa uma linha com cara de
     aprovação chegar ao modelo e aprova pelo mesmo laço do Mac, o teto, o prazo do turno, o
     campo `ao_dono` da resposta, e só as tools da nuvem: `SO_NO_MAC`
-    diz o que fica no Mac e por quê, e um teste exige que toda tool esteja numa das duas)
+    diz o que fica no Mac e por quê, e um teste exige que toda tool esteja numa das duas).
+    Desde a Sessão 12 (D65): o dia a dia é o `gemini-3.5-flash-lite`, nos dois chats
+    (`turno.MODELO`); na nuvem, `usar_modelo_forte` liga a marca do turno e o gancho de
+    `custos.instrumentar` manda as chamadas seguintes do mesmo turno ao `gemini-3.8-flash`,
+    enquanto a cota do dia deixa; `busca.py` é a busca na web (uma chamada **separada**, só com o
+    `google_search`, sem as nossas tools nem a conversa; o dono vê a resposta **igual**, com as
+    fontes do `grounding_metadata`, no campo `busca`; o modelo a recebe no bloco de não
+    confiável); `SO_NA_NUVEM` diz o que só a nuvem tem
   - `backup/` — o backup diário no Drive do dono (Sessão 11c, D63): `formato.py` (o arquivo
     versionado: lembretes no formato da migração, o registro de ações dos 30 dias inteiro, os
     gastos do teto; contagens e a impressão de cada lembrete; `ler` confere tudo e `montar` lê de
@@ -268,8 +279,9 @@ viking chat                    # assistente de chat (calendário + navegador + l
 viking chat --nuvem            # o chat no motor da nuvem (agenda, lembretes, registro, o
                                # Gmail quando o token dele está na nuvem, e o navegador do Mac
                                # quando o `viking maos` está ligado; as finanças quando o
-                               # serviço delas está no ar, desde a 11d). O código de
-                               # aprovação só aparece num terminal interativo
+                               # serviço delas está no ar, desde a 11d; a busca na
+                               # web com fontes e o modelo forte, desde a 12). O código
+                               # de aprovação só aparece num terminal interativo
 viking maos                    # o navegador deste Mac atende o chat da nuvem (num terminal,
                                # em primeiro plano; Ctrl-C desliga; a liberação de um clique
                                # se aprova aqui)
@@ -371,7 +383,8 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
   nuvem, no Mac e no VPS)/`VIKING_NUVEM_FATURAMENTO`, `_ORCAMENTO` e `_FUSO` (só no VPS, para
   `scripts/nuvem.py`; o fuso é o que o motor recebe, e troca quando o dono se mudar)/`VIKING_STORE`
   (`sqlite` ou `firestore`, este só no motor)/`VIKING_TETO_GEMINI_MES` e `_DIA` (o teto do chat
-  da nuvem, US$ 10 e 1)/`VIKING_DRIVE_TOKEN_PATH` (o token do Drive do backup, Sessão
+  da nuvem, US$ 10 e 1)/`VIKING_TETO_FORTE_DIA` e `VIKING_BUSCAS_DIA` (as cotas do dia do chat da
+  nuvem: o modelo forte, US$ 0,30, e as consultas de busca, 30; Sessão 12)/`VIKING_DRIVE_TOKEN_PATH` (o token do Drive do backup, Sessão
   11c)/`VIKING_GEMINI_CHAVE_ARQUIVO`, `VIKING_AGENDA_TOKEN_ARQUIVO`, `VIKING_GMAIL_TOKEN_ARQUIVO` e
   `VIKING_DRIVE_TOKEN_ARQUIVO` (só no
   motor, postos pelo deploy: os arquivos do volume do Secret Manager)/`VIKING_FINANCAS_URL` (só
@@ -511,6 +524,16 @@ vira a etiqueta "[enviado pelo Viking]", D53). Vale igual para liberar um clique
 (D38): o código sai por `browser/liberacao.ao_dono` só com terminal interativo, e
 `liberacao.clicar_aprovado` só é chamado pelo laço do chat e pela CLI
 (`tests/test_browser_liberacao.py`).
+
+**A resposta da busca na web não se guarda nem se reescreve.** Os termos do Grounding (lidos
+em 2026-10-07, D65) mandam mostrar o resultado "with the associated Search Suggestion(s) to the
+end user who submitted the prompt", sem modificar nem misturar, e proíbem guardar, "cache" e
+"syndicate". Por isso `assistant/busca.py` devolve o texto **igual** no campo `busca` (o terminal
+o imprime antes da resposta do modelo), as fontes saem só do `grounding_metadata`, nada da busca
+vai ao log, a um documento, a um commit ou ao Claude, e os testes usam texto inventado com a
+**forma** medida (o link é um redirecionamento `vertexaisearch`, o título é o domínio). A
+chamada da busca não leva as nossas tools nem a conversa: a página que a busca lê não alcança o
+modelo que envia e-mail (`tests/test_busca.py`).
 
 **No motor, o stdout e o stderr são o log do Cloud Run.** Um `print` do código de aprovação ali
 iria para o log, não ao dono. Por isso o que só o dono vê passa por `ao_dono.mostrar`, que no

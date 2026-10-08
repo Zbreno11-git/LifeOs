@@ -1362,6 +1362,7 @@ def provas(
             f"financas: {dados_versao.get('financas')} (esperado {financas})",
         )
     )
+    resultado.append(_prova_do_chat(dados_versao))
     resultado.extend(_provas_das_portas(ctx, url, cabecalho))
     if financas:
         resultado.extend(_provas_das_financas(ctx, sha, url, cabecalho))
@@ -1373,6 +1374,18 @@ def provas(
     erros = _ler(_gcloud(ctx, "logging", "read", filtro, "--freshness=30m", "--limit=20"))
     resultado.append(Prova("log sem erro (30 min)", not erros, f"{len(erros or [])} erro(s)"))
     return resultado
+
+
+def _prova_do_chat(dados_versao: dict) -> Prova:
+    """Sessão 12 (D65): o motor no ar busca na web e usa os modelos desta árvore (o dia a dia e o
+    forte). Grátis: só o `/versao`, nenhuma chamada ao Gemini."""
+    from lifeos.assistant import turno
+
+    esperado = {"busca": True, "modelo": turno.MODELO, "forte": turno.MODELO_FORTE}
+    no_ar = {chave: dados_versao.get(chave) for chave in esperado}
+    return Prova(
+        "viking-cli@: /versao diz a busca e os modelos do chat", no_ar == esperado, f"{no_ar}"
+    )
 
 
 def _provas_das_financas(
