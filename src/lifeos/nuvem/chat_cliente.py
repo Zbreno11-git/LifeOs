@@ -82,7 +82,7 @@ def abertura(capacidades: dict[str, Any]) -> str:
     if capacidades.get("busca") is True:  # Sessão 12: a busca na web, com fontes
         tem.append("busca na web com fontes")
     if capacidades.get("memoria") is True:  # Sessão 13: anota o que o dono conta (📝)
-        tem.append("memória do que você conta (`esquece isso` apaga a última)")
+        tem.append("memória do que você conta (vale só a linha 📝; `esquece isso` apaga a última)")
     if not so_no_mac:  # tudo na nuvem: nada a mandar para o Mac
         return f"☁️  Viking na nuvem ({_em_lista(tem)})."
     fora = _em_lista(so_no_mac)

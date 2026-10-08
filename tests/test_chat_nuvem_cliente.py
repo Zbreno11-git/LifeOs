@@ -264,5 +264,5 @@ def test_a_abertura_diz_que_a_memoria_esta_ligada():
     um motor de antes da 13 (sem o campo) não a promete."""
     tudo = {"gmail": True, "maos": True, "financas": True, "busca": True}
     com = chat_cliente.abertura(tudo | {"memoria": True})
-    assert "memória do que você conta (`esquece isso` apaga a última)" in com
+    assert "memória do que você conta (vale só a linha 📝; `esquece isso` apaga a última)" in com
     assert "memória" not in chat_cliente.abertura(tudo)
