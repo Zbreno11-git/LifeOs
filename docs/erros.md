@@ -18,7 +18,7 @@
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 27 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 8 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 3 | Estimei em vez de medir | 9 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 25 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 16 | *onde mais esta falha pode nascer?* antes de dar por pronto |
@@ -317,6 +317,16 @@ gravações: a rodada **grava** o `estado` a cada minuto e, sem lembrete vencido
 Dentro da cota nos dois casos, e a conta estava marcada como estimativa. O que tem de novo: eu
 contei a operação certa (uma por rodada) e atribuí ao tipo errado; a conta de custo de uma rotina
 pergunta "o que ela grava?" tanto quanto "o que ela lê?".
+
+**2026-10-08 — a lista de textos ao `gemini-embedding-2` sem ler a página (Sessão 13, C1).** O
+script da medição mandou 24 textos num `contents=[...]` de strings, como no exemplo do SDK (que é do
+`text-embedding-004`), e voltou **um** vetor: a página de embeddings diz "Adding multiple inputs
+directly to the `contents` parameter produces one aggregated embedding"; para um por texto, cada
+um vai num `types.Content`. O recall de 1,000 sobre 1 vetor não valia nada, e a fixture foi apagada
+antes do commit; a M3 refeita com o ok do dono (2 chamadas a mais). O dono, na hora: "lembra se
+nao souber algo - pesquisa docs e repo". O que tem de novo: o script não conferia a quantidade
+que voltou; agora confere (`assert len(...) == 24`), e a regra "limite do terceiro lido antes de
+desenhar" vale também para o **comportamento** de uma chamada que eu já sabia fazer noutro modelo.
 
 ### 4. Teste que não separava o certo do errado
 

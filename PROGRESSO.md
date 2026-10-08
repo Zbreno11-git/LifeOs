@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 15:16Z: Sessão 13 aberta e planejada; o próximo é o C1 (medições, com o ok do dono)
+## ▶️ RETOMAR AQUI — 2026-10-08 15:25Z: Sessão 13, C1 feito (medições); o próximo é o C2 (regras, store e vetores)
 
 **Estado (2026-10-08, medido):**
 - **A abertura da 13** (depois do compact): leitura e conferências batendo com o bloco anterior.
@@ -24,13 +24,22 @@
   dias; até 8 fatos por resposta; o resumo na segunda às 9h.
 - **Medido de graça:** o emulador do Firestore aceita `find_nearest`, com e sem `where`, sem
   índice (a produção exige o índice).
+- **O C1 (2026-10-08 15:20–15:22Z, ok do dono, ~US$ 0,002):** os números estão na seção 10 de
+  `docs/fontes/pesquisa-roteiro.md`. Em resumo:
+  - o extrator custa ~US$ 0,00015 por mensagem, em 0,6–1,0 s, JSON válido nas 12, e recusou as 6
+    que devia; ele precisa da regra "não repita um fato já anotado" (repetiu um com outra frase);
+  - a resposta do embedding não traz contagem de tokens: o teto cobra pelos **bytes** do texto (um
+    limite de cima: um token nunca tem menos de um byte);
+  - uma lista de strings dá **um vetor agregado**; cada texto vai num `types.Content` (erro meu,
+    classe 3; a M3 refeita com o ok do dono);
+  - o conjunto de ouro em `tests/dados/memoria_ouro.json`: recall@8 = MRR = 1,000.
 - **Não há background nem trava.**
 
-**Próximo passo exato:** o C1. Pedir o ok do dono (estimado < US$ 0,01) e rodar, no scratchpad, as
-três medições do plano (o extrator em ~12 mensagens inventadas, o `embed_content` a 768, o
-conjunto de ouro gravado em `tests/dados/memoria_ouro.json`).
+**Próximo passo exato:** o C2: `src/lifeos/memoria/regras.py` (o filtro, com os vizinhos e os
+disfarces escritos antes, classe 7), `memoria/store.py` (Firestore), `memoria/vetores.py` e o
+`gemini-embedding-2` em `custos.TARIFAS`; testes em `tests/test_memoria_*.py`.
 
-**Depende do dono:** o ok das medições do C1; depois, o do índice e da TTL e o do deploy.
+**Depende do dono:** o ok do índice e da TTL, e o do deploy (no C5).
 
 **Reler antes de continuar:** `CLAUDE.md`/`AGENTS.md`; este bloco; o "Plano — Sessão 13"; a D48 e a
 D66; `assistant/na_nuvem.py`, `busca.py`, `turno.py`; `custos.py`; `firestore_comum.py`;
@@ -893,8 +902,8 @@ No `viking chat --nuvem`:
 ### Mapa de checkpoints
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
-| C0 | o plano no `PROGRESSO.md`; `sessoes.md` (13 com as respostas, sem a migração; a 13b; a sugestão na 14); D66; `pesquisa-roteiro.md` seção 10 (a releitura e o emulador); barra 22 de 33 | — | ⬜ |
-| C1 | **ok do dono (< US$ 0,01)** → extrator em ~12 mensagens inventadas, `embed_content` (forma, tokens, tempo), o conjunto de ouro gravado como fixture | C0 | ⬜ |
+| C0 | o plano no `PROGRESSO.md`; `sessoes.md` (13 com as respostas, sem a migração; a 13b; a sugestão na 14); D66; `pesquisa-roteiro.md` seção 10 (a releitura e o emulador); barra 22 de 33 | — | ✅ (`0766f05`) |
+| C1 | **ok do dono (< US$ 0,01)** → extrator em ~12 mensagens inventadas, `embed_content` (forma, tokens, tempo), o conjunto de ouro gravado como fixture | C0 | ✅ (~US$ 0,002) |
 | C2 | `memoria/regras.py`, `memoria/store.py` (Firestore), `memoria/vetores.py`, tarifas do embedding | C1 | ⬜ |
 | C3 | `memoria/extrator.py`; o turno da nuvem (recuperar, a seção, a thread, o campo `memoria`, "esquece isso"); `chat_cliente` | C2 | ⬜ |
 | C4 | rotas do motor, `viking memoria`, `--reindexar`, resumo semanal, backup v2 | C2 | ⬜ |

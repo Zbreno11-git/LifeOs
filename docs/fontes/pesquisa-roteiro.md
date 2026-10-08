@@ -405,6 +405,16 @@ nada do conteúdo da busca guardado, só forma e números):
 `COSINE`, com e sem `where`, **sem índice nenhum**. A produção exige o índice: como nos índices
 compostos da Sessão 10, a prova do deploy é que o confere.
 
+**Medido em 2026-10-08 15:20–15:22Z** (VPS, a chave do `.env`, ok do dono; ~US$ 0,002 pelas
+tarifas; só texto inventado):
+
+| O quê | Resultado |
+|---|---|
+| O extrator (Flash-Lite, `response_schema`, temperatura 0), 12 mensagens | JSON válido nas 12; 0,6–1,0 s; ~300 tokens de entrada e até 49 de saída, sem raciocínio; **~US$ 0,00015 por mensagem**; recusou o plano com data, o valor em R$, o telefone de terceiro, o e-mail colado com ordem, a pergunta e a senha; anotou a preferência, a rotina, "vegetariano", "mora em Seattle" (sem a volta datada) e a contradição com o id certo; um fato ruim: repetiu um fato já anotado com outra frase ("trabalha após treinar") |
+| `embed_content` a 768 | 0,24 s; norma 1,0000; a resposta **não traz contagem de tokens** (`metadata` e `statistics` vazios) |
+| Uma lista de strings no `contents` | **um vetor agregado** (a página avisa; li depois: erros, classe 3); cada texto num `types.Content` dá um vetor por texto |
+| O conjunto de ouro: 24 fatos e 24 perguntas, um lote cada | ~0,45 s por lote; recall@1 = recall@8 = MRR = 1,000 (o conjunto é fácil: régua contra quebrar a busca, não medida fina) |
+
 **Não lido, e não preciso:** se o Python do Mac carrega extensão do SQLite (o `sqlite-vec`). A
 memória mora na nuvem (D66).
 
