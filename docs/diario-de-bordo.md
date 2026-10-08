@@ -1046,6 +1046,77 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-08 — Sessão 13 fechada no Mac: a memória de fatos, que aprende sozinha só do dono
+
+**A abertura** (depois do compact; leitura e conferências batendo com o bloco):
+- o lock com o platformdirs 4.12.4 e o pycparser 3.1 (`0cae0a7`);
+- relidos no dia: o `gemini-embedding-2` (US$ 0,20 por 1M, sem `task_type`, a tarefa no prefixo
+  do texto) e a busca vetorial do Firestore (até 2048 dimensões, só `flat`, índice obrigatório);
+  medido de graça: o emulador aceita `find_nearest` com filtro, sem índice.
+- **8 respostas do dono (D66):** a memória na nuvem, só no chat da nuvem; a 13 com os fatos e o
+  resumo, as receitas na 13b (nova; a barra passou a 33); o extrator em toda mensagem; embeddings
+  agora; nunca anotar valores das finanças, dados de outras pessoas nem planos com data; o
+  esquecer some na hora e apaga em 30 dias; até 8 fatos por resposta; o resumo na segunda às 9h.
+- **As medições do C1** (ok do dono, ~US$ 0,002): o extrator custa ~US$ 0,00015 por mensagem, em
+  0,6–1,0 s; a resposta do embedding não traz contagem de tokens (o teto cobra pelos bytes); uma
+  lista de strings dá um vetor só (erro meu, abaixo); o conjunto de ouro: recall@8 = MRR = 1,000.
+
+**O que entrou** (D66; plano, checkpoints e medições no `PROGRESSO.md`):
+- `memoria/`: `regras` (o filtro, com 26 vizinhos legítimos e 43 disfarces), `store` (a coleção
+  `memoria`, só se acrescenta, a TTL no esquecido), `vetores` (cada texto num `types.Content`),
+  `extrator` (a chamada separada que lê só a `mensagem`), `resumo`, `servico` e `terminal`;
+- `na_nuvem`: os 8 parecidos no texto de sistema, no bloco de não confiável; a anotação numa
+  thread com cliente próprio; o "esquece isso" antes da barreira; o campo `memoria`;
+- o motor: as rotas `/memoria*` (só o `cli@`), o resumo na rodada dos lembretes, a
+  `/fumaca/memoria`; o backup versão 2; `viking memoria`;
+- `scripts/nuvem.py`: o índice vetorial e a TTL `memoria.apagar_em` (criados com o ok do dono) e as
+  provas.
+
+**No ar, com os oks do dono no chat:** o deploy de `a8107d6` → 34 ✅ e 0 ❌ (19:41Z); o de `a964aff`
+(os consertos do fechamento) → 34 ✅ e 0 ❌ (20:32Z), com o log limpo nos dois serviços.
+
+**No Mac (2026-10-08):**
+- a suíte: `1 failed, 2551 passed, 338 skipped` na primeira (o teste de tempo, abaixo); depois do
+  conserto, verde ("funcionou", o dono);
+- o roteiro: 3 fatos com o 📝; "esquece isso" sem passar pelo modelo; a lembrança numa conversa
+  nova; a troca com "no lugar de"; `viking memoria`, `--todos` e `--semana` com o esperado; a
+  limpeza, todos esquecidos;
+- ~US$ 0,0018 por mensagem com a anotação e o embedding; o teste, ~US$ 0,009.
+
+**O fechamento achou três coisas, consertadas com o ok do dono:**
+- **o 429 do serviço de finanças** (19:05Z): o Cloud Run abortou o pedido sem instância livre
+  (`--max-instances=1`, da 11d); o motor repete só o 429, até 2 vezes, no prazo do turno
+  (`70da02f`);
+- **o teste de tempo que caiu no Mac** (2,09 s contra 2 s, escrito na 4): os três testes de "texto
+  gigante" medem o crescimento (4× a entrada, ~4× o tempo; o quadrático dá ~16×), e um teste prova a
+  régua dos dois lados (`208c7e0`);
+- **o "anotado" do modelo**, contra a regra: medido com frases inventadas (~US$ 0,043), a regra
+  velha confirmou em 3 de 8 e a nova em 0 de 7 fatos simples, mas ainda em ~2 de 4 trocas e em 1
+  de 3 recusados; a abertura diz "vale só a linha 📝" (`a964aff`; D66).
+
+**Portões:**
+- a suíte: `2892 passed`, 0 pulados (emulador exigido);
+- ruff, format, mypy (52), gitleaks e `uv lock --check` verdes;
+- mutações: 448 de 448 (a rodada inteira deu 446, e as 2 vivas eram verdade, consertadas) mais 3
+  de 3 do 429 (451).
+
+**Em linguagem simples:** o Viking da nuvem agora lembra o que você conta sobre você, sem pedir
+"sim" toda hora, e avisa cada anotação numa linha própria. Ele só aprende do que você digita:
+nada de um e-mail, de uma página ou de uma busca vira lembrança. Dá para esquecer na hora, corrigir
+pelo `viking memoria`, e toda segunda chega um resumo do que ele aprendeu.
+
+**Erros desta sessão (meus; em `docs/erros.md`):**
+- a lista de textos ao `gemini-embedding-2` sem ler a página (um vetor agregado; classe 3); o
+  dono, na hora: "lembra se nao souber algo - pesquisa docs e repo";
+- o serviço de finanças com uma instância e nenhuma repetição, desenhado na 11d (classe 3);
+- a hora do bloco escrita de cabeça (classe 2);
+- três testes que passavam por outro motivo, e o limite fixo de 2 s que dependia da máquina, com
+  um controle que eu mesmo errei ao desenhar a régua nova (classe 4);
+- três âncoras de mutação, o `conferir` do backup e o nome `desfazer` na régua da D26 (classe 6);
+- a régua de palavras da medição do "anotado", que não pegou "mudei" nem "Cadastrado!" (classe 7);
+- fora do catálogo: a emenda do `{hoje}` saiu ao contrário do comentário (pega ao reler) e um
+  `scripts/nuvem.py --executar` sem o nome do passo (o argparse recusou; nada rodou).
+
 ### 2026-10-08 — Sessão 12 fechada no Mac: o agente geral (busca com fontes, Flash-Lite, o forte quando precisa)
 
 **A abertura** (2026-10-07, depois do compact; leitura e conferências batendo com o bloco):

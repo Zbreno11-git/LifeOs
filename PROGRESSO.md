@@ -5,7 +5,43 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 19:05Z: Sessão 13, C5: índice e TTL criados e construindo; o próximo é medir até 13 ✅ e publicar (ok do dono já dado)
+## ▶️ RETOMAR AQUI — 2026-10-08 20:35Z: a Sessão 13 fechou no Mac; a próxima é a 13b (receitas), a abrir e planejar
+
+**Estado (2026-10-08, medido):**
+- **A 13 fechou no Mac** (D66 "Como ficou"; o diário e a barra têm o detalhe): 3 fatos com o 📝,
+  "esquece isso", a lembrança numa conversa nova, a troca, `viking memoria` e a limpeza; a suíte do
+  Mac verde depois do conserto do teste de tempo ("funcionou", o dono). Os fatos do teste estão
+  todos esquecidos (somem em 30 dias pela TTL).
+- **No ar:** o motor e o serviço `financas` em `a964aff`; o `deploy` com o `--executar` às 20:32Z
+  deu **34 ✅ e 0 ❌**, com o log limpo nos dois serviços; `python scripts/nuvem.py` → 13 ✅
+  (19:36Z).
+- **Portões:** a suíte `2892 passed`, 0 pulados (emulador exigido); ruff, format, mypy (52),
+  gitleaks e `uv lock --check` verdes; mutações 451 (448 da rodada inteira + 3 de 3 do 429).
+- **Não há background nem trava.**
+
+**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o commit do fechamento
+(ou depois), igual ao remoto; `gh run list --commit $(git rev-parse HEAD)` → `success`;
+`python scripts/nuvem.py` → 13 ✅; `python scripts/nuvem.py deploy` → 34 ✅ (o motor `a964aff`, 0
+commits desde ela nos caminhos da imagem).
+
+**Próximo passo exato:** abrir a 13b pela skill `software-build`: `uv lock --upgrade --dry-run`;
+conferir que o primeiro resumo semanal saiu (segunda 2026-10-12, depois das 9h no fuso do dono:
+o documento `estado/resumo-2026-W42`, e perguntar ao dono se o e-mail chegou); as perguntas da
+abertura (os "a decidir" da seção da 13b em `sessoes.md`).
+
+**Reler antes de continuar:** `CLAUDE.md`/`AGENTS.md`; este bloco; a seção da 13b em `sessoes.md`;
+a D48 e a D66; `src/lifeos/memoria/` (`extrator.py`, `regras.py`, `store.py`); `turno._MEMORIA`;
+`docs/erros.md` (classes 4 e 7).
+
+**Não pode ser esquecido:**
+- nenhum conteúdo do dono (fatos, conversa) em documento, commit ou log: só forma e números;
+- o extrator recebe só a `mensagem`; o chat não tem tool de memória; o 📝 sai do store; a prosa do
+  modelo pode dizer "anotado" sem ser verdade (medido; vale a linha 📝);
+- uma régua de palavras que mede respostas do modelo só vale depois de ler as respostas inteiras;
+- o fuso do dono é Seattle até ~fim de outubro; depois, perguntar a cidade;
+- a 11b (formulários) segue na fila, sem posição decidida.
+
+### 2026-10-08 19:05Z — o bloco de retomada do C5 antes do compact (o registro)
 
 **Estado (2026-10-08, medido às 19:05Z):**
 - **C0 a C4 feitos e o C5 quase:** commits `0cae0a7` (lock), `0766f05` (C0), `9afb5d0` (C1),
@@ -1027,7 +1063,7 @@ No `viking chat --nuvem`:
 | C2 | `memoria/regras.py`, `memoria/store.py` (Firestore), `memoria/vetores.py`, tarifas do embedding | C1 | ✅ |
 | C3 | `memoria/extrator.py`; o turno da nuvem (recuperar, a seção, a thread, o campo `memoria`, "esquece isso"); `chat_cliente` | C2 | ✅ |
 | C4 | rotas do motor, `viking memoria`, `--reindexar`, resumo semanal, backup v2 | C2 | ✅ |
-| C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, TTL, provas); **ok** → índice + TTL; **ok** → deploy; roteiro do Mac; fechamento (23 de 33) | C3, C4 | ⬜ |
+| C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, TTL, provas); **ok** → índice + TTL; **ok** → deploy; roteiro do Mac; fechamento (23 de 33) | C3, C4 | ✅ |
 
 ### Fase 0 — C0
 **Faz:** o plano no `PROGRESSO.md` (bloco RETOMAR → C1); `sessoes.md` (13: respostas, o primeiro

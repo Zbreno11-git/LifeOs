@@ -7,16 +7,53 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-10-08 (Sessão 12 fechada no seu Mac).**
+**Última atualização: 2026-10-08 (Sessão 13 fechada no seu Mac).**
 
-`█████████████░░░░░░░ 22 de 33 sessões fechadas`
+`██████████████░░░░░░ 23 de 33 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d e 12; parciais: nenhuma; em curso: 13 (memória de fatos); na fila: 13b
+10, 10b, 10c, 11, 11c, 11d, 12 e 13; parciais: nenhuma; em curso: nenhuma; na fila: 13b
 (receitas), 14 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
 30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), para 32
 quando a medição das finanças abriu a 11d (2026-10-06), e para 33 quando a 13 foi dividida na
 abertura (2026-10-08).
+
+## 2026-10-08 — Sessão 13: o Viking lembra o que você conta (fechada no seu Mac)
+
+**O que ficou pronto** (só no chat da nuvem; o `viking chat` do Mac continua igual):
+- **Ele anota sozinho o que você conta sobre você**, sem perguntar "sim?", e avisa numa linha
+  própria: "📝 anotei: …". Essa linha sai do que foi gravado de verdade.
+- **Ele lembra numa conversa nova** quando a pergunta tem a ver, pelo significado, não pelas
+  palavras exatas.
+- **"esquece isso"** apaga na hora a última anotação da conversa. Ela some do chat já e do banco em
+  30 dias; até lá, dá para desfazer.
+- **Um fato novo que contradiz o velho toma o lugar dele**, e o velho fica marcado como trocado.
+- **O que ele nunca anota:** valores das suas finanças, dados de outras pessoas, planos com data,
+  senhas e códigos. E nada que venha de um e-mail, de uma página ou de uma busca: quem anota só
+  lê o que você digitou.
+- **`viking memoria` no Mac:** a lista do que ele sabe, com corrigir, esquecer, desfazer e o que
+  entrou na semana.
+- **Um resumo por e-mail toda segunda às 9h** (o seu fuso), só se ele anotou algo. O primeiro
+  chega na segunda, 12/10, com os fatos do teste, já esquecidos.
+- **O backup no seu Drive leva a memória junto.**
+- **Dois consertos achados no caminho:** uma pergunta de finanças que chegasse na hora em que o
+  serviço acordava falhava; agora o Viking tenta de novo, no máximo duas vezes. E um teste antigo
+  que caía num Mac mais lento passou a medir do jeito certo.
+
+**Um aviso honesto:** o modelo às vezes escreve "anotado" por conta própria. Medi: com a regra
+nova isso sumiu nos casos simples, mas ainda acontece numa troca ou num caso que ele recusa. **Vale
+só a linha 📝** (a abertura do chat diz isso).
+
+**Como sabemos:**
+- **No seu Mac:** 3 fatos anotados, "esquece isso", a lembrança numa conversa nova, a troca, e o
+  `viking memoria` com a lista, o histórico e a limpeza no fim.
+- **No ar:** 34 provas, nenhuma gastando com o modelo, inclusive a busca por significado com o
+  índice novo.
+- **Os testes:** 2892 passando, e os 451 defeitos plantados de propósito derrubados pelo teste
+  certo.
+
+**Custo:** ~US$ 0,0018 por mensagem, já com a anotação e a busca por significado (esta, ~US$
+0,00002). O dia do teste: ~US$ 0,01 no seu Mac, mais ~US$ 0,045 nas medições daqui.
 
 ## 2026-10-08 — Sessão 12: o Viking busca na internet, com as fontes (fechada no seu Mac)
 

@@ -16,27 +16,27 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **13 — memória de fatos** (aberta e planejada em 2026-10-08; o plano está no
-  `PROGRESSO.md`). O dono a dividiu na abertura: a 13 fica com os fatos e o resumo semanal, e as
-  receitas vão para a **13b**, logo depois. A 12 fechou no Mac em 2026-10-08 (a busca com fontes, o
-  Flash-Lite e o forte; D65). A 11b (formulários) segue na fila, sem posição decidida pelo dono.
+- **Sessão:** **13b — receitas** (criada em 2026-10-08, na abertura da 13; a abrir e planejar). A
+  13 fechou no Mac em 2026-10-08 (a memória de fatos no chat da nuvem, no ar em `a964aff`; D66). A
+  11b (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-08):** 22 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
+- **Agora (2026-10-08):** 23 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
   ("só vou usar ativo quando eu tiver ele em hardware ou em app/site com ele completo") e decidiu
   **manter a ordem**: 11d, 12–16 e então o app (17–18).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D65), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D66), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** os oks da 13: as medições do C1 (< US$ 0,01), o índice e a TTL, e o
-  deploy. As 8 respostas da abertura estão na seção da 13 e na D66.
+- **Depende do dono:** as respostas da abertura da 13b (os "a decidir" da seção dela). Na
+  segunda 2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do
+  teste, já esquecidos): conferir que chegou.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -1020,7 +1020,14 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nada novo. O google-genai do lock já tem a busca e o
   `url_context` (era o 2.25.0 em 2026-09-28; 2.29.0 desde a abertura, em 2026-10-07).
 
-## Sessão 13 — memória de fatos (planejada em 2026-09-28; aberta em 2026-10-08)
+## Sessão 13 — memória de fatos (planejada em 2026-09-28; feita e testada no Mac em 2026-10-08)
+
+- **Feita (2026-10-08):** a memória de fatos no chat da nuvem (anotar sozinho só do que o dono
+  digita, lembrar por significado, "esquece isso", a troca, o `viking memoria`, o resumo semanal e
+  o backup versão 2), no ar (`a964aff`) e testada no Mac (o diário e a barra têm o detalhe; D66). A
+  mais, no fechamento: o 429 do serviço de finanças repetido pelo motor, os testes de tempo que
+  medem o crescimento, e a regra que mede o "anotado" do modelo (a prosa não é confiável: vale a
+  linha 📝).
 
 - **As respostas do dono na abertura (2026-10-08; D66):**
   - a memória mora **na nuvem** (Firestore), e só o `viking chat --nuvem` anota e lembra; o
@@ -1108,6 +1115,12 @@ O que estava escrito na abertura:
   existem; a receita é outro tipo de anotação, que o extrator propõe e o dono confirma.
 - **A decidir na abertura:** como a receita se dispara (pelo nome, por pedido parecido), se o
   `viking memoria` a mostra junto dos fatos, e o teto de passos de uma receita.
+- **Vindo do fechamento da 13 (2026-10-08):** a regra `turno._MEMORIA` foi medida (o modelo dizia
+  "anotado" sem ser quem anota; D66, "Como ficou"). Se a 13b mexer nela (uma receita também se
+  anota), meça de novo com frases inventadas e leia as respostas inteiras: a régua de palavras
+  errou duas vezes (`docs/erros.md`, classe 7). O primeiro resumo semanal sai na segunda
+  2026-10-12, depois das 9h no fuso do dono (`estado/resumo-2026-W42`): conferir na abertura que
+  chegou.
 
 ## Sessão 14 — documentos (planejada em 2026-09-28)
 

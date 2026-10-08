@@ -418,6 +418,13 @@ tarifas; só texto inventado):
 **Não lido, e não preciso:** se o Python do Mac carrega extensão do SQLite (o `sqlite-vec`). A
 memória mora na nuvem (D66).
 
+**Medido no fechamento (2026-10-08, frases inventadas, o Flash-Lite com as tools da nuvem e o
+AFC desligado, ~US$ 0,043):** o modelo do chat confirma registro ("anotado") mesmo proibido. A
+regra que só proibia: 3 de 8 respostas. A que diz o que responder (`turno._MEMORIA`): 0 de 7
+fatos simples, ~2 de 4 trocas, 1 de 3 recusados pelo filtro. Contado lendo as respostas inteiras:
+a régua de palavras deixou passar "mudei" e "Cadastrado!" (erros, classe 7). A prosa não é
+confiável; vale a linha 📝 (D66).
+
 ## Afirmações não conferidas (a medir na sessão que as usa)
 
 - **S8:** se o Chrome abre `view-source:` por CDP com os cookies; se "In production" sem

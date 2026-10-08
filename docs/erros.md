@@ -17,12 +17,12 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 27 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 9 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 25 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 2 | Afirmei sem abrir o lugar onde estaria | 28 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 3 | Estimei em vez de medir | 10 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 4 | Teste que não separava o certo do errado | 27 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 16 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 11 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 17 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 12 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
@@ -261,6 +261,11 @@ linha nova no `/custos` (`ed92a0c`), com mutação e um 2º deploy (ok do dono).
 a frase do plano nomeava um comando, e o checkpoint foi conferido pelo teste do vizinho; o
 checkpoint de uma frase com nome de comando se confere **naquele** comando.
 
+**2026-10-08 — a hora do bloco de retomada escrita de cabeça (Sessão 13, C5).** Escrevi
+"16:00Z" no bloco do `PROGRESSO.md`; o `date -u` dizia 15:31Z. Pego ao reler, corrigido antes do
+commit. O que tem de novo: nada; é a regra "horário, SHA e contagem saem do `date -u`, do git ou
+do `grep`", que o dono escreveu no prompt da sessão.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -327,6 +332,17 @@ antes do commit; a M3 refeita com o ok do dono (2 chamadas a mais). O dono, na h
 nao souber algo - pesquisa docs e repo". O que tem de novo: o script não conferia a quantidade
 que voltou; agora confere (`assert len(...) == 24`), e a regra "limite do terceiro lido antes de
 desenhar" vale também para o **comportamento** de uma chamada que eu já sabia fazer noutro modelo.
+
+**2026-10-07 → 2026-10-08 — o serviço de finanças com uma instância só e nenhuma repetição
+(desenhado na 11d, achado na 13).** O `deploy` só lendo das 19:05Z deu 502 na `/fumaca/financas`:
+"o serviço de finanças respondeu 429". O log do serviço: "The request was aborted because there
+was no available instance", latência 0 s, logo depois das provas de recusa acordarem a instância
+única (`--max-instances=1`). Eu escolhi uma instância na 11d sem ler o que o Cloud Run faz com o
+pedido que chega enquanto ela está ocupada ou subindo; a página de troubleshooting manda repetir
+com espera crescente. No chat, a pergunta de finanças na hora errada viraria "Não consegui falar
+com a Pluggy". Conserto (`70da02f`): `remoto._chamar` repete só o 429 (o serviço nunca o
+devolve), até 2 vezes, dentro do prazo do turno; 6 testes, 3 mutações. O que tem de novo: o
+limite do terceiro inclui o que a **plataforma** faz no limite que eu mesmo configurei.
 
 ### 4. Teste que não separava o certo do errado
 
@@ -481,6 +497,24 @@ agora. Entre 00:00 e 01:00 UTC isso é o próprio agora, e o backup feito um ins
 antes da rodada; o `grep` de `replace(hour`/`minute`/`day=` achou só dois usos certos no código
 (zerando até o microssegundo, e o dia de uma data). O que tem de novo: um teste que lê o relógio
 precisa passar a qualquer hora; "o começo do dia" se escreve zerando tudo, ou se evita.
+
+**2026-10-08 — três testes da memória que passavam por outro motivo (Sessão 13, C3–C5).** (1) Um
+parâmetro escrito para passar (`"pode esquecer isso"[:0] + …`) escondia que a regra do "esquece
+isso" não casava "pode esquecer isso"; (2) o teste da restauração caía pelo id que o store também
+recusa, e a mutação que tirava a régua de verdade sobreviveu (agora o caso torto é o `ativo` em
+texto); (3) uma mutação desenhada inerte (o `motivo = None` depois da recusa, que nada lia).
+Pegos ao reler e pela rodada de mutações. O que tem de novo: um parâmetro de teste que precisa de
+truque para passar é o defeito avisando.
+
+**2026-09-26 → 2026-10-08 — o limite fixo de 2 s nos testes de "texto gigante não explode"
+(escritos na 4, caiu no Mac na 13).** O caso da chave privada levou 2,09 s no Mac de 2017; no VPS,
+0,44 s, com custo linear (medido: o dobro de linhas, o dobro do tempo). A folga lá era ~2×. O que
+o teste quer pegar é o **crescimento**: `tests/crescimento.py` mede 4× a entrada contra 1×
+(linear ~4×, quadrático ~16×, o limite 8), e `tests/test_crescimento.py` prova a régua dos dois
+lados. Ao desenhar, o meu controle quadrático ficou com a entrada pequena abaixo do piso de 5 ms e
+deu só 5,5× (passaria): medido, o controle cresceu. O que tem de novo: um teste que mede tempo
+contra um número fixo depende da máquina, como um que lê o relógio depende da hora; e a régua
+nova se prova com um defeito de verdade, não com um que eu achei que era.
 
 ### 5. A ferramenta fez outra coisa do que eu li
 
@@ -711,6 +745,14 @@ rodada, e as duas foram reancoradas na linha inteira. O que tem de novo: a estru
 das âncoras na suíte) pegou o que a disciplina da 11d dizia para fazer à mão; o `grep` das
 âncoras dos arquivos mexidos continua sendo o passo antes da suíte.
 
+**2026-10-08 — três âncoras de mutação, o `conferir` do backup e um nome que cruzou a D26
+(Sessão 13).** As minhas mudanças quebraram três âncoras (a prova do chat, duas do formato do
+backup; reancoradas na linha inteira, pegas pelo teste das âncoras); o `conferir` passou a contar
+a memória no arquivo e não no restaurado (o teste pegou); e a função da memória chamada
+`desfazer` caiu na régua de `tests/test_gmail_aprovacao.py`, que vigia esse nome (renomeada
+`devolver`). O que tem de novo: um nome também é um vizinho — a régua que lê o código por nome
+vale para todo módulo novo.
+
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 
 **2026-09-26 — `href` por substring (Sessão 4b).** A primeira versão do freio casava `sair`
@@ -790,6 +832,14 @@ parou em `ALREADY_EXISTS`. Consertos: o passo não medido diz "não medido" e mo
 índices criam só o que falta, com teste. O que tem de novo: um script de infraestrutura tem os
 dois vizinhos, "nada existe" e "quase tudo existe", e o segundo é o de todo dia depois do
 primeiro.
+
+**2026-10-08 — a régua das respostas que "confirmam registro" (Sessão 13, fechamento).** Para
+medir se o modelo diz "anotado", escrevi uma regex com as palavras que eu esperava (anot…, guard…,
+registr…, salv…, memoriz…). Ela não pegou "Feito! Já mudei para as terças" nem "Cadastrado!", e
+contou como confirmação um "Mudou para o quinto, entendi" que só repetia o dono. Pego lendo as
+respostas inteiras, as 18. O que tem de novo: uma régua de medição também é regra de
+reconhecimento; o número dela só vale depois de ler os casos, e o que entrou no commit foi a
+contagem lida, não a da régua.
 
 ### 8. Comando que escreve com alcance maior que a mudança
 

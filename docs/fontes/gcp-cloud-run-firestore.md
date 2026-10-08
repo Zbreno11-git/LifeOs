@@ -148,6 +148,12 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
 - **O segredo `viking-pluggy`** é o 5º com versão ativa (6 grátis por mês, lido em 2026-09-30).
 - **O motor fala com ele** pelo token de identidade do servidor de metadados (a conta
   `viking-motor@`, sem papel novo: só o `run.invoker` no serviço `financas`).
+- **O 429 de uma instância só (medido em 2026-10-08, Sessão 13):** com `--max-instances=1`, um
+  pedido que chega enquanto a instância acorda ou está ocupada volta 429 do próprio Cloud Run, "The
+  request was aborted because there was no available instance" (latência 0 s; o pedido não chega
+  ao contêiner). Visto uma vez, logo depois das provas de recusa do `deploy`. A página de
+  troubleshooting (lida no mesmo dia) manda repetir com espera crescente; o motor repete só o
+  429, até 2 vezes, no prazo do turno (`financas/remoto.ESPERAS_DO_429_S`).
 
 ## A busca e o modelo forte (Sessão 12, D65)
 
