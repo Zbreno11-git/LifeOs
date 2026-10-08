@@ -16,7 +16,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **13b — receitas** (criada em 2026-10-08, na abertura da 13; a abrir e planejar). A
+- **Sessão:** **13b — receitas** (criada em 2026-10-08, na abertura da 13; aberta e planejada no
+  mesmo dia, em curso: o plano está no `PROGRESSO.md`). A
   13 fechou no Mac em 2026-10-08 (a memória de fatos no chat da nuvem, no ar em `a964aff`; D66). A
   11b (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
@@ -32,10 +33,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D66), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D67), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as respostas da abertura da 13b (os "a decidir" da seção dela), que abre
-  já (o dono, 2026-10-08: "quero continuar o que da sem esperar pela segunda 12/10"). Na segunda
+- **Depende do dono:** os oks da 13b (as medições, a TTL e o deploy) e o teste no Mac; as
+  respostas da abertura já estão na seção dela. Na segunda
   2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do teste, já
   esquecidos): conferir na primeira sessão depois disso, sem travar nada.
 
@@ -1104,7 +1105,7 @@ O que estava escrito na abertura:
   - as ideias do Graphiti (`invalida_em`) e do Leon (camadas: preferências, contexto do dia,
     conversa recente).
 
-## Sessão 13b — receitas (criada em 2026-10-08, na abertura da 13)
+## Sessão 13b — receitas (criada em 2026-10-08, na abertura da 13; aberta e planejada no mesmo dia)
 
 - **Por quê:** o dono dividiu a 13 na abertura: os fatos e o resumo semanal na 13, as receitas aqui,
   logo depois.
@@ -1114,8 +1115,21 @@ O que estava escrito na abertura:
   um envio a outra pessoa, o da limpeza, o freio do navegador).
 - **Parte da 13:** a coleção `memoria`, o extrator, o filtro de forma de ordem e o `viking memoria`
   existem; a receita é outro tipo de anotação, que o extrator propõe e o dono confirma.
-- **A decidir na abertura:** como a receita se dispara (pelo nome, por pedido parecido), se o
-  `viking memoria` a mostra junto dos fatos, e o teto de passos de uma receita.
+- **As respostas do dono na abertura (2026-10-08, ~21:55Z; D67):**
+  - **nasce proposta:** quem anota (o extrator, que lê só a mensagem digitada) propõe numa linha
+    própria, com todos os passos; só vira receita quando o dono digita `guarda receita`, lido antes
+    do modelo; ignorada, a proposta morre em 1 dia;
+  - **roda pelo nome:** `roda NOME` (o nome ou o começo único dele), lido antes do modelo; os
+    passos vão ao modelo como texto do dono;
+  - **passos que enviam, apagam ou arquivam podem**, com a aprovação de sempre (o código do envio
+    a outra pessoa a cada rodada);
+  - **a 13b inteira** nesta sessão (nascer, guardar, listar, rodar, esquecer, desfazer);
+  - **no `viking memoria`**, marcadas (📋), e `--receitas` com os passos inteiros;
+  - **até 8 passos** (e 800 caracteres no total);
+  - **o resumo de segunda** mostra as receitas guardadas e esquecidas na semana.
+- **Técnico (agente):** coleção própria `receitas` (sem vetor; a busca é pelo nome), com a TTL em
+  `apagar_em`; um filtro próprio (a forma de ordem dos fatos recusaria toda receita); o backup
+  versão 3. O plano inteiro está no `PROGRESSO.md`.
 - **Vindo do fechamento da 13 (2026-10-08):** a regra `turno._MEMORIA` foi medida (o modelo dizia
   "anotado" sem ser quem anota; D66, "Como ficou"). Se a 13b mexer nela (uma receita também se
   anota), meça de novo com frases inventadas e leia as respostas inteiras: a régua de palavras
