@@ -9,10 +9,10 @@ classe 5).
 import json
 import re
 import sys
-import time
 from pathlib import Path
 
 import pytest
+from tests import crescimento
 
 from lifeos.browser import _acoes_sensiveis as a
 
@@ -257,12 +257,15 @@ def test_layout_de_guard_inesperado_levanta(estranho):
 
 
 def test_entrada_gigante_nao_explode():
-    """Detector de custo quadrático, não benchmark: o limite é generoso de propósito."""
-    inicio = time.perf_counter()
-    _clique("sair " * 40_000)
-    _clique("Excluir", _guard(escopo="excluir " * 5_000))
-    _clique("Excluir", _guard(escopo="conta excluir " * 3_000))
-    assert time.perf_counter() - inicio < 2
+    """Detector de custo quadrático, não benchmark: mede o crescimento, não os segundos
+    (`tests/crescimento.py`; o limite fixo de 2 s caiu no Mac do dono em 2026-10-08)."""
+
+    def executar(k):
+        sair, excluir = "sair " * (10_000 * k), _guard(escopo="excluir " * (1_250 * k))
+        conta = _guard(escopo="conta excluir " * (750 * k))
+        return lambda: (_clique(sair), _clique("Excluir", excluir), _clique("Excluir", conta))
+
+    crescimento.cresce_linear(executar)
 
 
 def test_acao_vazia_ou_sem_rotulo():
@@ -421,8 +424,9 @@ def test_liberacao_em_pagina_data():
 
 
 def test_sinais_com_entrada_gigante_nao_explode():
-    inicio = time.perf_counter()
-    _sinais("sair " * 40_000)
-    _sinais("Sair", _guard(href="/" + "a/" * 20_000, escopo="pagar " * 5_000))
-    a.ler_liberacao(json.dumps({"esquema_host": "data:", "categoria": "sair", "rotulo": "sair"}))
-    assert time.perf_counter() - inicio < 2
+    def executar(k):
+        sair = "sair " * (10_000 * k)
+        guard = _guard(href="/" + "a/" * (5_000 * k), escopo="pagar " * (1_250 * k))
+        return lambda: (_sinais(sair), _sinais("Sair", guard))
+
+    crescimento.cresce_linear(executar)

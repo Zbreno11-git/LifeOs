@@ -4,10 +4,10 @@ aqui é uma forma de vazar dado ou de enganar o terminal/o modelo, testada sem r
 
 import re
 import sys
-import time
 from pathlib import Path
 
 import pytest
+from tests import crescimento
 
 from lifeos.browser import _redacao as r
 
@@ -335,19 +335,19 @@ def test_esquema_do_endereco_inicial_recusado(url):
 
 
 @pytest.mark.parametrize(
-    "gigante",
-    [
-        "1-" * 100_000,
-        "-----BEGIN PRIVATE KEY-----\n" * 10_000,
-        "9" * 200_000,
-    ],
+    ("pedaco", "vezes"),
+    [("1-", 25_000), ("-----BEGIN PRIVATE KEY-----\n", 1_250), ("9", 50_000)],
+    ids=["traços", "chave privada", "dígitos"],
 )
-def test_texto_gigante_nao_explode(gigante):
-    """Detector de custo quadrático (ReDoS), não benchmark — o limite é generoso de propósito."""
-    inicio = time.perf_counter()
-    r.redigir(gigante)
-    r.limpar_controles(gigante)
-    assert time.perf_counter() - inicio < 2
+def test_texto_gigante_nao_explode(pedaco, vezes):
+    """Detector de custo quadrático (ReDoS), não benchmark: mede o crescimento, não os segundos
+    (`tests/crescimento.py`; o limite fixo de 2 s caiu no Mac do dono em 2026-10-08)."""
+
+    def executar(k):
+        gigante = pedaco * (vezes * k)
+        return lambda: (r.redigir(gigante), r.limpar_controles(gigante))
+
+    crescimento.cresce_linear(executar)
 
 
 def test_redacao_so_usa_stdlib():
