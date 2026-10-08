@@ -185,3 +185,15 @@ def test_importar_passa_pelo_filtro():
     with pytest.raises(receitas.Recusada):
         receitas.importar(dict(copia, passos=["confirma 4821"]))
     assert receitas.obter(copia["id"]) is None
+
+
+def test_desfazer_no_meio_de_uma_cadeia_deixa_uma_so_ativa():
+    """A trocada por B, B trocada por C: desfazer A esquece C (a ativa), não só B (achado na 2ª
+    passada da 13b: ficavam A e C ativas com o mesmo nome, e o `roda` nunca escolhia)."""
+    a = _guardada(sessao="s1")
+    b = _guardada(sessao="s2", agora=AGORA + timedelta(minutes=1))
+    c = _guardada(sessao="s3", agora=AGORA + timedelta(minutes=2))
+    receitas.devolver(a.id, AGORA + timedelta(minutes=3))
+    assert [r.id for r in receitas.ativas()] == [a.id]
+    assert receitas.obter(c.id).esquecido_em is not None
+    assert receitas.obter(b.id).esquecido_em is None  # já estava fora; nada muda nela

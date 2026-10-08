@@ -3365,6 +3365,20 @@ MUTACOES = [
         '                    "enderecos": [],\n',
         "tests/test_na_nuvem_receitas.py::test_um_email_colado_vira_proposta_com_o_aviso_e_nao_se_guarda_sozinho",
     ),
+    Mutacao(
+        "memoria: desfazer no meio da cadeia esquece só o vizinho",
+        "src/lifeos/memoria/store.py",
+        "        vivo = _o_vivo_da_cadeia(substituto)\n",
+        "        vivo = substituto\n",
+        "tests/test_memoria_store.py::test_desfazer_no_meio_de_uma_cadeia_esquece_o_fato_que_vale_agora",
+    ),
+    Mutacao(
+        "receitas: desfazer no meio da cadeia deixa duas ativas",
+        "src/lifeos/memoria/receitas.py",
+        "        if devolvida is not None:\n",
+        "        if False:\n",
+        "tests/test_memoria_receitas.py::test_desfazer_no_meio_de_uma_cadeia_deixa_uma_so_ativa",
+    ),
 ]
 
 

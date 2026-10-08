@@ -259,9 +259,28 @@ def devolver(fato_id: str, agora: datetime | None = None) -> Fato | None:
             return {"ativo": True, "invalida_em": None, "substituido_por": None}, None
 
         firestore_comum.trocar(_ref(fato_id), reativar)
-        if substituto is not None and id_valido(substituto):
-            esquecer(substituto, momento)
+        vivo = _o_vivo_da_cadeia(substituto)
+        if vivo is not None:
+            esquecer(vivo, momento)
         return obter(fato_id)
+    return None
+
+
+def _o_vivo_da_cadeia(fato_id: str | None, limite: int = 100) -> str | None:
+    """O fato ativo no fim da cadeia de trocas que começa em `fato_id` (A trocado por B, B por C:
+    é o C que contradiz A agora; achado na 2ª passada da 13b, quando só o B era esquecido e A e C
+    ficavam ativos). `None` se a cadeia termina sem um ativo."""
+    vistos: set[str] = set()
+    while fato_id is not None and id_valido(fato_id) and fato_id not in vistos:
+        if len(vistos) >= limite:
+            return None
+        vistos.add(fato_id)
+        atual = obter(fato_id)
+        if atual is None:
+            return None
+        if atual.ativo:
+            return atual.id
+        fato_id = atual.substituido_por
     return None
 
 

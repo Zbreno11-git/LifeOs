@@ -268,7 +268,6 @@ def devolver(receita_id: str, agora: datetime | None = None) -> Receita | None:
             _esquecer_xaras(devolvida, momento)
         return devolvida
     if atual.invalida_em is not None:
-        substituta = atual.substituido_por
 
         def reativar(snap: DocumentSnapshot) -> tuple[dict[str, Any] | None, None]:
             dados = snap.to_dict() or {}
@@ -277,8 +276,11 @@ def devolver(receita_id: str, agora: datetime | None = None) -> Receita | None:
             return {"ativo": True, "invalida_em": None, "substituido_por": None}, None
 
         firestore_comum.trocar(_ref(receita_id), reativar)
-        if substituta is not None and id_valido(substituta):
-            esquecer(substituta, momento)
+        devolvida = obter(receita_id)
+        if devolvida is not None:
+            # A trocada por B e B por C: é a C, a ativa do mesmo nome, que sai (não só a B; achado
+            # na 2ª passada da 13b). Só se troca pelo mesmo nome, então as xarás são a cadeia.
+            _esquecer_xaras(devolvida, momento)
         return obter(receita_id)
     return None
 

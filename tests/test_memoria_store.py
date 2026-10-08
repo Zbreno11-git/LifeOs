@@ -290,3 +290,14 @@ def test_importar_passa_pelo_filtro():
     with pytest.raises(store.Recusado):
         store.importar(dict(copia, texto="O saldo do usuário é 1200."))
     assert store.todos() == []
+
+
+def test_desfazer_no_meio_de_uma_cadeia_esquece_o_fato_que_vale_agora():
+    """A trocado por B, B trocado por C: desfazer A esquece C, que é o que contradiz A agora (achado
+    na 2ª passada da 13b: ficavam A e C ativos, dois fatos que se contradizem)."""
+    a = _gravar("O usuário treina às 7h.")
+    b = _gravar("O usuário treina às 6h.", substitui=a.id, agora=AGORA + timedelta(minutes=1))
+    c = _gravar("O usuário treina às 5h.", substitui=b.id, agora=AGORA + timedelta(minutes=2))
+    store.devolver(a.id, AGORA + timedelta(minutes=3))
+    assert [f.id for f in store.ativos()] == [a.id]
+    assert store.obter(c.id).esquecido_em is not None
