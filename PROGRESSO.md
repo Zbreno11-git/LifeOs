@@ -5,38 +5,78 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 20:35Z: a Sessão 13 fechou no Mac; a próxima é a 13b (receitas), a abrir e planejar
+## ▶️ RETOMAR AQUI — 2026-10-08 20:59Z: a 13 fechada; abrir, planejar e implementar a 13b (receitas) já, sem esperar a segunda 2026-10-12
 
-**Estado (2026-10-08, medido):**
-- **A 13 fechou no Mac** (D66 "Como ficou"; o diário e a barra têm o detalhe): 3 fatos com o 📝,
-  "esquece isso", a lembrança numa conversa nova, a troca, `viking memoria` e a limpeza; a suíte do
-  Mac verde depois do conserto do teste de tempo ("funcionou", o dono). Os fatos do teste estão
-  todos esquecidos (somem em 30 dias pela TTL).
-- **No ar:** o motor e o serviço `financas` em `a964aff`; o `deploy` com o `--executar` às 20:32Z
-  deu **34 ✅ e 0 ❌**, com o log limpo nos dois serviços; `python scripts/nuvem.py` → 13 ✅
-  (19:36Z).
+**Estado (2026-10-08, medido às 20:59Z):**
+- **A 13 fechou no Mac** (D66 "Como ficou"; o diário e a barra, 23 de 33, têm o detalhe). Os fatos
+  do teste estão todos esquecidos (somem em 30 dias pela TTL).
+- **Repositório:** HEAD `68216b8` = o remoto, árvore limpa, sem `.mutacao.lock`; o CI do `68216b8`
+  pelo SHA: `success`.
+- **No ar:** o motor e o serviço `financas` em `a964aff`; o `deploy` só lendo às 20:57Z: **34 ✅ e
+  0 ❌**, 0 commits desde ela nos caminhos da imagem; `python scripts/nuvem.py` → 13 ✅ (19:36Z).
 - **Portões:** a suíte `2892 passed`, 0 pulados (emulador exigido); ruff, format, mypy (52),
-  gitleaks e `uv lock --check` verdes; mutações 451 (448 da rodada inteira + 3 de 3 do 429).
+  gitleaks e `uv lock --check` verdes; mutações 451.
 - **Não há background nem trava.**
 
-**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o commit do fechamento
-(ou depois), igual ao remoto; `gh run list --commit $(git rev-parse HEAD)` → `success`;
-`python scripts/nuvem.py` → 13 ✅; `python scripts/nuvem.py deploy` → 34 ✅ (o motor `a964aff`, 0
-commits desde ela nos caminhos da imagem).
+**O dono (2026-10-08, ~20:55Z):** "quero continuar o que da sem esperar pela segunda 12/10". A
+13b abre já. O resumo semanal **não trava nada**: é um evento datado (abaixo).
 
-**Próximo passo exato:** abrir a 13b pela skill `software-build`: `uv lock --upgrade --dry-run`;
-conferir que o primeiro resumo semanal saiu (segunda 2026-10-12, depois das 9h no fuso do dono:
-o documento `estado/resumo-2026-W42`, e perguntar ao dono se o e-mail chegou); as perguntas da
-abertura (os "a decidir" da seção da 13b em `sessoes.md`).
+**Depende de um evento futuro:** o primeiro resumo semanal sai na segunda 2026-10-12, depois das
+9h no fuso do dono (Seattle até ~fim de outubro), pela rodada dos lembretes, que reserva
+`estado/resumo-2026-W42`. Na primeira sessão aberta depois disso: perguntar ao dono se o e-mail
+chegou (só o assunto e quantas linhas; o conteúdo não vai a documento) e ler o log do motor
+daquela manhã (`severity>=ERROR`, com `--project`), sem travar a sessão.
 
-**Reler antes de continuar:** `CLAUDE.md`/`AGENTS.md`; este bloco; a seção da 13b em `sessoes.md`;
-a D48 e a D66; `src/lifeos/memoria/` (`extrator.py`, `regras.py`, `store.py`); `turno._MEMORIA`;
-`docs/erros.md` (classes 4 e 7).
+**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = `68216b8` (ou o commit
+deste bloco) = o remoto; `gh run list --commit $(git rev-parse HEAD)` → `success`;
+`VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2892 passed`, 0 pulados;
+`python scripts/nuvem.py` → 13 ✅; `python scripts/nuvem.py deploy` → 34 ✅ (o motor `a964aff`).
+
+**Próximo passo exato:** abrir a 13b pela skill `software-build`:
+1. `uv lock --upgrade --dry-run` (D45): versão nova → `uv lock --upgrade` num commit próprio, a
+   suíte antes e depois, o CI pelo SHA;
+2. reler os preços do Gemini do dia (o Flash-Lite e o `gemini-embedding-2`) e o que a receita
+   usaria;
+3. as perguntas da abertura ao dono, em rodadas pequenas (as que decidem o tamanho primeiro);
+4. o plano por fases no formato de `referencia/plano-de-sessao.md`, aprovado → copiado aqui;
+5. implementar até o fim, pedindo ok só para o que custa (o Gemini incluído), cria recurso ou
+   publica; o roteiro do Mac; o fechamento (24 de 33).
+
+**O que a 13b já tem decidido (D48, sessoes.md):** a receita nasce **só de mensagem do dono e com
+pergunta**; é reusada **sem permissão nova** (cada passo com as tools e as aprovações de sempre);
+fato ou instrução de origem externa nunca vira receita.
+
+**Perguntas previstas da abertura** (do dono; as opções são minhas, a recomendada primeiro):
+- **como a receita nasce:** o extrator propõe ("parece um procedimento") e o Viking pergunta
+  numa linha própria, com a resposta lida pela barreira, como o "esquece isso" (nunca pelo
+  modelo: um e-mail colado não pode dizer "sim" por ele); ou só quando o dono diz "guarda como
+  receita";
+- **como se dispara:** pelo nome que o dono deu; ou por pedido parecido (o embedding), com
+  pergunta antes de rodar;
+- **onde se vê:** `viking memoria` junto dos fatos, marcada; ou `viking memoria --receitas`;
+- **o teto de passos** de uma receita, e se ela pode incluir um passo que envia ou apaga (com o
+  código de sempre);
+- **tamanho:** a 13b inteira numa sessão, ou o "nascer e listar" agora e o "rodar" depois.
+
+**Técnico previsto (meu; o dono pode derrubar):** a receita é outro tipo na coleção `memoria`
+(o mesmo store, só se acrescenta, a TTL do esquecido, o backup v2 já leva); o filtro de forma de
+ordem vale para o texto dela; ao rodar, os passos vão ao modelo como texto do dono, e cada tool
+pede a aprovação de sempre; o 📝 e a linha da receita saem do store, nunca da prosa (medido na 13:
+o modelo diz "anotado" sozinho). Se a 13b mexer em `turno._MEMORIA`, medir de novo com frases
+inventadas e ler as respostas inteiras (erros, classe 7).
+
+**Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (as armadilhas "A memória só
+aprende do que o dono digita" e "Uma lista de strings ao `gemini-embedding-2`"); este bloco; a
+seção da 13b em `sessoes.md`; a D48 e a D66 em `docs/decisoes.md`; `src/lifeos/memoria/`
+(`extrator.py`, `regras.py`, `store.py`, `servico.py`, `terminal.py`); `assistant/na_nuvem.py` (o
+`_esquece_isso` e a barreira) e `turno._MEMORIA`; `docs/erros.md` (classes 4, 6 e 7); as skills
+`software-build` (abrir e planejar), `testes-que-provam`, `evidencia` e `seguranca`.
 
 **Não pode ser esquecido:**
-- nenhum conteúdo do dono (fatos, conversa) em documento, commit ou log: só forma e números;
-- o extrator recebe só a `mensagem`; o chat não tem tool de memória; o 📝 sai do store; a prosa do
-  modelo pode dizer "anotado" sem ser verdade (medido; vale a linha 📝);
+- nenhum conteúdo do dono (fatos, receitas, conversa) em documento, commit ou log: só forma e
+  números; medições e testes só com texto inventado;
+- quem anota recebe só a `mensagem`; o chat não tem tool de memória; o 📝 sai do store;
+- um nome de função da memória não se chama `desfazer` nem `confirmar` (a régua da D26);
 - uma régua de palavras que mede respostas do modelo só vale depois de ler as respostas inteiras;
 - o fuso do dono é Seattle até ~fim de outubro; depois, perguntar a cidade;
 - a 11b (formulários) segue na fila, sem posição decidida.

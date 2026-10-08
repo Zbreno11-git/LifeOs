@@ -34,9 +34,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D66), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as respostas da abertura da 13b (os "a decidir" da seção dela). Na
-  segunda 2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do
-  teste, já esquecidos): conferir que chegou.
+- **Depende do dono:** as respostas da abertura da 13b (os "a decidir" da seção dela), que abre
+  já (o dono, 2026-10-08: "quero continuar o que da sem esperar pela segunda 12/10"). Na segunda
+  2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do teste, já
+  esquecidos): conferir na primeira sessão depois disso, sem travar nada.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
