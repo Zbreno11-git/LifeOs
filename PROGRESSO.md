@@ -5,7 +5,97 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 16:40Z: Sessão 13, C5 em curso: portões e mutações verdes; falta o ok do índice e da TTL, o do deploy e o Mac
+## ▶️ RETOMAR AQUI — 2026-10-08 19:05Z: Sessão 13, C5: índice e TTL criados e construindo; o próximo é medir até 13 ✅ e publicar (ok do dono já dado)
+
+**Estado (2026-10-08, medido às 19:05Z):**
+- **C0 a C4 feitos e o C5 quase:** commits `0cae0a7` (lock), `0766f05` (C0), `9afb5d0` (C1),
+  `6bbd7b0` (C2), `18d5527` (C3), `cebc43b` (C4), `3572b50`, `0eb50d8` e `e05985a` (C5). O CI deu
+  `success` em todos, conferido pelo SHA (o do `e05985a` às 19:05Z).
+- **Portões do `0eb50d8`/`e05985a`:**
+  - a suíte: `2884 passed`, 0 pulados (emulador exigido);
+  - ruff, format (182), mypy (52), gitleaks e `uv lock --check` verdes;
+  - a imagem constrói (`docker build`, 15:56Z);
+  - mutações: **448 de 448** (a rodada inteira 16:00–16:35Z deu 446; as 2 vivas foram
+    consertadas e as 3 refeitas morreram; detalhe no registro abaixo).
+- **Recursos criados com o ok do dono** ("Ok, cria", ~18:59Z):
+  - `python scripts/nuvem.py --executar indices` (o índice vetorial `memoria`: `ativo` +
+    `vetor` 768 flat);
+  - `--executar ttl` (a TTL `memoria.apagar_em`).
+  - Os dois são `--async` e saíram com código 2 ("ainda não pronto"), sem erro.
+  - Às 19:05Z, `python scripts/nuvem.py` → **11 ✅**: o índice "faltam (ou construindo)" e a TTL
+    `memoria.apagar_em: CREATING`. A medição em background foi parada no compact (só leitura;
+    nada se perdeu: o Google segue construindo).
+- **O ok do deploy já foi dado** ("Ok, publica quando pronto", ~19:02Z): publicar com
+  `python scripts/nuvem.py deploy --executar` **assim que** `python scripts/nuvem.py` der 13 ✅.
+- **No ar:** o motor e o serviço `financas` ainda em `ed92a0c`. O `deploy` só lendo (19:05Z): 28 ✅
+  e 6 ❌. Cinco são esperados (o código está à frente da imagem): a imagem, o `/versao` = a imagem,
+  `/fumaca/memoria` (404), `memoria: None` no `/versao` e a imagem das finanças. **O sexto é
+  novo:** `/fumaca/financas` → HTTP 502 "o serviço de finanças respondeu 429" (essa prova não
+  chama a Pluggy). Reconferir depois do deploy (que republica o serviço). Se continuar, abrir pela
+  classe 2 de `docs/erros.md`: ler o log do serviço `financas` antes de supor a causa.
+- **Não há background nem trava** (`.mutacao.lock` não existe).
+
+**Verificações antes de confiar neste bloco:**
+- `git status` limpo; HEAD = `e05985a` ou depois, igual ao remoto; `.mutacao.lock` não existe;
+- `VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `2884 passed`, 0 pulados;
+- `gh run list --commit $(git rev-parse HEAD)` → `success`;
+- `python scripts/nuvem.py` → 13 ✅ (ou 11–12 se o índice/TTL ainda constroem: esperar, só lendo,
+  com uma medição a cada 60 s e no máximo 20; nunca `--executar` de novo).
+
+**Próximo passo exato:**
+1. `python scripts/nuvem.py` até 13 ✅ (índice READY e TTL ACTIVE).
+2. `python scripts/nuvem.py deploy --executar` (o ok já dado) e depois `python scripts/nuvem.py
+   deploy` só lendo → todas ✅ (34 esperadas, com a `/fumaca/memoria`), `/versao` com
+   `memoria: True`, o log limpo nos dois serviços, e o 429 das finanças resolvido ou explicado.
+3. O roteiro do Mac (abaixo), para o dono rodar e colar a saída.
+4. O fechamento: o D66 "Como ficou" (hoje "(a preencher no fechamento)"); o diário com "Erros
+   desta sessão"; a barra **23 de 33**; `sessoes.md` (a 13 feita, o ▶️ na 13b); `docs/erros.md`;
+   commit, push e o CI pelo SHA.
+
+**O roteiro do Mac (para depois do deploy; sem `<…>` nem `#`; gasto estimado < US$ 0,03):**
+- `cd ~/LifeOs && git pull && git log --oneline -1`
+- `uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q`
+- `viking chat --nuvem`: a abertura diz "memória do que você conta"; digitar
+  `Eu sou vegetariano.` (📝 anotei), `Eu treino todo dia às 7h da manhã.` (📝), `esquece isso`
+  (🗑️ esqueci o treino), `Eu corro aos sábados.` (📝), `/custos`, `sair`.
+- `viking chat --nuvem` de novo (conversa nova): `posso pedir um churrasco pra mim?` (a resposta
+  lembra o vegetariano), `Agora eu corro aos domingos, não mais aos sábados.` (📝 anotei … no lugar
+  de: …sábados), `sair`.
+- `viking memoria` (2 ativos), `viking memoria --todos` (o treino esquecido, o sábado trocado),
+  `viking memoria --semana`.
+- Da saída colada, para documento, só forma e números: o que o dono contou não vai a documento.
+
+**Erros desta sessão (para o diário e `docs/erros.md` no fechamento):**
+- classe 3: a lista de strings ao `gemini-embedding-2` (um vetor agregado; a página avisava; já
+  registrado em `docs/erros.md`); o dono, na hora: "lembra se nao souber algo - pesquisa docs e
+  repo" (memória do Claude `feedback-pesquisar-antes`);
+- classe 2: a hora do bloco escrita de cabeça (16:00Z em vez de 15:31Z; corrigida pelo `date -u`);
+- classe 4: um parâmetro de teste escrito para passar (`"pode esquecer isso"[:0] + …`) escondia
+  que a regra não casava "pode esquecer"; o teste da restauração caía pelo id que o store também
+  recusa (a mutação sobreviveu); uma mutação desenhada inerte (o `motivo = None` depois da recusa);
+- classe 6: três âncoras de mutação quebradas pelas minhas mudanças (a prova do chat, duas do
+  formato do backup); o `conferir` passou a comparar a memória do arquivo com um restaurado sem
+  ela (o teste pegou); o nome `desfazer` na memória cruzou a régua da D26 (renomeado `devolver`);
+- a emenda do `{hoje}` no `turno.instrucao` saiu ao contrário do comentário (pega ao reler, antes
+  do teste);
+- `python scripts/nuvem.py --executar` sem o nome do passo (o argparse recusou; nada rodou).
+
+**Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (as armadilhas novas "A memória
+só aprende do que o dono digita" e "Uma lista de strings ao `gemini-embedding-2`"); este bloco; o
+"Plano — Sessão 13" abaixo dos registros; a D48 e a D66; `src/lifeos/memoria/` (`store.py`,
+`extrator.py`, `resumo.py`, `servico.py`); `assistant/na_nuvem.py` (a memória no turno);
+`scripts/nuvem.py` (o `deploy`, `_prova_do_chat`, `INDICES`, `TTLS`); `docs/erros.md` (classes
+2, 3, 4 e 6); as skills `software-build` (fechar), `nuvem-e-deploy` e `evidencia`.
+
+**Não pode ser esquecido:**
+- nenhum conteúdo do dono (fatos, conversa) em documento, commit ou log: só forma e números;
+- o extrator recebe só a `mensagem`; o chat não tem tool de memória; o 📝 sai do store;
+- o fuso do dono é Seattle até ~fim de outubro; depois, perguntar a cidade;
+- a 13b (receitas) é a próxima sessão; a 11b (formulários) segue na fila sem posição;
+- todo `gcloud` com `--project`, e nem ID de projeto nem URL no repo (a saída do `deploy` mostra
+  o projeto: não copiar para documento).
+
+### 2026-10-08 16:40Z — o bloco de retomada do C5 antes dos recursos (o registro)
 
 **Estado (2026-10-08, medido):**
 - **A abertura da 13** (depois do compact): leitura e conferências batendo com o bloco anterior.
