@@ -884,7 +884,7 @@ PASSOS = (
     Passo(
         "ttl",
         "o registro de ações e as confirmações apagam sozinhos depois de 30 dias, as tarefas das "
-        "mãos depois de 1",
+        "mãos depois de 1, o fato esquecido da memória 30 dias depois",
         _m_ttl,
         _c_ttl,
         depende=("firestore",),
