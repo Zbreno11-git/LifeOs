@@ -190,6 +190,20 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
   (~300 tokens de entrada, até 49 de saída); o embedding a US$ 0,20 por 1M de tokens.
 - **Fora do backup?** Não: o backup versão 2 leva os textos e as marcas, sem o vetor.
 
+## As receitas (Sessão 13b, D67)
+
+- **Um recurso novo, com o ok do dono:** a TTL em `receitas.apagar_em` (a proposta ignorada some
+  em 1 dia, a esquecida em 30), em `scripts/nuvem.py` (`TTLS`). **Nenhum índice novo:** a coleção
+  `receitas` não tem vetor (o `roda` é pelo nome), e as consultas são de igualdade num campo só
+  (`ativo`, `sessao`), que o Firestore indexa sozinho.
+- **Leituras por mensagem do dono:** os nomes das guardadas (uma consulta `ativo == true`, um
+  documento por receita) entram no texto de sistema; `guarda receita` lê as da conversa; `roda`
+  lê as guardadas. Poucas receitas: poucas leituras.
+- **Custo do Gemini medido no C1** (2026-10-08, oks do dono, US$ 0,0351 no pior caso): o extrator
+  com o campo `receita` ficou em ~450–510 tokens de entrada e 19–145 de saída (~US$ 0,0003 no pior
+  caso, o mesmo da 13); rodar uma receita é um turno normal.
+- **No backup:** a versão 3 leva a coleção inteira (as propostas também).
+
 ## Comandos do gcloud que dizem "não existe" de jeitos diferentes
 
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find

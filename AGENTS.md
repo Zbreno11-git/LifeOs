@@ -150,8 +150,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     confiável); `SO_NA_NUVEM` diz o que só a nuvem tem
   - `backup/` — o backup diário no Drive do dono (Sessão 11c, D63): `formato.py` (o arquivo
     versionado: lembretes no formato da migração, o registro de ações dos 30 dias inteiro, os
-    gastos do teto e, desde a versão 2 (Sessão 13), os fatos da memória sem o vetor; contagens e a
-    impressão de cada lembrete; `ler` confere tudo, lê a versão 1 também, e `montar` lê de
+    gastos do teto e, desde a versão 2 (Sessão 13), os fatos da memória sem o vetor, e desde a 3
+    (Sessão 13b) as receitas; contagens e a impressão de cada lembrete; `ler` confere tudo, lê as
+    versões 1 e 2 também, e `montar` lê de
     volta antes de devolver), `drive.py` (escopo `drive.file`; **só cria, lista e baixa**, nunca
     apaga, e uma régua lê o código; o envio dentro de `registro.acao("backup.drive")`),
     `rodada.py` (a rodada da nuvem: baixa o arquivo mais novo e só sobe outro se o conteúdo
@@ -168,7 +169,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     `gemini-embedding-2` a 768; **cada texto num `types.Content`**), `extrator.py` (a chamada
     separada que lê **só a mensagem que o dono digitou** e os fatos parecidos, com ids curtos),
     `resumo.py` (o e-mail da semana, na segunda às 9h do fuso do dono, pela rodada dos lembretes),
-    `servico.py` (o que as rotas `/memoria*` fazem) e `terminal.py` (`viking memoria`)
+    `servico.py` (o que as rotas `/memoria*` fazem) e `terminal.py` (`viking memoria`). Desde a
+    Sessão 13b (D67), as **receitas**: `receitas.py` (a coleção `receitas`, sem vetor: a proposta
+    do extrator nasce fora do `roda`, vira guardada só com o `guarda receita` digitado naquela
+    conversa, e morre em 1 dia pela TTL; o mesmo nome substitui), e `regras.recusa_receita` (o
+    filtro próprio: a forma de ordem dos fatos recusaria toda receita)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
@@ -319,8 +324,10 @@ viking aprovar                  # aprova com código os pedidos que outros apps 
 viking memoria                  # o que o Viking anotou de você, na nuvem (os ativos); --todos
                                # (também os trocados e os esquecidos), --semana, --esquecer ID,
                                # --desfazer ID, --corrigir ID --texto T, --reindexar (depois de
-                               # restaurar um backup). No chat da nuvem, "esquece isso" esquece
-                               # a última anotação da conversa
+                               # restaurar um backup), --receitas (as guardadas, com os passos;
+                               # esquecer e desfazer valem para elas). No chat da nuvem,
+                               # "esquece isso" esquece a última anotação da conversa, `guarda
+                               # receita` guarda a proposta 📋 e `roda NOME` roda uma guardada
 viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
                                # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
                                # (só num terminal interativo); --nuvem lista os da nuvem;
@@ -555,7 +562,11 @@ listas de tools). A linha "📝 anotei" sai do que foi relido do store; o "esque
 `na_nuvem._esquece_isso`, antes da barreira, e nunca chega ao modelo; o filtro (`regras.recusa`)
 vale no extrator **e** no `store.gravar`/`importar`, e cada um tem a sua régua. Um nome de
 função da memória não se chama `desfazer` nem `confirmar`: `tests/test_gmail_aprovacao.py` vigia
-quem chama esses nomes (a D26), e a da memória é `devolver`.
+quem chama esses nomes (a D26), e a da memória é `devolver`. As receitas (13b, D67) seguem a
+mesma régua: quem propõe é o extrator (só a mensagem), e `guarda receita` e `roda NOME` são lidos
+em `na_nuvem` antes da barreira; rodar manda os passos ao modelo como texto do dono, com as tools
+e as aprovações de sempre (`tests/test_na_nuvem_receitas.py`, e o envio a outra pessoa ainda pede
+o código em `tests/test_na_nuvem_gmail.py`).
 
 **Uma lista de strings ao `gemini-embedding-2` vira um vetor só.** A página diz "Adding multiple
 inputs directly to the `contents` parameter produces one aggregated embedding" (medido em
