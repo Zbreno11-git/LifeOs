@@ -376,6 +376,38 @@ nada do conteúdo da busca guardado, só forma e números):
 | Busca no 3.5 Flash-Lite só com `google_search`, 3 perguntas | 1,6–2,1 s; 1–2 consultas cada; 1–4 fontes web; `uri` sempre `vertexaisearch.cloud.google.com` (redirecionamento); `title` = domínio; `domain` vazio; `search_entry_point` nas 3; 96–206 tokens de saída, sem raciocínio |
 | Conversa Flash-Lite (chama tool, com assinatura) → 3.8 Flash → Flash-Lite | as duas trocas aceitas: o 3.8 continua o histórico do Flash-Lite, e o Flash-Lite o do 3.8 |
 
+## 10. Releitura de 2026-10-08 (abertura da Sessão 13)
+
+**Lido em 2026-10-08:**
+- **Embeddings** (https://ai.google.dev/gemini-api/docs/embeddings):
+  - o `gemini-embedding-2` é multimodal, vai de 128 a 3072 dimensões (recomendadas 768, 1536 e
+    3072; 3072 por padrão) e aceita até 8.192 tokens;
+  - "You cannot use the `task_type` field for the `gemini-embedding-2` model": a tarefa vai no
+    texto, como `task: search result | query: {content}` na pergunta e `title: none | text:
+    {content}` no documento;
+  - normaliza sozinho as dimensões menores (o `gemini-embedding-001` não);
+  - os espaços dos dois modelos não se misturam: trocar de modelo é reembutir tudo.
+- **Preço** (https://ai.google.dev/gemini-api/docs/pricing): o `gemini-embedding-2` custa US$ 0,20
+  por 1M de tokens de texto (US$ 0,10 no Batch), com nível grátis; o 3.5 Flash-Lite e o 3.8 Flash
+  seguem como na seção 9.
+- **Busca vetorial do Firestore**
+  (https://docs.cloud.google.com/firestore/native/docs/vector-search):
+  - "The maximum supported embedding dimension is 2048"; o índice é só `flat`, e é obrigatório
+    ("you must create a corresponding index");
+  - `EUCLIDEAN`, `COSINE` e `DOT_PRODUCT`; até 1000 resultados;
+  - aceita filtro `where` antes da busca, com índice vetorial composto;
+  - a página não fala do emulador nem do preço.
+- **Cobrança** (https://firebase.google.com/docs/firestore/pricing): "one read operation for each
+  batch of up to 100 kNN vector index entries read by the query", mais as leituras dos documentos
+  devolvidos; a cota grátis é de 50 mil leituras, 20 mil gravações e 20 mil exclusões por dia.
+
+**Medido em 2026-10-08** (VPS, grátis): o emulador do Firestore 1.22.0 aceita `find_nearest` com
+`COSINE`, com e sem `where`, **sem índice nenhum**. A produção exige o índice: como nos índices
+compostos da Sessão 10, a prova do deploy é que o confere.
+
+**Não lido, e não preciso:** se o Python do Mac carrega extensão do SQLite (o `sqlite-vec`). A
+memória mora na nuvem (D66).
+
 ## Afirmações não conferidas (a medir na sessão que as usa)
 
 - **S8:** se o Chrome abre `view-source:` por CDP com os cookies; se "In production" sem
@@ -388,8 +420,8 @@ nada do conteúdo da busca guardado, só forma e números):
 - **S12:** se busca e funções combinam pelo `generateContent` no 3.x (o campo
   `include_server_side_tool_invocations` existe no SDK 2.25.0 instalado; não testado). Em
   2026-10-07 a D65 escolheu a busca numa chamada separada: segue não testado, e não é usado.
-- **S13:** se o Python do Mac carrega extensão do SQLite; o preço da consulta vetorial do
-  Firestore.
+- **S13:** o preço da consulta vetorial do Firestore foi lido em 2026-10-08 (seção 10); a
+  extensão do SQLite no Mac deixou de importar (D66).
 - **S17:** WebAuthn em PWA da tela de início no iPhone; se o MP4 do Safari passa no Gemini como
   `audio/m4a`.
 - **S19/S21:** se a Garmin recusa de fato; se o acordo do Strava permite o uso com IA (só uma

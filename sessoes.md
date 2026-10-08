@@ -16,8 +16,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **13 — memória de fatos e receitas** (a próxima, pela ordem que o dono manteve em
-  2026-10-07: 12–16 e então o app). A 12 fechou no Mac em 2026-10-08 (a busca com fontes, o
+- **Sessão:** **13 — memória de fatos** (aberta e planejada em 2026-10-08; o plano está no
+  `PROGRESSO.md`). O dono a dividiu na abertura: a 13 fica com os fatos e o resumo semanal, e as
+  receitas vão para a **13b**, logo depois. A 12 fechou no Mac em 2026-10-08 (a busca com fontes, o
   Flash-Lite e o forte; D65). A 11b (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
@@ -25,7 +26,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-08):** 22 de 32 sessões fechadas. O dono ainda não usa o Viking ativamente
+- **Agora (2026-10-08):** 22 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
   ("só vou usar ativo quando eu tiver ele em hardware ou em app/site com ele completo") e decidiu
   **manter a ordem**: 11d, 12–16 e então o app (17–18).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
@@ -34,8 +35,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D65), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as respostas da abertura da 13 (a seção dela tem as perguntas; a D48 diz
-  o que a memória pode anotar sozinha).
+- **Depende do dono:** os oks da 13: as medições do C1 (< US$ 0,01), o índice e a TTL, e o
+  deploy. As 8 respostas da abertura estão na seção da 13 e na D66.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -1019,7 +1020,22 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** nada novo. O google-genai do lock já tem a busca e o
   `url_context` (era o 2.25.0 em 2026-09-28; 2.29.0 desde a abertura, em 2026-10-07).
 
-## Sessão 13 — memória de fatos e receitas (planejada em 2026-09-28)
+## Sessão 13 — memória de fatos (planejada em 2026-09-28; aberta em 2026-10-08)
+
+- **As respostas do dono na abertura (2026-10-08; D66):**
+  - a memória mora **na nuvem** (Firestore), e só o `viking chat --nuvem` anota e lembra; o
+    `viking chat` do Mac fica sem memória, e o `viking memoria` do Mac fala com o motor. Por isso o
+    "primeiro passo" abaixo (a migração no `viking.db`) **não acontece**: as tabelas viram a coleção
+    `memoria` do Firestore, com as mesmas regras (só se acrescenta, `invalida_em`, a origem);
+  - **dividida:** a 13 fica com os fatos e o resumo semanal; as **receitas** vão para a 13b;
+  - o extrator roda em **toda** mensagem do dono, em paralelo com a resposta;
+  - **embeddings agora** (`gemini-embedding-2`, 768 dimensões, `find_nearest` do Firestore);
+  - **nunca anotar:** valores das finanças, dados de outras pessoas e planos com data (além de
+    senha e código de aprovação, sempre);
+  - **"esquece isso"** tira a última anotação da conversa na hora, dá para desfazer, e o texto some
+    de vez em 30 dias; um fato específico se esquece pelo `viking memoria`;
+  - **até 8 fatos** por resposta;
+  - o **resumo semanal** chega na segunda às 9h (fuso do dono), só se houve anotação.
 
 - **Entrega:**
   - um fato que o dono escreve na conversa A ("treino às 7h") é anotado sozinho, com a linha
@@ -1080,6 +1096,19 @@ O que estava escrito na abertura:
   - as ideias do Graphiti (`invalida_em`) e do Leon (camadas: preferências, contexto do dia,
     conversa recente).
 
+## Sessão 13b — receitas (criada em 2026-10-08, na abertura da 13)
+
+- **Por quê:** o dono dividiu a 13 na abertura: os fatos e o resumo semanal na 13, as receitas aqui,
+  logo depois.
+- **Entrega:** uma receita (um procedimento que o dono ensina, como "quando eu pedir o resumo da
+  semana, faz X, Y e Z") nasce **só de mensagem do dono e com pergunta** (D48), e é reusada **sem
+  ganhar permissão nova**: cada passo continua com as tools e as aprovações de sempre (o código de
+  um envio a outra pessoa, o da limpeza, o freio do navegador).
+- **Parte da 13:** a coleção `memoria`, o extrator, o filtro de forma de ordem e o `viking memoria`
+  existem; a receita é outro tipo de anotação, que o extrator propõe e o dono confirma.
+- **A decidir na abertura:** como a receita se dispara (pelo nome, por pedido parecido), se o
+  `viking memoria` a mostra junto dos fatos, e o teto de passos de uma receita.
+
 ## Sessão 14 — documentos (planejada em 2026-09-28)
 
 - **Entrega:** "aprende este PDF", um arquivo por vez. A resposta cita o arquivo e o trecho, e a
@@ -1102,6 +1131,8 @@ O que estava escrito na abertura:
   - **O documento é conteúdo de terceiro:** trecho citado vai no bloco de não confiável, e uma
     instrução dentro de um PDF não vira fato nem receita (a mesma regra da 13).
   - **Cortes com o arquivo e a posição gravados,** para a resposta citar arquivo e trecho.
+  - **Um fato que só um documento diz vira, no máximo, sugestão** que o Viking pergunta (D48). Veio
+    da abertura da 13 (2026-10-08): lá não há documento ainda, e aqui nasce o primeiro produtor.
   - **O limiar da avaliação é do dono,** medido antes de combinado.
 - **Libs/repos a reaproveitar:** medir na abertura um leitor de PDF só com wheel (a árvore e o Mac
   Intel, se ler lá). Nenhum candidato aprovado ainda.

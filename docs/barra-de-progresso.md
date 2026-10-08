@@ -9,13 +9,14 @@
 
 **Última atualização: 2026-10-08 (Sessão 12 fechada no seu Mac).**
 
-`██████████████░░░░░░ 22 de 32 sessões fechadas`
+`█████████████░░░░░░░ 22 de 33 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d e 12; parciais: nenhuma; em curso: nenhuma; na fila: 13 (memória,
-a próxima), 14 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
-30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), e para 32
-quando a medição das finanças abriu a 11d (2026-10-06).
+10, 10b, 10c, 11, 11c, 11d e 12; parciais: nenhuma; em curso: 13 (memória de fatos); na fila: 13b
+(receitas), 14 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
+30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), para 32
+quando a medição das finanças abriu a 11d (2026-10-06), e para 33 quando a 13 foi dividida na
+abertura (2026-10-08).
 
 ## 2026-10-08 — Sessão 12: o Viking busca na internet, com as fontes (fechada no seu Mac)
 
