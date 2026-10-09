@@ -5,16 +5,18 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 01:12Z: a 13b fechada no Mac (24 de 33); a próxima é a 14 (documentos)
+## ▶️ RETOMAR AQUI — 2026-10-09 02:16Z: a 13b fechada (24 de 33); abrir, planejar e implementar a 14 (documentos)
 
 **Estado (2026-10-09):**
 - **A 13b fechou no Mac** (01:07–01:09Z; D67 "Como ficou"; o diário e a barra têm o detalhe): a
   proposta 📋, `guarda receita`, `roda`, `viking memoria --receitas` e a limpeza (a receita de
   teste esquecida; some em 30 dias pela TTL).
-- **No ar:** o motor e o `financas` em `2c78d8b`; o `deploy` só lendo às 00:42Z: 34 ✅ e 0 ❌;
+- **No ar:** o motor e o `financas` em `2c78d8b`; o `deploy` só lendo às 02:16Z: 34 ✅ e 0 ❌, 0
+  commits desde ela nos caminhos da imagem;
   `python scripts/nuvem.py` → 13 ✅ (00:38Z).
-- **Portões:** a suíte `3020 passed` (emulador exigido); mutações 468 de 468; o CI do `2c78d8b`
-  `success`.
+- **Repositório (02:16Z):** HEAD `dbbfff9` = o remoto (o fechamento), árvore limpa, sem
+  `.mutacao.lock`; o CI do `dbbfff9` pelo SHA: `success`.
+- **Portões:** a suíte `3020 passed` (emulador exigido); mutações 468 de 468.
 - **O dono decidiu no fechamento:** aceitar e vigiar o modelo que faz os passos de leitura ao
   ensinar (o gatilho na D67: um passo que muda algo rodar ao ensinar).
 - **Não há background nem trava.**
@@ -25,10 +27,66 @@ desde a 13b ele inclui as receitas da semana (a de teste foi guardada e esquecid
 "esquecida"). Na primeira sessão depois disso: perguntar ao dono se chegou (só o assunto e quantas
 linhas) e ler o log do motor daquela manhã (`severity>=ERROR`, com `--project`), sem travar nada.
 
-**Próximo passo exato:** abrir a 14 pela `software-build`: `uv lock --upgrade --dry-run`; a releitura
-dos preços e do que a 14 usaria (um leitor de PDF só com wheel; o NotebookLM exporta as notas para
-o Docs); as perguntas da abertura ao dono (a primeira: o material são as notas exportadas para o
-Docs?), o plano, a implementação, o Mac e o fechamento (25 de 33).
+**O dono (2026-10-09, ~02:15Z):** pediu o compact com o prompt refletindo "o planejamento e a
+implementação da próxima sessão": a 14 abre, planeja e implementa logo depois do compact.
+
+**Próximo passo exato:** abrir a 14 pela `software-build`:
+1. `uv lock --upgrade --dry-run` (D45): versão nova → `uv lock --upgrade` num commit próprio, a
+   suíte antes e depois, o CI pelo SHA;
+2. reler os preços do dia (o `gemini-embedding-2` e o Flash-Lite) e medir, de graça, um leitor de
+   PDF **só com wheel** (candidato: `pypdf`, Python puro; conferir a árvore, a licença e o wheel
+   para o Mac Intel; nenhum aprovado ainda, `sessoes.md`, 14);
+3. as perguntas da abertura ao dono, em rodadas pequenas (as que decidem o tamanho primeiro);
+4. o plano por fases no formato de `referencia/plano-de-sessao.md`, aprovado → copiado aqui;
+5. implementar até o fim, pedindo ok só para o que custa (o Gemini incluído), cria recurso
+   (o índice vetorial novo) ou publica; o roteiro do Mac; o fechamento (25 de 33).
+
+**O que a 14 já tem decidido (D48, `sessoes.md` 14):** documentos **um por um**; o documento é
+conteúdo de terceiro (o trecho vai ao modelo no bloco de não confiável; uma instrução num PDF não
+vira fato nem receita: quem anota e quem propõe já leem só a mensagem digitada); a resposta cita o
+arquivo e o trecho; **um fato que só um documento diz vira, no máximo, sugestão que o Viking
+pergunta**; o limiar da avaliação fixa é do dono, medido antes de combinado. O NotebookLM pessoal
+não tem API; ele exporta as **notas** para um Google Doc (lido em 2026-09-28).
+
+**Achado que decide a 1ª pergunta (do código, 2026-10-09):** o Drive do Viking usa `drive.file`
+(`backup/drive.SCOPES`): ele só enxerga o que **ele** criou ou o que o dono abriu por um seletor
+numa página web. Um Doc exportado pelo NotebookLM fica invisível sem o seletor; ler o Drive inteiro
+seria `drive.readonly`, escopo restrito (o `gmail.modify` já é; a tela de app não verificado).
+
+**Perguntas previstas da abertura** (do dono; as opções são minhas, a recomendada primeiro):
+- **o material:** as notas do NotebookLM exportadas para o Docs, PDFs, ou os dois;
+- **como o documento chega:** `viking documentos --aprender ARQUIVO` no Mac, com o arquivo baixado
+  (PDF, `.txt`, `.md`; o Doc baixado como PDF ou texto), e o texto sobe ao motor (recomendado: sem
+  escopo novo do Google); ou o seletor do Drive numa página local, como a da Pluggy (`drive.file`;
+  mais código e um login); ou o Drive inteiro (`drive.readonly`, restrito);
+- **onde responde:** só o chat da nuvem, como a memória (recomendado; o app da 17 herda);
+- **a sugestão de fato** (D48): uma linha "💡 o documento diz: … — para anotar, digite `anota isso`",
+  lida pela barreira; ou nada nesta sessão (o tamanho);
+- **quantos trechos por resposta** e o tamanho máximo de um documento;
+- **esquecer um documento:** `viking documentos --esquecer ID` (some na hora, apaga em 30 dias, como
+  os fatos), e se o backup leva os documentos (o texto inteiro no Drive);
+- **o limiar da avaliação fixa** (recall@k e MRR num conjunto de ouro inventado), depois de medido;
+- **tamanho:** a 14 inteira, ou "aprender e citar" agora e a sugestão de fato depois.
+
+**Técnico previsto (meu; o dono pode derrubar):** coleções `documentos` (o arquivo: nome, origem,
+contagem, marcas) e `trechos` (o texto, o arquivo, a posição, `ativo`, o vetor 768), só se
+acrescenta e TTL no esquecido; os trechos cortados por parágrafo com um teto de caracteres e o
+número da página; os vetores pelo `memoria/vetores.embutir` (cada texto num `types.Content`, lotes
+como o `servico.LOTE`), pelo cliente instrumentado (o teto); a busca `find_nearest` com `ativo ==
+true` num **índice vetorial novo** em `trechos` (recurso: ok na hora; o emulador não pede, a prova
+do deploy exerce); os trechos no bloco de não confiável com "«arquivo», p. N"; o texto do documento
+nunca em log, documento ou commit; as medições e o conjunto de ouro só com texto inventado; se
+mexer no texto de sistema, medir de novo com frases inventadas e ler as respostas inteiras.
+
+**Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (as armadilhas "A memória só
+aprende do que o dono digita", "Uma lista de strings ao `gemini-embedding-2`", "O emulador do
+Firestore não é a produção" e "Segredo da nuvem é arquivo de volume"); este bloco; a seção da 14 e
+o bloco ▶️ em `sessoes.md`; D48, D53, D63, D66 e D67 em `docs/decisoes.md`; a seção NotebookLM e a
+seção 10 de `docs/fontes/pesquisa-roteiro.md`; o código: `memoria/` (`vetores`, `store`,
+`receitas`, `extrator`, `servico`, `terminal`), `backup/drive.py` (o `drive.file`),
+`assistant/na_nuvem.py` (o `_lembrar`, o `_config`, a barreira) e `turno.instrucao`;
+`docs/erros.md` (classes 2, 3, 4, 6 e 7); as skills `software-build`, `testes-que-provam`,
+`evidencia`, `seguranca`, `integracoes` e `dados-e-banco`; a memória do Claude.
 
 **Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto; sem
 `.mutacao.lock`; `gh run list --commit $(git rev-parse HEAD)` → `success`;
