@@ -108,6 +108,7 @@ async def versao(request: Request) -> JSONResponse:
             # Sessão 13 (D66): a memória de fatos deste chat
             "memoria": config.MEMORIA,
             "receitas": config.MEMORIA,  # Sessão 13b (D67): as receitas vêm com a memória
+            "documentos": config.MEMORIA,  # Sessão 14 (D68): os documentos também
         }
     )
 

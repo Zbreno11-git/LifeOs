@@ -30,7 +30,7 @@ def test_nome_legitimo_passa(nome):
         ("notas.pdf", "só arquivos .md ou .txt"),
         ("notas.docx", "só arquivos .md ou .txt"),
         ("notas", "só arquivos .md ou .txt"),
-        ("/Users/dono/notas.md", "sem a pasta"),
+        ("/Users/usuario/notas.md", "sem a pasta"),
         ("pasta\\notas.md", "sem a pasta"),
         (".md", "sem letras"),
         ("!!!.txt", "sem letras"),

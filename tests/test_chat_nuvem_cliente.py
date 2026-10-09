@@ -277,6 +277,33 @@ def test_a_abertura_diz_como_guardar_e_rodar_receitas():
     assert "receitas" not in chat_cliente.abertura(tudo)
 
 
+def test_a_abertura_diz_como_mandar_documentos():
+    """Sessão 14 (D68): o comando aparece; um motor de antes da 14 (sem o campo) não o promete."""
+    tudo = {"gmail": True, "maos": True, "financas": True, "busca": True, "memoria": True}
+    com = chat_cliente.abertura(tudo | {"documentos": True})
+    assert "os documentos que você manda (`viking documentos --aprender`)" in com
+    assert "documentos" not in chat_cliente.abertura(tudo)
+
+
+def test_a_linha_dos_documentos_sai_limpa_e_pula_o_torto():
+    esc = chr(0x1B)
+    resposta = {
+        "documentos": [
+            {"tema": "treino", "arquivos": [["treino.md", 3], [f"jo{esc}[2Jelho.md", 1]]},
+            {"tema": "python", "arquivos": []},
+            {"tema": "", "arquivos": [["x.md", 1]]},
+            {"tema": "y", "arquivos": [["a.md", True], ["b.md", "2"], "c"]},
+            "lixo",
+        ]
+    }
+    assert chat_cliente.documentos(resposta) == [
+        "📄 consultei «treino.md» (3 trecho(s)) e «jo[2Jelho.md» (1 trecho(s)) (tema treino)",
+        "📄 consultei o tema python: nenhum trecho voltou",
+        "📄 consultei o tema y: nenhum trecho voltou",
+    ]
+    assert chat_cliente.documentos({}) == [] and chat_cliente.documentos({"documentos": "x"}) == []
+
+
 @pytest.mark.parametrize(
     "receita",
     [

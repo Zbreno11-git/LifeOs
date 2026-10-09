@@ -1520,10 +1520,12 @@ def test_a_prova_do_chat_confere_a_busca_e_os_modelos_da_arvore(nuvem):
         "forte": turno.MODELO_FORTE,
         "memoria": True,
         "receitas": True,
+        "documentos": True,
         "gmail": True,
     }
     assert nuvem._prova_do_chat(certo).passou
     assert not nuvem._prova_do_chat(certo | {"receitas": None}).passou  # um motor de antes da 13b
+    assert not nuvem._prova_do_chat(certo | {"documentos": None}).passou  # um de antes da 14
     assert not nuvem._prova_do_chat(certo | {"memoria": False}).passou  # a 13 desligada no ar
     assert not nuvem._prova_do_chat({"commit": "velho", "gmail": True}).passou
     assert not nuvem._prova_do_chat(certo | {"modelo": "gemini-2.5-flash"}).passou

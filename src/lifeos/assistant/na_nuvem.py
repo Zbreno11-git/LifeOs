@@ -39,6 +39,8 @@ from lifeos import ao_dono, config, confirmacao, custos, nao_confiavel, prazo, r
 from lifeos.assistant import agent, busca
 from lifeos.assistant import turno as turno_nucleo
 from lifeos.browser._redacao import limpar_controles
+from lifeos.documentos import consulta as documentos_consulta
+from lifeos.documentos import store as documentos_store
 from lifeos.memoria import extrator as memoria_extrator
 from lifeos.memoria import receitas as memoria_receitas
 from lifeos.memoria import store as memoria_store
@@ -145,6 +147,8 @@ FERRAMENTAS: list[Callable[..., Any]] = [
     agent.fatura_do_cartao,
     usar_modelo_forte,
     busca.buscar_na_web,
+    # Os documentos (Sessão 14, D68): só leitura, por tema; só com a memória ligada.
+    documentos_consulta.consultar_documentos,
 ]
 _DO_GMAIL = frozenset(
     {
@@ -169,6 +173,7 @@ SO_NO_MAC: dict[str, str] = {}
 SO_NA_NUVEM: dict[str, str] = {
     "usar_modelo_forte": "a cota do dia do forte mora no Firestore (o dono, 2026-10-07)",
     "buscar_na_web": "a cota do dia da busca mora no Firestore (o dono, 2026-10-07)",
+    "consultar_documentos": "os documentos moram no Firestore, com a memória (D68)",
 }
 
 
@@ -295,6 +300,15 @@ def _nomes_das_receitas() -> tuple[list[str], str]:
         return [], f"as receitas não responderam agora ({type(exc).__name__})"
 
 
+def _temas_dos_documentos() -> tuple[dict[str, list[str]], str]:
+    """Os temas dos documentos ativos e os arquivos de cada um (o modelo escolhe o tema da
+    consulta), e um aviso se falhou."""
+    try:
+        return {tema: arquivos for tema, arquivos in documentos_store.temas().values()}, ""
+    except Exception as exc:  # noqa: BLE001 - o turno segue sem os documentos
+        return {}, f"os documentos não responderam agora ({type(exc).__name__})"
+
+
 def _lembrar(cliente: Any, mensagem: str) -> tuple[list[memoria_store.Fato], str]:
     """Os fatos parecidos com a mensagem, e um aviso se a memória não respondeu (o turno segue
     sem ela: a resposta não depende dela, e o dono fica sabendo)."""
@@ -369,6 +383,8 @@ def ferramentas() -> list[Callable[..., Any]]:
         fora |= _DO_GMAIL
     if not config.financas_no_motor():
         fora |= _DAS_FINANCAS
+    if not config.MEMORIA:  # os documentos moram ao lado da memória (D68)
+        fora.add("consultar_documentos")
     return [f for f in FERRAMENTAS if f.__name__ not in fora]
 
 
@@ -447,13 +463,20 @@ def _cliente() -> Any:
 
 
 def _config(
-    memoria: list[str] | None = None, receitas: list[str] | None = None
+    memoria: list[str] | None = None,
+    receitas: list[str] | None = None,
+    documentos: dict[str, list[str]] | None = None,
 ) -> types.GenerateContentConfig:
     presentes = ferramentas()
     return types.GenerateContentConfig(
         tools=[*presentes],
         system_instruction=turno_nucleo.instrucao(
-            presentes, agent._hoje(), onde="nuvem", memoria=memoria, receitas=receitas
+            presentes,
+            agent._hoje(),
+            onde="nuvem",
+            memoria=memoria,
+            receitas=receitas,
+            documentos=documentos,
         ),
         temperature=turno_nucleo.TEMPERATURA,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(
@@ -474,10 +497,12 @@ def _resposta(
     so_ao_dono: list[str],
     buscas: Sequence[busca.Busca] = (),
     memoria: dict[str, Any] | None = None,
+    consultas: Sequence[documentos_consulta.Consulta] = (),
 ) -> dict[str, Any]:
     return {
         "ao_dono": list(so_ao_dono),
         "busca": [b.como_dict() for b in buscas],
+        "documentos": [c.como_dict() for c in consultas],
         "memoria": memoria or {"anotei": [], "aviso": "", "receita": None},
         "resposta": resposta,
         "erro": erro,
@@ -585,10 +610,11 @@ def _turno(
     lembrados, aviso_da_memoria = _lembrar(cliente, pedido) if com_memoria else ([], "")
     fatos = [f.texto for f in lembrados] if com_memoria else None
     nomes, aviso_das_receitas = _nomes_das_receitas() if com_memoria else ([], "")
-    aviso_da_memoria = aviso_da_memoria or aviso_das_receitas
+    temas, aviso_dos_documentos = _temas_dos_documentos() if com_memoria else ({}, "")
+    aviso_da_memoria = aviso_da_memoria or aviso_das_receitas or aviso_dos_documentos
     chat = cliente.chats.create(
         model=turno_nucleo.MODELO,
-        config=_config(fatos, nomes if com_memoria else None),
+        config=_config(fatos, nomes if com_memoria else None, temas if com_memoria else None),
         history=historico,
     )
     prompt = f"{nota}\n\n{pedido}" if nota else pedido
@@ -599,7 +625,10 @@ def _turno(
         if com_memoria and rodar is None
         else None
     )
-    with busca.no_turno(cliente, cotas) as buscas:
+    with (
+        busca.no_turno(cliente, cotas) as buscas,
+        documentos_consulta.no_turno(cliente) as consultas,
+    ):
         resultado = turno_nucleo.executar(chat, prompt, turno_id)
     if anotando is not None:
         memoria = _terminar_anotacao(anotando, consumo, aviso_da_memoria)
@@ -618,6 +647,7 @@ def _turno(
             so_ao_dono=so_ao_dono,
             buscas=buscas,
             memoria=memoria,
+            consultas=consultas,
         )
     if isinstance(resultado.erro, custos.TetoAtingido):
         erro = f"Parei no meio: o teto de gasto foi atingido ({resultado.erro.gasto.texto()})."
@@ -638,5 +668,6 @@ def _turno(
         consumo=gasto_do_turno,
         so_ao_dono=so_ao_dono,
         buscas=buscas,  # o que já apareceu numa busca antes do erro continua do dono
+        consultas=consultas,
         memoria=memoria,  # a mensagem é do dono mesmo com o turno falhando: o que anotou, aparece
     )

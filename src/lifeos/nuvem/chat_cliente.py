@@ -22,6 +22,8 @@ Desde a 13 (D66), o campo `memoria` diz o que o Viking anotou da mensagem ("📝
 foi gravado e relido no motor) e avisa se a memória não respondeu. Também aparece sem terminal
 interativo: são frases do próprio dono. Desde a 13b (D67), também a receita proposta ("📋 receita
 proposta «…»", com todos os passos e o aviso de um endereço de outra pessoa), relida do store.
+Desde a 14 (D68), o campo `documentos` diz o que a consulta aos documentos achou ("📄 consultei
+«arquivo» (N trechos)"), do que a tool devolveu no motor, nunca da prosa do modelo.
 
 Pode ter `from __future__ import annotations`: nada daqui é tool do Gemini.
 """
@@ -86,6 +88,8 @@ def abertura(capacidades: dict[str, Any]) -> str:
         tem.append("memória do que você conta (vale só a linha 📝; `esquece isso` apaga a última)")
     if capacidades.get("receitas") is True:  # Sessão 13b: as receitas que o dono ensina (📋)
         tem.append("receitas que você ensina (`guarda receita` guarda a proposta; `roda NOME`)")
+    if capacidades.get("documentos") is True:  # Sessão 14: os documentos, por tema (📄)
+        tem.append("os documentos que você manda (`viking documentos --aprender`)")
     if not so_no_mac:  # tudo na nuvem: nada a mandar para o Mac
         return f"☁️  Viking na nuvem ({_em_lista(tem)})."
     fora = _em_lista(so_no_mac)
@@ -110,6 +114,32 @@ def buscas(resposta: dict[str, Any]) -> list[str]:
             linhas.append("Buscado no Google: " + "; ".join(f"“{c}”" for c in consultas))
         blocos.append("\n".join(linhas))
     return blocos
+
+
+def documentos(resposta: dict[str, Any]) -> list[str]:
+    """O que a consulta aos documentos achou neste turno (Sessão 14, D68): uma linha por consulta,
+    com o tema e quantos trechos de cada arquivo (do que a tool devolveu, nunca da prosa). Fora do
+    formato, pulada."""
+    linhas = []
+    for item in resposta.get("documentos") or []:
+        if not isinstance(item, dict) or not _texto(item.get("tema")):
+            continue
+        arquivos = [
+            f"«{_texto(a[0])}» ({int(a[1])} trecho(s))"
+            for a in item.get("arquivos") or []
+            if isinstance(a, list)
+            and len(a) == 2
+            and _texto(a[0])
+            and isinstance(a[1], int)
+            and not isinstance(a[1], bool)
+        ]
+        tema = _texto(item.get("tema"))
+        linhas.append(
+            f"📄 consultei {_em_lista(arquivos)} (tema {tema})"
+            if arquivos
+            else f"📄 consultei o tema {tema}: nenhum trecho voltou"
+        )
+    return linhas
 
 
 def memoria(resposta: dict[str, Any]) -> list[str]:
@@ -258,6 +288,8 @@ def iniciar(entrada: Any = input) -> int:
             print(f"❌ {_texto(resposta.get('erro')) or 'a nuvem não respondeu o turno'}\n")
         if _texto(resposta.get("aviso")):
             print(f"{_texto(resposta.get('aviso'))}\n")
+        for linha_dos_documentos in documentos(resposta):
+            print(linha_dos_documentos)
         for linha_da_memoria in memoria(resposta):
             print(linha_da_memoria)
         if _texto(resposta.get("consumo")):
