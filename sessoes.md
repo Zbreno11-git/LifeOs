@@ -16,7 +16,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **14 — documentos** (a abrir e planejar). A 13b fechou no Mac em 2026-10-09 (as
+- **Sessão:** **14 — documentos** (aberta e planejada em 2026-10-09; em curso). A 13b fechou no Mac em 2026-10-09 (as
   receitas no chat da nuvem, no ar em `2c78d8b`; D67), depois da 13 (a memória de fatos; D66). A
   11b (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
@@ -32,10 +32,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   Se houver, `uv lock --upgrade` num commit próprio, com a suíte antes e depois; e conferir o CI do
   último commit pelo SHA (`gh run list --commit <sha>`). Alerta do Dependabot aberto = atualizar
   aquele pacote primeiro.
-- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D67), o
+- **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D68), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** as respostas da abertura da 14 (o primeiro passo dela: confirmar que o
-  material são as notas do NotebookLM exportadas para o Docs). Na segunda
+- **Depende do dono:** os oks da 14 (as medições, o índice e as TTLs, o deploy) e o limiar da
+  avaliação fixa, depois de medido. Na segunda
   2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do teste, já
   esquecidos): conferir na primeira sessão depois disso, sem travar nada.
 
@@ -1143,7 +1143,26 @@ O que estava escrito na abertura:
   2026-10-12, depois das 9h no fuso do dono (`estado/resumo-2026-W42`): conferir na abertura que
   chegou.
 
-## Sessão 14 — documentos (planejada em 2026-09-28)
+## Sessão 14 — documentos (planejada em 2026-09-28; aberta em 2026-10-09)
+
+- **As respostas do dono na abertura (2026-10-09, ~03:15–03:31Z; D68):**
+  - o material é **`.md` ou `.txt`** (o Docs exporta os dois; lido na página da API do Drive):
+    **sem PDF**, e o `pypdf` não entra (medido: 1 pacote, mas 101 avisos de PDF malformado);
+  - chega por **`viking documentos --aprender ARQUIVO --tema T`** no Mac, sem escopo novo do Google;
+  - **a 14 inteira:** aprender, consultar com citação, listar, esquecer, desfazer, substituir,
+    backup e a avaliação fixa;
+  - **um documento nunca vira fato** (nem sugestão): a D48 fica mais estrita do que permitia;
+  - **busca por tema** ("mais precisa, mais rápido e… menos tokens"), escolhido **pelo modelo**
+    numa tool só de leitura (`consultar_documentos(tema, pergunta)`), só no chat da nuvem;
+  - **até 5 trechos** por consulta; **até 1 MB** por documento;
+  - **esquecer como os fatos** (some na hora, desfaz, apaga em 30 dias), e **o backup leva o
+    texto** (o gatilho da D63 de ~1 MB passa a ~20 MB);
+  - **o mesmo arquivo no mesmo tema substitui** o anterior (marcado, desfazível);
+  - o limiar da avaliação fixa: perguntado no C1, com os números medidos.
+- **Técnico (agente):** coleções `documentos` e `trechos` (o vetor 768 no trecho, com o tema e o
+  `ativo`), um índice vetorial composto (`tema_lido`, `ativo`, `vetor`), as TTLs nas duas,
+  aprender em duas fases (nada pela metade na busca), cortes por parágrafo com o título e as
+  linhas, o backup versão 4. O plano inteiro está no `PROGRESSO.md`.
 
 - **Entrega:** "aprende este PDF", um arquivo por vez. A resposta cita o arquivo e o trecho, e a
   avaliação fixa atinge um limiar medido e combinado.
