@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 05:15Z: a 14 com C0 e C1 feitos; o C2 (cortes, store, backup v4) em curso
+## ▶️ RETOMAR AQUI — 2026-10-09 05:34Z: a 14 com C0–C3 feitos; o C4 (rotas, `viking documentos`, reindexar, resumo) em curso
 
 **Estado (2026-10-09):**
 - **Abertura conferida (03:08–03:12Z):** tudo igual ao bloco de 02:16Z (limpo, `6e01b99` = origin,
@@ -46,9 +46,19 @@
   MRR ≥ 0,95**; a regra **fica como medida** ("se ele já souber não precisa consultar… a consulta
   é justamente para aprendizado específico"): sem medição nova do texto.
 
-**Próximo passo exato:** o C2 — `documentos/cortes.py` (já escrito para a M1, `MAX_TRECHO = 600`;
-faltam os testes), `documentos/store.py`, o backup v4; `VIKING_EXIGIR_EMULADOR=1 pytest
-tests/test_documentos*.py tests/test_backup*.py -q` verde.
+- **C2 feito (`b06b966`):** o corte (linear em toda forma; a palavra gigante refatiada era
+  quadrática), o store (duas fases; a consulta confere o documento de cada trecho; substituir,
+  esquecer, devolver com a cadeia), o backup v4 já na rodada, no conferir, no restaurar e no
+  `/backup/importar`; a avaliação fixa pelo `find_nearest` do emulador. Suíte `3139 passed`.
+- **C3 feito (`f3f0fa5`):** a tool `consultar_documentos` (só nuvem, com a memória), os temas no
+  texto de sistema depois do tom (onde foi medido), o campo `documentos` e a linha 📄, o `/versao`
+  e a prova do chat. Dentro do bloco o trecho cita "arquivo X, linhas a–b" sem «» (o neutralizar
+  as trocaria). Suíte `3159 passed`.
+
+**Próximo passo exato:** o C4 — `documentos/servico.py` e as rotas `/documentos*` (só `cli@`), o
+cliente, `documentos/terminal.py` e `viking documentos` no `cli.py`, o `--reindexar` com os
+trechos, o resumo de segunda com os documentos; `VIKING_EXIGIR_EMULADOR=1 pytest
+tests/test_motor*.py tests/test_documentos*.py tests/test_memoria*.py -q` verde.
 
 **Depende de um evento futuro:** o primeiro resumo semanal, segunda 2026-10-12 depois das 9h no
 fuso do dono (Seattle): perguntar se chegou e ler o log daquela manhã, sem travar nada.
@@ -157,8 +167,8 @@ oks na hora só para o que custa (o Gemini incluído), cria recurso ou publica.
 |---|---|---|---|
 | C0 | lock em commit próprio (suíte depois, CI); plano no `PROGRESSO.md`; `sessoes.md` 14 com as respostas; D68 rascunho; gatilho da D63 | — | ✅ `edb4449`, `7d3ca2a` |
 | C1 | **ok (< US$ 0,05)** → M1 vetores do conjunto de ouro (recall@5, MRR, o limiar de distância); M2 o modelo com a tool (consulta no tema certo? não consulta fora?); M3 a resposta com trechos (cita «arquivo»? obedece o trecho injetado?); **o dono decide o limiar da avaliação** | C0 | ✅ (05:05Z; o dono: o limiar e a regra como medida) |
-| C2 | `documentos/cortes.py` (puro), `documentos/store.py` (duas fases, substituir, esquecer, devolver, consultar), backup v4 (`formato`) | C1 | ⬜ |
-| C3 | a tool e o coletor; `na_nuvem` (temas no `_config`, o campo `documentos`); `turno._DOCUMENTOS`; `chat_cliente` (📄) | C2 | ⬜ |
+| C2 | `documentos/cortes.py` (puro), `documentos/store.py` (duas fases, substituir, esquecer, devolver, consultar), backup v4 (`formato`) | C1 | ✅ `b06b966` |
+| C3 | a tool e o coletor; `na_nuvem` (temas no `_config`, o campo `documentos`); `turno._DOCUMENTOS`; `chat_cliente` (📄) | C2 | ✅ `f3f0fa5` |
 | C4 | rotas e `servico`; `viking documentos` (terminal, cliente, cli); `--reindexar` com os trechos; resumo; backup v4 em `rodada`/`conferir`/`restaurar`/importar; a avaliação fixa no pytest | C2 | ⬜ |
 | C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, 2 TTLs, provas); **ok** → índice e TTLs; **ok** → deploy; roteiro do Mac; fechamento 25 de 33 | C3, C4 | ⬜ |
 
