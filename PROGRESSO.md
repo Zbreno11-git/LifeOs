@@ -5,7 +5,80 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 06:39Z: a 14 com C0–C4 feitos e o C5 até os docs; faltam os oks (índice e TTLs, deploy), o Mac e o fechamento
+## ▶️ RETOMAR AQUI — 2026-10-09 14:49Z: a 14 no C5 — índice e TTLs criados (CREATING), o deploy autorizado; faltam o índice READY, o deploy, o Mac e o fechamento (25 de 33)
+
+**Estado (medido às 14:45–14:48Z, depois de o dono reiniciar o VPS):**
+- **Repositório:** HEAD `31f85e6` = o remoto, árvore limpa, sem `.mutacao.lock`, sem nada em
+  background; o CI do `31f85e6` pelo SHA: `success`.
+- **Os oks do dono (2026-10-09, ~14:44Z):** "Ok, cria" (o índice e as TTLs) e **"Ok, publica quando
+  pronto"** (o deploy, depois do índice pronto e do CI verde) — o deploy já está autorizado.
+- **Criado com o ok (14:45–14:47Z):** `python scripts/nuvem.py --executar indices` (o índice
+  vetorial composto de `trechos`, `tema_lido`+`ativo`+`vetor` 768, `--async`) e `--executar ttl`
+  (`documentos.apagar_em`, `trechos.apagar_em`). Os dois saíram com 2 = "ainda não pronto" (o
+  passo relê na hora). Às 14:48Z, lido pela função do script (`nuvem._indices`): o índice de
+  `trechos` em **CREATING**; as duas TTLs em **CREATING**.
+- **No ar:** o motor e o `financas` ainda em `2c78d8b` (a 13b); a 14 e o conserto da redação
+  (`3dc67a3`) entram no deploy.
+- **Portões (antes do reinício):** suíte `3200 passed` (emulador exigido); mutações **492 de 492**
+  (05:47–06:36Z); ruff, format, mypy, `uv lock --check`, gitleaks e `docker build` limpos.
+
+**Próximo passo exato:**
+1. `python scripts/nuvem.py` (só lendo) até `✅ indices` e `✅ ttl` (13 ✅); o índice vetorial pode
+   levar minutos — sem laço de espera: confira, e se ainda CREATING, siga lendo os docs do
+   fechamento e confira de novo;
+2. com tudo ✅ e a árvore limpa: `python scripts/nuvem.py deploy --executar` (o ok já foi dado;
+   `date -u` no mesmo comando para a hora) e depois `python scripts/nuvem.py deploy` só lendo →
+   todas ✅ (a prova `/fumaca/memoria` exerce a consulta dos trechos: sem o índice, 500; a do chat
+   espera `documentos: true` no `/versao`), o motor no novo SHA, 0 commits desde;
+3. o roteiro do Mac (abaixo), para o dono colar e devolver a saída;
+4. o fechamento: D68 "Como ficou" (com os três restos das passadas: o trecho chega ao modelo, que
+   pode criar lembrete/evento, mandar e-mail ao próprio dono ou o navegador a uma URL, como um
+   e-mail lido; a versão trocada fica sem TTL, como o fato substituído; dois `--aprender` do mesmo
+   arquivo ao mesmo tempo poderiam se substituir um ao outro), a D48 mais estrita (documento nunca
+   vira fato), o diário com "Erros desta sessão" (os de `docs/erros.md` de 2026-10-09), a barra
+   **25 de 33**, `sessoes.md` (a 14 feita, ▶️ na 15), commit, push, o CI pelo SHA.
+
+**O roteiro do Mac (pronto; sem `<…>` nem `#`; só texto inventado; < US$ 0,02):**
+```
+cd ~/LifeOs && git pull && git log --oneline -1
+uv sync --locked --extra dev && source .venv/bin/activate && which python && python -m pytest -q
+printf 'Notas inventadas para testar o Viking.\n\nA prancha do treino inventado de quinta dura quarenta segundos, em tres series.\n\nO alongamento inventado dura dez minutos depois da corrida.\n' > /tmp/viking-teste.txt
+viking documentos --aprender /tmp/viking-teste.txt --tema teste
+viking documentos
+viking chat --nuvem
+```
+no chat: `quanto dura a prancha no meu documento de teste?` (esperado: a resposta cita
+«viking-teste.txt» e a linha 📄 consultei…), depois `oi, tudo bem?` (sem 📄), depois `sair`; a
+limpeza:
+```
+viking documentos --esquecer "$(viking documentos | awk '/viking-teste.txt/ {print $1}')"
+rm /tmp/viking-teste.txt
+viking documentos
+```
+(esperado no fim: "Nenhum documento ativo"; no pytest do Mac, os testes que exigem o emulador
+pulam, como sempre lá.)
+
+**Depende de um evento futuro:** o primeiro resumo semanal, segunda 2026-10-12 depois das 9h no
+fuso do dono (Seattle): perguntar se chegou e ler o log daquela manhã, sem travar nada.
+
+**Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md` (o pacote `documentos/`, as
+armadilhas da memória, da `thought_signature` e do emulador); este bloco e o plano da 14 logo
+abaixo (com o registro de C0–C5); `docs/decisoes.md` D68 (rascunho), D63 e D48; `docs/erros.md`
+(as entradas de 2026-10-09); as skills `software-build` (fechar) e `nuvem-e-deploy`; o código só
+se o deploy reprovar: `src/lifeos/documentos/`, `scripts/nuvem.py` (`INDICES`, `TTLS`,
+`_prova_do_chat`, a `/fumaca/memoria`).
+
+**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto (`31f85e6` ou o
+checkpoint depois dele); sem `.mutacao.lock`; `gh run list --commit $(git rev-parse HEAD)` →
+`success`; `python scripts/nuvem.py` → o estado do índice e das TTLs (CREATING ou ✅).
+
+**Não pode ser esquecido:** nenhum conteúdo do dono em documento, commit ou log; a hora entra no
+texto só **depois** de lida no `date -u` (errei duas vezes nesta sessão); depois de editar um
+arquivo de `src/`, rodar o teste das âncoras (`tests/test_mutacoes_ancoras.py`) junto do `ruff`
+(três âncoras quebradas nesta sessão); um reinício do VPS no meio de uma rodada de mutações deixa
+um arquivo mutado: restaurar do HEAD e conferir pelo hash.
+
+### (o registro) RETOMAR AQUI — 2026-10-09 06:39Z: a 14 com C0–C4 feitos e o C5 até os docs; faltam os oks (índice e TTLs, deploy), o Mac e o fechamento
 
 **Estado (2026-10-09):**
 - **Abertura conferida (03:08–03:12Z):** tudo igual ao bloco de 02:16Z (limpo, `6e01b99` = origin,
@@ -183,7 +256,7 @@ oks na hora só para o que custa (o Gemini incluído), cria recurso ou publica.
 | C2 | `documentos/cortes.py` (puro), `documentos/store.py` (duas fases, substituir, esquecer, devolver, consultar), backup v4 (`formato`) | C1 | ✅ `b06b966` |
 | C3 | a tool e o coletor; `na_nuvem` (temas no `_config`, o campo `documentos`); `turno._DOCUMENTOS`; `chat_cliente` (📄) | C2 | ✅ `f3f0fa5` |
 | C4 | rotas e `servico`; `viking documentos` (terminal, cliente, cli); `--reindexar` com os trechos; resumo; backup v4 em `rodada`/`conferir`/`restaurar`/importar; a avaliação fixa no pytest | C2 | ✅ `65dd415` |
-| C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, 2 TTLs, provas); **ok** → índice e TTLs; **ok** → deploy; roteiro do Mac; fechamento 25 de 33 | C3, C4 | ⬜ |
+| C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, 2 TTLs, provas); **ok** → índice e TTLs; **ok** → deploy; roteiro do Mac; fechamento 25 de 33 | C3, C4 | 🟡 até o índice criado (CREATING, 14:48Z); o deploy autorizado |
 
 ### Fase 0 — C0
 **Faz:** `uv lock --upgrade` → commit "lock", a suíte depois (`3020 passed`), o CI pelo SHA; o plano

@@ -34,8 +34,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D68), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** os oks da 14 (as medições, o índice e as TTLs, o deploy) e o limiar da
-  avaliação fixa, depois de medido. Na segunda
+- **Depende do dono:** o roteiro do Mac da 14 (os oks já foram dados: as medições, o índice e as
+  TTLs, o deploy; o limiar da avaliação, recall@5 = 1,0 e MRR ≥ 0,95). Na segunda
   2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do teste, já
   esquecidos): conferir na primeira sessão depois disso, sem travar nada.
 
