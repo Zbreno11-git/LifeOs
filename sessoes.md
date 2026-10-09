@@ -16,16 +16,16 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **14 — documentos** (aberta e planejada em 2026-10-09; em curso). A 13b fechou no Mac em 2026-10-09 (as
-  receitas no chat da nuvem, no ar em `2c78d8b`; D67), depois da 13 (a memória de fatos; D66). A
-  11b (formulários) segue na fila, sem posição decidida pelo dono.
+- **Sessão:** **15 — coach 1: registrar.** A 14 fechou no Mac em 2026-10-09 (os documentos no
+  chat da nuvem, por tema, no ar em `56f0807`; D68), depois da 13b (as receitas; D67). A 11b
+  (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-09):** 24 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
+- **Agora (2026-10-09):** 25 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
   ("só vou usar ativo quando eu tiver ele em hardware ou em app/site com ele completo") e decidiu
   **manter a ordem**: 11d, 12–16 e então o app (17–18).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
@@ -34,10 +34,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D68), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** o roteiro do Mac da 14 (os oks já foram dados: as medições, o índice e as
-  TTLs, o deploy; o limiar da avaliação, recall@5 = 1,0 e MRR ≥ 0,95). Na segunda
-  2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do teste, já
-  esquecidos): conferir na primeira sessão depois disso, sem travar nada.
+- **Depende do dono:** as perguntas de abertura da 15 (o que registrar, como corrigir, o
+  catálogo de exercícios). Na segunda 2026-10-12, depois das 9h no fuso dele, chega o primeiro
+  resumo semanal (os fatos e o documento do teste, já esquecidos): conferir na primeira sessão
+  depois disso, sem travar nada.
 
 > **Notas de ordem.** 2026-09-26: Sessão 4b criada e posta antes da Sessão Gmail, por decisão do
 > dono — o freio de clique era o maior risco aberto e estava sem sessão. 2026-09-26: Sessão
@@ -1143,7 +1143,15 @@ O que estava escrito na abertura:
   2026-10-12, depois das 9h no fuso do dono (`estado/resumo-2026-W42`): conferir na abertura que
   chegou.
 
-## Sessão 14 — documentos (planejada em 2026-09-28; aberta em 2026-10-09)
+## Sessão 14 — documentos (planejada em 2026-09-28; feita e testada no Mac em 2026-10-09)
+
+- **Feita (2026-10-09):** `viking documentos --aprender ARQUIVO --tema T` manda um `.md`/`.txt`
+  (até 1 MB); no chat da nuvem o modelo consulta só o tema da pergunta, cita o arquivo, e a
+  linha 📄 diz o que ele achou; listar, esquecer, desfazer e substituir; o backup v4 e o resumo
+  de segunda com os documentos; a avaliação fixa (recall@5 = 1,0 e MRR ≥ 0,95, o limiar do
+  dono). No ar (`56f0807`) e testada no Mac (o diário e a barra têm o detalhe; D68). A mais: a
+  redação que trocava um pedaço de ~1 em mil ids por "[cartão]". Aceito pelo dono: dois envios
+  simultâneos do mesmo arquivo podem tirar o documento da busca (`--desfazer` o devolve).
 
 - **As respostas do dono na abertura (2026-10-09, ~03:15–03:31Z; D68):**
   - o material é **`.md` ou `.txt`** (o Docs exporta os dois; lido na página da API do Drive):

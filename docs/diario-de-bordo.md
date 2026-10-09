@@ -1046,6 +1046,73 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-09 — Sessão 14 fechada no Mac: os documentos (o dono manda um arquivo por tema, o Viking consulta e cita)
+
+**A abertura** (03:08–03:12Z; tudo igual ao bloco de 02:16Z: `6e01b99`, `3020 passed`, 13 ✅, 34
+✅): o lock com dnspython 2.9.0 e fastmcp/fastmcp-slim 4.1.0 (`edb4449`; o `beartype` bifurcado por
+versão do Python obrigou a régua de `tests/test_lock.py` a ler nome e versão); os preços relidos
+iguais a `custos.TARIFAS`; o `pypdf` medido (1 pacote sem dependências, 101 avisos de PDF
+malformado) e o export do Docs lido (Markdown e texto puro). **9 respostas do dono (D68):** `.md`
+ou `.txt`, pelo Mac, a 14 inteira, documento nunca vira fato, **busca por tema** escolhido pelo
+modelo, até 5 trechos, até 1 MB, esquecer como os fatos com o texto no backup, o mesmo arquivo no
+mesmo tema substitui.
+
+**As medições do C1** (ok do dono, só texto inventado, ~US$ 0,047): recall@5 = MRR = 1,000 nos
+dois temas; a distância não separa a pergunta de fora (ficou mais perto que várias certas), então
+não há limiar de distância e a separação é o tema; o Flash-Lite consultou o tema certo em 6 de 7
+perguntas do assunto e em nenhuma de 5 de fora; 5 de 5 respostas citaram o arquivo, e a ordem
+plantada num trecho não virou chamada. O dono escolheu o limiar da avaliação fixa (recall@5 = 1,0
+e MRR ≥ 0,95) e manteve a regra como medida.
+
+**O que entrou** (D68; plano, checkpoints e medições no `PROGRESSO.md`):
+- `documentos/cortes.py` (a régua do arquivo e o corte por parágrafo até 600 caracteres, com o
+  caminho dos títulos e as linhas; linear em toda forma), `store.py` (as coleções `documentos` e
+  `trechos`; aprender em duas fases, nada pela metade na busca; a consulta confere o documento de
+  cada trecho; substituir, esquecer e devolver com a cadeia), `consulta.py` (a tool só de leitura,
+  o trecho no bloco de não confiável, a linha 📄 do que ela achou), `servico.py` e `terminal.py`;
+- as rotas `/documentos*` (só o `cli@`), `viking documentos`, o `--reindexar` com os trechos, o
+  resumo de segunda com os documentos, o backup versão 4 (1 a 3 ainda se leem);
+- o índice vetorial composto de `trechos` e as TTLs `documentos.apagar_em`/`trechos.apagar_em` no
+  `nuvem.py`, e a fumaça da memória exercendo a consulta dos trechos.
+- **O conserto no caminho** (`3dc67a3`): o CI do C0 caiu num teste antigo porque a redação de
+  páginas trocava por "[cartão]" um pedaço de ~1 em mil UUIDs no registro; o vizinho era o id do
+  Gmail na busca. Os dois consertados, no ar junto.
+
+**No ar, com os oks do dono no chat:** o índice e as TTLs criados às 14:45–14:47Z ("Ok, cria"),
+prontos às 14:53Z (13 ✅); o deploy de `56f0807` às 14:53–14:55Z ("Ok, publica quando pronto") →
+34 ✅ e 0 ❌, e a leitura de 14:56Z com 0 commits desde.
+
+**O reinício do VPS** (do dono, depois dos portões): nada estava rodando; o bloco de retomada e
+o checkpoint `56f0807` levaram o estado pelo compact.
+
+**No Mac (2026-10-09, devolvido às 16:39Z):**
+- a suíte: `2732 passed, 468 skipped`;
+- o `--aprender` de um `.txt` inventado (1 trecho), a lista, a pergunta do tema citando o arquivo
+  com a linha 📄 (~US$ 0,0039: duas chamadas ao modelo e o embedding da pergunta), o "oi" sem 📄
+  e sem anotação (~US$ 0,002), e a limpeza ("Nenhum documento ativo").
+
+**Portões:**
+- a suíte: `3200 passed`, 0 pulados (emulador exigido);
+- ruff, format, mypy, gitleaks, `uv lock --check` e `docker build` verdes;
+- mutações: **492 de 492** (as 468 de antes, 3 da redação e 21 dos documentos).
+
+**O resto que o dono aceitou** (D68): dois `--aprender` do mesmo arquivo no mesmo tema ao mesmo
+tempo podem marcar um ao outro como trocado; o documento sai da busca e `--desfazer` o devolve.
+
+**Em linguagem simples:** agora você manda um arquivo de texto ao Viking com um assunto
+(`viking documentos --aprender arquivo.md --tema treino`), e no chat da nuvem ele consulta só
+aquele assunto quando a pergunta é dele, responde citando o arquivo e mostra numa linha própria o
+que consultou. O que está escrito num documento nunca vira ordem nem anotação sobre você.
+
+**Erros desta sessão (meus; em `docs/erros.md`):**
+- a hora do bloco de retomada escrita antes do `date -u`, duas vezes, pega antes do commit
+  (classe 2);
+- o histórico com uma chamada de tool montada à mão, sem a `thought_signature` (400; classe 3);
+- a contagem de «» do teste da consulta que esquecia o cabeçalho (classe 4);
+- três âncoras de mutação quebradas, uma por fase (classe 6), e o vizinho da redação (o id do
+  Gmail) achado só depois do conserto do registro (classe 6);
+- a regra do cartão, de 2026-09-20, lendo dígitos dentro de um id (classe 7).
+
 ### 2026-10-09 — Sessão 13b fechada no Mac: as receitas (o dono ensina, o Viking reusa sem permissão nova)
 
 **A abertura** (2026-10-08, depois do compact; leitura e conferências batendo com o bloco: `16379ea`,

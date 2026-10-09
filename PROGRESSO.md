@@ -5,7 +5,63 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 14:49Z: a 14 no C5 — índice e TTLs criados (CREATING), o deploy autorizado; faltam o índice READY, o deploy, o Mac e o fechamento (25 de 33)
+## ▶️ RETOMAR AQUI — 2026-10-09 16:43Z: a 14 fechada (25 de 33); a próxima é a 15 (coach 1: registrar)
+
+**Estado (2026-10-09):**
+- **A 14 fechou no Mac** (a saída devolvida às 16:39Z; D68 "Como ficou"; o diário e a barra têm
+  o detalhe): o `--aprender` de um `.txt` inventado, a lista, a resposta citando o arquivo com a
+  linha 📄, o "oi" sem 📄 e sem anotação, e a limpeza (o documento esquecido; some em 30 dias pela
+  TTL). A suíte do Mac: `2732 passed, 468 skipped`.
+- **No ar:** o motor e o `financas` em `56f0807` (deploy às 14:53–14:55Z, com o ok do dono); o
+  `deploy` só lendo às 14:56Z: 34 ✅ e 0 ❌, 0 commits desde ela nos caminhos da imagem;
+  `python scripts/nuvem.py` → 13 ✅ (14:53Z; o índice dos trechos e as duas TTLs prontos).
+- **Repositório:** o fechamento é o commit depois de `56f0807`, só docs (conferir com `git log
+  -2` e o CI dele pelo SHA); sem `.mutacao.lock`; nada em background.
+- **Portões:** a suíte `3200 passed` (emulador exigido); mutações 492 de 492.
+- **O dono decidiu no fechamento:** aceitar e registrar a corrida de dois `--aprender` do mesmo
+  arquivo ao mesmo tempo (o gatilho na D68: um documento sumir da busca depois de dois envios).
+
+**Depende de um evento futuro:** o primeiro resumo semanal sai na segunda 2026-10-12, depois das 9h
+no fuso do dono (Seattle até ~fim de outubro), pela rodada dos lembretes (`estado/resumo-2026-W42`);
+ele inclui os fatos, as receitas e, desde a 14, os documentos da semana (os de teste, todos
+esquecidos). Na primeira sessão depois disso: perguntar ao dono se chegou (só o assunto e quantas
+linhas) e ler o log do motor daquela manhã (`severity>=ERROR`, com `--project`), sem travar nada.
+
+**Próximo passo exato:** abrir a 15 pela `software-build`, quando o dono pedir:
+1. `uv lock --upgrade --dry-run` (D45): versão nova → `uv lock --upgrade` num commit próprio, a
+   suíte antes e depois, o CI pelo SHA;
+2. reler os preços do dia (o Flash-Lite e o `gemini-embedding-2`) contra `custos.TARIFAS`;
+3. as perguntas da abertura ao dono, em rodadas pequenas (as que decidem o tamanho primeiro): o
+   que se registra (séries, repetições, carga, unidade; cardio?), como chega (no chat da nuvem, só
+   o que ele digita), o catálogo de exercícios e quem o corrige, o desfazer, o que mostra
+   (recordes, volume por semana);
+4. o plano por fases no formato de `referencia/plano-de-sessao.md`, aprovado → copiado aqui;
+5. implementar até o fim, pedindo ok só para o que custa (o Gemini incluído), cria recurso ou
+   publica; o roteiro do Mac; o fechamento (26 de 33).
+
+**O que a 15 já tem decidido (`sessoes.md` 15, D48, D66):** o modelo só extrai os campos do
+texto do dono, e volume, recorde e progresso são contas do código, com teste; registrar treino é
+uma escrita do dono (sem o "sim" da D48), com o `desfaz` e a linha no registro de ações; unidade
+explícita (kg/lb), sem converter em silêncio; nomes de exercício normalizados num catálogo
+pequeno, que o dono corrige. Os documentos da 14 (o material do NotebookLM) entram na 16 (planejar
+e cobrar), não na 15.
+
+**Reler antes de continuar, nesta ordem:** `CLAUDE.md`/`AGENTS.md`; este bloco; `sessoes.md` (15
+e 16); `docs/decisoes.md` (D48, D54, D66–D68); `docs/erros.md` (o índice e as entradas de
+2026-10-09); a memória do Claude (fuso e visão do dono); as skills `software-build` e
+`integracoes`.
+
+**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto; sem
+`.mutacao.lock`; `gh run list --commit $(git rev-parse HEAD)` → `success`; `python
+scripts/nuvem.py` → 13 ✅; `python scripts/nuvem.py deploy` → o motor em `56f0807` e 0 commits
+desde nos caminhos da imagem (o fechamento só mexe em docs).
+
+**Não pode ser esquecido:** nenhum conteúdo do dono em documento, commit ou log; a hora entra no
+texto só **depois** de lida no `date -u`; depois de editar um arquivo de `src/`, o teste das
+âncoras (`tests/test_mutacoes_ancoras.py`) junto do `ruff`; um reinício do VPS no meio de uma
+rodada de mutações deixa um arquivo mutado: restaurar do HEAD e conferir pelo hash.
+
+### (o registro) RETOMAR AQUI — 2026-10-09 14:49Z: a 14 no C5 — índice e TTLs criados (CREATING), o deploy autorizado; faltam o índice READY, o deploy, o Mac e o fechamento (25 de 33)
 
 **Estado (medido às 14:45–14:48Z, depois de o dono reiniciar o VPS):**
 - **Repositório:** HEAD `31f85e6` = o remoto, árvore limpa, sem `.mutacao.lock`, sem nada em
@@ -256,7 +312,7 @@ oks na hora só para o que custa (o Gemini incluído), cria recurso ou publica.
 | C2 | `documentos/cortes.py` (puro), `documentos/store.py` (duas fases, substituir, esquecer, devolver, consultar), backup v4 (`formato`) | C1 | ✅ `b06b966` |
 | C3 | a tool e o coletor; `na_nuvem` (temas no `_config`, o campo `documentos`); `turno._DOCUMENTOS`; `chat_cliente` (📄) | C2 | ✅ `f3f0fa5` |
 | C4 | rotas e `servico`; `viking documentos` (terminal, cliente, cli); `--reindexar` com os trechos; resumo; backup v4 em `rodada`/`conferir`/`restaurar`/importar; a avaliação fixa no pytest | C2 | ✅ `65dd415` |
-| C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, 2 TTLs, provas); **ok** → índice e TTLs; **ok** → deploy; roteiro do Mac; fechamento 25 de 33 | C3, C4 | 🟡 até o índice criado (CREATING, 14:48Z); o deploy autorizado |
+| C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, 2 TTLs, provas); **ok** → índice e TTLs; **ok** → deploy; roteiro do Mac; fechamento 25 de 33 | C3, C4 | ✅ o índice e as TTLs prontos (14:53Z); no ar em `56f0807` (14:55Z, 34 ✅); o Mac (16:39Z); fechada |
 
 ### Fase 0 — C0
 **Faz:** `uv lock --upgrade` → commit "lock", a suíte depois (`3020 passed`), o CI pelo SHA; o plano
