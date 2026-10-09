@@ -425,6 +425,17 @@ fatos simples, ~2 de 4 trocas, 1 de 3 recusados pelo filtro. Contado lendo as re
 a régua de palavras deixou passar "mudei" e "Cadastrado!" (erros, classe 7). A prosa não é
 confiável; vale a linha 📝 (D66).
 
+**Abertura da 13b (2026-10-08, receitas; D67).** Relidos no dia (ai.google.dev/gemini-api/docs/
+pricing): o Flash-Lite a US$ 0,30/2,50, o 3.8 Flash a 0,75/3,75 até 31/12/2026, o
+`gemini-embedding-2` a 0,20 — iguais a `custos.TARIFAS`. **Medido (C1, oks do dono, só texto
+inventado, US$ 0,0351 no pior caso):** o extrator com o campo `receita` deu JSON válido em 14 de
+14 e separou as 6 receitas do e-mail colado, do costume, do pedido de rodar e da pergunta; o
+filtro tem de pegar o que o modelo devolve ("confirma 4821", "R$ 3.000", 12 passos). A prosa do
+chat com a regra que só proibia disse "receita anotada" e afins em 5 de 7 e executou os passos em
+1; a que diz o que responder (`turno._RECEITAS`), a frase certa em 6 de 7 (sobram uma promessa e
+uma leitura na hora). No Mac (2026-10-09 UTC), o ensinar executou a leitura de novo: aceito pelo
+dono, com gatilho (D67).
+
 ## Afirmações não conferidas (a medir na sessão que as usa)
 
 - **S8:** se o Chrome abre `view-source:` por CDP com os cookies; se "In production" sem

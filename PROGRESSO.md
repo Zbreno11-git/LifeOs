@@ -5,7 +5,43 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 00:43Z: a 13b no ar; falta o teste no Mac e o fechamento (24 de 33)
+## ▶️ RETOMAR AQUI — 2026-10-09 01:12Z: a 13b fechada no Mac (24 de 33); a próxima é a 14 (documentos)
+
+**Estado (2026-10-09):**
+- **A 13b fechou no Mac** (01:07–01:09Z; D67 "Como ficou"; o diário e a barra têm o detalhe): a
+  proposta 📋, `guarda receita`, `roda`, `viking memoria --receitas` e a limpeza (a receita de
+  teste esquecida; some em 30 dias pela TTL).
+- **No ar:** o motor e o `financas` em `2c78d8b`; o `deploy` só lendo às 00:42Z: 34 ✅ e 0 ❌;
+  `python scripts/nuvem.py` → 13 ✅ (00:38Z).
+- **Portões:** a suíte `3020 passed` (emulador exigido); mutações 468 de 468; o CI do `2c78d8b`
+  `success`.
+- **O dono decidiu no fechamento:** aceitar e vigiar o modelo que faz os passos de leitura ao
+  ensinar (o gatilho na D67: um passo que muda algo rodar ao ensinar).
+- **Não há background nem trava.**
+
+**Depende de um evento futuro:** o primeiro resumo semanal sai na segunda 2026-10-12, depois das 9h
+no fuso do dono (Seattle até ~fim de outubro), pela rodada dos lembretes (`estado/resumo-2026-W42`);
+desde a 13b ele inclui as receitas da semana (a de teste foi guardada e esquecida: entra marcada
+"esquecida"). Na primeira sessão depois disso: perguntar ao dono se chegou (só o assunto e quantas
+linhas) e ler o log do motor daquela manhã (`severity>=ERROR`, com `--project`), sem travar nada.
+
+**Próximo passo exato:** abrir a 14 pela `software-build`: `uv lock --upgrade --dry-run`; a releitura
+dos preços e do que a 14 usaria (um leitor de PDF só com wheel; o NotebookLM exporta as notas para
+o Docs); as perguntas da abertura ao dono (a primeira: o material são as notas exportadas para o
+Docs?), o plano, a implementação, o Mac e o fechamento (25 de 33).
+
+**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto; sem
+`.mutacao.lock`; `gh run list --commit $(git rev-parse HEAD)` → `success`;
+`VIKING_EXIGIR_EMULADOR=1 .venv/bin/python -m pytest -q` → `3020 passed`;
+`python scripts/nuvem.py deploy` → 34 ✅ (o motor `2c78d8b`).
+
+**Não pode ser esquecido:** nenhum conteúdo do dono em documento, commit ou log; a hora de um passo
+que espera o dono é a de depois da resposta (`date -u` no mesmo comando); um reinício do VPS no
+meio de uma rodada de mutações deixa um arquivo mutado: restaurar do HEAD e conferir pelo hash.
+
+### O registro da 13b, do bloco de 00:43Z ao C0 (2026-10-08/09)
+
+#### (o registro) RETOMAR AQUI — 2026-10-09 00:43Z: a 13b no ar; falta o teste no Mac e o fechamento (24 de 33)
 
 **Estado (2026-10-09, medido às 00:42Z):**
 - **C0–C5 feitos, no ar:** o deploy com o ok do dono ("Ok, publica quando pronto") às ~00:39Z; o

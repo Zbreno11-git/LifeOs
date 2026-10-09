@@ -16,9 +16,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **13b — receitas** (criada em 2026-10-08, na abertura da 13; aberta e planejada no
-  mesmo dia, em curso: o plano está no `PROGRESSO.md`). A
-  13 fechou no Mac em 2026-10-08 (a memória de fatos no chat da nuvem, no ar em `a964aff`; D66). A
+- **Sessão:** **14 — documentos** (a abrir e planejar). A 13b fechou no Mac em 2026-10-09 (as
+  receitas no chat da nuvem, no ar em `2c78d8b`; D67), depois da 13 (a memória de fatos; D66). A
   11b (formulários) segue na fila, sem posição decidida pelo dono.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
@@ -26,7 +25,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
   - As 4 perguntas que tocavam decisões do dono foram respondidas no mesmo dia e já estão nas
     seções: a memória, que aprende sozinha só do dono (13, D48), o repo privado no começo da 10 (D50), o deploy sem
     credencial fixa (10, D47) e o relógio pelo Strava (21, D54).
-- **Agora (2026-10-08):** 23 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
+- **Agora (2026-10-09):** 24 de 33 sessões fechadas (a 13b entrou na abertura da 13). O dono ainda não usa o Viking ativamente
   ("só vou usar ativo quando eu tiver ele em hardware ou em app/site com ele completo") e decidiu
   **manter a ordem**: 11d, 12–16 e então o app (17–18).
 - **Ao abrir qualquer sessão (D45, desde a 7):** `uv lock --upgrade --dry-run` — há versão nova?
@@ -35,8 +34,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
   aquele pacote primeiro.
 - **Ler antes:** `AGENTS.md`, `PROGRESSO.md`, `docs/erros.md`, `docs/decisoes.md` (D45–D67), o
   roteiro de 2026-09-28 abaixo, e a memória do Claude (fuso e visão do dono).
-- **Depende do dono:** os oks da 13b (as medições, a TTL e o deploy) e o teste no Mac; as
-  respostas da abertura já estão na seção dela. Na segunda
+- **Depende do dono:** as respostas da abertura da 14 (o primeiro passo dela: confirmar que o
+  material são as notas do NotebookLM exportadas para o Docs). Na segunda
   2026-10-12, depois das 9h no fuso dele, chega o primeiro resumo semanal (os fatos do teste, já
   esquecidos): conferir na primeira sessão depois disso, sem travar nada.
 
@@ -1105,7 +1104,14 @@ O que estava escrito na abertura:
   - as ideias do Graphiti (`invalida_em`) e do Leon (camadas: preferências, contexto do dia,
     conversa recente).
 
-## Sessão 13b — receitas (criada em 2026-10-08, na abertura da 13; aberta e planejada no mesmo dia)
+## Sessão 13b — receitas (criada em 2026-10-08, na abertura da 13; feita e testada no Mac em 2026-10-09)
+
+- **Feita (2026-10-09):** a receita nasce proposta pelo extrator (📋, com todos os passos), se
+  guarda com `guarda receita`, roda com `roda NOME`, aparece no `viking memoria` (`--receitas`),
+  no resumo de segunda e no backup v3; no ar (`2c78d8b`) e testada no Mac (o diário e a barra
+  têm o detalhe; D67). A mais: o desfazer de uma cadeia de trocas, também nos fatos da 13. Fica
+  vigiado (o dono): no ensinar, o modelo às vezes faz os passos de leitura na hora.
+
 
 - **Por quê:** o dono dividiu a 13 na abertura: os fatos e o resumo semanal na 13, as receitas aqui,
   logo depois.

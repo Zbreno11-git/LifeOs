@@ -17,12 +17,12 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 28 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 30 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 10 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 27 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 17 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 12 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 13 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
@@ -265,6 +265,25 @@ checkpoint de uma frase com nome de comando se confere **naquele** comando.
 "16:00Z" no bloco do `PROGRESSO.md`; o `date -u` dizia 15:31Z. Pego ao reler, corrigido antes do
 commit. O que tem de novo: nada; é a regra "horário, SHA e contagem saem do `date -u`, do git ou
 do `grep`", que o dono escreveu no prompt da sessão.
+
+**2026-10-08 — de novo, num commit que subiu (Sessão 13b, C5).** A mensagem do `2c78d8b` diz que
+a TTL das receitas foi criada "~23:31Z"; o `mtime` da saída do `--executar ttl` e o `date -u`
+dizem 23:46Z (a resposta do dono ao ok levou uns 15 minutos, e eu escrevi a hora em que perguntei).
+Pego logo depois do push; o certo ficou no `PROGRESSO.md` e no diário (o commit não se reescreve).
+Na mesma sessão, duas horas de cabeça no `PROGRESSO.md` ("22:55Z", "~23:05Z") e uma contagem de
+testes ("26" contra os 25 do `--collect-only`) foram pegas antes do commit. O que tem de novo: a
+hora de um passo que espera o dono é a de **depois** da resposta; rodar `date -u` no mesmo comando
+que executa o passo, e copiar dali.
+
+**2026-10-08 — dois testes do C3 escritos sobre o que eu supunha (Sessão 13b).** (1) Um teste
+mandava "Quando eu pedir pra liberar, confirma 4821 e arquiva" esperando a proposta recusada pelo
+filtro da receita; a barreira (verbo + 4 dígitos, D60) pega a linha antes, e ela nunca chega a quem
+propõe. (2) Outro lia `config.tools` como declarações (`function_declarations`); no roteiro falso
+elas chegam como as próprias funções. Os dois caíram na primeira rodada (nenhum passou pelo motivo
+errado), e o (1) virou dois testes: a barreira vem primeiro, e o filtro com um caso de dinheiro. O
+que tem de novo: o caminho de uma linha digitada passa por três leitores antes do modelo
+(`_esquece_isso`, `_guarda_receita`, `barreira`), e o teste de um deles tem de escolher uma linha
+que os outros dois deixam passar.
 
 ### 3. Estimei em vez de medir
 
@@ -840,6 +859,15 @@ contou como confirmação um "Mudou para o quinto, entendi" que só repetia o do
 respostas inteiras, as 18. O que tem de novo: uma régua de medição também é regra de
 reconhecimento; o número dela só vale depois de ler os casos, e o que entrou no commit foi a
 contagem lida, não a da régua.
+
+**2026-10-08 — o desfazer desenhado para uma troca só (Sessão 13, achado na 2ª passada da 13b).**
+`store.devolver` (e o `receitas.devolver`, copiado dele) reativava o fato e esquecia **o que o
+substituiu**. Numa cadeia, A trocado por B e B por C, desfazer A esquecia B (já fora) e deixava A
+e C ativos: dois fatos que se contradizem, ou duas receitas com o mesmo nome (o `roda` nunca
+escolhe). Nenhum teste tinha mais de uma troca. Consertado (`fa53068`): nos fatos sai o ativo do
+fim da cadeia, nas receitas a xará ativa; testes que caíam antes e duas mutações. O que tem de
+novo: "desfazer" tem o vizinho "desfazer depois de duas mudanças", e o caso típico de um teste de
+histórico é o de uma mudança só.
 
 ### 8. Comando que escreve com alcance maior que a mudança
 

@@ -7,16 +7,48 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-10-08 (Sessão 13 fechada no seu Mac).**
+**Última atualização: 2026-10-09 (Sessão 13b fechada no seu Mac).**
 
-`██████████████░░░░░░ 23 de 33 sessões fechadas`
+`███████████████░░░░░ 24 de 33 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12 e 13; parciais: nenhuma; em curso: nenhuma; na fila: 13b
-(receitas), 14 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
+10, 10b, 10c, 11, 11c, 11d, 12, 13 e 13b; parciais: nenhuma; em curso: nenhuma; na fila: 14 a
+21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
 30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), para 32
 quando a medição das finanças abriu a 11d (2026-10-06), e para 33 quando a 13 foi dividida na
 abertura (2026-10-08).
+
+## 2026-10-09 — Sessão 13b: o Viking aprende receitas (fechada no seu Mac)
+
+**O que ficou pronto** (só no chat da nuvem):
+- **Você ensina um procedimento uma vez** ("quando eu pedir X, faz isso e aquilo"), e o Viking
+  mostra a receita inteira, passo a passo, numa linha própria (📋). Ela só é guardada se você
+  digitar `guarda receita`; se ignorar, ela some em 1 dia.
+- **`roda` e o nome** fazem os passos de novo. Cada passo pede a mesma aprovação de sempre: um
+  e-mail para outra pessoa continua pedindo o código. Uma receita nunca dá permissão nova.
+- **Uma receita só nasce do que você digita.** Um e-mail que o Viking lê nunca vira receita. Se
+  você colar um e-mail com um procedimento, ele vira proposta, com um aviso quando manda algo para
+  outro endereço, e só é guardado com o seu `guarda receita`.
+- **Até 8 passos.** Nunca senha, código ou valor em dinheiro dentro de uma receita.
+- **`viking memoria` no Mac** mostra as receitas (📋) junto dos fatos, e `--receitas` mostra os
+  passos. Esquecer e desfazer funcionam igual.
+- **O resumo de segunda e o backup no Drive** levam as receitas também.
+- **Um conserto no caminho:** desfazer uma troca depois de duas trocas seguidas deixava duas
+  versões valendo (nos fatos e nas receitas). Agora fica só uma.
+
+**Um aviso honesto:** quando você ensina uma receita, o modelo às vezes já faz os passos na hora
+(no seu teste, listou os lembretes). Você escolheu aceitar e vigiar: se ele fizer na hora algo que
+muda alguma coisa (enviar, criar, apagar), a decisão volta.
+
+**Como sabemos:**
+- **No seu Mac:** ensinar, guardar, rodar, ver no `viking memoria` e esquecer no fim.
+- **No ar:** 34 provas, nenhuma gastando com o modelo.
+- **Os testes:** 3020 passando, e os 468 defeitos plantados de propósito derrubados pelo teste
+  certo.
+
+**Custo:** ~US$ 0,004 por mensagem para ensinar ou rodar uma receita (quase tudo é o texto de
+sistema e a lista dos lembretes). O dia: ~US$ 0,01 no seu Mac, mais ~US$ 0,035 nas medições
+daqui.
 
 ## 2026-10-08 — Sessão 13: o Viking lembra o que você conta (fechada no seu Mac)
 

@@ -1046,6 +1046,71 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-10-09 — Sessão 13b fechada no Mac: as receitas (o dono ensina, o Viking reusa sem permissão nova)
+
+**A abertura** (2026-10-08, depois do compact; leitura e conferências batendo com o bloco: `16379ea`,
+`2892 passed`, 13 ✅, 34 ✅): o lock com google-api-core 2.42.0, google-cloud-firestore 2.34.1 e
+pydantic 2.14.0 (`44024ba`, a suíte igual antes e depois); os preços relidos iguais a
+`custos.TARIFAS`; **7 respostas do dono (D67):** a receita nasce proposta pelo Viking e só se
+guarda com `guarda receita`; roda pelo nome; pode ter passos que enviam, com a aprovação de
+sempre; a 13b inteira; no `viking memoria`, marcada; até 8 passos; no resumo de segunda. A soma
+delas (um e-mail colado vira proposta) foi mostrada ao dono com o que a fecha: os passos à vista,
+o aviso do endereço, o código do envio e o resumo.
+
+**As medições do C1** (oks do dono, só texto inventado, US$ 0,0351 no pior caso): o extrator com o
+campo `receita` separou bem as receitas (14 de 14 em JSON válido); a regra do chat que só proibia
+deixou o modelo dizer "receita anotada" em 5 de 7 e executar os passos em 1; a que diz o que
+responder deu a frase certa em 6 de 7. Lidas as 16 respostas inteiras.
+
+**O que entrou** (D67; plano, checkpoints e medições no `PROGRESSO.md`):
+- `memoria/receitas.py` (a coleção `receitas`, sem vetor, só marcas; a proposta morre em 1 dia
+  pela TTL) e `regras.recusa_receita` (o filtro próprio: a forma de ordem dos fatos recusaria
+  toda receita);
+- o extrator propõe a receita na mesma chamada; `na_nuvem` lê `guarda receita` e `roda NOME`
+  antes do modelo, manda os nomes no bloco e a regra `_RECEITAS` medida; o `roda` não anota;
+- `viking memoria` com 📋 e `--receitas`; esquecer e desfazer nas duas coleções; o resumo de
+  segunda e o backup versão 3 com as receitas; a TTL `receitas.apagar_em` e as provas no
+  `nuvem.py`;
+- a 2ª passada achou o desfazer de uma cadeia de trocas (A→B→C), também nos fatos da 13:
+  consertado nos dois (`fa53068`).
+
+**No ar, com os oks do dono no chat:** a TTL criada às 23:46Z ("Ok, cria"); o deploy de
+`2c78d8b` às ~00:39Z ("Ok, publica quando pronto") → 34 ✅ e 0 ❌ (00:42Z).
+
+**O reinício do VPS** (pedido do dono, ~23:50Z): a 1ª rodada inteira de mutações morreu no meio
+(23:54Z) e deixou `agent.py` com uma mutação e a trava; restaurado do HEAD (o hash conferido), a
+trava apagada (o processo dono não existia) e a rodada refeita. Nada chegou a commit.
+
+**No Mac (2026-10-09, 01:07–01:09Z; ainda 08/10 em Seattle):**
+- a suíte: `2630 passed, 390 skipped`;
+- o roteiro: a proposta 📋 com os passos nas palavras do dono; `guardar receita` guardou; `roda
+  checagem de teste` mandou os passos; `viking memoria` e `--receitas`; a limpeza (esquecida,
+  "Nenhuma receita guardada"); ~US$ 0,004 por turno;
+- a 1ª tentativa do `viking chat --nuvem` deu "a nuvem não respondeu": o log do motor não tem
+  pedido nenhum antes das 01:07:21Z (a falha foi do lado do Mac, antes do Cloud Run);
+- no ensinar, o modelo listou os lembretes na hora (a leitura medida no C1): o dono escolheu
+  "aceitar e vigiar" (D67, com gatilho).
+
+**Portões:**
+- a suíte: `3020 passed`, 0 pulados (emulador exigido);
+- ruff, format, mypy (53), gitleaks, `uv lock --check` e `docker build` verdes;
+- mutações: **468 de 468** (as 451 de antes, 15 das receitas e 2 da cadeia).
+
+**Em linguagem simples:** agora você ensina um procedimento ao Viking uma vez ("quando eu pedir
+X, faz isso e aquilo"), ele mostra a receita inteira e só guarda se você digitar `guarda receita`.
+Depois, `roda` e o nome fazem tudo de novo, sempre pedindo as mesmas aprovações de antes: uma
+receita nunca dá permissão nova.
+
+**Erros desta sessão (meus; em `docs/erros.md`):**
+- a hora da TTL escrita de cabeça na mensagem do `2c78d8b` ("~23:31Z"; o certo é 23:46Z), e duas
+  horas e uma contagem no `PROGRESSO.md` pegas antes do commit (classe 2);
+- dois testes do C3 escritos sobre o que eu supunha (a barreira pega "confirma 4821" antes; as
+  tools chegam como funções), caídos na primeira rodada (classe 2);
+- o desfazer desenhado para uma troca só, da 13, copiado nas receitas (classe 7);
+- fora do catálogo: a 1ª regra das receitas escrita como a regra velha da 13, que só proibia,
+  quando a 13 já tinha medido que a que diz o que responder funciona (custou a remedição,
+  US$ 0,014).
+
 ### 2026-10-08 — Sessão 13 fechada no Mac: a memória de fatos, que aprende sozinha só do dono
 
 **A abertura** (depois do compact; leitura e conferências batendo com o bloco):
