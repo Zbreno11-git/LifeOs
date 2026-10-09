@@ -37,6 +37,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from lifeos import config, registro_firestore
+from lifeos.documentos import store as documentos_store
 from lifeos.memoria import store as memoria_store
 from lifeos.reminders import store_firestore
 
@@ -60,7 +61,12 @@ MOTOR, CLI, MAOS, AGENDADOR = "viking-motor", "viking-cli", "viking-maos", "viki
 DO_DONO = (CLI, MAOS)
 # Os índices compostos que as consultas pedem, declarados por cada store (uma fonte só). O da
 # memória é vetorial (Sessão 13, D66): o emulador não o exige, a produção sim.
-INDICES = store_firestore.INDICES + registro_firestore.INDICES + memoria_store.INDICES
+INDICES = (
+    store_firestore.INDICES
+    + registro_firestore.INDICES
+    + memoria_store.INDICES
+    + documentos_store.INDICES  # Sessão 14 (D68): a consulta dos trechos por tema
+)
 
 
 class ErroDoGcloud(RuntimeError):
@@ -546,6 +552,8 @@ TTLS = (
     ("tarefas", "apagar_em"),
     ("memoria", "apagar_em"),
     ("receitas", "apagar_em"),
+    ("documentos", "apagar_em"),  # Sessão 14 (D68): o esquecido e o aprender que caiu
+    ("trechos", "apagar_em"),
 )
 
 
@@ -887,7 +895,8 @@ PASSOS = (
         "ttl",
         "o registro de ações e as confirmações apagam sozinhos depois de 30 dias, as tarefas das "
         "mãos depois de 1, o fato esquecido da memória 30 dias depois, a receita esquecida 30 "
-        "dias depois e a proposta ignorada depois de 1",
+        "dias depois e a proposta ignorada depois de 1, e o documento esquecido (com os trechos) "
+        "30 dias depois e o que não terminou de aprender depois de 1",
         _m_ttl,
         _c_ttl,
         depende=("firestore",),

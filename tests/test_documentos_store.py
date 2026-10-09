@@ -142,6 +142,23 @@ def test_a_consulta_filtra_o_tema_e_devolve_os_mais_perto_primeiro():
     assert store.consultar("", _eixo(0)) == []
 
 
+def test_os_trechos_de_fora_nao_tomam_o_lugar_dos_ativos():
+    """A versão trocada tem 6 trechos colados na pergunta, a nova tem 1 mais longe: sem o filtro
+    `ativo` na consulta, os 5 lugares iam para os de fora, e a conferência do documento os tiraria
+    todos (a resposta vazia, com a versão certa no banco)."""
+    velho_texto = "\n\n".join(f"# S{n}\n\nvelho {n}" for n in range(6))
+    _aprender(texto=velho_texto, embutir=lambda textos: [_eixo(3) for _ in textos])
+    novo, _ = _aprender(
+        texto="# S\n\nnovo",
+        embutir=lambda textos: [_eixo(4) for _ in textos],
+        agora=AGORA + timedelta(hours=1),
+    )
+    perto_do_velho = [0.0] * vetores.DIMENSAO
+    perto_do_velho[3], perto_do_velho[4] = 1.0, 0.1
+    (achado,) = store.consultar("treino", perto_do_velho)
+    assert achado.documento == novo.id
+
+
 def test_a_consulta_traz_no_maximo_5():
     texto = "\n\n".join(f"# S{n}\n\nparágrafo {n}" for n in range(8))
     _aprender(texto=texto, embutir=lambda textos: [_eixo(3) for _ in textos])

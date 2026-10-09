@@ -212,17 +212,22 @@ def test_orcamento_com_outro_valor_nao_esta_pronto(nuvem, ctx, monkeypatch):
 
 def test_indices_vem_do_store(nuvem, ctx, monkeypatch):
     """Uma fonte só: o script cria exatamente os índices que os stores declaram para as consultas
-    (os lembretes, desde a 10b o registro de ações, e desde a 13 o vetorial da memória)."""
+    (os lembretes, desde a 10b o registro de ações, desde a 13 o vetorial da memória, e desde a
+    14 o dos trechos, com o tema)."""
     from lifeos import registro_firestore
+    from lifeos.documentos import store as documentos_store
     from lifeos.memoria import store as memoria_store
     from lifeos.reminders import store_firestore
 
     assert nuvem.INDICES == (
-        store_firestore.INDICES + registro_firestore.INDICES + memoria_store.INDICES
+        store_firestore.INDICES
+        + registro_firestore.INDICES
+        + memoria_store.INDICES
+        + documentos_store.INDICES
     )
     monkeypatch.setattr(nuvem, "_ler", lambda _c: [])
     comandos = nuvem._c_indices(ctx)
-    assert len(comandos) == len(nuvem.INDICES) == 3
+    assert len(comandos) == len(nuvem.INDICES) == 4
     for comando, (colecao, esperados) in zip(comandos[:2], nuvem.INDICES[:2], strict=True):
         assert f"--collection-group={colecao}" in comando
         campos = [a.split("field-path=")[1] for a in comando if "field-path=" in a]
@@ -230,6 +235,13 @@ def test_indices_vem_do_store(nuvem, ctx, monkeypatch):
     vetorial = comandos[2]
     assert "--collection-group=memoria" in vetorial
     assert [a for a in vetorial if a.startswith("--field-config=")] == [
+        "--field-config=field-path=ativo,order=ascending",
+        "--field-config=field-path=vetor,vector-config={dimension=768,flat}",
+    ]
+    dos_trechos = comandos[3]
+    assert "--collection-group=trechos" in dos_trechos
+    assert [a for a in dos_trechos if a.startswith("--field-config=")] == [
+        "--field-config=field-path=tema_lido,order=ascending",
         "--field-config=field-path=ativo,order=ascending",
         "--field-config=field-path=vetor,vector-config={dimension=768,flat}",
     ]
@@ -626,27 +638,31 @@ def _ttl(colecao, campo, estado):
     ],
 )
 def test_ttl_so_esta_pronta_com_todas_ativas(nuvem, ctx, monkeypatch, estados, pronto):
+    estados = estados + ("ACTIVE",) * (len(nuvem.TTLS) - len(estados))  # as da 14 ligadas
     ttl = [_ttl(c, f, e) for (c, f), e in zip(nuvem.TTLS, estados, strict=True) if e]
     monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
     assert nuvem._m_ttl(ctx).pronto is pronto
 
 
 def test_ttl_liga_so_a_que_falta(nuvem, ctx, monkeypatch):
-    """A das receitas é nova (13b); as outras quatro já estão ligadas e não se pedem de novo."""
+    """As dos documentos são novas (14); as outras cinco já estão ligadas e não se pedem de novo."""
     ttl = [
         _ttl("acoes", "expira_em", "ACTIVE"),
         _ttl("confirmacoes", "apagar_em", "ACTIVE"),
         _ttl("tarefas", "apagar_em", "ACTIVE"),
         _ttl("memoria", "apagar_em", "ACTIVE"),
+        _ttl("receitas", "apagar_em", "ACTIVE"),
     ]
     monkeypatch.setattr(nuvem, "_rodar", _Gcloud(ttl=ttl).rodar)
     pronto = nuvem.dataclasses.replace(ctx, prontos=frozenset({"firestore"}))
-    (comando,) = nuvem._c_ttl(pronto)
-    assert "--collection-group=receitas" in comando and "apagar_em" in comando
+    documentos, trechos = nuvem._c_ttl(pronto)
+    assert "--collection-group=documentos" in documentos and "apagar_em" in documentos
+    assert "--collection-group=trechos" in trechos and "apagar_em" in trechos
 
 
 def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
     from lifeos import confirmacao_firestore, registro_firestore
+    from lifeos.documentos import store as documentos_store
     from lifeos.maos import fila_firestore
     from lifeos.memoria import receitas as memoria_receitas
     from lifeos.memoria import store as memoria_store
@@ -657,12 +673,16 @@ def test_os_campos_da_ttl_sao_os_dos_stores(nuvem):
         (fila_firestore.COLECAO, "apagar_em"),
         (memoria_store.COLECAO, "apagar_em"),
         (memoria_receitas.COLECAO, "apagar_em"),
+        (documentos_store.COLECAO, "apagar_em"),
+        (documentos_store.TRECHOS, "apagar_em"),
     )
     assert "expira_em" in registro_firestore._CAMPOS
     assert "apagar_em" in confirmacao_firestore._CAMPOS
     assert "apagar_em" in fila_firestore._CAMPOS
     assert "apagar_em" in memoria_store._CAMPOS
     assert "apagar_em" in memoria_receitas._CAMPOS
+    assert "apagar_em" in documentos_store._CAMPOS
+    assert "apagar_em" in documentos_store._CAMPOS_DO_TRECHO
 
 
 # --- o token do Gmail sobe do Mac (Sessão 10c, D60) ----------------------------------------------
