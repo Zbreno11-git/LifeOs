@@ -47,12 +47,21 @@ def _plataformas_que_usam(lock: dict) -> dict[str, set[str]]:
     partir do Viking: a plataforma de um pacote é a do pai cortada pelo marcador da aresta, e um
     extra (`google-api-core[grpc]`) só ativa as dependências dele por quem o pede. Sessão 10: o
     grpcio vem só pelo Firestore, que só entra no Linux (D53), e a aresta Firestore → grpcio não tem
-    marcador; olhar só a aresta direta o daria como do Mac."""
-    pacotes = {p["name"]: p for p in lock["package"]}
-    (raiz,) = [p["name"] for p in lock["package"] if p.get("source", {}).get("editable")]
-    usos: dict[str, set[str]] = {nome: set() for nome in pacotes}
+    marcador; olhar só a aresta direta o daria como do Mac.
+
+    A chave é (nome, versão): o lock pode ter duas versões de um pacote, cada uma para um pedaço
+    dos Pythons (2026-10-09, Sessão 14: o `beartype` 0.22.9 abaixo do 3.15 e o 0.23.0rc2 do 3.15
+    em diante, pelo `fastmcp-slim` 4.1.0). A aresta diz a versão quando há mais de uma."""
+    pacotes = {(p["name"], p["version"]): p for p in lock["package"]}
+    versoes: dict[str, list[str]] = {}
+    for nome, versao in pacotes:
+        versoes.setdefault(nome, []).append(versao)
+    (raiz,) = [
+        (p["name"], p["version"]) for p in lock["package"] if p.get("source", {}).get("editable")
+    ]
+    usos: dict[tuple[str, str], set[str]] = {chave: set() for chave in pacotes}
     # (pacote, extra ou None) → plataformas em que está ativo; os extras do Viking valem todos
-    ativos: dict[tuple[str, str | None], set[str]] = {(raiz, None): set(_PLATAFORMAS)}
+    ativos: dict[tuple[tuple[str, str], str | None], set[str]] = {(raiz, None): set(_PLATAFORMAS)}
     for extra in pacotes[raiz].get("optional-dependencies", {}):
         ativos[(raiz, extra)] = set(_PLATAFORMAS)
     mudou = True
@@ -68,10 +77,12 @@ def _plataformas_que_usam(lock: dict) -> dict[str, set[str]]:
             )
             for dep in arestas:
                 cabe = _cabe(dep.get("marker", ""), onde)
-                for chave in [
-                    (dep["name"], None),
-                    *((dep["name"], e) for e in dep.get("extra", [])),
-                ]:
+                if "version" in dep:
+                    alvo = (dep["name"], dep["version"])
+                else:
+                    (unica,) = versoes[dep["name"]]  # sem versão na aresta, o lock tem uma só
+                    alvo = (dep["name"], unica)
+                for chave in [(alvo, None), *((alvo, e) for e in dep.get("extra", []))]:
                     if not cabe <= ativos.get(chave, set()):
                         ativos[chave] = ativos.get(chave, set()) | cabe
                         mudou = True
@@ -120,7 +131,7 @@ def _casos() -> list[tuple[str, str, str, int]]:
     for pacote in lock["package"]:
         if pacote.get("source", {}).get("editable"):
             continue  # o próprio Viking: instala do checkout
-        for plataforma in sorted(usos[pacote["name"]]):
+        for plataforma in sorted(usos[(pacote["name"], pacote["version"])]):
             for menor in PYTHONS:
                 casos.append((pacote["name"], pacote["version"], plataforma, menor))
     return casos
@@ -133,13 +144,15 @@ def test_o_lock_tem_o_que_conferir():
     assert {plataforma for _, _, plataforma, _ in casos} == {"darwin", "linux"}
 
 
-def _pacote(nome: str) -> dict:
-    (pacote,) = [p for p in _lock()["package"] if p["name"] == nome]
+def _pacote(nome: str, versao: str | None = None) -> dict:
+    (pacote,) = [
+        p for p in _lock()["package"] if p["name"] == nome and versao in (None, p["version"])
+    ]
     return pacote
 
 
-def _tem_wheel(nome: str, plataforma: str, menor: int) -> bool:
-    wheels = [w["url"].rsplit("/", 1)[1] for w in _pacote(nome).get("wheels", [])]
+def _tem_wheel(nome: str, plataforma: str, menor: int, versao: str | None = None) -> bool:
+    wheels = [w["url"].rsplit("/", 1)[1] for w in _pacote(nome, versao).get("wheels", [])]
     return any(_serve(w, plataforma, menor) for w in wheels)
 
 
@@ -148,7 +161,7 @@ def _tem_wheel(nome: str, plataforma: str, menor: int) -> bool:
     [caso for caso in _casos() if (caso[0], caso[2]) not in COMPILA],
 )
 def test_todo_pacote_tem_wheel_para_as_nossas_maquinas(nome, versao, plataforma, menor):
-    assert _tem_wheel(nome, plataforma, menor), (
+    assert _tem_wheel(nome, plataforma, menor, versao), (
         f"{nome} {versao} não tem wheel para {plataforma} com Python 3.{menor}: o `uv sync` "
         "compilaria do código-fonte"
     )
@@ -169,7 +182,9 @@ def test_a_nuvem_nao_vai_para_o_mac():
     """D53 (2): as dependências da nuvem entram só onde rodam. Derivado da árvore: o Firestore e
     o gRPC que ele puxa são só do Linux; o `google-auth`, que o Mac usa para pedir o token do
     `cli@`, continua nos dois."""
-    usos = _plataformas_que_usam(_lock())
+    usos: dict[str, set[str]] = {}
+    for (nome, _versao), onde in _plataformas_que_usam(_lock()).items():
+        usos.setdefault(nome, set()).update(onde)
     for nome in ("google-cloud-firestore", "grpcio", "grpcio-status", "google-cloud-core"):
         assert usos[nome] == {"linux"}, nome
     assert usos["google-auth"] == {"darwin", "linux"}
