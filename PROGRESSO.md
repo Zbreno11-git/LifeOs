@@ -5,15 +5,35 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-08 22:53Z: a 13b em curso; C0 feito, o próximo é o C1 (medições, ok do dono)
+## ▶️ RETOMAR AQUI — 2026-10-09 00:43Z: a 13b no ar; falta o teste no Mac e o fechamento (24 de 33)
 
-**Estado (2026-10-08, medido às 22:53Z):**
-- A abertura conferiu tudo igual ao bloco anterior (21:43–21:52Z): `16379ea` = o remoto, `2892
-  passed`, CI `success`, `nuvem.py` 13 ✅, `deploy` 34 ✅ 0 ❌ (o motor `a964aff`).
-- **O dono respondeu as 7 perguntas da abertura** (~21:55Z; a tabela no plano abaixo) e aprovou o
-  plano.
-- **C0:** o lock em `44024ba` (a suíte `2892 passed` depois); este plano; `sessoes.md`; D67.
+**Estado (2026-10-09, medido às 00:42Z):**
+- **C0–C5 feitos, no ar:** o deploy com o ok do dono ("Ok, publica quando pronto") às ~00:39Z; o
+  `deploy` só lendo às 00:42Z: **34 ✅ e 0 ❌**, motor e finanças em `2c78d8b`, 0 commits desde
+  ela nos caminhos da imagem, o `/versao` com `receitas: True`.
+- **A TTL `receitas.apagar_em`** criada com o ok do dono ("Ok, cria") às **23:46Z** de 2026-10-08
+  (a mensagem do commit `2c78d8b` diz "~23:31Z": escrito de cabeça, errado; o certo é o `mtime`
+  da saída e o `date -u`); ACTIVE às 00:38Z (`nuvem.py`: 13 ✅).
+- **Portões:** a suíte `3020 passed` (emulador exigido); ruff, format, mypy, `docker build`;
+  **mutações 468 de 468** (a rodada inteira de 23:54Z a ~00:37Z; a primeira, de 23:47Z, morreu no
+  reinício do VPS e deixou `agent.py` mutado e a trava: restaurado do HEAD, conferido pelo hash,
+  e a rodada refeita); o CI do `2c78d8b`: `success`.
 - **Não há background nem trava.**
+
+**Próximo passo exato:** o dono roda o roteiro do Mac (no chat; ensinar, guardar, rodar, e
+esquecer a receita de teste no fim) e cola a saída; depois o fechamento: o D67 "Como ficou", o
+diário com "Erros desta sessão" (o horário de cabeça no `2c78d8b`; os dois testes errados do C3; a
+cadeia de trocas achada na 2ª passada, também nos fatos da 13), a barra **24 de 33**,
+`sessoes.md` (a 13b feita, o ▶️ na 14), `docs/erros.md`, `pesquisa-roteiro.md` seção 10 (o C1);
+commit, push, CI pelo SHA.
+
+**Verificações antes de confiar neste bloco:** `git status` limpo; HEAD = o remoto; sem
+`.mutacao.lock`; `python scripts/nuvem.py deploy` → 34 ✅ com o motor `2c78d8b`.
+
+**Ainda vale:** o resumo de segunda 2026-10-12 (depois das 9h no fuso do dono) é o primeiro;
+conferir na primeira sessão depois, sem travar nada.
+
+### O registro do C0 ao C5 (2026-10-08)
 
 **C1 feito (2026-10-08, ~22:58Z; oks do dono: "Pode rodar" e "Pode medir"; só texto inventado;
 US$ 0,0351 no pior caso):**
