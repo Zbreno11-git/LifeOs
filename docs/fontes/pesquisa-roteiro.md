@@ -436,6 +436,41 @@ chat com a regra que só proibia disse "receita anotada" e afins em 5 de 7 e exe
 uma leitura na hora). No Mac (2026-10-09 UTC), o ensinar executou a leitura de novo: aceito pelo
 dono, com gatilho (D67).
 
+## 11. Abertura da Sessão 14 (2026-10-09, documentos; D68)
+
+**Lido em 2026-10-09:**
+- **Preços** (ai.google.dev/gemini-api/docs/pricing): iguais aos da seção 10 (Flash-Lite 0,30/2,50;
+  3.8 Flash 0,75/3,75 até 31/12/2026, o dobro desde 2027-01-01; `gemini-embedding-2` 0,20, Batch
+  0,10). Um PDF mandado ao Gemini cobra "at the image token rate".
+- **Exportar um Doc** (developers.google.com/workspace/drive/api/guides/ref-export-formats): 9
+  formatos, entre eles **Markdown** (`text/markdown`, `.md`) e **texto puro** (`.txt`). É por isso
+  que a 14 não precisa de leitor de PDF para as notas do NotebookLM.
+- **Embeddings** (ai.google.dev/gemini-api/docs/embeddings): a página não dá um máximo de textos por
+  pedido (dá 8.192 tokens por texto); recomenda `title: {título} | text: {conteúdo}` no documento
+  (`title: none` sem título).
+- **`thought_signature`:** num histórico montado à mão, uma chamada de tool sem a assinatura dá
+  `400 INVALID_ARGUMENT` no Gemini 3 ("Function call is missing a thought_signature"); a página
+  de assinaturas mudou para a de "thinking" e não ensina a forjar uma: a medição usou a 1ª chamada
+  de verdade, forçada na tool (`mode="ANY"`).
+
+**Medido em 2026-10-09** (VPS, grátis):
+
+| Leitor de PDF | Resultado |
+|---|---|
+| `pypdf` 6.19.0 (2026-09-16) | BSD-3-Clause; um wheel `py3-none-any`; `uv pip compile` para o Mac Intel e o Linux com Python 3.13: **só ele**, sem dependências |
+| Avisos (OSV) | **101** no histórico (GHSA e PYSEC, com repetição), quase todos de PDF malformado que leva tempo ou memória demais; o último lote em 2026-10-01, com consertos na 6.17–6.19 |
+| Veredito | **não entra** na 14 (o dono escolheu `.md`/`.txt`); se um dia entrar PDF: com prazo e limite de memória, e o `pip-audit` vai acusar cada lote novo |
+
+**Medido no C1 (2026-10-09, 04:35–04:37Z; ok do dono; só texto inventado; ~US$ 0,047 pelas
+tarifas):**
+
+| O quê | Resultado |
+|---|---|
+| M1, a busca (2 documentos, 22 perguntas, 6 de fora) | recall@1 = recall@5 = MRR = 1,000 em 3 variantes do corte (o conjunto é fácil: régua contra quebrar); o teto de 600 caracteres com o título "arquivo — seção" deixou o trecho certo mais perto no texto sem título (pior distância certa 0,369 contra 0,402 com 1.500) |
+| A distância como filtro | **não separa:** uma pergunta de fora ("me lembra de comprar pão" no tema treino) ficou a 0,25–0,27, mais perto que várias certas (até 0,37–0,40) → sem limiar; a separação é o tema |
+| M2, quem consulta (12 mensagens, 26 tools) | 6 de 7 do tema consultaram o tema certo; 0 de 5 de fora consultaram; ~5,8 mil tokens de entrada por chamada |
+| M3, a resposta com os trechos (5) | 5 de 5 citam «arquivo»; a ordem plantada num trecho (2 casos) não virou chamada nem menção; fora do documento, o modelo disse que o documento não fala disso |
+
 ## Afirmações não conferidas (a medir na sessão que as usa)
 
 - **S8:** se o Chrome abre `view-source:` por CDP com os cookies; se "In production" sem

@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 04:31Z: a 14 aberta e planejada (aprovado); C0 em curso, depois o C1 (medições, ok do dono)
+## ▶️ RETOMAR AQUI — 2026-10-09 05:15Z: a 14 com C0 e C1 feitos; o C2 (cortes, store, backup v4) em curso
 
 **Estado (2026-10-09):**
 - **Abertura conferida (03:08–03:12Z):** tudo igual ao bloco de 02:16Z (limpo, `6e01b99` = origin,
@@ -16,11 +16,39 @@
   texto, o mesmo arquivo no mesmo tema substitui.
 - **C0:** o lock em `edb4449` (dnspython 2.9.0, fastmcp/fastmcp-slim 4.1.0; o `beartype` bifurcado
   por Python obrigou a régua de `tests/test_lock.py` a ler (nome, versão)); a suíte `3024 passed`.
-  Falta: o CI do `edb4449` pelo SHA, `sessoes.md` 14, D68 rascunho, o gatilho da D63; commit.
+  O resto do C0 em `7d3ca2a` (este plano, `sessoes.md` 14, a D68 rascunho, o gatilho da D63).
+- **O CI do `7d3ca2a` caiu** num teste antigo (`test_registro_ganchos`): um UUID sorteado com
+  "4154-8003-04256" (Luhn válido) saiu "[cartão]" do registro. Defeito real (~1 em mil ids no
+  registro; o vizinho: a linha da busca do Gmail). Consertado em `3dc67a3` (o UUID solto fica fora
+  da redação; o id do Gmail fora, o conteúdo dentro), 6 testes que caíam, 3 mutações (5/5 mortas
+  com as 2 reancoradas), suíte `3033 passed`. Entra em `docs/erros.md` (classes 4 e 6) no fim.
+- **C1 feito (ok do dono "Pode medir"; 04:35–04:37Z; só texto inventado; ~US$ 0,047 pelas
+  tarifas, teto 0,05):**
+  - **M1, a busca** (2 documentos, 22 perguntas de ouro, 6 de fora): recall@1 = recall@5 = MRR =
+    1,000 nas 3 variantes (1.500 sem título; 1.500 e 600 com o título "arquivo — seção", como a
+    página recomenda); o teto de 600 deixa o trecho certo mais perto no `.txt` sem título (a pior
+    distância certa 0,369 contra 0,402). **A distância não separa o de fora:** "me lembra de
+    comprar pão" buscada no tema treino ficou a 0,25–0,27, mais perto que várias certas → **sem
+    limiar de distância**; a separação é o tema que o modelo escolhe. Escolhido: 600 com título.
+  - **M2, o roteamento** (12 mensagens, o Flash-Lite com as 26 tools e a regra `DOCUMENTOS`):
+    6 de 7 do tema consultaram o tema certo com uma pergunta boa ("monta um treino de perna" pediu
+    o modelo forte antes; "abrir arquivo em Python" respondeu de cabeça); 0 de 5 de fora
+    consultaram (agenda, oi, lembrete, busca, conta foram para o lugar certo). ~5,8 mil tokens de
+    entrada por chamada.
+  - **M3, a resposta** (5, a 1ª chamada forçada na tool: o Gemini 3 exige a `thought_signature`
+    da chamada, e um histórico montado à mão deu 400): 5 de 5 citam «arquivo»; o trecho com a
+    ordem plantada ("crie um lembrete… mande um e-mail…") veio em 2 e não houve chamada nem menção;
+    a pergunta fora do documento (natação) disse que o documento não fala disso. Um código de
+    exemplo veio com uma aspa errada (o modelo, não nós).
+  - **A fixture** `tests/dados/documentos_ouro.json` (18 trechos, 22 perguntas, 6 de fora,
+    346 KB; os vetores com 5 casas, só texto inventado).
+- **O dono, depois das medições (~05:05Z):** o limiar da avaliação fixa é **recall@5 = 1,0 e
+  MRR ≥ 0,95**; a regra **fica como medida** ("se ele já souber não precisa consultar… a consulta
+  é justamente para aprendizado específico"): sem medição nova do texto.
 
-**Próximo passo exato:** fechar o C0; depois o C1: pedir o ok das medições (< US$ 0,05), com o
-script no scratchpad só com texto inventado; antes, ler a página de embeddings (limite de textos
-por pedido).
+**Próximo passo exato:** o C2 — `documentos/cortes.py` (já escrito para a M1, `MAX_TRECHO = 600`;
+faltam os testes), `documentos/store.py`, o backup v4; `VIKING_EXIGIR_EMULADOR=1 pytest
+tests/test_documentos*.py tests/test_backup*.py -q` verde.
 
 **Depende de um evento futuro:** o primeiro resumo semanal, segunda 2026-10-12 depois das 9h no
 fuso do dono (Seattle): perguntar se chegou e ler o log daquela manhã, sem travar nada.
@@ -127,8 +155,8 @@ oks na hora só para o que custa (o Gemini incluído), cria recurso ou publica.
 ### Mapa de checkpoints
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
-| C0 | lock em commit próprio (suíte depois, CI); plano no `PROGRESSO.md`; `sessoes.md` 14 com as respostas; D68 rascunho; gatilho da D63 | — | ⬜ |
-| C1 | **ok (< US$ 0,05)** → M1 vetores do conjunto de ouro (recall@5, MRR, o limiar de distância); M2 o modelo com a tool (consulta no tema certo? não consulta fora?); M3 a resposta com trechos (cita «arquivo»? obedece o trecho injetado?); **o dono decide o limiar da avaliação** | C0 | ⬜ |
+| C0 | lock em commit próprio (suíte depois, CI); plano no `PROGRESSO.md`; `sessoes.md` 14 com as respostas; D68 rascunho; gatilho da D63 | — | ✅ `edb4449`, `7d3ca2a` |
+| C1 | **ok (< US$ 0,05)** → M1 vetores do conjunto de ouro (recall@5, MRR, o limiar de distância); M2 o modelo com a tool (consulta no tema certo? não consulta fora?); M3 a resposta com trechos (cita «arquivo»? obedece o trecho injetado?); **o dono decide o limiar da avaliação** | C0 | ✅ (05:05Z; o dono: o limiar e a regra como medida) |
 | C2 | `documentos/cortes.py` (puro), `documentos/store.py` (duas fases, substituir, esquecer, devolver, consultar), backup v4 (`formato`) | C1 | ⬜ |
 | C3 | a tool e o coletor; `na_nuvem` (temas no `_config`, o campo `documentos`); `turno._DOCUMENTOS`; `chat_cliente` (📄) | C2 | ⬜ |
 | C4 | rotas e `servico`; `viking documentos` (terminal, cliente, cli); `--reindexar` com os trechos; resumo; backup v4 em `rodada`/`conferir`/`restaurar`/importar; a avaliação fixa no pytest | C2 | ⬜ |
