@@ -17,12 +17,12 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 30 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 10 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 27 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 3 | Estimei em vez de medir | 11 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 4 | Teste que não separava o certo do errado | 29 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 17 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 13 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 19 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
 
 ---
@@ -285,6 +285,12 @@ que tem de novo: o caminho de uma linha digitada passa por três leitores antes 
 (`_esquece_isso`, `_guarda_receita`, `barreira`), e o teste de um deles tem de escolher uma linha
 que os outros dois deixam passar.
 
+**2026-10-09 — a hora do bloco de retomada escrita antes do `date -u`, duas vezes (Sessão 14).**
+Escrevi "05:16Z" e depois "05:35Z" no título do bloco do `PROGRESSO.md` no mesmo comando que rodava
+o `date -u`, que respondeu 05:15Z e 05:34Z. Pegos lendo a saída, corrigidos antes do commit. O que
+tem de novo: rodar o `date -u` no mesmo comando não basta se o texto já foi escrito antes dele; a
+hora entra no texto num comando **depois** de lida.
+
 ### 3. Estimei em vez de medir
 
 **2026-09-20 — tokens por caractere.** A régua "4 caracteres por token" errou por 6×. E medir em
@@ -362,6 +368,13 @@ com espera crescente. No chat, a pergunta de finanças na hora errada viraria "N
 com a Pluggy". Conserto (`70da02f`): `remoto._chamar` repete só o 429 (o serviço nunca o
 devolve), até 2 vezes, dentro do prazo do turno; 6 testes, 3 mutações. O que tem de novo: o
 limite do terceiro inclui o que a **plataforma** faz no limite que eu mesmo configurei.
+
+**2026-10-09 — o histórico com uma chamada de tool montada à mão (Sessão 14, C1).** Para a M3,
+escrevi a `function_call` de `consultar_documentos` no histórico, sem ler o que o Gemini 3 exige
+dela: `400 INVALID_ARGUMENT`, "Function call is missing a thought_signature". O 400 não cobrou e
+nada foi medido errado; refeito com a 1ª chamada de verdade, forçada na tool. O que tem de novo: a
+forma de um pedido (não só o preço ou o limite) também é do terceiro e se lê antes; virou armadilha
+no `AGENTS.md`.
 
 ### 4. Teste que não separava o certo do errado
 
@@ -534,6 +547,18 @@ lados. Ao desenhar, o meu controle quadrático ficou com a entrada pequena abaix
 deu só 5,5× (passaria): medido, o controle cresceu. O que tem de novo: um teste que mede tempo
 contra um número fixo depende da máquina, como um que lê o relógio depende da hora; e a régua
 nova se prova com um defeito de verdade, não com um que eu achei que era.
+
+**2026-10-09 — a contagem de «» que esquecia o cabeçalho (Sessão 14, C3).** O teste da consulta
+dizia "um « e um »" no retorno da tool; o cabeçalho, que é nosso, também traz o tema entre «». Caiu
+na primeira rodada (vermelho, não verde por outro motivo); o teste passou a separar o cabeçalho do
+bloco antes de contar.
+
+**2026-09-26 → 2026-10-09 — o teste do registro que caía com 1 UUID em ~1.000 (achado no CI da 14).**
+`test_lembrete_criar_e_concluir_registram` comparava o id do lembrete com o que o registro guardou;
+o id é sorteado, e o do CI do `7d3ca2a` tinha "4154-8003-04256", que passa no Luhn: o registro
+guardou "05ba68a4-7f8d-[cartão]e8a91b7". O teste estava certo e o produto errado (classe 7); o que
+tem de novo aqui é que um teste com entrada sorteada só acha o defeito raro quando a sorte deixa, e
+o conserto fixou o caso sorteado num teste próprio (`UUID_DO_CI`).
 
 ### 5. A ferramenta fez outra coisa do que eu li
 
@@ -772,6 +797,19 @@ a memória no arquivo e não no restaurado (o teste pegou); e a função da mem�
 `devolver`). O que tem de novo: um nome também é um vizinho — a régua que lê o código por nome
 vale para todo módulo novo.
 
+**2026-10-09 — três âncoras de mutação quebradas de novo, uma por fase (Sessão 14).** O `gmail/tools.py`
+(no conserto da redação), o `vetores.py` (no C4) e, antes, nenhum `grep` das âncoras dos arquivos
+que eu mexia: o teste das âncoras pegou as três na suíte, antes da rodada. O que tem de novo: a
+mesma lição da 11d, 12 e 13 voltou três vezes numa sessão; a régua estrutural segura, e o `grep` à
+mão continua não sendo feito. Passo a rodar o teste das âncoras junto do `ruff` depois de cada
+emenda, não só na suíte.
+
+**2026-10-09 — a redação de páginas aplicada a ids (o vizinho do registro, Sessão 14).** O conserto do
+registro (um UUID solto fica fora da redação) cobria os ids nossos; o vizinho era a linha da busca do
+Gmail, "(ID: …)", que passava inteira pela mesma redação, e um id do Gmail (16 hex) só de dígitos
+tem a forma de um cartão de 16 dígitos: não dava para protegê-lo na regra geral sem abrir um buraco.
+Consertado no lugar dele: o id fora da redação, o conteúdo dentro (como o `ler_email` já fazia).
+
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 
 **2026-09-26 — `href` por substring (Sessão 4b).** A primeira versão do freio casava `sair`
@@ -868,6 +906,15 @@ escolhe). Nenhum teste tinha mais de uma troca. Consertado (`fa53068`): nos fato
 fim da cadeia, nas receitas a xará ativa; testes que caíam antes e duas mutações. O que tem de
 novo: "desfazer" tem o vizinho "desfazer depois de duas mudanças", e o caso típico de um teste de
 histórico é o de uma mudança só.
+
+**2026-09-20 → 2026-10-09 — a regra do cartão lendo dígitos dentro de um id (achada no CI da 14).**
+`registro.limpo` passa a redação das páginas em todo texto do registro, ids inclusive, e a regra do
+cartão (13 a 19 dígitos, com espaço ou hífen, Luhn) foi desenhada para texto de página: "4154-8003-04256"
+dentro de um UUID é cartão para ela (~1 em 1.000 UUIDs). O desfazer não sofria (a cópia é crua), mas
+o `viking registro`, a `acoes_recentes` e o backup mostravam o id errado. Conserto (`3dc67a3`): um
+UUID exato e solto fica de fora (32 hex não cabem num cartão); colado a letra, `_` ou hífen, não
+(seria o meio de um token, e parti-lo o deixaria escapar: testado com um JWT). O que tem de novo: o
+vizinho legítimo de uma regra de texto de página inclui o identificador que o próprio sistema gera.
 
 ### 8. Comando que escreve com alcance maior que a mudança
 

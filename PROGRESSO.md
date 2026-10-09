@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 05:34Z: a 14 com C0–C3 feitos; o C4 (rotas, `viking documentos`, reindexar, resumo) em curso
+## ▶️ RETOMAR AQUI — 2026-10-09 06:39Z: a 14 com C0–C4 feitos e o C5 até os docs; faltam os oks (índice e TTLs, deploy), o Mac e o fechamento
 
 **Estado (2026-10-09):**
 - **Abertura conferida (03:08–03:12Z):** tudo igual ao bloco de 02:16Z (limpo, `6e01b99` = origin,
@@ -55,10 +55,23 @@
   e a prova do chat. Dentro do bloco o trecho cita "arquivo X, linhas a–b" sem «» (o neutralizar
   as trocaria). Suíte `3159 passed`.
 
-**Próximo passo exato:** o C4 — `documentos/servico.py` e as rotas `/documentos*` (só `cli@`), o
-cliente, `documentos/terminal.py` e `viking documentos` no `cli.py`, o `--reindexar` com os
-trechos, o resumo de segunda com os documentos; `VIKING_EXIGIR_EMULADOR=1 pytest
-tests/test_motor*.py tests/test_documentos*.py tests/test_memoria*.py -q` verde.
+- **C4 feito (`65dd415`):** as rotas `/documentos*` (só `cli@`; o aprender com o corpo até 4 MiB;
+  o Gemini fora → 503 com o tipo, nada no log), `viking documentos`, o `--reindexar` com os
+  trechos, o resumo de segunda com os documentos, a fumaça exercendo a consulta dos trechos.
+- **C5 até aqui:** `e1d9645` (o índice e as TTLs no `nuvem.py`; 21 mutações; o teste dos trechos
+  de fora que tomavam as vagas); a rodada inteira de mutações **492 de 492** (05:47–06:36Z); os
+  docs técnicos (AGENTS, a coleção no GCP, `docs/erros.md`); a suíte `3200 passed`; ruff, format,
+  mypy, `uv lock --check`, gitleaks e `docker build` limpos. `nuvem.py` só lendo às 05:43Z: faltam
+  só o índice de `trechos` e as TTLs `documentos.apagar_em` e `trechos.apagar_em`.
+- **As duas passadas:** nada a consertar; três restos vão para a D68 (o trecho chega ao modelo, que
+  pode criar lembrete/evento, mandar e-mail ao próprio dono ou o navegador a uma URL, como um
+  e-mail lido hoje; a versão trocada fica sem TTL, como o fato substituído; dois `--aprender` do
+  mesmo arquivo ao mesmo tempo poderiam se substituir um ao outro).
+
+**Próximo passo exato:** o CI do HEAD pelo SHA → **ok do dono** → `python scripts/nuvem.py
+--executar indices` e `--executar ttl` → `python scripts/nuvem.py` (o índice pode levar minutos em
+CREATING) → **ok do dono** → `python scripts/nuvem.py deploy --executar` → `deploy` só lendo, todas ✅
+→ o roteiro do Mac → o fechamento (25 de 33).
 
 **Depende de um evento futuro:** o primeiro resumo semanal, segunda 2026-10-12 depois das 9h no
 fuso do dono (Seattle): perguntar se chegou e ler o log daquela manhã, sem travar nada.
@@ -169,7 +182,7 @@ oks na hora só para o que custa (o Gemini incluído), cria recurso ou publica.
 | C1 | **ok (< US$ 0,05)** → M1 vetores do conjunto de ouro (recall@5, MRR, o limiar de distância); M2 o modelo com a tool (consulta no tema certo? não consulta fora?); M3 a resposta com trechos (cita «arquivo»? obedece o trecho injetado?); **o dono decide o limiar da avaliação** | C0 | ✅ (05:05Z; o dono: o limiar e a regra como medida) |
 | C2 | `documentos/cortes.py` (puro), `documentos/store.py` (duas fases, substituir, esquecer, devolver, consultar), backup v4 (`formato`) | C1 | ✅ `b06b966` |
 | C3 | a tool e o coletor; `na_nuvem` (temas no `_config`, o campo `documentos`); `turno._DOCUMENTOS`; `chat_cliente` (📄) | C2 | ✅ `f3f0fa5` |
-| C4 | rotas e `servico`; `viking documentos` (terminal, cliente, cli); `--reindexar` com os trechos; resumo; backup v4 em `rodada`/`conferir`/`restaurar`/importar; a avaliação fixa no pytest | C2 | ⬜ |
+| C4 | rotas e `servico`; `viking documentos` (terminal, cliente, cli); `--reindexar` com os trechos; resumo; backup v4 em `rodada`/`conferir`/`restaurar`/importar; a avaliação fixa no pytest | C2 | ✅ `65dd415` |
 | C5 | portões, mutações, duas passadas, docs, `nuvem.py` (índice, 2 TTLs, provas); **ok** → índice e TTLs; **ok** → deploy; roteiro do Mac; fechamento 25 de 33 | C3, C4 | ⬜ |
 
 ### Fase 0 — C0

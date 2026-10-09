@@ -151,8 +151,9 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   - `backup/` — o backup diário no Drive do dono (Sessão 11c, D63): `formato.py` (o arquivo
     versionado: lembretes no formato da migração, o registro de ações dos 30 dias inteiro, os
     gastos do teto e, desde a versão 2 (Sessão 13), os fatos da memória sem o vetor, e desde a 3
-    (Sessão 13b) as receitas; contagens e a impressão de cada lembrete; `ler` confere tudo, lê as
-    versões 1 e 2 também, e `montar` lê de
+    (Sessão 13b) as receitas, e desde a 4 (Sessão 14) os documentos e os trechos com o texto, sem
+    o vetor; contagens e a impressão de cada lembrete; `ler` confere tudo, lê as versões 1 a 3
+    também, e `montar` lê de
     volta antes de devolver), `drive.py` (escopo `drive.file`; **só cria, lista e baixa**, nunca
     apaga, e uma régua lê o código; o envio dentro de `registro.acao("backup.drive")`),
     `rodada.py` (a rodada da nuvem: baixa o arquivo mais novo e só sobe outro se o conteúdo
@@ -174,6 +175,17 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     do extrator nasce fora do `roda`, vira guardada só com o `guarda receita` digitado naquela
     conversa, e morre em 1 dia pela TTL; o mesmo nome substitui), e `regras.recusa_receita` (o
     filtro próprio: a forma de ordem dos fatos recusaria toda receita)
+  - `documentos/` — os documentos (Sessão 14, D68), **só no chat da nuvem e com a memória**: o
+    dono manda um `.md`/`.txt` por vez, com um tema, e o modelo consulta por tema. `cortes.py`
+    (puro: a régua do arquivo, UTF-8 e até 1 MB contado em bytes, e o corte por parágrafo até
+    600 caracteres, com o caminho dos títulos e as linhas de/até; linear em toda forma),
+    `store.py` (as coleções `documentos` e `trechos`, o vetor no trecho com o `tema_lido` e o
+    `ativo`; **aprender em duas fases**: nada pela metade na busca, e a TTL limpa o que caiu; a
+    consulta confere o documento de cada trecho achado; o mesmo arquivo no mesmo tema substitui;
+    o índice vetorial composto em `INDICES`), `consulta.py` (a tool `consultar_documentos`, só
+    leitura: até 5 trechos no bloco de não confiável, e o que achou volta ao dono no campo
+    `documentos` da resposta, a linha 📄), `servico.py` (as rotas `/documentos*`) e
+    `terminal.py` (`viking documentos`: o arquivo conferido no Mac, só o nome sem a pasta sobe)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
@@ -187,7 +199,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     (`/fumaca/vencidos`, `/registro`, `/segredos`), e as finanças pelo serviço delas
     (`/financas` e `/fumaca/financas`, do `cli@`; Sessão 11d), e as da memória (`/memoria`,
     `/memoria/esquecer`, `/desfazer`, `/corrigir`, `/reindexar` e `/fumaca/memoria`, do `cli@`;
-    Sessão 13);
+    Sessão 13), e as dos documentos (`/documentos`, `/documentos/aprender`, com o corpo até
+    4 MiB, `/esquecer` e `/desfazer`, do `cli@`; Sessão 14);
     `identidade.py` é a verificação do token dos dois serviços (a mesma régua; Sessão 11d);
     `financas.py` é o **serviço de finanças** (D64): outro Cloud Run, a mesma imagem com outro
     comando, a conta `viking-financas@` (a única que lê o `viking-pluggy`), só o `viking-motor@`
@@ -328,6 +341,11 @@ viking memoria                  # o que o Viking anotou de você, na nuvem (os a
                                # esquecer e desfazer valem para elas). No chat da nuvem,
                                # "esquece isso" esquece a última anotação da conversa, `guarda
                                # receita` guarda a proposta 📋 e `roda NOME` roda uma guardada
+viking documentos              # os documentos que o Viking aprendeu (na nuvem); --aprender
+                               # ARQUIVO --tema T manda um .md/.txt (até 1 MB; o mesmo
+                               # arquivo no mesmo tema substitui), --todos, --esquecer ID,
+                               # --desfazer ID. No chat da nuvem, o modelo consulta por tema
+                               # e a linha 📄 diz o que ele achou
 viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
                                # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
                                # (só num terminal interativo); --nuvem lista os da nuvem;
@@ -566,7 +584,18 @@ quem chama esses nomes (a D26), e a da memória é `devolver`. As receitas (13b,
 mesma régua: quem propõe é o extrator (só a mensagem), e `guarda receita` e `roda NOME` são lidos
 em `na_nuvem` antes da barreira; rodar manda os passos ao modelo como texto do dono, com as tools
 e as aprovações de sempre (`tests/test_na_nuvem_receitas.py`, e o envio a outra pessoa ainda pede
-o código em `tests/test_na_nuvem_gmail.py`).
+o código em `tests/test_na_nuvem_gmail.py`). Os documentos (14, D68) são conteúdo de terceiro:
+o trecho só chega ao modelo pelo retorno da `consultar_documentos`, dentro do bloco de não
+confiável, e nunca ao extrator; um documento nunca vira fato nem receita
+(`tests/test_na_nuvem_documentos.py`). Dentro do bloco o trecho cita "arquivo X, linhas a–b"
+sem «»: o `neutralizar` as trocaria por ‹›.
+
+**Uma chamada de tool montada à mão não passa no Gemini 3.** Medido em 2026-10-09 (C1 da 14): um
+histórico com uma `function_call` escrita pelo script, sem a `thought_signature` que o modelo
+gera, dá `400 INVALID_ARGUMENT` ("Function call is missing a thought_signature"); a página não
+ensina a forjar uma. Para medir a resposta a um retorno de tool, a 1ª chamada é de verdade,
+forçada na tool (`FunctionCallingConfig(mode="ANY", allowed_function_names=[…])`), e o
+histórico segue com o `content` que voltou. Os testes usam um cliente falso e não são afetados.
 
 **Uma lista de strings ao `gemini-embedding-2` vira um vetor só.** A página diz "Adding multiple
 inputs directly to the `contents` parameter produces one aggregated embedding" (medido em

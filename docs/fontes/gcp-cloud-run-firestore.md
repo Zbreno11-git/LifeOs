@@ -209,3 +209,23 @@ o código em `scripts/nuvem.py`, `src/lifeos/nuvem/`, `src/lifeos/assistant/na_n
 `NOT_FOUND`, "was not found", "may not exist" e, no `run services describe`, "Cannot find
 service" (medido em 2026-09-30). `scripts/nuvem.py` trata esses como ausência e qualquer outro
 erro como erro.
+
+## Os documentos (Sessão 14, D68)
+
+- **Três recursos novos, com o ok do dono:** o índice vetorial composto de `trechos`
+  (`tema_lido`, `ativo`, `vetor` 768, `flat`), que a consulta por tema pede na produção (o emulador
+  não pede; a `/fumaca/memoria` o exerce com um tema que não existe), e as TTLs em
+  `documentos.apagar_em` e `trechos.apagar_em` (o esquecido some em 30 dias, com os trechos; o que
+  não terminou de aprender, em 1). Os três em `scripts/nuvem.py` (`INDICES`, `TTLS`).
+- **Gravações ao aprender:** um documento de 1 MB tem ~1.700 trechos de 600 caracteres: ~1.700
+  criações e ~1.700 atualizações (a 2ª fase), em lotes de 200 (cada lote ~1,5 MB, longe dos 10 MiB
+  do pedido; lido em 2026-10-09: a página de cotas não dá limite de escritas por lote, e o tamanho
+  do pedido é 10 MiB). A cota grátis é de 20 mil gravações por dia.
+- **Leituras por turno:** os temas (uma consulta `ativo == true` em `documentos`, um documento por
+  arquivo) entram no texto de sistema; uma consulta lê 1 a cada 100 entradas do índice (o tema) e
+  os até 5 trechos e os documentos deles.
+- **Custo do Gemini:** aprender embute cada trecho (US$ 0,20 por 1M de tokens; o teto conta pelos
+  bytes, ~US$ 0,24 para 1 MB no pior caso, de US$ 1 por dia); consultar embute a pergunta e soma uma
+  volta ao modelo (~5,8 mil tokens de entrada, medido no C1).
+- **No backup:** a versão 4 leva os documentos e os trechos com o texto, sem o vetor (`viking memoria
+  --reindexar` refaz); o gatilho da D63 passou de ~1 MB para ~20 MB por isso.
