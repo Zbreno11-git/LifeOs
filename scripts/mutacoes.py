@@ -717,7 +717,7 @@ MUTACOES = [
     Mutacao(
         "gmail: conteúdo sai sem redação para o Gemini",
         "src/lifeos/gmail/tools.py",
-        "    return bloco(_DADOS_DOS_EMAILS, _redigido(conteudo))",
+        "    return bloco(_DADOS_DOS_EMAILS, conteudo if ja_redigido else _redigido(conteudo))",
         "    return bloco(_DADOS_DOS_EMAILS, conteudo)",
         "tests/test_gmail_tools.py::test_corpo_redigido_como_pagina",
     ),
@@ -731,9 +731,30 @@ MUTACOES = [
     Mutacao(
         "gmail: e-mail fora do bloco de não confiável",
         "src/lifeos/gmail/tools.py",
-        "    return bloco(_DADOS_DOS_EMAILS, _redigido(conteudo))",
-        "    return _redigido(conteudo)",
+        "    return bloco(_DADOS_DOS_EMAILS, conteudo if ja_redigido else _redigido(conteudo))",
+        "    return conteudo if ja_redigido else _redigido(conteudo)",
         "tests/test_gmail_tools.py::test_injecao_no_corpo_fica_dentro_do_bloco",
+    ),
+    Mutacao(
+        "gmail: a linha da busca sai sem redação (o id ficou fora, o conteúdo não)",
+        "src/lifeos/gmail/tools.py",
+        '    return f"- (ID: {e.id}) {_redigido(conteudo)}"',
+        '    return f"- (ID: {e.id}) {conteudo}"',
+        "tests/test_gmail_tools.py::test_o_id_da_busca_nao_passa_pela_redacao",
+    ),
+    Mutacao(
+        "redação: o UUID volta a ser redigido como cartão",
+        "src/lifeos/browser/_redacao.py",
+        "    if len(pedacos) > 1:",
+        "    if False:",
+        "tests/test_redacao.py::test_uuid_fica_intacto",
+    ),
+    Mutacao(
+        "redação: um UUID colado a letra parte o token em volta",
+        "src/lifeos/browser/_redacao.py",
+        '    r"(?<![\\w-])[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"',
+        '    r"(?<![0-9A-Fa-f-])[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"',
+        "tests/test_redacao.py::test_uuid_dentro_de_um_token_nao_parte_o_token",
     ),
     Mutacao(
         "gmail: e-mail que falhou no lote some em silêncio",

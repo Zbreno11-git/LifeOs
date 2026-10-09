@@ -82,6 +82,40 @@ def test_cartao_luhn_valido_e_redigido(cartao):
     assert r.redigir(f"cartão {cartao} ok") == "cartão [cartão] ok"
 
 
+# O UUID que o CI sorteou em 2026-10-09 (`7d3ca2a`): "4154-8003-04256" passa no Luhn, e o id de um
+# lembrete saiu do registro como "05ba68a4-7f8d-[cartão]e8a91b7" (erros, classe 4 e 6).
+UUID_DO_CI = "05ba68a4-7f8d-4154-8003-04256e8a91b7"
+
+
+@pytest.mark.parametrize(
+    "uuid", [UUID_DO_CI, UUID_DO_CI.upper(), "abcdef12-3456-7890-1234-411111111111"]
+)
+def test_uuid_fica_intacto(uuid):
+    """Um UUID não carrega cartão (32 hex em 8-4-4-4-12): ele é o id de lembrete, fato, receita e
+    documento no registro, e redigido não se acha de volta."""
+    assert r.redigir(uuid) == uuid
+    assert r.redigir(f"id {uuid}, ok") == f"id {uuid}, ok"
+
+
+def test_cartao_ao_lado_de_um_uuid_continua_redigido():
+    assert r.redigir(f"{UUID_DO_CI} cartão 4111111111111111") == f"{UUID_DO_CI} cartão [cartão]"
+    assert r.redigir(f"4111111111111111 {UUID_DO_CI}") == f"[cartão] {UUID_DO_CI}"
+
+
+def test_uuid_dentro_de_um_token_nao_parte_o_token():
+    """Um UUID colado a letra ou `_` não fica de fora: partido, o token escaparia da regra dele."""
+    # inventado e montado em pedaços: o literal inteiro seria um achado do gitleaks
+    jwt = "eyJ" + "hbGciOiJIUzI1NiJ9." + "eyJ" + "zdWIiOiIxMjM0NTY3ODkwIn0.x" + UUID_DO_CI
+    assert r.redigir(f"token {jwt} fim") == "token [token] fim"
+    assert r.redigir(f"sk-{UUID_DO_CI}") == "[token]"
+
+
+def test_quase_uuid_nao_escapa_da_redacao():
+    """Só a forma exata fica: um cartão com hífens de 4 em 4 continua cartão."""
+    assert r.redigir("x-4111-1111-1111-1111") == "x-[cartão]"
+    assert r.redigir("05ba68a4-7f8d-4154-8003-04256") == "05ba68a4-7f8d-[cartão]"
+
+
 def test_cnpj_que_passa_no_luhn_vira_cnpj_e_nao_cartao():
     """Este CNPJ também é Luhn-válido: se o cartão fosse aplicado antes, viraria `[cartão]`."""
     assert r._luhn("11222333003520")

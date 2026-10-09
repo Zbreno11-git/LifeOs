@@ -39,8 +39,8 @@ def _redigido(texto: str) -> str:
     return _URL.sub(lambda m: _redacao.redigir_url(m.group()), _redacao.redigir(texto or ""))
 
 
-def _dados(conteudo: str) -> str:
-    return bloco(_DADOS_DOS_EMAILS, _redigido(conteudo))
+def _dados(conteudo: str, *, ja_redigido: bool = False) -> str:
+    return bloco(_DADOS_DOS_EMAILS, conteudo if ja_redigido else _redigido(conteudo))
 
 
 def mensagem_de_erro(exc: service.ErroGmail) -> str:
@@ -75,9 +75,10 @@ def _linha(e: service.Email) -> str:
     if e.do_viking:
         marcas.append("enviado pelo Viking")
     extra = f" [{', '.join(marcas)}]" if marcas else ""
-    return (
-        f"- (ID: {e.id}) {e.data} · {e.remetente} <{e.endereco}> · {e.assunto}{extra}\n  {e.trecho}"
-    )
+    # O id vem do Google e fica fora da redação (como no `ler_email`): hex de 16, um só de dígitos
+    # tem a forma de um cartão e sairia "[cartão]" (achado em 2026-10-09). O conteúdo é redigido.
+    conteudo = f"{e.data} · {e.remetente} <{e.endereco}> · {e.assunto}{extra}\n  {e.trecho}"
+    return f"- (ID: {e.id}) {_redigido(conteudo)}"
 
 
 def _lista(busca: service.Busca, titulo: str, vazio: str) -> str:
@@ -91,7 +92,7 @@ def _lista(busca: service.Busca, titulo: str, vazio: str) -> str:
             f"⚠️ {busca.falharam} e-mail(s) achados não puderam ser lidos agora: a lista está "
             "incompleta."
         )
-    partes.append(_dados("\n".join(_linha(e) for e in busca.emails)))
+    partes.append(_dados("\n".join(_linha(e) for e in busca.emails), ja_redigido=True))
     return "\n".join(p for p in partes if p)
 
 

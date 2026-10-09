@@ -90,6 +90,15 @@ def test_dado_sensivel_e_controle_saem_redigidos():
     assert RLO not in guardado and "[CPF]" in guardado
 
 
+def test_o_id_de_um_lembrete_volta_igual():
+    """O UUID que o CI sorteou em 2026-10-09 passava no Luhn e saía redigido (erros, classe 4)."""
+    uuid = "05ba68a4-7f8d-4154-8003-04256e8a91b7"
+    with registro.acao("lembrete.criar", {"titulo": "x"}) as marca:
+        marca.feito({"id": uuid})
+    (a,) = registro.do_turno("sessao-a:1")
+    assert a.resultado == {"id": uuid}
+
+
 def test_desfazer_guarda_a_copia_bruta():
     evento = {"summary": "CPF 529.982.247-25", "start": {"date": "2026-10-01"}}
     with registro.acao("calendario.apagar", {"event_id": "e1"}) as marca:

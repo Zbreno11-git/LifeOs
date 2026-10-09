@@ -96,6 +96,16 @@ def test_nada_de_controle_chega_ao_modelo(gmail):
         assert not any(c in texto for c in (ESC, C1, RLO))
 
 
+def test_o_id_da_busca_nao_passa_pela_redacao(gmail):
+    """Um id do Gmail é hex de 16: um só de dígitos tem a forma de um cartão de 16 e saía
+    "[cartão]", e o `ler_email` com ele não acharia nada. O id vem do Google, fora do conteúdo;
+    o conteúdo da linha continua redigido (como no `ler_email`, que já punha o id fora)."""
+    gmail["nova"]("4111111111111111", trecho="cartão 4111111111111111")
+    texto = tools.buscar_emails("x")
+    assert "(ID: 4111111111111111)" in texto
+    assert "cartão [cartão]" in texto
+
+
 # --- falha e incompleto aparecem no texto ---------------------------------------------------
 
 

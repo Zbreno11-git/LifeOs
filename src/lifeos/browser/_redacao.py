@@ -39,6 +39,14 @@ _CNPJ = re.compile(r"(?<!\d)\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}(?!\d)")
 _CPF = re.compile(r"(?<!\d)\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?!\d)")
 _CARTAO = re.compile(r"(?<!\d)\d(?:[ -]?\d){12,18}(?!\d)")
 _SSN = re.compile(r"(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)")
+# Um UUID (8-4-4-4-12 hex) é id nosso (lembrete, fato, receita, documento), nunca cartão: 32 hex não
+# cabem num cartão de até 19 dígitos. Sem isto, "4154-8003-04256" dentro de um id passava no Luhn
+# e o registro guardava "05ba68a4-7f8d-[cartão]e8a91b7" (o CI de 2026-10-09). Só a forma exata e
+# solta: colado a letra, `_` ou hífen, pode ser o meio de um token, e partir o token o deixaria passar.
+_UUID = re.compile(
+    r"(?<![\w-])[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}"
+    r"(?![\w-])"
+)
 _NAO_DIGITO = re.compile(r"\D")
 
 _PARAM_SENSIVEL = re.compile(
@@ -110,6 +118,19 @@ def redigir(texto):
     """Apaga tokens/chaves, CNPJ, CPF, cartão e SSN. A ordem importa: um CNPJ sem pontuação tem
     14 dígitos e poderia passar no Luhn como cartão se o cartão viesse antes. E-mails ficam
     visíveis (decisão do dono, 2026-09-26)."""
+    if not texto:
+        return texto
+    # O UUID fica de fora: cada pedaço entre dois UUIDs é redigido sozinho.
+    pedacos = _UUID.split(texto)
+    if len(pedacos) > 1:
+        uuids = _UUID.findall(texto)
+        return "".join(
+            _redigir(p) + (uuids[i] if i < len(uuids) else "") for i, p in enumerate(pedacos)
+        )
+    return _redigir(texto)
+
+
+def _redigir(texto):
     if not texto:
         return texto
     texto = _TOKENS.sub(lambda m: "[chave]" if m.group().startswith("-----") else "[token]", texto)
