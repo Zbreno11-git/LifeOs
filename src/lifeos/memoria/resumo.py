@@ -16,7 +16,8 @@ Roda na rodada do envio de lembretes (a cada minuto, `POST /tarefas/lembretes`),
 
 Desde a 13b (D67, o dono: "sim"), o resumo mostra também as receitas guardadas e esquecidas na
 semana, com os passos: é mais uma chance de pegar uma que entrou sem querer (um e-mail colado). As
-propostas ignoradas não entram. "Só se houve anotação" passa a contar as receitas.
+propostas ignoradas não entram. "Só se houve anotação" passa a contar as receitas. Desde a 14
+(D68), também os documentos aprendidos e esquecidos na semana (só o nome e o tema, nunca o texto).
 
 O e-mail, lido de volta pelo Viking, é conteúdo de terceiro (D53): a marca dele vira só a etiqueta.
 
@@ -29,6 +30,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from lifeos import config, firestore_comum
+from lifeos.documentos import store as documentos_store
 from lifeos.memoria import receitas as memoria_receitas
 from lifeos.memoria import store
 
@@ -59,6 +61,7 @@ def corpo(
     inicio: datetime,
     fim: datetime,
     receitas: list[memoria_receitas.Receita] | None = None,
+    documentos: list[documentos_store.Documento] | None = None,
 ) -> str:
     """O texto do e-mail: cada anotação da semana com o id curto e o estado de hoje, e as receitas
     com os passos."""
@@ -82,6 +85,19 @@ def corpo(
                 estado = ""
             linhas.append(f"- [{receita.curto}] {receita.nome}{estado}:")
             linhas += [f"  {n}. {passo}" for n, passo in enumerate(receita.passos, 1)]
+    if documentos:
+        linhas += ["", "Documentos (viking documentos):"]
+        for documento in documentos:
+            if documento.esquecido_em is not None:
+                estado = " (esquecido)"
+            elif documento.invalida_em is not None:
+                estado = " (já trocado por outra versão)"
+            else:
+                estado = ""
+            linhas.append(
+                f"- [{documento.curto}] {documento.nome} (tema {documento.tema}, "
+                f"{documento.n_trechos} trecho(s)){estado}"
+            )
     linhas += [
         "",
         (
@@ -118,11 +134,13 @@ def rodar(agora: datetime | None = None) -> str:
     try:
         fatos = store.criados_entre(inicio, fim)
         receitas = memoria_receitas.da_semana(inicio, fim)
-        if not fatos and not receitas:
+        documentos = documentos_store.da_semana(inicio, fim)
+        if not fatos and not receitas and not documentos:
             ref.update({"estado": "vazio"})
             return "nada anotado"
-        assunto = f"Viking: o que anotei esta semana ({len(fatos) + len(receitas)})"
-        pedido = gmail_envio.novo("eu", assunto, corpo(fatos, inicio, fim, receitas))
+        total = len(fatos) + len(receitas) + len(documentos)
+        assunto = f"Viking: o que anotei esta semana ({total})"
+        pedido = gmail_envio.novo("eu", assunto, corpo(fatos, inicio, fim, receitas, documentos))
     except gmail_service.ErroGmail as exc:
         if exc.incerta:
             ref.update({"estado": "incerto"})

@@ -322,6 +322,30 @@ def da_memoria() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     return fatos, receitas
 
 
+# --- os documentos (Sessão 14, D68): o `viking documentos` do Mac --------------------------------
+
+ACOES_DOS_DOCUMENTOS = ("aprender", "esquecer", "desfazer")
+
+
+def dos_documentos() -> list[dict[str, Any]]:
+    """Os documentos guardados na nuvem (os esquecidos até sumirem), do mais novo ao mais velho,
+    sem os trechos."""
+    dados = _chamar(_sessao(), "GET", "/documentos")
+    documentos = dados.get("documentos")
+    if not isinstance(documentos, list) or not all(isinstance(d, dict) for d in documentos):
+        raise ErroDaNuvem("a nuvem respondeu num formato inesperado (o motor é de antes da 14?)")
+    return documentos
+
+
+def acao_dos_documentos(acao: str, corpo: dict[str, Any]) -> dict[str, Any]:
+    """Aprender (chama o Gemini no motor, um embedding por trecho: o prazo é o do chat), esquecer
+    ou desfazer."""
+    if acao not in ACOES_DOS_DOCUMENTOS:
+        raise ValueError(f"ação desconhecida: {acao!r}")
+    prazo = PRAZO_CHAT_S if acao == "aprender" else PRAZO_S
+    return _chamar(_sessao(), "POST", f"/documentos/{acao}", corpo=corpo, prazo=prazo)
+
+
 def acao_da_memoria(acao: str, corpo: dict[str, Any]) -> dict[str, Any]:
     """Esquecer, desfazer, corrigir ou reindexar (os dois últimos chamam o Gemini no motor: o
     prazo é o do chat)."""

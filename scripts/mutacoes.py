@@ -3207,8 +3207,8 @@ MUTACOES = [
     Mutacao(
         "memoria: a lista de textos vira um vetor só",
         "src/lifeos/memoria/vetores.py",
-        "        contents=[types.Content(parts=[types.Part.from_text(text=prefixo + t)]) for t in textos],\n",
-        "        contents=[prefixo + t for t in textos],\n",
+        "        contents=[types.Content(parts=[types.Part.from_text(text=t)]) for t in textos],\n",
+        "        contents=list(textos),\n",
         "tests/test_memoria_vetores.py::test_cada_texto_vai_num_content_com_o_prefixo_e_a_dimensao",
     ),
     Mutacao(

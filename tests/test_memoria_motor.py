@@ -174,7 +174,7 @@ def test_reindexar_refaz_so_quem_nao_tem_vetor(embedding):
         sem = store.gravar("O usuário toca violão.", origem="backup", vetor=None)
     _gravar("O usuário corre aos sábados.")
     resposta = _pedir("POST", "/memoria/reindexar")
-    assert resposta.json() == {"refeitos": 1}
+    assert resposta.json() == {"refeitos": 1, "trechos": 0}
     assert embedding.textos == [vetores.PREFIXO_FATO + "O usuário toca violão."]
     with _do_lado_da_nuvem():
         assert store.sem_vetor() == []
@@ -340,10 +340,11 @@ def test_uma_falha_do_resumo_nao_para_os_lembretes(gmail, monkeypatch):
 
 
 def test_a_fumaca_da_memoria_so_conta(monkeypatch):
-    assert _pedir("GET", "/fumaca/memoria").json() == {"achados": 0, "receitas": 0}
+    assert _pedir("GET", "/fumaca/memoria").json() == {"achados": 0, "receitas": 0, "trechos": 0}
     _gravar("O usuário corre aos sábados.")
     resposta = _pedir("GET", "/fumaca/memoria")
-    assert resposta.json() == {"achados": 1, "receitas": 0} and "sábados" not in resposta.text
+    assert resposta.json() == {"achados": 1, "receitas": 0, "trechos": 0}
+    assert "sábados" not in resposta.text
     assert _pedir("GET", "/fumaca/memoria", conta="maos").status_code == 403
 
 

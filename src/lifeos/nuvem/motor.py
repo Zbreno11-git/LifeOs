@@ -132,11 +132,17 @@ async def fumaca_vencidos(request: Request) -> JSONResponse:
 
 
 def _busca_da_memoria() -> dict[str, int]:
+    from lifeos.documentos import store as documentos
     from lifeos.memoria import receitas, store, vetores
 
     eixo = [1.0] + [0.0] * (vetores.DIMENSAO - 1)
-    # Sessão 13b (D67): a coleção das receitas também se lê no ar (a consulta do `roda`)
-    return {"achados": len(store.parecidos(eixo, k=1)), "receitas": len(receitas.ativas())}
+    # Sessão 13b (D67): a coleção das receitas também se lê no ar (a consulta do `roda`); e a
+    # Sessão 14 (D68): a consulta dos trechos por tema, que pede o outro índice vetorial.
+    return {
+        "achados": len(store.parecidos(eixo, k=1)),
+        "receitas": len(receitas.ativas()),
+        "trechos": len(documentos.consultar("fumaca", eixo, k=1)),
+    }
 
 
 async def fumaca_memoria(request: Request) -> JSONResponse:
@@ -267,6 +273,11 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/memoria/desfazer": frozenset({CLI}),
     "/memoria/corrigir": frozenset({CLI}),
     "/memoria/reindexar": frozenset({CLI}),
+    # Os documentos (Sessão 14, D68): só o terminal do dono lista, manda, esquece e desfaz.
+    "/documentos": frozenset({CLI}),
+    "/documentos/aprender": frozenset({CLI}),
+    "/documentos/esquecer": frozenset({CLI}),
+    "/documentos/desfazer": frozenset({CLI}),
 }
 
 
@@ -616,6 +627,58 @@ async def memoria_reindexar(request: Request) -> JSONResponse:
     return await _memoria(request, servico.reindexar)
 
 
+async def _documentos(request: Request, fazer: Any, teto: int = MAX_CORPO_DAS_MAOS) -> JSONResponse:
+    """Uma operação do `viking documentos` (Sessão 14, D68). Pedido torto (ou recusado pela régua
+    do arquivo) → 400 com o motivo; o teto, o prazo, um vetor errado ou o Gemini fora → 503 com o
+    tipo. Nada do documento vai à resposta de erro nem ao log."""
+    from lifeos import custos as custos_
+    from lifeos.memoria import vetores
+
+    if not config.MEMORIA:
+        return JSONResponse({"erro": "a memória (e os documentos) está desligada"}, 503)
+    dados = await _corpo_pequeno(request, teto) if request.method == "POST" else {}
+    if dados is None:
+        return JSONResponse({"erro": "o pedido passou do tamanho ou não é JSON"}, 400)
+    try:
+        return JSONResponse(await run_in_threadpool(fazer, dados))
+    except ValueError as exc:  # o pedido veio torto: a mensagem é o motivo, sem conteúdo
+        return JSONResponse({"erro": str(exc)}, 400)
+    except (custos_.TetoAtingido, prazo.TempoEsgotado, vetores.VetorInvalido) as exc:
+        return JSONResponse({"erro": f"não deu agora ({type(exc).__name__})"}, 503)
+    except Exception as exc:  # noqa: BLE001 - o Gemini ou o Firestore: só o tipo, nunca o texto
+        log.error("documentos falhou: %s", type(exc).__name__)
+        return JSONResponse({"erro": f"não deu agora ({type(exc).__name__})"}, 503)
+
+
+async def documentos_listar(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.documentos import servico
+
+    return await _documentos(request, servico.listar)
+
+
+async def documentos_aprender(request: Request) -> JSONResponse:
+    """O arquivo inteiro vem no corpo (até 1 MB de texto, `cortes.MAX_BYTES`): o teto é o do chat."""
+    await _quem(request)
+    from lifeos.documentos import servico
+
+    return await _documentos(request, servico.aprender, MAX_CORPO)
+
+
+async def documentos_esquecer(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.documentos import servico
+
+    return await _documentos(request, servico.esquecer)
+
+
+async def documentos_desfazer(request: Request) -> JSONResponse:
+    await _quem(request)
+    from lifeos.documentos import servico
+
+    return await _documentos(request, servico.devolver)
+
+
 async def _corpo_pequeno(request: Request, teto: int) -> Any:
     """O JSON de um pedido pequeno, ou `None` se passou do teto ou não é JSON."""
     declarado = request.headers.get("content-length", "")
@@ -744,5 +807,9 @@ ROTAS = [
     Route("/memoria/desfazer", memoria_desfazer, methods=["POST"]),
     Route("/memoria/corrigir", memoria_corrigir, methods=["POST"]),
     Route("/memoria/reindexar", memoria_reindexar, methods=["POST"]),
+    Route("/documentos", documentos_listar, methods=["GET"]),
+    Route("/documentos/aprender", documentos_aprender, methods=["POST"]),
+    Route("/documentos/esquecer", documentos_esquecer, methods=["POST"]),
+    Route("/documentos/desfazer", documentos_desfazer, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)

@@ -32,14 +32,20 @@ class VetorInvalido(RuntimeError):
 
 def embutir(cliente: Any, textos: list[str], *, pergunta: bool) -> list[list[float]]:
     """Um vetor por texto, na ordem. `pergunta=True` para o que se busca, `False` para o fato."""
+    prefixo = PREFIXO_PERGUNTA if pergunta else PREFIXO_FATO
+    return embutir_prontos(cliente, [prefixo + t for t in textos])
+
+
+def embutir_prontos(cliente: Any, textos: list[str]) -> list[list[float]]:
+    """Um vetor por texto que já vem com a tarefa escrita (o trecho de um documento leva o título
+    dele, "title: arquivo — seção | text: …", Sessão 14). O resto é o `embutir`."""
     if not textos:
         return []
     from google.genai import types
 
-    prefixo = PREFIXO_PERGUNTA if pergunta else PREFIXO_FATO
     resposta = cliente.models.embed_content(
         model=MODELO,
-        contents=[types.Content(parts=[types.Part.from_text(text=prefixo + t)]) for t in textos],
+        contents=[types.Content(parts=[types.Part.from_text(text=t)]) for t in textos],
         config=types.EmbedContentConfig(output_dimensionality=DIMENSAO),
     )
     vetores = [list(e.values or []) for e in (resposta.embeddings or [])]

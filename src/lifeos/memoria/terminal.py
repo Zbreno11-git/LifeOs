@@ -141,8 +141,12 @@ def executar(args: Any) -> int:
             ]
             print(f"📝 anotado no lugar: {linha(fato)}")
         elif args.reindexar:
-            refeitos = cliente.acao_da_memoria("reindexar", {})["refeitos"]
-            print(f"✅ vetores refeitos: {int(refeitos)}")
+            refeitos = cliente.acao_da_memoria("reindexar", {})
+            trechos = refeitos.get("trechos", 0)  # Sessão 14: um motor de antes não manda
+            print(
+                f"✅ vetores refeitos: {int(refeitos['refeitos'])}"
+                + (f" (e {int(trechos)} trecho(s) de documento)" if trechos else "")
+            )
         else:
             if args.texto:
                 print("❌ --texto só vale com --corrigir.", file=sys.stderr)

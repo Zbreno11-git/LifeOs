@@ -737,6 +737,21 @@ def main() -> None:
         "--receitas", action="store_true", help="As receitas guardadas, com os passos"
     )
     memoria_cli.add_argument("--texto", help="Com --corrigir: o fato certo")
+    documentos_cli = subparsers.add_parser(
+        "documentos", help="Os arquivos que o Viking aprendeu (na nuvem): mandar, listar, esquecer"
+    )
+    modo_documentos = documentos_cli.add_mutually_exclusive_group()
+    modo_documentos.add_argument(
+        "--aprender", metavar="ARQUIVO", help="Manda um .md ou .txt (até 1 MB), com --tema"
+    )
+    modo_documentos.add_argument(
+        "--todos", action="store_true", help="Também os trocados e os esquecidos"
+    )
+    modo_documentos.add_argument(
+        "--esquecer", metavar="ID", help="Tira da busca na hora (some em 30 dias)"
+    )
+    modo_documentos.add_argument("--desfazer", metavar="ID", help="Devolve um esquecido ou trocado")
+    documentos_cli.add_argument("--tema", help="Com --aprender: o tema (treino, python…)")
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
     )
@@ -798,6 +813,10 @@ def main() -> None:
         from lifeos.memoria import terminal
 
         sys.exit(terminal.executar(args))
+    elif args.command == "documentos":
+        from lifeos.documentos import terminal as documentos_terminal
+
+        sys.exit(documentos_terminal.executar(args))
 
 
 if __name__ == "__main__":

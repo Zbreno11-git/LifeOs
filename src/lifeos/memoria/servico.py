@@ -128,11 +128,16 @@ def corrigir(dados: Any) -> dict[str, Any]:
 
 
 def reindexar(_dados: Any = None) -> dict[str, Any]:
-    """Refaz o vetor de cada fato sem vetor ou com outro modelo/dimensão, em lotes."""
+    """Refaz o vetor de cada fato sem vetor ou com outro modelo/dimensão, em lotes, e, desde a 14
+    (D68), o de cada trecho de documento (o restaurado do backup volta sem)."""
+    from lifeos.documentos import servico as documentos_servico
+    from lifeos.documentos import store as documentos_store
+
     faltam = store.sem_vetor()
-    if not faltam:
-        return {"refeitos": 0}
-    refeitos = 0
+    trechos_faltam = documentos_store.sem_vetor()
+    if not faltam and not trechos_faltam:
+        return {"refeitos": 0, "trechos": 0}
+    refeitos = trechos = 0
     with prazo.ate(PRAZO_S):
         cliente = _cliente()
         for i in range(0, len(faltam), LOTE):
@@ -143,4 +148,6 @@ def reindexar(_dados: Any = None) -> dict[str, Any]:
             ):
                 store.trocar_vetor(fato.id, vetor)
                 refeitos += 1
-    return {"refeitos": refeitos}
+        if trechos_faltam:
+            trechos = documentos_servico.reindexar_trechos(cliente)
+    return {"refeitos": refeitos, "trechos": trechos}
