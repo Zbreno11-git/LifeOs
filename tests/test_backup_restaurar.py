@@ -20,6 +20,7 @@ from tests.test_lembretes_nuvem import _do_lado_da_nuvem
 
 from lifeos import custos, registro
 from lifeos.backup import formato, restaurar
+from lifeos.documentos import store as documentos_store
 from lifeos.memoria import receitas as memoria_receitas
 from lifeos.memoria import store as memoria_store
 from lifeos.reminders import transporte
@@ -64,6 +65,12 @@ def arquivo(mac, falso, tmp_path, emulador_firestore):
         )
         memoria_receitas.propor("fechamento", ["veja a agenda", "mande por e-mail"], sessao="s1")
         memoria_receitas.guardar("s1")  # Sessão 13b: uma receita guardada
+        documentos_store.aprender(  # Sessão 14: um documento de dois trechos, com vetor
+            "treino.md",
+            "treino",
+            "# Perna\n\nAgachamento.\n\n# Costas\n\nBarra fixa.\n",
+            embutir=lambda textos: [[1.0] + [0.0] * 767 for _ in textos],
+        )
     antes = _estado_da_nuvem()
     assert _backup().status_code == 200
     (feito,) = falso.de_backup()
@@ -90,6 +97,8 @@ def test_restaura_as_tres_colecoes_num_banco_vazio(arquivo):
         "gastos": 1,
         "memoria": 1,
         "receitas": 1,
+        "documentos": 1,
+        "trechos": 2,
     }
     with _do_lado_da_nuvem():
         (fato,) = memoria_store.todos()
@@ -98,6 +107,13 @@ def test_restaura_as_tres_colecoes_num_banco_vazio(arquivo):
     assert (fato.texto, fato.sessao, fato.ativo) == (FATO, "s1", True)
     assert fato.vetor_modelo is None  # sem vetor: o texto final manda reindexar
     assert "viking memoria --reindexar" in restaurar.texto(relatorio, executou=True)
+    with _do_lado_da_nuvem():
+        (documento,) = documentos_store.ativos()
+        trechos = documentos_store.trechos_de(documento.id)
+    assert (documento.nome, documento.tema, documento.n_trechos) == ("treino.md", "treino", 2)
+    assert [t.texto for t in trechos] == ["Agachamento.", "Barra fixa."]
+    assert all(t.ativo and t.vetor_modelo is None for t in trechos)  # o --reindexar refaz
+    assert "📄 Documentos: 1 criado(s) com 2 trecho(s)" in restaurar.texto(relatorio, executou=True)
     depois_lembretes, depois_acoes, depois_gastos = _estado_da_nuvem()
     assert depois_lembretes == lembretes
     assert depois_gastos == gastos
@@ -118,8 +134,17 @@ def test_restaurar_de_novo_nao_duplica(arquivo):
         "gastos": 0,
         "memoria": 0,
         "receitas": 0,
+        "documentos": 0,
+        "trechos": 0,
     }
-    assert relatorio.ja_iguais == {"acoes": len(acoes), "gastos": 1, "memoria": 1, "receitas": 1}
+    assert relatorio.ja_iguais == {
+        "acoes": len(acoes),
+        "gastos": 1,
+        "memoria": 1,
+        "receitas": 1,
+        "documentos": 1,
+        "trechos": 2,
+    }
     assert _estado_da_nuvem()[0] == lembretes
 
 

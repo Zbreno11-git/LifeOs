@@ -350,6 +350,7 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
     conferido pelo formato antes de gravar; nunca sobrescreve."""
     from lifeos import custos
     from lifeos.backup import formato
+    from lifeos.documentos import store as documentos_store
     from lifeos.memoria import receitas as memoria_receitas
     from lifeos.memoria import store as memoria_store
 
@@ -358,20 +359,29 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
         "gastos",
         "memoria",
         "receitas",
+        "documentos",
+        "trechos",
     }:
         raise ValueError(
-            "o pedido tem de ter acoes e gastos (e, desde a 13, memoria; desde a 13b, receitas)"
+            "o pedido tem de ter acoes e gastos (e, desde a 13, memoria; desde a 13b, receitas; "
+            "desde a 14, documentos e trechos)"
         )
     acoes, gastos = dados["acoes"], dados["gastos"]
     fatos, receitas = dados.get("memoria", []), dados.get("receitas", [])
-    if not all(isinstance(lista, list) for lista in (acoes, gastos, fatos, receitas)):
-        raise ValueError("acoes, gastos, memoria e receitas têm de ser listas")
-    if not 1 <= len(acoes) + len(gastos) + len(fatos) + len(receitas) <= formato.LOTE_DO_BACKUP:
+    documentos, trechos = dados.get("documentos", []), dados.get("trechos", [])
+    listas = (acoes, gastos, fatos, receitas, documentos, trechos)
+    if not all(isinstance(lista, list) for lista in listas):
+        raise ValueError("acoes, gastos, memoria, receitas, documentos e trechos têm de ser listas")
+    if not 1 <= sum(len(lista) for lista in listas) <= formato.LOTE_DO_BACKUP:
         raise ValueError(f"o lote tem de ter de 1 a {formato.LOTE_DO_BACKUP} itens")
     acoes = [formato.acao_conferida(a, f"ação {n}") for n, a in enumerate(acoes, 1)]
     gastos = [formato.gasto_conferido(g, f"gasto {n}") for n, g in enumerate(gastos, 1)]
     fatos = [formato.fato_conferido(f, f"fato {n}") for n, f in enumerate(fatos, 1)]
     receitas = [formato.receita_conferida(r, f"receita {n}") for n, r in enumerate(receitas, 1)]
+    documentos = [
+        formato.documento_conferido(d, f"documento {n}") for n, d in enumerate(documentos, 1)
+    ]
+    trechos = [formato.trecho_conferido(t, f"trecho {n}") for n, t in enumerate(trechos, 1)]
     registro.ORIGEM.set("mac")
     resposta: dict[str, Any] = {
         "acoes": {"criadas": 0, "iguais": 0, "diferentes": []},
@@ -381,11 +391,16 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
         resposta["memoria"] = {"criados": 0, "iguais": 0, "diferentes": [], "recusados": 0}
     if "receitas" in dados:
         resposta["receitas"] = {"criadas": 0, "iguais": 0, "diferentes": [], "recusadas": 0}
+    for colecao in ("documentos", "trechos"):
+        if colecao in dados:
+            resposta[colecao] = {"criados": 0, "iguais": 0, "diferentes": [], "recusados": 0}
     parametros = {
         "acoes": len(acoes),
         "gastos": len(gastos),
         "memoria": len(fatos),
         "receitas": len(receitas),
+        "documentos": len(documentos),
+        "trechos": len(trechos),
     }
     with registro.acao("backup.restaurar", parametros) as marca:
         for acao in acoes:
@@ -422,12 +437,30 @@ def _importar_do_backup(dados: Any) -> dict[str, Any]:
             else:
                 chave = "criadas" if resultado == memoria_receitas.CRIADO else "iguais"
                 resposta["receitas"][chave] += 1
+        # Os documentos e os trechos (Sessão 14): sem vetor, o `viking memoria --reindexar` refaz.
+        for colecao, itens, importar in (
+            ("documentos", documentos, documentos_store.importar),
+            ("trechos", trechos, documentos_store.importar_trecho),
+        ):
+            for item in itens:
+                try:
+                    resultado = importar(item)
+                except documentos_store.Recusado:  # a régua de hoje recusa: conta, sem o texto
+                    resposta[colecao]["recusados"] += 1
+                    continue
+                if resultado == documentos_store.DIFERENTE:
+                    resposta[colecao]["diferentes"].append(item["id"])
+                else:
+                    chave = "criados" if resultado == documentos_store.CRIADO else "iguais"
+                    resposta[colecao][chave] += 1
         marca.feito(
             {
                 "acoes_criadas": resposta["acoes"]["criadas"],
                 "gastos_criados": resposta["gastos"]["criados"],
                 "fatos_criados": resposta.get("memoria", {}).get("criados", 0),
                 "receitas_criadas": resposta.get("receitas", {}).get("criadas", 0),
+                "documentos_criados": resposta.get("documentos", {}).get("criados", 0),
+                "trechos_criados": resposta.get("trechos", {}).get("criados", 0),
             }
         )
     return resposta

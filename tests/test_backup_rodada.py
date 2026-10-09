@@ -81,6 +81,8 @@ def test_o_backup_sobe_um_arquivo_que_se_le_de_volta(falso, caplog):
         "gastos": 1,
         "memoria": 0,
         "receitas": 0,
+        "documentos": 0,
+        "trechos": 0,
     }
     assert not aparece("5823", resposta.text) and not aparece("5823", caplog.text)
     backup = formato.de_bytes(arquivo["conteudo"])
@@ -176,7 +178,18 @@ def _receita_nova():
         receitas.propor("fechamento", ["veja a agenda"], sessao="s1")
 
 
-@pytest.mark.parametrize("mudar", [_lembrete_novo, _concluir, _gasto, _fato_novo, _receita_nova])
+def _documento_novo():
+    from lifeos.documentos import store as documentos_store
+
+    with _do_lado_da_nuvem():
+        documentos_store.aprender(
+            "treino.md", "treino", "Agachamento.", embutir=lambda t: [[1.0] + [0.0] * 767]
+        )
+
+
+@pytest.mark.parametrize(
+    "mudar", [_lembrete_novo, _concluir, _gasto, _fato_novo, _receita_nova, _documento_novo]
+)
 def test_qualquer_mudanca_cria_um_arquivo_novo(falso, mudar):
     _um_de_cada()
     assert _backup().json()["novo"] is True
@@ -185,7 +198,7 @@ def test_qualquer_mudanca_cria_um_arquivo_novo(falso, mudar):
     assert resposta["novo"] is True
     assert len(falso.de_backup()) == 2
     novo = formato.de_bytes(falso.de_backup()[-1]["conteudo"])
-    colecoes = ("lembretes", "acoes", "gastos", "memoria", "receitas")
+    colecoes = ("lembretes", "acoes", "gastos", "memoria", "receitas", "documentos", "trechos")
     assert novo.contagens() == {k: resposta[k] for k in colecoes}
 
 

@@ -106,7 +106,47 @@ def _receita(**mudar) -> dict:
     return copia
 
 
-def _bom(memoria=None, receitas=None) -> dict:
+def _documento(**mudar) -> dict:
+    copia = {
+        "id": "3d4e5f6a-7b8c-4d9e-8f0a-1b2c3d4e5f6a",
+        "nome": "treino.md",
+        "tema": "treino",
+        "bytes": 120,
+        "n_trechos": 1,
+        "impressao": "a" * 64,
+        "origem": "viking documentos",
+        "estado": "aprendido",
+        "ativo": True,
+        "criado_em": "2026-10-06T17:00:00.000000+00:00",
+        "aprendido_em": "2026-10-06T17:00:05.000000+00:00",
+        "invalida_em": None,
+        "substituido_por": None,
+        "esquecido_em": None,
+        "apagar_em": None,
+    }
+    copia.update(mudar)
+    return copia
+
+
+def _trecho(**mudar) -> dict:
+    copia = {
+        "id": "4e5f6a7b-8c9d-4e0f-8a1b-2c3d4e5f6a7b",
+        "documento": "3d4e5f6a-7b8c-4d9e-8f0a-1b2c3d4e5f6a",
+        "arquivo": "treino.md",
+        "tema_lido": "treino",
+        "ordem": 0,
+        "linha_de": 3,
+        "linha_ate": 4,
+        "secao": "Perna",
+        "texto": "Agachamento, quatro séries de oito.",
+        "ativo": True,
+        "apagar_em": None,
+    }
+    copia.update(mudar)
+    return copia
+
+
+def _bom(memoria=None, receitas=None, documentos=None, trechos=None) -> dict:
     return formato.montar(
         [_lembrete(), _lembrete(id="9e8d7c6b-5a49-4382-9172-6a5b4c3d2e1f", title="outro")],
         [_acao()],
@@ -115,12 +155,23 @@ def _bom(memoria=None, receitas=None) -> dict:
         commit="abc1234",
         memoria=memoria,
         receitas=receitas,
+        documentos=documentos,
+        trechos=trechos,
     )
+
+
+def _versao_3(dados: dict) -> dict:
+    """O mesmo arquivo como a 13b o escrevia (sem os documentos)."""
+    v3 = copy.deepcopy(dados)
+    assert v3.pop("documentos") == [] and v3.pop("trechos") == []
+    del v3["contagens"]["documentos"], v3["contagens"]["trechos"]
+    v3["versao"] = 3
+    return v3
 
 
 def _versao_2(dados: dict) -> dict:
     """O mesmo arquivo como a 13 o escrevia (sem as receitas)."""
-    v2 = copy.deepcopy(dados)
+    v2 = _versao_3(dados)
     assert v2.pop("receitas") == []
     del v2["contagens"]["receitas"]
     v2["versao"] = 2
@@ -145,6 +196,8 @@ def test_ida_e_volta_preserva_tudo():
         "gastos": 1,
         "memoria": 0,
         "receitas": 0,
+        "documentos": 0,
+        "trechos": 0,
     }
     assert backup.criado_em == AGORA and backup.commit == "abc1234"
     assert [transporte.impressao(r) for r in backup.lembretes] == [
@@ -177,7 +230,7 @@ def test_campo_a_mais_no_arquivo_e_recusado():
 
 def test_versao_desconhecida_e_recusada():
     dados = _bom()
-    dados["versao"] = 4
+    dados["versao"] = 5
     _recusado(dados, "versão do backup desconhecida")
     dados["versao"] = True  # bool é int no Python: não pode passar por 1
     _recusado(dados, "versão do backup desconhecida")
@@ -524,3 +577,101 @@ def test_a_contagem_das_receitas_confere():
     dados = _bom(receitas=[_receita()])
     dados["contagens"]["receitas"] = 0
     _recusado(dados, "contagens")
+
+
+# --- os documentos (Sessão 14, D68): a versão 4 --------------------------------------------------
+
+
+def test_o_arquivo_da_versao_3_continua_se_lendo():
+    backup = formato.ler(_versao_3(_bom([_fato()], [_receita()])))
+    assert backup.documentos == [] and backup.trechos == [] and backup.receitas == [_receita()]
+
+
+def test_a_versao_3_nao_aceita_os_documentos_nem_a_4_sem_eles():
+    v3 = _versao_3(_bom())
+    v3["documentos"] = []
+    _recusado(v3, "exatamente os campos")
+    v4 = _bom()
+    del v4["trechos"]
+    _recusado(v4, "exatamente os campos")
+
+
+def test_os_documentos_e_os_trechos_vao_e_voltam():
+    esquecido = _documento(
+        id="5f6a7b8c-9d0e-4f1a-8b2c-3d4e5f6a7b8c",
+        ativo=False,
+        esquecido_em="2026-10-07T17:00:00.000000+00:00",
+        apagar_em="2026-11-06T17:00:00.000000+00:00",
+    )
+    dados = _bom(documentos=[_documento(), esquecido], trechos=[_trecho()])
+    backup = formato.de_bytes(formato.para_bytes(dados))
+    assert backup.documentos == [_documento(), esquecido] and backup.trechos == [_trecho()]
+    assert backup.contagens()["documentos"] == 2 and backup.contagens()["trechos"] == 1
+
+
+def test_os_documentos_vazios_nao_mudam_a_impressao_de_um_arquivo_da_versao_3():
+    """O primeiro backup depois do deploy da 14, sem documento, não sobe um arquivo à toa."""
+    v4 = formato.ler(_bom([_fato()], [_receita()]))
+    v3 = formato.ler(_versao_3(_bom([_fato()], [_receita()])))
+    assert formato.impressao_do_conteudo(v4) == formato.impressao_do_conteudo(v3)
+    com_documento = formato.ler(_bom(documentos=[_documento()], trechos=[_trecho()]))
+    assert formato.impressao_do_conteudo(com_documento) != formato.impressao_do_conteudo(
+        formato.ler(_bom())
+    )
+
+
+def test_um_trecho_sem_o_documento_no_arquivo_e_recusado():
+    dados = _bom(documentos=[_documento()], trechos=[_trecho()])
+    dados["documentos"] = []
+    dados["contagens"]["documentos"] = 0
+    _recusado(dados, "documento que não está no backup")
+
+
+@pytest.mark.parametrize(
+    ("mudar", "trecho"),
+    [
+        ({"id": "../gastos"}, "UUID"),
+        ({"nome": " "}, "nome"),
+        ({"tema": ""}, "tema"),
+        ({"bytes": -1}, "bytes"),
+        ({"n_trechos": True}, "n_trechos"),
+        ({"estado": "ativo"}, "estado"),
+        ({"origem": "e-mail"}, "origem"),
+        ({"ativo": "sim"}, "ativo"),
+        ({"substituido_por": "x"}, "substituido_por"),
+        ({"criado_em": None}, "criado_em"),
+        ({"apagar_em": "amanhã"}, "apagar_em"),
+    ],
+)
+def test_documento_torto_e_recusado(mudar, trecho):
+    dados = _bom(documentos=[_documento()], trechos=[_trecho()])
+    dados["documentos"] = [_documento(**mudar)]
+    _recusado(dados, trecho)
+
+
+@pytest.mark.parametrize(
+    ("mudar", "trecho"),
+    [
+        ({"id": "x"}, "UUID"),
+        ({"documento": "x"}, "UUID"),
+        ({"texto": " "}, "texto"),
+        ({"arquivo": 3}, "arquivo"),
+        ({"secao": None}, "secao"),
+        ({"ordem": -1}, "ordem"),
+        ({"linha_de": "3"}, "linha_de"),
+        ({"ativo": 1}, "ativo"),
+        ({"apagar_em": "x"}, "apagar_em"),
+        ({"vetor": [0.1]}, "exatamente os campos"),
+    ],
+)
+def test_trecho_torto_e_recusado(mudar, trecho):
+    dados = _bom(documentos=[_documento()], trechos=[_trecho()])
+    dados["trechos"] = [_trecho(**mudar)]
+    _recusado(dados, trecho)
+
+
+def test_um_trecho_repetido_e_recusado():
+    dados = _bom(documentos=[_documento()], trechos=[_trecho()])
+    dados["trechos"] = [_trecho(), _trecho()]
+    dados["contagens"]["trechos"] = 2
+    _recusado(dados, "aparece duas vezes")

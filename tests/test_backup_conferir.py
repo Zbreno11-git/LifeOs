@@ -53,6 +53,8 @@ def test_restaura_inteiro_num_banco_vazio_e_bate_com_a_nuvem(backup_feito):
         "gastos": 1,
         "memoria": 0,
         "receitas": 0,
+        "documentos": 0,
+        "trechos": 0,
     }
     assert relatorio.restaurados == relatorio.no_arquivo
     assert (relatorio.iguais, relatorio.divergentes, relatorio.sumiram) == (1, 0, 0)

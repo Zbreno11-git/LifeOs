@@ -88,6 +88,8 @@ def _restaurar_no_vazio(backup) -> dict[str, int]:
         # gastos; o banco do Mac não a guarda.
         "memoria": len(backup.memoria),
         "receitas": len(backup.receitas),  # a 13b (D67): também só na nuvem
+        "documentos": len(backup.documentos),  # a 14 (D68): também só na nuvem
+        "trechos": len(backup.trechos),
     }
 
 
@@ -133,7 +135,9 @@ def texto(r: Relatorio) -> str:
             f"{r.no_arquivo['lembretes']} lembrete(s), {r.restaurados.get('acoes', 0)} de "
             f"{r.no_arquivo['acoes']} ação(ões); {r.no_arquivo['gastos']} mês(es) de gastos e "
             f"{r.no_arquivo.get('memoria', 0)} fato(s) e {r.no_arquivo.get('receitas', 0)} "
-            "receita(s) da memória conferidos no arquivo (a memória mora só na nuvem)."
+            f"receita(s) da memória e {r.no_arquivo.get('documentos', 0)} documento(s) "
+            f"({r.no_arquivo.get('trechos', 0)} trecho(s)) conferidos no arquivo (a memória e "
+            "os documentos moram só na nuvem)."
         ),
         (
             f"☁️  Contra a nuvem de agora: {r.iguais} iguais, {r.mudaram_depois} mudaram depois "

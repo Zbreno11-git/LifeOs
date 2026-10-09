@@ -275,15 +275,21 @@ def importar_do_backup(
     gastos: list[dict[str, Any]],
     memoria: list[dict[str, Any]] | None = None,
     receitas: list[dict[str, Any]] | None = None,
+    documentos: list[dict[str, Any]] | None = None,
+    trechos: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Um lote da restauração (`/backup/importar`): o que foi criado, o que já estava igual e os
-    ids que já estavam diferentes. A memória (Sessão 13) e as receitas (13b) só vão quando há itens
-    no lote: um motor de antes continua aceitando os lotes sem elas."""
+    ids que já estavam diferentes. A memória (Sessão 13), as receitas (13b) e os documentos (14)
+    só vão quando há itens no lote: um motor de antes continua aceitando os lotes sem eles."""
     corpo: dict[str, Any] = {"acoes": acoes, "gastos": gastos}
     if memoria:
         corpo["memoria"] = memoria
     if receitas:
         corpo["receitas"] = receitas
+    if documentos:
+        corpo["documentos"] = documentos
+    if trechos:
+        corpo["trechos"] = trechos
     dados = _chamar(sessao, "POST", "/backup/importar", corpo=corpo)
     if not isinstance(dados.get("acoes"), dict) or not isinstance(dados.get("gastos"), dict):
         raise ErroDaNuvem("a nuvem respondeu num formato inesperado")
@@ -291,6 +297,11 @@ def importar_do_backup(
         raise ErroDaNuvem("a nuvem não restaurou a memória (o motor é de antes da Sessão 13?)")
     if receitas and not isinstance(dados.get("receitas"), dict):
         raise ErroDaNuvem("a nuvem não restaurou as receitas (o motor é de antes da Sessão 13b?)")
+    for colecao, lote in (("documentos", documentos), ("trechos", trechos)):
+        if lote and not isinstance(dados.get(colecao), dict):
+            raise ErroDaNuvem(
+                f"a nuvem não restaurou os {colecao} (o motor é de antes da Sessão 14?)"
+            )
     return dados
 
 
