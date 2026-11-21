@@ -1198,7 +1198,7 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** medir na abertura um leitor de PDF só com wheel (a árvore e o Mac
   Intel, se ler lá). Nenhum candidato aprovado ainda.
 
-## Sessão 14b — manutenção da mini-auditoria (criada e aberta em 2026-11-21)
+## Sessão 14b — manutenção da mini-auditoria (criada e feita em 2026-11-21; no ar, falta o Mac)
 
 - **Por quê:** a mini-auditoria de 2026-11-21 (`docs/auditorias/mini-auditoria-2026-11-21.md`)
   achou, depois de 43 dias sem push: 20 vulnerabilidades em 8 pacotes da imagem (a `certifi`
@@ -1207,7 +1207,7 @@ O que estava escrito na abertura:
   mora em SP) e `roles/editor` na conta padrão do Compute.
 - **Entrega:** o lock atualizado (D45) e no ar; o teste com o relógio real; a prova do valor do
   fuso no `deploy`; os passos `alertas` (canal de e-mail + 2 políticas de ausência) e `editor` no
-  `scripts/nuvem.py`; o CI semanal; o repo público (D50 revista, decisão do dono).
+  `scripts/nuvem.py`; o CI semanal; o repo público (D58 revista, item 3, decisão do dono).
 - **O plano por checkpoints:** `PROGRESSO.md`.
 
 ## Sessão H1 — voz pelo pulso: ESP32 → servidor de casa → motor (criada em 2026-11-21)
@@ -1469,7 +1469,7 @@ podia dizer o que aquele código foi (limpeza de quando, quantos e-mails).
 ## Sessão final — repo privado de novo (criada em 2026-11-21)
 
 - **Quando:** quando o Viking for para o Home Assistant, ou antes, se o dono fizer algo comercial
-  (decisão do dono em 2026-11-21, ao tornar o repo público na 14b; D50 revista).
+  (decisão do dono em 2026-11-21, ao tornar o repo público na 14b; D58 revista, item 3).
 - **Faz:** `gh repo edit Zbreno11-git/LifeOs --visibility private
   --accept-visibility-change-consequences`; o `AGENTS.md` volta a dizer que o scanner de segredos
   do GitHub não roda no privado (o gitleaks segue no CI e no hook).

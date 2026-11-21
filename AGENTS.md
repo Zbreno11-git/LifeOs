@@ -291,8 +291,9 @@ python -m ruff format --check . # formatação: zero arquivos a formatar (sem ba
                                # 2026-09-28; os `.md` ficam fora, D45)
 python -m mypy                 # tipos, só nos módulos de dados (a lista está no `pyproject`;
                                # Sessão 9); o resto do repo segue no backlog
-bash scripts/gitleaks.sh git . # segredos no histórico inteiro (o CI roda igual; o repo é
-                               # privado desde 2026-09-29 e o scanner do GitHub sumiu)
+bash scripts/gitleaks.sh git . # segredos no histórico inteiro (o CI roda igual). O repo é
+                               # público desde 2026-11-21 (D58 item 3, revisto): tudo que
+                               # entra num commit é visto; nenhum dado do dono em doc ou log
 bash scripts/instalar_hooks.sh # o mesmo scanner no commit desta cópia (uma vez)
 python scripts/nuvem.py        # a infraestrutura do GCP, medida (nada muda sem --executar)
 python scripts/nuvem.py deploy # o que está no ar, o que mudou desde, e as provas ao vivo

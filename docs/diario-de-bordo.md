@@ -1046,6 +1046,55 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-21 — Sessão 14b: a mini-auditoria e a manutenção (no ar; falta o Mac)
+
+**Por quê:** 43 dias sem push. A mini-auditoria (`docs/auditorias/mini-auditoria-2026-11-21.md`,
+18:23–18:35Z, só leitura) achou a nuvem verde (13 ✅, 34 ✅), mas com seis problemas:
+- 20 vulnerabilidades em 8 pacotes da imagem;
+- 2 testes vencidos por data;
+- nenhuma auditoria agendada;
+- nenhum alerta;
+- Seattle no ar, com o dono já em SP;
+- o `roles/editor` que o GCP dá à conta padrão do Compute.
+
+**Feito (commits `93413a5` a `b56942f`; D69, D58 item 3 revisto):**
+- **O lock inteiro atualizado (D45)**: o pip-audit foi de 20 a 0. O `google-genai` foi de 2.29 a
+  3.6.1, uma versão maior, e as notas de versão mudam duas coisas:
+  - **A API padrão virou `v1`.** Os dois clientes prendem `v1beta`, o medido no ar.
+  - **O cliente HTTP virou o `httpx2`, que confia no repositório do sistema.** A base da imagem
+    trazia três raízes emSign que a `certifi` nova tirou. A imagem passou a usar a `certifi` do
+    lock (`SSL_CERT_FILE`; o build cai sem ela), e a base subiu de digest. A prova foi feita de
+    dentro da imagem: um pedido sem chave ao Gemini deu 403 depois do aperto de mão.
+- **As duas bombas de data:**
+  - o `T0` do registro, achado pelo CI vermelho;
+  - a tarifa do forte que dobra em 2027-01-01, achada rodando a suíte com o relógio adiantado em
+    120 dias.
+
+  Os dois testes estão verdes em +0, +120 e +400 dias.
+- **O fuso:** o `.env` do VPS está em São Paulo, e o `deploy` agora prova o valor no ar. Antes, só
+  o `.env` mudar não chegava ao motor.
+- **Dois passos novos no `nuvem.py`:**
+  - `editor`, executado com o ok do dono às 21:14Z. Antes, 0 usos da conta em 400 dias.
+  - `alertas`: a métrica `viking_agendador_ok`, com o filtro medido no log do Scheduler, e o canal
+    de e-mail, às 21:15Z. As políticas nascem depois de a métrica viver a janela de cada uma.
+- **O CI toda segunda**, às 12:00Z.
+- **O deploy às 21:17Z**, com o ok do dono: motor e finanças em `b56942f`, **36 ✅ e 0 ❌**, o fuso
+  `America/Sao_Paulo` no ar, e nenhum minuto do envio de lembretes perdido.
+
+**Medido:** suíte `3183 passed` (o `test_lock` tem 36 casos a menos: são 10 pacotes a menos no
+lock). ruff, format, mypy e gitleaks limpos. CI do `b56942f` em `success`.
+
+**Erros meus (`docs/erros.md`):**
+- **Classe 8:** o `ruff --fix --select RUF100` apagou 47 `noqa` em 19 arquivos. Olhei só o diff de
+  `tests/`, e foi o `ruff check` seguinte que mostrou o resto; restaurado do commit.
+- **Classe 4:** as duas datas fixas.
+
+**Falta:**
+- **O Mac:** `uv sync` com o `google-genai` 3 no chat local, e a suíte.
+- **A política do backup:** só pode nascer depois de ~2026-11-22 22:15Z, com
+  `python scripts/nuvem.py --executar alertas`.
+- **O repo público:** C8, por decisão do dono.
+
 ### 2026-10-09 — Sessão 14 fechada no Mac: os documentos (o dono manda um arquivo por tema, o Viking consulta e cita)
 
 **A abertura** (03:08–03:12Z; tudo igual ao bloco de 02:16Z: `6e01b99`, `3020 passed`, 13 ✅, 34

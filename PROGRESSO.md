@@ -5,11 +5,27 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-21: a 14b (manutenção) aberta; o plano abaixo, aprovado pelo dono
+## ▶️ RETOMAR AQUI — 2026-11-21 ~21:25Z: a 14b no ar; faltam a política do backup (amanhã), o Mac e o repo público
 
-**Estado:** o plano da 14b foi aprovado em 2026-11-21 (~18:50Z). O mapa de checkpoints abaixo é
-a fonte: retomar pelo primeiro ⬜. O Mac não entra nesta sessão (tudo é testável no VPS, e o
-deploy sai daqui com o ok do dono).
+**Estado (medido em 2026-11-21):**
+- **No ar:** o motor e as finanças em `b56942f` (deploy às 21:17Z, com o ok do dono): 36 ✅ e
+  0 ❌, `VIKING_TIMEZONE=America/Sao_Paulo`, nenhum minuto do envio perdido.
+- **`nuvem.py`:** `editor` ✅, removido às 21:14Z com o ok. Em `alertas`, a métrica
+  `viking_agendador_ok` (criada às 21:17Z; recebe pontos, lido na API do Monitoring às 21:22Z) e o
+  canal de e-mail existem. A política do envio nasce às ~21:33Z, por uma rodada em segundo plano;
+  a do backup **só depois de 2026-11-22 ~22:20Z** (a métrica tem de viver 25 h):
+  `python scripts/nuvem.py --executar alertas`, e então `python scripts/nuvem.py` → 15 ✅.
+- **Portões:** suíte `3183 passed`; pip-audit 0; ruff, format, mypy e gitleaks limpos; CI do
+  `b56942f` em `success`.
+- **Falta:**
+  1. o C8 (o repo público, decisão do dono), depois do último push;
+  2. o Mac: `git pull`, `uv sync --locked --extra dev`, `python -m pytest`, e uma pergunta no
+     `viking chat` (o `google-genai` 3 chega ao chat local), mais o `VIKING_TIMEZONE` do `.env`
+     de lá;
+  3. perguntar se os resumos de segunda chegaram;
+  4. (opcional, gasta ~US$ 0,001) `python scripts/nuvem.py prova-chat`: o primeiro turno real
+     com o `google-genai` 3 no ar.
+- **Depois da 14b:** a H1 (o ESP32 pelo servidor de casa), aberta pela `software-build`.
 
 ### Plano — Sessão 14b: manutenção (a mini-auditoria de 2026-11-21)
 
@@ -57,7 +73,7 @@ O motor e as finanças estão no ar num commit novo, com:
 | Alertas | e-mail do Google Cloud | 1 canal de e-mail + 2 políticas, por um passo novo do `nuvem.py`; o endereço fica no `.env`, nunca no repo |
 | Editor | tirar | um passo novo `editor` no `nuvem.py`, que mede e remove |
 | Deps agendadas | pip-audit semanal no CI | `schedule` no `testes.yml` (a suíte inteira, que também pega bomba-relógio de data) |
-| Visibilidade | "público como está agora"; voltar a privado numa sessão no fim do roteiro, quando o Viking for para o HA | C8 troca para público (D50 revista); a nova "Sessão final — repo privado de novo" escrita no fim de `sessoes.md` no C0 |
+| Visibilidade | "público como está agora"; voltar a privado numa sessão no fim do roteiro, quando o Viking for para o HA | C8 troca para público (D58 revista, item 3); a nova "Sessão final — repo privado de novo" escrita no fim de `sessoes.md` no C0 |
 | Ainda sem resposta | os 6 resumos semanais chegaram? | perguntar no fechamento; não trava nada |
 
 #### Decisões técnicas minhas (declaradas)
@@ -90,10 +106,10 @@ O motor e as finanças estão no ar num commit novo, com:
 | C1 | lock atualizado: pip-audit 0, suíte verde (o CI pelo SHA no push) | C2 | ✅ |
 | C2 | o teste da data consertado e a varredura de outras bombas feita (a +120 dias achou a 2ª: a tarifa do forte dobra em 2027-01-01) | C0 | ✅ |
 | C3 | o fuso trocado e a prova do valor no `deploy` (o `.env` do VPS em SP; o no ar troca no deploy do C7) | C0 | ✅ |
-| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | ⬜ |
-| C5 | o passo `editor` medido e executado com o ok | C0 | ⬜ |
+| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | 🟡 a métrica e o canal; a do envio às ~21:33Z, a do backup depois de 2026-11-22 ~22:20Z |
+| C5 | o passo `editor` medido e executado com o ok | C0 | ✅ |
 | C6 | o CI semanal (`schedule`, segunda 12:00Z) | C0 | ✅ |
-| C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ⬜ |
+| C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ✅ (`b56942f`, 36 ✅) |
 | C8 | o repo público, depois do último push da sessão | C7 | ⬜ |
 
 #### Fase 1 — o código
@@ -205,7 +221,7 @@ push, e o resumo de 2–3 linhas.
 **Faz:** gitleaks no histórico inteiro de novo (`bash scripts/gitleaks.sh git .`, que precisa dar
 "no leaks found") e a busca do e-mail do dono no histórico (0 linhas, como medido na abertura).
 Depois, `gh repo edit Zbreno11-git/LifeOs --visibility public
---accept-visibility-change-consequences`. A D50 fica revista em `docs/decisoes.md`: público por
+--accept-visibility-change-consequences`. A D58 (item 3) fica revista em `docs/decisoes.md`: público por
 decisão do dono, com o ID do projeto e os detalhes pessoais dos docs aceitos como estão, e o
 gatilho "algo comercial ou o Viking no HA → privado". O `AGENTS.md` deixa de dizer "o repo é
 privado desde 2026-09-29" (no comando do gitleaks), e o scanner de segredos do GitHub volta.

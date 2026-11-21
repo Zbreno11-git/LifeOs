@@ -7,16 +7,37 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-10-09 (Sessão 14 fechada no seu Mac).**
+**Última atualização: 2026-11-21 (Sessão 14b no ar; falta o seu Mac).**
 
-`███████████████░░░░░ 25 de 33 sessões fechadas`
+`██████████████░░░░░░ 25 de 36 sessões fechadas` (+ a 14b parcial)
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b e 14; parciais: nenhuma; em curso: nenhuma; na fila:
-15 a 21 e 11b (formulários). O total passou de 28 para 29 quando a 10 foi dividida, para
-30 quando a 10b foi dividida (2026-09-30), para 31 quando a 11c saiu da 11 (2026-10-01), para 32
-quando a medição das finanças abriu a 11d (2026-10-06), e para 33 quando a 13 foi dividida na
-abertura (2026-10-08).
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b e 14; parcial: 14b (no ar, falta o Mac); na fila: H1
+(voz pelo pulso), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total
+passou de 33 para 36 em 2026-11-21: a 14b (manutenção), a H1 e a sessão final.
+
+## 2026-11-21 — Sessão 14b: a manutenção depois de 43 dias parado (no ar; falta o seu Mac)
+
+**Por que ela existiu:** uma conferência rápida, que só leu e não mudou nada, achou seis coisas
+que estragaram em silêncio enquanto ninguém mexia no projeto. Todas estão consertadas:
+- **20 falhas de segurança conhecidas em 8 bibliotecas** que a nuvem usa. Agora são zero: tudo foi
+  atualizado, e a biblioteca do Gemini subiu de versão grande. Duas mudanças dela que podiam
+  quebrar o Viking em silêncio ficaram travadas no comportamento de antes (detalhe na D69).
+- **2 testes que venceram sozinhos** porque tinham uma data fixa. Uma rodada com o relógio
+  adiantado 4 meses achou um terceiro, que ia vencer em 1º de janeiro (o preço do modelo forte
+  dobra nesse dia). Os três foram consertados.
+- **O fuso da nuvem ainda era o de Seattle.** Agora é o de São Paulo, e o deploy confere isso
+  sozinho.
+- **Nada avisava se o envio de lembretes ou o backup parasse.** Agora chega um e-mail para você:
+  o do envio de lembretes se ficar 15 min sem rodar (ligado em 21/11), e o do backup se ficar 25 h
+  sem rodar (liga amanhã, depois de a medição completar um dia, para não mandar alarme falso).
+- **Uma conta padrão do Google tinha poder de editar o projeto inteiro.** Ninguém a usava em 400
+  dias; o poder foi tirado.
+- **Os testes não rodavam sem um push.** Agora rodam sozinhos toda segunda, e se algo quebrar o
+  GitHub te manda e-mail.
+
+**Para fechar no seu Mac:** a biblioteca nova do Gemini também chega ao `viking chat` daí. São
+três comandos (`git pull`, `uv sync` e a suíte) e uma pergunta ao chat, que eu te passo prontos.
 
 ## 2026-10-09 — Sessão 14: o Viking lê os seus documentos (fechada no seu Mac)
 

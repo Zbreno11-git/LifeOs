@@ -19,11 +19,11 @@
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 11 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 29 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 19 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 2 | formatador e afins só nos arquivos que eu editei, nomeados um a um; conferir com `git status` depois |
+| 8 | Comando que escreve com alcance maior que a mudança | 3 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
 
 ---
 
@@ -560,6 +560,16 @@ guardou "05ba68a4-7f8d-[cartão]e8a91b7". O teste estava certo e o produto errad
 tem de novo aqui é que um teste com entrada sorteada só acha o defeito raro quando a sorte deixa, e
 o conserto fixou o caso sorteado num teste próprio (`UUID_DO_CI`).
 
+**2026-09-27 → 2026-11-21 — duas datas fixas em teste que venceram sozinhas (achado na
+mini-auditoria, 14b).** `test_contaveis_so_da_operacao_e_sem_as_que_falharam` gravava as ações em
+um `T0` de 2026-09-27, e `registro.contaveis` corta na retenção de 30 dias contada do relógio real:
+desde 2026-10-27 a suíte tinha 2 vermelhos, e ninguém viu, porque não houve push em 43 dias. A
+varredura (a suíte inteira com o relógio adiantado em 120 dias, pelo `time-machine` num ambiente
+temporário) achou a segunda: o teste da cota do forte presumia US$ 0,15 por chamada, e a tarifa do
+forte dobra em 2027-01-01 (`custos.TARIFAS`). O que tem de novo: um teste com data fixa contra um
+código que lê o relógio é uma bomba com data; a pergunta é "o que este teste compara com o agora?",
+e a prova é rodar a suíte com o relógio adiantado (+120 e +400 dias, verdes depois do conserto).
+
 ### 5. A ferramenta fez outra coisa do que eu li
 
 **2026-09-26 — `\u202e` pela ferramenta de escrita (Sessão 4).** O parâmetro é JSON: o escape virou
@@ -941,4 +951,13 @@ depois de qualquer comando que escreve.
 > `.md` saíram do `ruff format` (o Python deles é citação). A regra "em arquivo do baseline, só os
 > meus trechos do `--diff`" deixou de existir: `ruff format --check .` tem de dar zero. O antídoto
 > de cima continua: nomear os arquivos.
+
+**2026-11-21 — `ruff check --fix --select RUF100` no repo inteiro (14b, C1).** O ruff 0.17 apontou
+dois `noqa` de uma regra que não está ligada; para consertar só esses, rodei o `--fix` com
+`--select RUF100`. Com a seleção reduzida a uma regra, **todo** `noqa` de outra regra pareceu
+sobrando, e o ruff apagou 47 deles em 19 arquivos de `src/` e `tests/`. Olhei primeiro só o
+`git diff --stat -- tests/` (12 arquivos) e restaurei `tests/`; o `ruff check` seguinte deu 49
+erros em `src/`, e só então vi o resto. Restaurado tudo do commit, e as duas linhas editadas à
+mão. O antídoto: `--fix` com a configuração do projeto, nunca com `--select` de uma regra só; e o
+`git status` **do repo inteiro** depois, não de uma pasta.
 
