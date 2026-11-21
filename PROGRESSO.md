@@ -5,23 +5,102 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-21 22:31Z: a 14b fechada no Mac (26 de 36); a próxima é a H1
+## ▶️ RETOMAR AQUI — 2026-11-21, ~22:40Z (19:40 em SP) — antes de um compact; a próxima é a H1
 
-**Estado (medido em 2026-11-21):**
-- **No ar:** o motor e as finanças em `b56942f` (36 ✅), o fuso em SP; `editor` ✅. Em `alertas`,
-  a métrica, o canal e a política do envio existem; **falta a do backup**, que só pode nascer
-  depois de 2026-11-22 ~22:20Z (`python scripts/nuvem.py --executar alertas` → 15 ✅).
-- **No Mac (~22:30Z):** o repo em `~/Desktop/LifeOs` (não `~/LifeOs`; erros, classe 1). Havia lá um
-  conserto local do `T0`, igual ao do GitHub, guardado em `git stash` ("conserto local do T0…"), e
-  uma venv mais nova que o lock antigo (`google-genai` 3.3.0): alguém trabalhou no Mac depois da 14
-  sem commit; perguntar ao dono. A suíte do Mac deu `2717 passed, 468 skipped` (= 3185);
-  `VIKING_TIMEZONE=America/Sao_Paulo`; `viking chat`: "amanhã é domingo, 22 de novembro; agora são
-  19:30", certo (o VPS: 19:31 -03), ~US$ 0,003, com o `google-genai` 3.6.1 e `v1beta`.
-- **O repo é público** desde ~21:43Z (D58 item 3 revisto).
-- **Sem resposta do dono:** se os resumos de segunda chegaram; se pode rodar `prova-chat` na nuvem.
+**Estado do repositório:** árvore limpa · HEAD = o commit deste bloco (o remoto igual: conferir) ·
+travas: nenhuma (sem `.mutacao.lock`) · execuções em background: nenhuma.
 
-**Próximo passo:** abrir a H1 pela `software-build` (a seção H1 de `sessoes.md`; o relatório do
-ESP32 da abertura de 2026-11-21 está resumido lá).
+**Estado do mundo (medido em 2026-11-21):**
+- O motor e as finanças estão em `b56942f`. O `deploy` às 21:17Z deu 36 ✅ e 0 ❌, com o fuso
+  `America/Sao_Paulo` no ar. Os commits depois disso são só docs e `scripts/`, fora da imagem.
+- `python scripts/nuvem.py` → 14 ✅ e 1 ⬜ (`alertas`). Existem a métrica `viking_agendador_ok`
+  (createTime 21:17:14Z), o canal de e-mail e a política do envio (21:37Z). **Falta a do backup.**
+- O CI do `7a68cb8` deve estar verde: conferir pelo SHA.
+- O repo é **público** desde ~21:43Z (D58 item 3 revisto).
+- A 14b está **fechada no Mac** (~22:30Z): `2717 passed, 468 skipped`, `VIKING_TIMEZONE` em SP, e o
+  `viking chat` com o dia e a hora certos.
+
+**Objetivo em curso:** abrir, planejar e implementar a **Sessão H1 — voz pelo pulso**. O ESP32
+(XIAO S3 + INMP441 + MAX98357A) grava a fala com o botão, o servidor de casa do dono a leva ao
+motor, e no primeiro marco volta o eco da transcrição, sem executar nada. Escopo exato na seção
+H1 de `sessoes.md`.
+
+**Próximo passo exato:**
+1. **Pendência da 14b, primeiro e só depois de 2026-11-22 ~22:20Z:** `python scripts/nuvem.py
+   --executar alertas` → esperado "✅ alertas", e então `python scripts/nuvem.py` → 15 ✅. A
+   permissão já foi dada ("Pode executar os dois"). Antes dessa hora, o script não cria a política,
+   e está certo: sem 25 h de métrica o primeiro alerta seria falso. Rodar **sem pipe**, com o `$?`.
+2. Abrir a H1 pela `software-build`. A rotina de abertura do `sessoes.md`, `uv lock --upgrade
+   --dry-run` e o CI pelo SHA, vale também.
+
+**Checkpoints da 14b:** C0–C3 e C5–C8 ✅. C4 🟡: a política do backup é o passo 1 acima.
+
+**Reler, nesta ordem:**
+1. `CLAUDE.md` e `AGENTS.md` do LifeOs: regras, fronteiras e armadilhas.
+2. Este bloco.
+3. `sessoes.md`: as seções **H1** (com "O que já existe"), **17 e 18** (a porta do app e a lista
+   de tools da voz) e "Só se o Bosgame voltar" (as respostas de 2026-09-30 e 2026-10-06 sobre o
+   microcontrolador).
+4. `docs/decisoes.md`: D2 (a trilha pausada; reaberta pelo dono em 2026-11-21), D47 (duas portas,
+   nenhuma chave baixada), D52, D58, D60 (o `interativo`) e D69.
+5. `docs/arquitetura/wristband-hardware-pausado.md`, em especial a segurança: nunca chave de IA no
+   firmware, credencial de curta duração.
+6. `/root/esp32/CLAUDE.md` e `/root/esp32/README.md`: o fluxo `esp` e as regras da placa remota.
+7. As skills `/root/esp32/.claude/skills/esp32-development/SKILL.md` (e as `references/` que a
+   etapa pedir), `electronics` e `embedded-systems`. Do LifeOs: `software-build`, `seguranca`,
+   `integracoes` e `testes-que-provam`.
+8. `/root/esp32/projects/viking-hardware-teste/src/main.ino`: o INMP441 que já funciona.
+9. `src/lifeos/nuvem/motor.py` (`QUEM_FALA`, as rotas) e `src/lifeos/nuvem/identidade.py`.
+10. `docs/erros.md`, o índice, e as entradas de 2026-11-21.
+
+**Decisões desta conversa (e onde ficaram escritas):**
+- A ordem 14b → H1 → 15 — o dono — `sessoes.md` (▶️ e H1).
+- O servidor de casa como ponte: o ESP32 não guarda chave; o laptop chama o motor só para fora,
+  com uma conta própria, nunca o login do dono — o dono propôs, eu desenhei — `sessoes.md` H1.
+- A XIAO comum, não a Sense; o mic e o amplificador externos — o dono — `sessoes.md` H1.
+- O repo público e a volta a privado no fim — o dono — D58 item 3, e a "Sessão final".
+- O fuso em SP, os alertas por e-mail, o editor removido, o CI semanal — o dono — D69.
+
+**Não pode ser esquecido (só existe aqui ou foi medido nesta conversa):**
+- **O repo no Mac está em `~/Desktop/LifeOs`** (usuário `luanabreno`, Intel de 2017, macOS
+  13.7.8). Todo roteiro do Mac é **uma corrente só** com `&&` (erros, classe 1, 2026-11-21).
+- O Mac tem um `git stash` ("conserto local do T0…"), igual ao do GitHub; pode ser apagado com
+  `git stash drop` quando o dono quiser.
+- **O repo é público:** nenhum e-mail, ID ou número de projeto, nome de rede, senha de Wi-Fi ou
+  IP de casa em commit. Isso vale também para o `/root/esp32` (o git de lá é local, mas segue a
+  regra do `esp32-development`: segredo nunca no source).
+- **O `google-genai` está no 3.6.1, preso em `v1beta`** (`turno.VERSAO_DA_API`). Pela página de
+  modelos de 2026-11-21, o áudio só é afirmado para os `gemini-4-*`, e existe um
+  `gemini-3.5-transcribe`. **Medir antes de desenhar** a transcrição. A chamada real roda só no Mac,
+  ou na nuvem com o ok do dono, porque gasta.
+- No `/root/esp32` há um arquivo não versionado, `edge_AI_GPT.md`, que não é meu: não mexer.
+- **Os resumos de segunda:** W42 `enviado`, W43–W47 `vazio` (semana sem novidade, que não sai).
+  É o desenho, não um defeito.
+
+**Depende do dono (perguntas da abertura da H1, em rodadas pequenas):**
+- O que o pulso pode pedir: só eco e nota no 1º marco? Lembrete? O chat inteiro?
+- Resposta por voz (MAX98357A: está ligado? quais pinos?) ou só LED.
+- O servidor de casa: como o VPS e o ESP32 o alcançam, qual é o túnel ("opentunnel"), se tem
+  Python 3.12, e se o ESP32 fica na mesma Wi-Fi dele.
+- A credencial do laptop para o motor: uma chave baixada de uma conta só de invocar (contra a
+  D47, revogável) ou federação de identidade. Eu recomendo, ele decide.
+- Botão: qual pino e qual botão físico. Ou a palma dupla do teste?
+
+**Riscos do próximo passo:**
+- Gravar firmware mexe em hardware real: a skill manda o boot log antes e nunca apagar a flash
+  de primeira.
+- Uma rota nova no motor é superfície pública: a primeira instrução é a verificação de quem fala,
+  com teste.
+- A conta de serviço nova e o deploy pedem o ok do dono.
+- Transcrição real custa dinheiro: medir o preço antes.
+
+**Antes de confiar neste bloco, confira:**
+- `git status` limpo; `git rev-parse HEAD` = `git ls-remote origin refs/heads/master`;
+- `gh run list --commit $(git rev-parse HEAD)` → `success`;
+- `python scripts/nuvem.py` → 14 ✅ + `alertas` ⬜ (ou 15 ✅, se já for 22/11 depois das ~22:20Z e
+  o passo 1 tiver rodado);
+- `cd /root/esp32 && bin/esp check`: o túnel e o chip. Se estiver fora, é o Mac dormindo: pedir
+  ao dono, não "consertar".
 
 ### Plano — Sessão 14b: manutenção (a mini-auditoria de 2026-11-21)
 

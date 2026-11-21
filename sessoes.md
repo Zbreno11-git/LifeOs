@@ -1235,6 +1235,27 @@ O que estava escrito na abertura:
   `gemini-3.5-transcribe`); a latência real; o preço.
 - **Perguntas da abertura:** o que o pulso pode pedir (só lembrete e nota? o chat inteiro?), se
   responde por voz (o MAX98357A) ou só por LED, e se o Home Assistant entra como ação.
+- **O que já existe, medido em 2026-11-21 (antes da abertura):**
+  - **Um workspace de firmware no próprio VPS, `/root/esp32`** (git próprio, branch `main`; o
+    `CLAUDE.md` e o `README.md` de lá são as regras). A VPS compila e **grava a XIAO que está
+    plugada no Mac do dono** por um túnel SSH reverso que o Mac abre (porta 443) até um servidor
+    RFC2217 (`127.0.0.1:4000` no VPS). Só pelo `bin/esp` (`esp build`, `esp flash`, `esp log`,
+    `esp reset-log`, `esp check`; nunca `pio`/`esptool` direto); **um cliente por vez na placa**;
+    túnel fora do ar = pedir ao dono `cd ~/esp32-mac && ./service.sh status` no Mac. A rede do Mac
+    é corporativa (inspeção TLS, Tailscale bloqueado): não propor contornar.
+  - **Skills de lá** (`/root/esp32/.claude/skills/`, não carregadas no LifeOs, mas legíveis):
+    `esp32-development` (o contrato: placa exata, datasheet antes do pino, uma camada por vez,
+    "pronto" só no limite físico, segredo de Wi-Fi nunca no git), `electronics`,
+    `embedded-systems`, `tinyml-keyword-spotting`, `edge-model-deployment`,
+    `ml-experiment-discipline`.
+  - **O projeto `projects/viking-hardware-teste`** (Arduino-ESP32 3.x pelo pioarduino, `ESP_I2S.h`):
+    o INMP441 já ligado e lido a 16 kHz (VDD→3V3, GND, L/R→GND, SCK→D8/GPIO7, WS→D9/GPIO8,
+    SD→D10/GPIO9), um LED externo em D6/GPIO43, o da placa em GPIO21 (ativo em baixo), e a
+    detecção de palma dupla. O MAX98357A ainda não aparece ali (a conferir: ligado? que pinos?).
+  - **A ponte de casa** (dito pelo dono em 2026-11-21): um laptop antigo com Debian, Home Assistant
+    e um túnel ("opentunnel") instalados, sempre ligado. A conferir na abertura: o VPS alcança esse
+    laptop? Por qual caminho? Ele roda Python 3.12? Qual é o túnel exatamente? O ESP32 e o laptop
+    ficam na mesma rede Wi-Fi?
 
 ## Sessão 15 — coach 1: registrar (planejada em 2026-09-28)
 

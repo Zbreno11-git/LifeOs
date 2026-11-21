@@ -1097,6 +1097,12 @@ seguiu depois do `cd` que falhou (erros, classe 1). Lá havia o mesmo conserto d
 468 skipped`; `VIKING_TIMEZONE` passou para SP; o `viking chat` respondeu o dia e a hora certos de
 Brasília, com o `google-genai` 3.6.1 (~US$ 0,003).
 
+**Os resumos de segunda (lido no Firestore, `estado/resumo-2026-W*`):** o W42 saiu
+(`enviado`); do W43 ao W47, `vazio`: a semana não tinha fato, receita nem documento novo, e o
+resumo vazio não sai (`memoria/resumo.py`). Está de acordo com o desenho, e o dono não lembra de
+ter recebido nada. O dono também não lembra do trabalho no Mac sem commit (o `T0` e a venv nova,
+em ~16/11).
+
 **Falta:**
 - **A política do backup:** só pode nascer depois de ~2026-11-22 22:15Z, com
   `python scripts/nuvem.py --executar alertas`.
