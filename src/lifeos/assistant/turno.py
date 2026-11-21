@@ -29,6 +29,10 @@ from lifeos import nao_confiavel, registro, registro_texto
 # por dia. A tarifa de cada um está em `custos.TARIFAS`.
 MODELO = "gemini-3.5-flash-lite"
 MODELO_FORTE = "gemini-3.8-flash"
+# A versão da API do Gemini, presa (Sessão 14b, D69): o google-genai 3.0 trocou o padrão de
+# `v1beta` para `v1`, e tudo que está no ar (as tools, a busca, a assinatura de pensamento, o
+# embedding) foi medido em `v1beta`. Trocar para `v1` é uma medição de propósito, não um upgrade.
+VERSAO_DA_API = "v1beta"
 TEMPERATURA = 0.3
 
 # --- o texto de sistema, por seção --------------------------------------------------------------

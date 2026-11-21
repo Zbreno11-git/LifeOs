@@ -459,7 +459,8 @@ def _cliente() -> Any:
     chave = config.gemini_chave()
     if not chave:
         raise RuntimeError("sem a chave do Gemini (o segredo do motor)")
-    return genai.Client(api_key=chave, http_options=types.HttpOptions(timeout=PRAZO_DO_GEMINI_MS))
+    opcoes = types.HttpOptions(timeout=PRAZO_DO_GEMINI_MS, api_version=turno_nucleo.VERSAO_DA_API)
+    return genai.Client(api_key=chave, http_options=opcoes)
 
 
 def _config(

@@ -143,5 +143,5 @@ def test_o_que_nao_e_objeto_e_recusado(bruto):
 
 def test_horario_sem_fuso_nao_sai_do_mac():
     with pytest.raises(transporte.LembreteInvalido, match="sem fuso"):
-        sem_fuso = datetime(2026, 10, 2, 10, 0)  # noqa: DTZ001 - o caso que recusa
+        sem_fuso = datetime(2026, 10, 2, 10, 0)  # o caso que recusa
         transporte.para_dict(_lembrete(due_at=sem_fuso))

@@ -547,6 +547,7 @@ def test_o_cliente_do_gemini_tem_prazo_e_limite_de_chamadas(monkeypatch):
     monkeypatch.setattr(genai, "Client", lambda **kw: capturado.update(kw))
     na_nuvem._cliente()
     assert capturado["http_options"].timeout == na_nuvem.PRAZO_DO_GEMINI_MS
+    assert capturado["http_options"].api_version == "v1beta"  # D69: o google-genai 3 mudou o padrão
     configuracao = na_nuvem._config()
     assert configuracao.automatic_function_calling.maximum_remote_calls == 10
 
@@ -555,3 +556,13 @@ def test_sem_chave_erra_alto(monkeypatch):
     monkeypatch.setattr(config, "gemini_chave", lambda: "")
     with pytest.raises(RuntimeError, match="chave"):
         na_nuvem._cliente()
+
+
+def test_o_cliente_do_mac_tambem_prende_a_versao_da_api(monkeypatch):
+    """Os dois chats falam com a mesma API (D69): o padrão do google-genai 3 é `v1`, e o que se
+    mediu no ar foi `v1beta`."""
+    capturado = {}
+    monkeypatch.setattr(agent, "GEMINI_API_KEY", "chave")
+    monkeypatch.setattr(agent.genai, "Client", lambda **kw: capturado.update(kw))
+    agent._build_client()
+    assert capturado["http_options"].api_version == "v1beta"

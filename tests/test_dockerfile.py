@@ -66,3 +66,13 @@ def test_a_imagem_confere_que_o_motor_e_o_fuso_existem():
     assert "test -f /app/.venv/lib/python3.12/site-packages/lifeos/nuvem/motor.py" in DOCKERFILE
     assert "test -f /app/.venv/lib/python3.12/site-packages/lifeos/nuvem/financas.py" in DOCKERFILE
     assert "zoneinfo.ZoneInfo(" in DOCKERFILE
+
+
+def test_a_confianca_do_tls_e_a_certifi_do_lock():
+    """D69: o httpx2 (google-genai 3) confia no repositório do sistema; a imagem aponta para a
+    `certifi` do lock, que o pip-audit confere, e o build cai se o arquivo não estiver lá."""
+    caminho = "/app/.venv/lib/python3.12/site-packages/certifi/cacert.pem"
+    assert f"ENV SSL_CERT_FILE={caminho}" in DOCKERFILE
+    assert 'RUN test -s "$SSL_CERT_FILE"' in DOCKERFILE
+    final = DOCKERFILE.split("AS construir", 1)[1]
+    assert final.index("SSL_CERT_FILE=") < final.index("RUN test -s")

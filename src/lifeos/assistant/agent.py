@@ -159,7 +159,10 @@ def _build_client() -> genai.Client:
     if not GEMINI_API_KEY:
         print("❌ ERRO: GEMINI_API_KEY não encontrada no .env!")
         sys.exit(1)
-    return genai.Client(api_key=GEMINI_API_KEY)
+    return genai.Client(
+        api_key=GEMINI_API_KEY,
+        http_options=types.HttpOptions(api_version=turno_nucleo.VERSAO_DA_API),
+    )
 
 
 # Registradas no Gemini como function-calling. Constante no módulo para que os testes possam

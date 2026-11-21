@@ -56,7 +56,7 @@ def test_add_repetido_com_o_mesmo_id_nao_duplica(lembretes):
 
 def test_horario_sem_fuso_e_recusado_e_nada_e_gravado(lembretes):
     with pytest.raises(ValueError, match="fuso"):
-        lembretes.add(title="Sem fuso", due_at=datetime(2026, 10, 1, 10, 0))  # noqa: DTZ001
+        lembretes.add(title="Sem fuso", due_at=datetime(2026, 10, 1, 10, 0))
     assert lembretes.list_open() == []
 
 
