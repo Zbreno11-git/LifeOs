@@ -1046,6 +1046,25 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-21 — Sessão H1 aberta: a voz do estúdio (reabre a D2)
+
+**Decidido pelo dono (2 rodadas na abertura):** o aparelho fica fixo no estúdio, com "todas as
+funções do Viking + controle de HA"; a resposta por voz sai no alto-falante do laptop de casa
+(o MAX98357A vai ser comprado, H1b); o HA é Container; botão externo já, palavra de ativação
+depois (H2); "absolutamente tudo, sem senha", com dois toques no botão no lugar do código e um
+interruptor no HA para desligar; a voz "boa, rápida, nada de robótica, de preferência streaming".
+Viram a D70.
+
+**Medido na abertura:** `gemini-3.5-flash-lite` aceita áudio (32 tokens/s, US$ 0,30/1M);
+`gemini-3.5-transcribe` a US$ 0,003/min; TTS: Gemini Flash-Lite TTS (~US$ 0,07/mês no uso
+estimado), Chirp 3 HD (pt-BR, streaming nos dois sentidos) e ElevenLabs Flash v2.5 (~US$ 9/mês);
+o HA tem "preferir comandos locais" desde 2024.12; o projeto não tem organização; o
+`IDTokenCredentials` do `google-auth` troca o JWT no `token_uri` (sem `TokenCreator`); o
+ESP32-S3 não tem DAC. O chip não respondia pelo túnel (22:43Z).
+
+**Feito:** o lock (`google-auth` 2.63.1, suíte 3185 antes e depois); a H1 reescrita e as H1b, H2 e
+H3 criadas em `sessoes.md`; a D70; o plano por checkpoints no `PROGRESSO.md`.
+
 ### 2026-11-21 — Sessão 14b fechada no Mac: a mini-auditoria e a manutenção
 
 **Por quê:** 43 dias sem push. A mini-auditoria (`docs/auditorias/mini-auditoria-2026-11-21.md`,

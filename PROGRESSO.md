@@ -5,7 +5,310 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-21, ~22:40Z (19:40 em SP) — antes de um compact; a próxima é a H1
+## ▶️ RETOMAR AQUI — 2026-11-21, 23:05Z — a H1 aberta (o plano aprovado pelo dono); C0 em curso
+
+**Estado:** o lock em `eb9ef6a` (google-auth 2.63.1; a suíte 3185 antes e depois). O plano abaixo
+foi aprovado pelo dono em 2026-11-21. **Pendência P0 (da 14b):** depois de 2026-11-22 22:20Z,
+`python scripts/nuvem.py --executar alertas` sem pipe. A placa não respondia pelo túnel às 22:43Z
+(o chip, não o túnel): pedir ao dono antes do C4.
+
+**Checkpoints:** P0 ⬜ · C0 🟡 (docs e lock) · C1–C8 ⬜.
+
+### Plano — Sessão H1: a voz do estúdio (ESP32 → servidor de casa → motor)
+
+### Context
+
+O dono quer falar com o Viking no estúdio dele: um aparelho fixo (não mais de pulso) com a XIAO
+ESP32-S3 comum + o microfone INMP441 (já funcionando a 16 kHz no `viking-hardware-teste`). Ele
+aperta um botão, fala, e ouve a resposta em voz. Além das funções do Viking, ele quer controlar o
+Home Assistant (a luz, etc.). O laptop de casa (Debian, HA em Docker, sempre ligado, na mesma Wi-Fi)
+é a ponte: o aparelho não guarda chave nenhuma, e o laptop chama o motor só para fora, com uma
+conta própria. A sessão reabre a D2 (a trilha de hardware) por decisão do dono (2026-11-21) e
+nasce agora porque o dono "só vai usar ativo quando tiver ele em hardware ou app".
+
+### O que esta sessão entrega (uma frase verificável)
+
+No estúdio, o dono segura o botão do aparelho e fala. A resposta sai em voz pelo alto-falante do
+laptop de casa:
+- "liga a luz do estúdio" → o HA faz, sem passar pela nuvem;
+- "o que tenho amanhã?" → o Viking responde;
+- "manda um e-mail para Fulano…" → o Viking lê o e-mail e pede dois toques no botão, e só então
+  envia;
+- o interruptor "Viking voz" do HA desligado → nada sai para a nuvem.
+
+### O que ela NÃO faz (e para onde foi; escrito no C0)
+
+- **A voz saindo do próprio aparelho (MAX98357A)** → **H1b**. O dono vai comprar o amplificador.
+  Até lá, a resposta sai no laptop.
+- **A palavra de ativação ("Hey Viking")** → **H2**. Ela segue as skills `tinyml-keyword-spotting`
+  e `edge-model-deployment` do `/root/esp32` e compara o modelo próprio com o microWakeWord.
+- **O Viking mandando no HA** (pelo chat do Mac, do iPhone ou numa frase composta) → **H3**. Pelo
+  desenho de agora, só o que o HA reconhece sozinho vira ação dele.
+- **"Pensar enquanto fala"** (o turno do Gemini em streaming, falando enquanto gera) → H1b, com o
+  gatilho "a latência medida incomodar". Nesta sessão o streaming é do áudio, frase por frase,
+  depois do texto pronto.
+- **A busca na web pela voz:** fica fora, porque os termos do Grounding mandam *mostrar* as
+  sugestões de busca a quem perguntou, e a voz não mostra nada. O Viking responde "essa eu busco no
+  chat". Gatilho: uma tela no aparelho, ou o app da S17.
+
+### Respostas do dono (2026-11-21)
+
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| O que o aparelho pede | fixo no estúdio; "todas as funções do Viking lá + controle de HA" | o turno inteiro da nuvem, mais o HA local primeiro |
+| Responde por voz? | sim; o amp ainda não existe; **tocar no alto-falante do laptop servidor** e comprar o amp depois | a ponte toca o áudio com `aplay`; o som no aparelho vai para a H1b |
+| O laptop de casa | alcançado por túnel a partir do Mac; mesma Wi-Fi do ESP32; já controla o HA | o dono roda os comandos do laptop (eu monto o roteiro); o VPS nunca alcança o laptop |
+| HA instalado como | **Container (Docker)** | sem add-ons; a ponte fala com o HA pela API REST local |
+| A credencial do laptop | "pela tua recomendação" | ver as decisões técnicas: a chave cuja metade privada nasce e fica no laptop |
+| O botão | **externo já** (depois, a palavra de ativação, que é "o perfeito") | um push-button entre o D1 (GPIO2) e o GND |
+| Até onde vai a voz | "absolutamente tudo, sem senha também… só cria um fallback para desligar" | finanças e e-mail lidos em voz alta; nada de código falado |
+| A aprovação "sem senha" | **dois toques no botão** | o código nasce na nuvem, fica só na ponte, e os dois toques mandam o `confirma NNNN` |
+| O desligar | **o interruptor no HA** (`input_boolean`), mais o corte de emergência | a ponte confere antes de cada pedido e falha fechada |
+| A voz (TTS) | "uma API de voz, a mais barata… voz boa e rápida, nada de robótica, de preferência com streaming" | pesquisa feita (abaixo); o dono ouve e escolhe no C6 |
+
+### Decisões técnicas minhas (declaradas)
+
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| **Firmware próprio (Arduino, como o teste do mic) + uma ponte do Viking no laptop**, e não o ESPHome com o pipeline Assist do HA | o HA é Container, sem add-ons; o aparelho ainda não tem alto-falante e a resposta toca no laptop; o cérebro, a aprovação e o teto têm de ser os do Viking; e o Assist pediria uma integração própria dentro do HA (`ConversationEntity`), com a chave da conta dentro da config do HA | a H2 medir que o microWakeWord do ESPHome é muito melhor que um modelo próprio |
+| **O HA primeiro, pela API dele** (`/api/conversation/process` com o agente local `conversation.home_assistant`, pt-BR); só o que ele não reconhece vai ao Viking | é o "preferir comandos locais" do próprio HA (desde 2024.12): a luz acende sem nuvem, de graça e rápido; o HA só alcança as entidades que o dono expôs à voz (opt-in) | uma frase do Viking cair no HA por engano, medida no E2E |
+| **A credencial do laptop:** a conta `viking-casa@`, só de invocar o motor e listada em `QUEM_FALA` só nas rotas `/voz/*`. A chave é um **par gerado no próprio laptop** (`openssl`), e só o certificado público sobe para o Google (`keys upload`). A metade privada nunca sai de lá, e não há chave gerada pelo Google | é o menor raio possível com uma máquina sem login humano. A doc do Google aceita esse caminho ("you can use the private key… to authenticate as the service account"). Não há organização no projeto, então nenhuma política bloqueia (medido) | o laptop ganhar um TPM utilizável (a doc recomenda), ou um IdP para federação |
+| **A D47 ("nenhuma chave baixada") ganha uma exceção escrita, só para essa conta** | o laptop não tem pessoa para um login; nenhuma chave foi *baixada*: a privada nasceu lá | — |
+| **O aparelho fala só com a ponte, por HTTPS na rede de casa**, com o certificado da ponte fixado no firmware e um token do aparelho (comparado em tempo constante). Os segredos ficam em `src/segredos.h`, fora do git | um token em HTTP puro fica visível para qualquer um na Wi-Fi; e a regra da skill é segredo nunca no código | — |
+| **Três rotas novas no motor:** `/voz/ouvir` (WAV → texto), `/voz/responder` (o turno de sempre, com o canal "voz") e `/voz/falar` (texto → áudio em streaming). Mais `/voz/saude` (só a identidade, para o `--conferir`) | a ponte decide entre o HA e o Viking com o texto na mão; o turno continua sem estado (a conversa vai e volta no corpo) | — |
+| **O canal "voz" no turno:** `interativo` passa a ser verdadeiro **só** quando quem chama é o `viking-casa@`; uma seção de sistema pede resposta curta, sem markdown; e `buscar_na_web` sai da lista | o canal físico de aprovação existe (os dois toques); a voz não lê tabela; e a busca, pelos termos dela | — |
+| **A transcrição vale como mensagem do dono** (a memória aprende dela, D48) | é a voz dele, do botão dele ("o estúdio é meu") | ruído ou outra pessoa sendo anotada, medido |
+| **O código de aprovação nunca vai ao modelo nem ao TTS.** A ponte tira a linha `confirma NNNN` do `ao_dono` (a regex é presa por teste aos 3 produtores: `gmail/tools.py:229,341`, `browser/liberacao.py:87`) e fala o resto | o que impede um e-mail injetado de se autoaprovar (D26) é o modelo nunca ver o código e o gesto ser físico | — |
+| **A transcrição e o TTS passam pelo teto** (`custos.TARIFAS`) | sem isso, a mini-auditoria acharia um caminho que gasta fora do teto | — |
+| **Sessão da conversa na ponte, em memória:** o histórico e a nota (como o `chat_cliente`), zerados depois de 5 min sem falar | o motor não guarda conversa | — |
+
+### Medido na abertura (2026-11-21, `date -u` 22:43Z)
+
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repo = GitHub, CI | `git rev-parse HEAD origin/master`; `gh run list --commit` | `4b7b464` nos dois; `success` | — |
+| Nuvem | `python scripts/nuvem.py` | 14 ✅, `alertas` ⬜ (falta a política do backup) | o passo 0 abaixo, depois de 22/11 22:20Z |
+| Lock | `uv lock --upgrade --dry-run` | `google-auth` 2.63.0 → 2.63.1 | commit próprio no C0 (D45) |
+| Placa | `bin/esp check` | túnel ok; o chip não respondeu ("port is busy or doesn't exist") | pedir ao dono: a XIAO plugada no Mac e `cd ~/esp32-mac && ./service.sh status` |
+| Projeto sem organização | `projects describe --format=value(parent.type)` | vazio | o upload de chave não é bloqueado por política (confirmar no passo) |
+| Áudio de entrada | doc do Gemini (aistudio.google.com/docs/audio, models, pricing) | `gemini-3.5-flash-lite` aceita áudio, a 32 tokens/s e US$ 0,30/1M (≈ US$ 0,0006/min); o `gemini-3.5-transcribe` custa US$ 0,003/min, com pt-BR listado; até 20 MB por pedido; `audio/wav` aceito | os dois candidatos se medem no C6 com a voz real |
+| TTS | páginas oficiais de preço e doc (2026-11-21) | **Gemini `gemini-3.8-flash-lite-tts`**: US$ 6/1M de áudio de saída, a 25 tokens/s (≈ US$ 0,07/mês no uso estimado de 225 mil caracteres; dobra em 2027). Faz streaming da saída, não da entrada; "Portuguese" listado, sem dizer pt-BR. **Google Cloud TTS Chirp 3 HD**: pt-BR na tabela e streaming nos dois sentidos; o preço (US$ 30/1M, com 1M grátis por mês) veio só de um snippet. **ElevenLabs Flash v2.5**: US$ 0,04/1k caracteres (≈ US$ 9/mês), ~100 ms, WebSocket com texto parcial. Fora: o OpenAI (os modelos TTS saem em 2027-01-06), o Deepgram (sem português) e o Cartesia (≈ US$ 13/mês) | o C6 mede o Gemini e o Chirp (o mesmo Google, sem chave nova: o Chirp entra pela conta do motor); o ElevenLabs só se o dono não gostar dos dois (pede conta e chave dele) |
+| Token da ponte | `google/oauth2/service_account.py:646` (google-auth instalado) | o `IDTokenCredentials` usa o endpoint do IAM só fora do domínio padrão; aqui assina um JWT com a chave e troca no `token_uri` | a `viking-casa@` não precisa de `TokenCreator`: só do `run.invoker` |
+| HA | doc do HA | REST com token de longa duração; `conversation.process`; "Prefer handling commands locally" desde 2024.12 | a ponte usa o HA local primeiro |
+| Código | leitura de `motor.py`, `identidade.py`, `na_nuvem.py` | `QUEM_FALA` = rota → contas, `_quem` como primeira instrução (preso por AST em `tests/test_motor.py:190`); `ferramentas()` não conhece quem chama; nada de áudio no `src/` | um parâmetro de canal novo, e as rotas `/voz/*` só para a `CASA` |
+| Hardware | datasheet do S3, wiki da XIAO | o S3 não tem DAC (o som sai só por I2S); os strapping pins são GPIO0/3/45/46 | o botão no D1 (GPIO2), longe deles |
+
+### Mapa de checkpoints
+
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| P0 | a política do backup (pendência da 14b), depois de 2026-11-22 22:20Z | — | ⬜ |
+| C0 | H1 reescrita, H1b/H2/H3 escritas em `sessoes.md`; D70 em rascunho; o lock (google-auth) num commit próprio | — | ⬜ |
+| C1 | o motor: `/voz/*`, o canal "voz", o teto de áudio, com testes | C0 | ⬜ |
+| C2 | o `nuvem.py`: o passo `casa`, o upload do certificado, cortar e religar, as provas | C0 | ⬜ |
+| C3 | a ponte `lifeos/casa/` com testes offline | C1 | ⬜ |
+| C4 | o firmware `viking-voz`, camada por camada, visto no serial | C3 (o contrato da ponte) | ⬜ |
+| C5 | a nuvem no ar com o ok: a conta, o certificado e o deploy | C1, C2 | ⬜ |
+| C6 | as medições que gastam (com o ok): a transcrição e as vozes, ouvidas pelo dono | C5 | ⬜ |
+| C7 | o laptop instalado pelo dono e o E2E | C3–C6 | ⬜ |
+| C8 | a revisão de segurança, as mutações, os docs e o fechamento | C7 | ⬜ |
+
+### P0 — a pendência da 14b
+Depois de 2026-11-22 22:20Z, e **sem pipe**: `python scripts/nuvem.py --executar alertas; echo
+"exit=$?"` → "✅ alertas" e `exit=0`; depois `python scripts/nuvem.py` → 15 ✅. A permissão já
+foi dada. Antes dessa hora não se roda: o script recusa por desenho.
+
+### C0 — docs e lock
+**Faz:**
+- `sessoes.md`: a H1 reescrita ("estúdio", não "pulso"), mais a H1b (o amplificador, o som no
+  aparelho, a fala em streaming), a H2 (a palavra de ativação) e a H3 (o Viking mandando no HA).
+- `docs/decisoes.md`: a D70 em rascunho, que reabre a D2 e revê a regra "a voz só alcança uma lista
+  curta" da S17 (agora tudo, menos a busca), a exceção da D47 e os dois toques como aprovação.
+- `uv lock --upgrade`, num commit só dele, com a suíte antes e depois.
+
+**✅** `python -m pytest -q` verde nos dois lados do lock, e o CI do SHA em `success`.
+
+### C1 — o motor (`src/lifeos/nuvem/motor.py`, `assistant/na_nuvem.py`, `assistant/turno.py`, `custos.py`, um módulo novo `assistant/voz.py`)
+**Faz:**
+- `CASA = "viking-casa"` em `QUEM_FALA`, **só** nas 4 rotas `/voz/*`; nenhuma outra conta nelas.
+- `/voz/ouvir`:
+  - o corpo é um WAV PCM de 16 kHz, mono e 16 bits, até 1 MiB (~30 s), conferido pelo cabeçalho
+    RIFF antes de ir ao modelo;
+  - o texto é devolvido com um prompt fixo de transcrição, sem tools e sem a conversa;
+  - os dois modelos candidatos ficam atrás de uma constante, decidida no C6.
+- `/voz/responder`: `na_nuvem.turno(dados, canal="voz")`.
+  - `ferramentas(canal)` tira a `buscar_na_web`;
+  - `interativo` é verdadeiro pelo canal, não pelo corpo;
+  - a resposta ganha `aprovacao: {codigo, expira}` quando o turno criar uma proposta. A ponte não
+    precisa ler o texto, e um teste confere que o código não vai em `resposta`, no `historico` nem
+    na `nota`.
+- `/voz/falar`: o texto → o áudio PCM 24 kHz em `StreamingResponse`, frase por frase, com o
+  provedor escolhido no C6 atrás de uma interface pequena (`voz.Falante`).
+- `custos`: a tarifa de áudio de entrada e a do TTS, cobradas antes, pelo tamanho (`POR_BYTES`
+  como referência).
+
+**Testes** (`tests/test_motor_voz.py`, `tests/test_na_nuvem_voz.py`):
+- a régua AST já cobre a primeira instrução;
+- só a `CASA` entra em `/voz/*`, e a `CASA` não entra em nenhuma outra;
+- WAV torto, grande ou de outro formato → 400/413 sem chamar o modelo;
+- `canal="voz"` sem a busca e com `interativo`;
+- um e-mail para outra pessoa pela voz → `aprovacao` com o código, e o sentinela do código fora do
+  texto, do histórico, da nota e do log;
+- o teto recusa antes do modelo.
+
+**✅** `python -m pytest -q` verde; `ruff`, `mypy`.
+**🐞 Previsto → Depurar:** o código vazar por um caminho novo (erros: a classe do "canal que o
+modelo vê") → o teste do sentinela em `capsys`/`caplog`, e `grep -n "ao_dono\|aprovacao"` nos
+caminhos novos.
+
+### C2 — `scripts/nuvem.py`
+**Faz:**
+- o passo `casa` (depende de `contas`): mede e cria a `viking-casa@`, sem papel no projeto;
+- o `run.invoker` dela no motor, dentro de `comandos_do_deploy`, com a prova `_invocadores_certos`
+  atualizada;
+- os subcomandos:
+  - `casa-chave CERT.pem`: só lê, e com `--executar` faz o `keys upload`; recusa se não for um
+    certificado X.509 com uma chave RSA pública, ou se já houver 2 chaves;
+  - `casa-cortar` e `casa-religar`: o `service-accounts disable` e o `enable`, o corte de
+    emergência, que vale em segundos;
+- a prova do deploy "a casa só tem chave enviada por nós" (`keys list`: nenhuma chave
+  `GOOGLE_PROVIDED` gerenciada pelo usuário).
+
+**Testes** em `tests/test_nuvem_script.py`: os verbos novos em `_ESCRITAS`; todo comando leva o
+`--project`; o certificado vai por arquivo, nunca no argv com conteúdo; e a ordem dos passos.
+**✅** `python scripts/nuvem.py` → `casa` ⬜ (até o C5).
+
+### C3 — a ponte (`src/lifeos/casa/`, o extra `casa` = starlette + uvicorn, e `viking casa` em `cli.py`)
+**Módulos:**
+- `config.py`: a pasta `~/.config/viking-casa/`, com permissão 600 e recusa se for mais aberta. Lá
+  ficam o token do aparelho, o token do HA, a chave da conta, o certificado TLS e a URL do motor;
+- `nuvem.py`: o `service_account.IDTokenCredentials` com o `target_audience` igual à URL do motor
+  (pelo `token_uri`, sem o IAM, como medido), e as chamadas às `/voz/*` com prazo. O streaming do
+  `/voz/falar` é lido em pedaços e vai direto ao `som`;
+- `ha.py`: o estado do `input_boolean.viking_voz` (desligado, ou o HA fora → **fecha**), e o
+  `conversation/process` com `conversation.home_assistant` e `pt-BR`. `action_done` ou
+  `query_answer` → fala a resposta do HA; `no_intent_match` → vai ao Viking;
+- `aprovacao.py`: a proposta aberta por 60 s; os dois toques mandam o `confirma NNNN` como a
+  próxima mensagem, na mesma sessão;
+- `som.py`: o `aplay -t raw -f S16_LE -r 24000 -c 1` lendo o streaming, um áudio por vez;
+- `servidor.py`: HTTPS na rede de casa, com:
+  - `POST /falar` (o WAV do aparelho, com o Bearer do aparelho) e `POST /toque`;
+  - um teto de corpo, um pedido por vez (o resto ganha 429) e nada de áudio gravado em disco;
+- `terminal.py`:
+  - `viking casa` serve;
+  - `--preparar` gera o par da conta, o certificado TLS e o token do aparelho, e imprime **só** o
+    certificado público e as linhas para o `segredos.h`;
+  - `--conferir`: o HA, o interruptor, o `/voz/saude` e o `aplay -l`.
+
+**Testes** (`tests/test_casa_*.py`, com dublês do HA, do motor e do `aplay`):
+- o token errado ou ausente → 401, comparado com `hmac.compare_digest`;
+- o interruptor desligado ou o HA fora → nada vai ao motor;
+- o HA reconheceu → o motor não é chamado;
+- `no_intent_match` → o motor é chamado;
+- o código não vai ao TTS;
+- os dois toques fora da janela → nada;
+- a pasta com permissão 644 → recusa;
+- a credencial montada de uma chave gerada no teste assina um JWT, sem rede.
+
+**✅** `python -m pytest tests/test_casa_*.py -q` verde.
+**🐞 Previsto → Depurar:** o `aplay` travar com o streaming parado no meio → o prazo por pedaço e
+o teste com um dublê que para.
+
+### C4 — o firmware (`/root/esp32/projects/viking-voz`, `esp new` a partir do `templates/xiao_s3`)
+Pela `esp32-development`: o roteiro `templates/hardware-bringup.md` preenchido, uma camada por
+vez, cada uma vista no serial (`esp reset-log`), e **nunca** apagar a flash.
+1. O boot log e o botão no D1, com `INPUT_PULLUP`, debounce e as linhas "apertou" e "soltou".
+2. A Wi-Fi e o mDNS do laptop, e um `GET /saude` da ponte por HTTPS com o certificado fixado.
+3. Gravar enquanto segura (até 15 s, na PSRAM; a escala 24→16 bits e o passa-alta do
+   `viking-hardware-teste`) e o `POST /falar`.
+4. O LED com os estados ocioso, gravando, esperando, ok e erro, e os dois toques quando a ponte
+   devolver "aguardando".
+
+Os segredos ficam em `src/segredos.h`, que entra no `.gitignore` do projeto, mais um
+`segredos.exemplo.h`. O watchdog e a reconexão da Wi-Fi também entram.
+
+**✅** Cada camada com a linha esperada no `logs/serial.log`.
+**🐞 Previsto → Depurar:** o handshake TLS sem memória, ou a hora errada no certificado → ver o
+log do mbedTLS; a validade do certificado é longa e não depende do relógio, que o firmware sincroniza
+por NTP antes.
+
+### C5 — a nuvem no ar (com o ok do dono em cada passo)
+1. `python scripts/nuvem.py --executar casa`: a conta.
+2. `casa-chave cert.pem --executar`, com o certificado que o dono colar, gerado no laptop pelo
+   `--preparar`.
+3. `deploy`: o CI verde pelo SHA, e então `deploy --executar`. As provas todas ✅, incluindo as
+   novas.
+
+### C6 — medições que gastam (com o ok; menos de US$ 0,05)
+- **A transcrição:** ~5 falas reais do dono, gravadas pelo aparelho, nos dois candidatos. O que se
+  compara: as palavras erradas, contadas à mão contra o que ele disse, a latência e o custo. Entra o
+  mais barato que não errar mais.
+- **A voz:** 3 frases em pt-BR (uma curta, uma com número e hora, uma longa com pausa), tocadas
+  no laptop, na voz pt-BR de cada candidata:
+  - o **Gemini Flash-Lite TTS** (o mais barato e com a mesma chave);
+  - o **Chirp 3 HD** (antes, ligar a `texttospeech.googleapis.com` no passo `apis`, com o ok, e
+    conferir na página o preço, a cota grátis e se a conta do motor precisa de papel).
+
+  O dono escolhe, e a latência até o primeiro som é medida. Se ele não gostar de nenhuma, entra o
+  ElevenLabs Flash v2.5: ele cria a conta, e a chave sobe ao Secret Manager como `viking-voz`
+  (`segredo`), só para o motor.
+- **Os áudios não vão para o git nem para o log;** são apagados depois.
+
+### C7 — o laptop e o E2E (os comandos que o dono roda)
+- O roteiro do laptop, numa corrente com `&&`:
+  - `uv`, o clone do repo público e `uv sync --locked --extra casa`;
+  - `viking casa --preparar` e `--conferir`;
+  - o `input_boolean` criado no HA e o token de longa duração;
+  - o serviço `systemd` de um usuário sem privilégio.
+- Antes, um levantamento só de leitura: `uname -a`, `python3 --version`, `aplay -l`,
+  `docker ps --format '{{.Names}}'` e `hostname`.
+
+### C8 — fechamento
+- A `seguranca` em duas passadas (`referencia/revisao.md`), com a pergunta "por onde mais se chega
+  lá?" nas rotas `/voz/*` e na ponte.
+- `scripts/mutacoes.py` com as mutações novas e o teste que cada uma derruba:
+  - a `CASA` em `/chat`;
+  - o `interativo` vindo do corpo;
+  - o código no TTS;
+  - o interruptor ignorado;
+  - o token comparado com `==`.
+- Docs: o diário, a D70, os erros, a barra, o `AGENTS.md` (o módulo `casa/`, as rotas e a
+  armadilha nova) e o `PROGRESSO.md`.
+- O commit do `/root/esp32` só se o dono pedir (regra de lá).
+
+### Verificação ponta a ponta (no estúdio)
+1. "Liga a luz do estúdio" → a luz acende; a ponte registra "HA" e o motor não recebe nada.
+2. "O que eu tenho amanhã?" → a resposta em voz no laptop, com o tempo do soltar ao primeiro som
+   medido e anotado.
+3. "Manda um e-mail para [outra conta do dono] dizendo oi" → o Viking lê o e-mail e pede os dois
+   toques. Com os toques, o e-mail sai, e o `viking registro` mostra o envio; sem eles, nada sai.
+4. O interruptor "Viking voz" desligado no iPhone → o aparelho mostra erro no LED e o motor não
+   recebe nada.
+5. `casa-cortar` → o motor recusa (`401`/`403`); `casa-religar` → volta.
+
+### Riscos e o que é irreversível
+- **Criar a conta, subir o certificado e o deploy** criam recurso e publicam → o ok do dono em cada
+  um. Tudo é reversível (`keys delete`, `service-accounts delete`).
+- **A chave privada no laptop:** se o laptop for roubado, quem estiver com ela fala com o Viking
+  por inteiro. A resposta é o `casa-cortar` em segundos, e a rotação é uma chave nova.
+- **Gravar o firmware** mexe na placa real → o boot log antes, um projeto novo (o de teste fica
+  intacto) e nunca apagar a flash.
+- **As medições custam** (menos de US$ 0,05) → o ok na hora.
+- **O repo é público:** nenhum IP, SSID, e-mail, ID do projeto, token ou certificado do laptop em
+  commit. O `segredos.h` fica no `.gitignore`, e o gitleaks roda antes de cada push.
+
+### Para o dono: o amplificador
+- **Modelo:** **MAX98357A**, a plaquinha I2S "3 W class D" (a Adafruit 3006 ou a genérica roxa
+  com o mesmo chip). Um só basta para voz.
+- **Alimentação:** 2,5 a 5,5 V; vai no pino 5V da XIAO, que é o 5 V do USB.
+- **Potência** (snippets do datasheet, a conferir): ~3,2 W em 4 Ω e ~1,8 W em 8 Ω, a 5 V.
+- **A corrente que recomendo:** uma **fonte USB de 5 V e 2 A** para a XIAO com o amp. O consumo
+  real se mede na H1b.
+- **Os alto-falantes do Acer:** leia a etiqueta (Ω/W) antes da H1b. Com 4 Ω cada, os dois em série
+  dão 8 Ω num amp só.
+
+
+### (o registro) RETOMAR AQUI — 2026-11-21, ~22:40Z (19:40 em SP) — antes de um compact; a próxima é a H1
 
 **Estado do repositório:** árvore limpa · HEAD = o commit deste bloco (o remoto igual: conferir) ·
 travas: nenhuma (sem `.mutacao.lock`) · execuções em background: nenhuma.

@@ -16,7 +16,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H1 — voz pelo pulso** (o ESP32 pelo servidor de casa; reabre a D2), depois a
+- **Sessão:** **H1 — a voz do estúdio** (em curso desde 2026-11-21; o ESP32 pelo servidor de casa;
+  reabre a D2, D70), depois a H1b/H2/H3 quando o dono quiser, e a
   **15 — coach 1**. A 14b (a manutenção da mini-auditoria) fechou no Mac em 2026-11-21; a 14, em
   2026-10-09 (D68). A 11b (formulários) segue na fila, sem posição decidida.
 - **Pendente da 14b, sem travar a H1:** a política de alerta do backup só pode nascer depois de
@@ -1212,29 +1213,32 @@ O que estava escrito na abertura:
   `scripts/nuvem.py`; o CI semanal; o repo público (D58 revista, item 3, decisão do dono).
 - **O plano por checkpoints:** `PROGRESSO.md`.
 
-## Sessão H1 — voz pelo pulso: ESP32 → servidor de casa → motor (criada em 2026-11-21)
+## Sessão H1 — a voz do estúdio: ESP32 → servidor de casa → motor (criada em 2026-11-21; aberta no mesmo dia)
 
 - **Reabre a trilha de hardware (D2) por decisão do dono (2026-11-21):** "faz a manutenção
-  primeiro, depois o ESP32". Vem antes da 15.
-- **O que já se sabe (dito pelo dono em 2026-11-21):** XIAO ESP32-S3 **comum** (não a Sense: sem
-  microfone embutido), com o microfone INMP441 (I2S, não I2C) e o amplificador MAX98357A
-  externos, a combinação já escolhida no diário. Um **servidor de casa sempre ligado** (um laptop
-  antigo com Debian, Home Assistant e um túnel instalados) fica entre o aparelho e a nuvem.
-- **Escolhas previstas (a confirmar na abertura):**
-  - o ESP32 fala só com o servidor de casa, pela rede local: nenhuma chave no firmware;
-  - o servidor chama o motor só para fora (nada aberto para a internet), com uma **conta de
-    serviço própria** (`viking-casa@` ou parecido), só de invocar, listada em `QUEM_FALA` só nas
-    rotas do aparelho, revogável; **nunca** o login do gcloud do dono (alcança os outros projetos
-    dele). A credencial dessa conta no laptop é uma decisão da abertura (chave baixada contra a
-    D47, ou federação de identidade);
-  - a voz alcança uma lista curta de tools (a regra da S18), `interativo: false` (nada que pede
-    código), e a fala ambiente é tratada como dado do dono só depois de transcrita do botão;
-  - primeiro marco: botão → grava 5 s → servidor → transcrição devolvida (eco), sem executar nada.
-- **Medir na abertura:** se o `gemini-3.5-flash-lite` aceita áudio ou se a transcrição vai a um
-  modelo próprio (a página de modelos lida em 2026-11-21 só lista áudio nos `gemini-4-*` e um
-  `gemini-3.5-transcribe`); a latência real; o preço.
-- **Perguntas da abertura:** o que o pulso pode pedir (só lembrete e nota? o chat inteiro?), se
-  responde por voz (o MAX98357A) ou só por LED, e se o Home Assistant entra como ação.
+  primeiro, depois o ESP32". Vem antes da 15. Decisões da abertura: D70.
+- **Mudou na abertura (respostas do dono, 2026-11-21):** o aparelho **não é de pulso**, fica fixo
+  no estúdio ("quero todas as funções do Viking lá + controle de HA"); responde **por voz, no
+  alto-falante do laptop de casa** até o amplificador chegar; botão externo já, palavra de ativação
+  depois ("é o perfeito para mim"); a voz alcança **tudo**, "sem senha também", com um jeito de
+  desligar; o HA é **Container (Docker)**, sem add-ons.
+- **Entrega:** segurar o botão, falar, ouvir a resposta no laptop. "Liga a luz do estúdio" é do HA
+  (local, sem nuvem); o resto vai ao Viking; um e-mail para outra pessoa pede **dois toques no
+  botão**; o interruptor "Viking voz" do HA desligado corta tudo antes da nuvem.
+- **O desenho (D70):**
+  - firmware próprio (Arduino-ESP32 3.x, como o teste do mic) em `/root/esp32/projects/viking-voz`:
+    grava enquanto o botão está apertado e manda o WAV à ponte por HTTPS na rede de casa, com o
+    certificado da ponte fixado e um token do aparelho (`src/segredos.h`, fora do git);
+  - a ponte `viking casa` (`src/lifeos/casa/`) no laptop: confere o interruptor do HA, transcreve
+    pelo motor, tenta o HA local (`/api/conversation/process`, agente `conversation.home_assistant`)
+    e só no `no_intent_match` chama o turno do Viking; toca a resposta com `aplay`;
+  - o motor ganha `/voz/ouvir`, `/voz/responder`, `/voz/falar` e `/voz/saude`, só para a conta
+    `viking-casa@` (e ela só nessas); o canal "voz" tira a busca na web (os termos do Grounding
+    mandam *mostrar* as sugestões) e liga o `interativo` pelo canal, porque o botão é o canal
+    físico de aprovação;
+  - a `viking-casa@` só invoca; a chave é um par gerado **no laptop**, e só o certificado público
+    sobe ao Google (`keys upload`); `scripts/nuvem.py casa-cortar` a desliga em segundos.
+- **O plano por checkpoints:** `PROGRESSO.md`.
 - **O que já existe, medido em 2026-11-21 (antes da abertura):**
   - **Um workspace de firmware no próprio VPS, `/root/esp32`** (git próprio, branch `main`; o
     `CLAUDE.md` e o `README.md` de lá são as regras). A VPS compila e **grava a XIAO que está
@@ -1256,6 +1260,32 @@ O que estava escrito na abertura:
     e um túnel ("opentunnel") instalados, sempre ligado. A conferir na abertura: o VPS alcança esse
     laptop? Por qual caminho? Ele roda Python 3.12? Qual é o túnel exatamente? O ESP32 e o laptop
     ficam na mesma rede Wi-Fi?
+
+
+## Sessão H1b — o som no aparelho e a fala mais rápida (criada em 2026-11-21, na abertura da H1)
+
+- **Quando:** o MAX98357A chegar (o dono vai comprar: um só basta para voz, fonte USB de 5 V e 2 A).
+- **Entrega:** a resposta sai do próprio aparelho (I2S para o MAX98357A; os dois alto-falantes do
+  Acer em série se forem de 4 Ω cada, conferido na etiqueta ou no multímetro antes de ligar).
+- **Junto:** "pensar enquanto fala" (o turno do Gemini em streaming, falando frase a frase enquanto
+  gera), se a latência medida na H1 incomodar.
+
+## Sessão H2 — a palavra de ativação (criada em 2026-11-21, na abertura da H1)
+
+- **Entrega:** "Hey Viking" acorda o aparelho sem o botão (o botão continua, e os dois toques
+  continuam sendo a aprovação).
+- **Como:** pelas skills `tinyml-keyword-spotting`, `edge-model-deployment` e
+  `ml-experiment-discipline` do `/root/esp32` (dataset com o INMP441 final, split por gravação,
+  falsas ativações por hora como a métrica). Comparar com o microWakeWord do ESPHome antes de
+  treinar do zero.
+
+## Sessão H3 — o Viking mandando no Home Assistant (criada em 2026-11-21, na abertura da H1)
+
+- **Entrega:** o chat (Mac, e depois o app) e as frases compostas ("apaga tudo e me lembra
+  amanhã") alcançam o HA pelo Viking, não só pelo reconhecimento local do HA.
+- **Ideia, a medir:** a ponte de casa como "mãos" do HA (como o `viking maos` do navegador): uma
+  intenção tipada e de uma lista fechada de domínios, executada no laptop pela API REST local;
+  nunca o HA aberto para a internet.
 
 ## Sessão 15 — coach 1: registrar (planejada em 2026-09-28)
 
