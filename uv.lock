@@ -1098,6 +1098,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+casa = [
+    { name = "cryptography" },
+    { name = "requests" },
+    { name = "starlette" },
+    { name = "uvicorn" },
+]
 dev = [
     { name = "mypy" },
     { name = "pytest" },
@@ -1114,6 +1120,7 @@ nuvem = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cryptography", marker = "extra == 'casa'" },
     { name = "fastmcp" },
     { name = "google-api-python-client" },
     { name = "google-auth" },
@@ -1125,11 +1132,14 @@ requires-dist = [
     { name = "pyserial", marker = "extra == 'hardware'" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
+    { name = "requests", marker = "extra == 'casa'" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "starlette", marker = "sys_platform == 'linux' and extra == 'nuvem'" },
+    { name = "starlette", marker = "extra == 'casa'" },
     { name = "uvicorn", marker = "sys_platform == 'linux' and extra == 'nuvem'" },
+    { name = "uvicorn", marker = "extra == 'casa'" },
 ]
-provides-extras = ["dev", "nuvem", "hardware"]
+provides-extras = ["dev", "nuvem", "hardware", "casa"]
 
 [[package]]
 name = "markdown-it-py"

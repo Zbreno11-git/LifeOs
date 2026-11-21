@@ -752,6 +752,22 @@ def main() -> None:
     )
     modo_documentos.add_argument("--desfazer", metavar="ID", help="Devolve um esquecido ou trocado")
     documentos_cli.add_argument("--tema", help="Com --aprender: o tema (treino, python…)")
+    casa_cli = subparsers.add_parser(
+        "casa", help="A ponte da voz do estúdio, no laptop de casa (serve; --preparar, --conferir)"
+    )
+    modo_casa = casa_cli.add_mutually_exclusive_group()
+    modo_casa.add_argument(
+        "--preparar", action="store_true", help="Gera aqui a chave da conta, o HTTPS e o token"
+    )
+    modo_casa.add_argument("--conferir", action="store_true", help="Mede tudo, sem gastar")
+    modo_casa.add_argument("--chave-id", metavar="ID", help="O id que o casa-chave do VPS mostrou")
+    casa_cli.add_argument(
+        "--nome",
+        action="append",
+        default=[],
+        metavar="NOME",
+        help="Com --preparar: outro nome ou IP do laptop no certificado (além de <host>.local)",
+    )
     registro_cli = subparsers.add_parser(
         "registro", help="O que o Viking fez (até 30 dias) e desfazer no calendário"
     )
@@ -791,6 +807,14 @@ def main() -> None:
 
         registro.ORIGEM.set("maos")  # as tarefas do navegador, no registro do Mac (D57)
         sys.exit(mac.iniciar())
+    elif args.command == "casa":
+        from lifeos.casa import terminal as casa
+
+        if args.preparar:
+            sys.exit(casa.preparar(args.nome))
+        if args.chave_id:
+            sys.exit(casa.gravar_chave_id(args.chave_id))
+        sys.exit(casa.conferir() if args.conferir else casa.servir())
     elif args.command == "mcp-server":
         from lifeos.mcp_server.server import main as run_server
 

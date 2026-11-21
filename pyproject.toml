@@ -28,6 +28,9 @@ nuvem = [
     "uvicorn; sys_platform == 'linux'",
 ]
 hardware = ["pyserial"]
+# A ponte de casa da voz do estúdio (Sessão H1, D70): roda no laptop de casa (Debian), serve o
+# aparelho por HTTPS e fala com o motor. Sem Firestore: ela nunca toca o banco.
+casa = ["starlette", "uvicorn", "cryptography", "requests"]
 
 [project.scripts]
 viking = "lifeos.cli:main"
