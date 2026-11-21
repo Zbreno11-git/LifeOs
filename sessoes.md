@@ -16,9 +16,11 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **14b — manutenção** (aberta em 2026-11-21, depois da mini-auditoria), depois a
-  **H1 — voz pelo pulso** (o ESP32 pelo servidor de casa; reabre a D2) e então a **15 — coach 1**.
-  A 14 fechou no Mac em 2026-10-09 (D68). A 11b (formulários) segue na fila, sem posição decidida.
+- **Sessão:** **H1 — voz pelo pulso** (o ESP32 pelo servidor de casa; reabre a D2), depois a
+  **15 — coach 1**. A 14b (a manutenção da mini-auditoria) fechou no Mac em 2026-11-21; a 14, em
+  2026-10-09 (D68). A 11b (formulários) segue na fila, sem posição decidida.
+- **Pendente da 14b, sem travar a H1:** a política de alerta do backup só pode nascer depois de
+  2026-11-22 ~22:20Z (`python scripts/nuvem.py --executar alertas`, e então 15 ✅).
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
@@ -1198,7 +1200,7 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** medir na abertura um leitor de PDF só com wheel (a árvore e o Mac
   Intel, se ler lá). Nenhum candidato aprovado ainda.
 
-## Sessão 14b — manutenção da mini-auditoria (criada e feita em 2026-11-21; no ar, falta o Mac)
+## Sessão 14b — manutenção da mini-auditoria (criada, feita e testada no Mac em 2026-11-21)
 
 - **Por quê:** a mini-auditoria de 2026-11-21 (`docs/auditorias/mini-auditoria-2026-11-21.md`)
   achou, depois de 43 dias sem push: 20 vulnerabilidades em 8 pacotes da imagem (a `certifi`

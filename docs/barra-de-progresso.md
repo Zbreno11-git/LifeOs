@@ -7,16 +7,16 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-11-21 (Sessão 14b no ar; falta o seu Mac).**
+**Última atualização: 2026-11-21 (Sessão 14b fechada no seu Mac).**
 
-`██████████████░░░░░░ 25 de 36 sessões fechadas` (+ a 14b parcial)
+`██████████████░░░░░░ 26 de 36 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b e 14; parcial: 14b (no ar, falta o Mac); na fila: H1
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14 e 14b; parciais: nenhuma; na fila: H1
 (voz pelo pulso), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total
 passou de 33 para 36 em 2026-11-21: a 14b (manutenção), a H1 e a sessão final.
 
-## 2026-11-21 — Sessão 14b: a manutenção depois de 43 dias parado (no ar; falta o seu Mac)
+## 2026-11-21 — Sessão 14b: a manutenção depois de 43 dias parado (fechada no seu Mac)
 
 **Por que ela existiu:** uma conferência rápida, que só leu e não mudou nada, achou seis coisas
 que estragaram em silêncio enquanto ninguém mexia no projeto. Todas estão consertadas:
@@ -36,8 +36,10 @@ que estragaram em silêncio enquanto ninguém mexia no projeto. Todas estão con
 - **Os testes não rodavam sem um push.** Agora rodam sozinhos toda segunda, e se algo quebrar o
   GitHub te manda e-mail.
 
-**Para fechar no seu Mac:** a biblioteca nova do Gemini também chega ao `viking chat` daí. São
-três comandos (`git pull`, `uv sync` e a suíte) e uma pergunta ao chat, que eu te passo prontos.
+**Fechada no seu Mac (2026-11-21, ~22:30 UTC):** a suíte deu 2.717 testes passando e 468 pulados
+(as peças da nuvem), o fuso do Mac foi trocado para São Paulo, e o `viking chat` respondeu "amanhã
+é domingo, 22 de novembro; agora são 19:30", o horário certo de Brasília, com a biblioteca nova do
+Gemini (~US$ 0,003).
 
 ## 2026-10-09 — Sessão 14: o Viking lê os seus documentos (fechada no seu Mac)
 

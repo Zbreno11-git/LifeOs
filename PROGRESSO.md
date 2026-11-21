@@ -5,27 +5,23 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-21 ~21:25Z: a 14b no ar; faltam a política do backup (amanhã) e o Mac; o repo já é público
+## ▶️ RETOMAR AQUI — 2026-11-21 22:31Z: a 14b fechada no Mac (26 de 36); a próxima é a H1
 
 **Estado (medido em 2026-11-21):**
-- **No ar:** o motor e as finanças em `b56942f` (deploy às 21:17Z, com o ok do dono): 36 ✅ e
-  0 ❌, `VIKING_TIMEZONE=America/Sao_Paulo`, nenhum minuto do envio perdido.
-- **`nuvem.py`:** `editor` ✅, removido às 21:14Z com o ok. Em `alertas`, a métrica
-  `viking_agendador_ok` (criada às 21:17Z; recebe pontos, lido na API do Monitoring às 21:22Z) e o
-  canal de e-mail existem; a política do envio existe desde 21:37Z (a 1ª tentativa, às 21:33Z,
-  foi recusada pela API: duração zero; consertado no código). A do backup **só depois de
-  2026-11-22 ~22:20Z** (a métrica tem de viver 25 h):
-  `python scripts/nuvem.py --executar alertas`, e então `python scripts/nuvem.py` → 15 ✅.
-- **Portões:** suíte `3183 passed`; pip-audit 0; ruff, format, mypy e gitleaks limpos; CI do
-  `b56942f` em `success`.
-- **Falta:**
-  2. o Mac: `git pull`, `uv sync --locked --extra dev`, `python -m pytest`, e uma pergunta no
-     `viking chat` (o `google-genai` 3 chega ao chat local), mais o `VIKING_TIMEZONE` do `.env`
-     de lá;
-  3. perguntar se os resumos de segunda chegaram;
-  4. (opcional, gasta ~US$ 0,001) `python scripts/nuvem.py prova-chat`: o primeiro turno real
-     com o `google-genai` 3 no ar.
-- **Depois da 14b:** a H1 (o ESP32 pelo servidor de casa), aberta pela `software-build`.
+- **No ar:** o motor e as finanças em `b56942f` (36 ✅), o fuso em SP; `editor` ✅. Em `alertas`,
+  a métrica, o canal e a política do envio existem; **falta a do backup**, que só pode nascer
+  depois de 2026-11-22 ~22:20Z (`python scripts/nuvem.py --executar alertas` → 15 ✅).
+- **No Mac (~22:30Z):** o repo em `~/Desktop/LifeOs` (não `~/LifeOs`; erros, classe 1). Havia lá um
+  conserto local do `T0`, igual ao do GitHub, guardado em `git stash` ("conserto local do T0…"), e
+  uma venv mais nova que o lock antigo (`google-genai` 3.3.0): alguém trabalhou no Mac depois da 14
+  sem commit; perguntar ao dono. A suíte do Mac deu `2717 passed, 468 skipped` (= 3185);
+  `VIKING_TIMEZONE=America/Sao_Paulo`; `viking chat`: "amanhã é domingo, 22 de novembro; agora são
+  19:30", certo (o VPS: 19:31 -03), ~US$ 0,003, com o `google-genai` 3.6.1 e `v1beta`.
+- **O repo é público** desde ~21:43Z (D58 item 3 revisto).
+- **Sem resposta do dono:** se os resumos de segunda chegaram; se pode rodar `prova-chat` na nuvem.
+
+**Próximo passo:** abrir a H1 pela `software-build` (a seção H1 de `sessoes.md`; o relatório do
+ESP32 da abertura de 2026-11-21 está resumido lá).
 
 ### Plano — Sessão 14b: manutenção (a mini-auditoria de 2026-11-21)
 
@@ -106,7 +102,7 @@ O motor e as finanças estão no ar num commit novo, com:
 | C1 | lock atualizado: pip-audit 0, suíte verde (o CI pelo SHA no push) | C2 | ✅ |
 | C2 | o teste da data consertado e a varredura de outras bombas feita (a +120 dias achou a 2ª: a tarifa do forte dobra em 2027-01-01) | C0 | ✅ |
 | C3 | o fuso trocado e a prova do valor no `deploy` (o `.env` do VPS em SP; o no ar troca no deploy do C7) | C0 | ✅ |
-| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | 🟡 a métrica, o canal e a política do envio (21:37Z); a do backup depois de 2026-11-22 ~22:20Z |
+| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | 🟡 (pendente sem travar a H1) a métrica, o canal e a política do envio (21:37Z); a do backup depois de 2026-11-22 ~22:20Z |
 | C5 | o passo `editor` medido e executado com o ok | C0 | ✅ |
 | C6 | o CI semanal (`schedule`, segunda 12:00Z) | C0 | ✅ |
 | C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ✅ (`b56942f`, 36 ✅) |

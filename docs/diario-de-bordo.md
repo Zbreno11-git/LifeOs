@@ -1046,7 +1046,7 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
-### 2026-11-21 — Sessão 14b: a mini-auditoria e a manutenção (no ar; falta o Mac)
+### 2026-11-21 — Sessão 14b fechada no Mac: a mini-auditoria e a manutenção
 
 **Por quê:** 43 dias sem push. A mini-auditoria (`docs/auditorias/mini-auditoria-2026-11-21.md`,
 18:23–18:35Z, só leitura) achou a nuvem verde (13 ✅, 34 ✅), mas com seis problemas:
@@ -1091,8 +1091,13 @@ lock). ruff, format, mypy e gitleaks limpos. CI do `b56942f` em `success`.
   `tests/`, e foi o `ruff check` seguinte que mostrou o resto; restaurado do commit.
 - **Classe 4:** as duas datas fixas.
 
+**No Mac (~22:30Z):** o repo mora em `~/Desktop/LifeOs`; o primeiro roteiro foi para `~/LifeOs` e
+seguiu depois do `cd` que falhou (erros, classe 1). Lá havia o mesmo conserto do `T0`, sem commit
+(guardado em `git stash`), e uma venv mais nova que o lock antigo. A suíte deu `2717 passed,
+468 skipped`; `VIKING_TIMEZONE` passou para SP; o `viking chat` respondeu o dia e a hora certos de
+Brasília, com o `google-genai` 3.6.1 (~US$ 0,003).
+
 **Falta:**
-- **O Mac:** `uv sync` com o `google-genai` 3 no chat local, e a suíte.
 - **A política do backup:** só pode nascer depois de ~2026-11-22 22:15Z, com
   `python scripts/nuvem.py --executar alertas`.
 
