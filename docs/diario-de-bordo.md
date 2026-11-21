@@ -1081,7 +1081,7 @@ segunda vez; terminou sem estrago).
 - **O deploy às 21:17Z**, com o ok do dono: motor e finanças em `b56942f`, **36 ✅ e 0 ❌**, o fuso
   `America/Sao_Paulo` no ar, e nenhum minuto do envio de lembretes perdido.
 
-**O repo virou público às 21:44Z** (D58 item 3 revisto, decisão do dono), depois do gitleaks no histórico inteiro limpo; volta a privado na "Sessão final".
+**O repo virou público às ~21:43Z** (D58 item 3 revisto, decisão do dono), depois do gitleaks no histórico inteiro limpo; volta a privado na "Sessão final".
 
 **Medido:** suíte `3183 passed` (o `test_lock` tem 36 casos a menos: são 10 pacotes a menos no
 lock). ruff, format, mypy e gitleaks limpos. CI do `b56942f` em `success`.

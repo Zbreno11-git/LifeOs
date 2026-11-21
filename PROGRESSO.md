@@ -110,7 +110,7 @@ O motor e as finanças estão no ar num commit novo, com:
 | C5 | o passo `editor` medido e executado com o ok | C0 | ✅ |
 | C6 | o CI semanal (`schedule`, segunda 12:00Z) | C0 | ✅ |
 | C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ✅ (`b56942f`, 36 ✅) |
-| C8 | o repo público, depois do último push da sessão | C7 | ✅ (21:44Z; gitleaks no histórico inteiro limpo antes) |
+| C8 | o repo público, depois do último push da sessão | C7 | ✅ (~21:43Z; gitleaks no histórico inteiro limpo antes) |
 
 #### Fase 1 — o código
 
