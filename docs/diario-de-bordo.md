@@ -1081,6 +1081,8 @@ segunda vez; terminou sem estrago).
 - **O deploy às 21:17Z**, com o ok do dono: motor e finanças em `b56942f`, **36 ✅ e 0 ❌**, o fuso
   `America/Sao_Paulo` no ar, e nenhum minuto do envio de lembretes perdido.
 
+**O repo virou público às 21:44Z** (D58 item 3 revisto, decisão do dono), depois do gitleaks no histórico inteiro limpo; volta a privado na "Sessão final".
+
 **Medido:** suíte `3183 passed` (o `test_lock` tem 36 casos a menos: são 10 pacotes a menos no
 lock). ruff, format, mypy e gitleaks limpos. CI do `b56942f` em `success`.
 
@@ -1093,7 +1095,6 @@ lock). ruff, format, mypy e gitleaks limpos. CI do `b56942f` em `success`.
 - **O Mac:** `uv sync` com o `google-genai` 3 no chat local, e a suíte.
 - **A política do backup:** só pode nascer depois de ~2026-11-22 22:15Z, com
   `python scripts/nuvem.py --executar alertas`.
-- **O repo público:** C8, por decisão do dono.
 
 ### 2026-10-09 — Sessão 14 fechada no Mac: os documentos (o dono manda um arquivo por tema, o Viking consulta e cita)
 

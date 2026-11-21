@@ -1470,7 +1470,8 @@ podia dizer o que aquele código foi (limpeza de quando, quantos e-mails).
 
 - **Quando:** quando o Viking for para o Home Assistant, ou antes, se o dono fizer algo comercial
   (decisão do dono em 2026-11-21, ao tornar o repo público na 14b; D58 revista, item 3).
-- **Faz:** `gh repo edit Zbreno11-git/LifeOs --visibility private
-  --accept-visibility-change-consequences`; o `AGENTS.md` volta a dizer que o scanner de segredos
+- **Faz:** `gh repo edit Zbreno11-git/LifeOs --visibility private` (o `gh` 2.45 do VPS não tem
+  a flag `--accept-visibility-change-consequences`, que as versões novas pedem; medido em
+  2026-11-21 ao tornar público); o `AGENTS.md` volta a dizer que o scanner de segredos
   do GitHub não roda no privado (o gitleaks segue no CI e no hook).
 - **Ressalva:** forks e caches de enquanto o repo foi público não voltam.

@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-21 ~21:25Z: a 14b no ar; faltam a política do backup (amanhã), o Mac e o repo público
+## ▶️ RETOMAR AQUI — 2026-11-21 ~21:25Z: a 14b no ar; faltam a política do backup (amanhã) e o Mac; o repo já é público
 
 **Estado (medido em 2026-11-21):**
 - **No ar:** o motor e as finanças em `b56942f` (deploy às 21:17Z, com o ok do dono): 36 ✅ e
@@ -19,7 +19,6 @@
 - **Portões:** suíte `3183 passed`; pip-audit 0; ruff, format, mypy e gitleaks limpos; CI do
   `b56942f` em `success`.
 - **Falta:**
-  1. o C8 (o repo público, decisão do dono), depois do último push;
   2. o Mac: `git pull`, `uv sync --locked --extra dev`, `python -m pytest`, e uma pergunta no
      `viking chat` (o `google-genai` 3 chega ao chat local), mais o `VIKING_TIMEZONE` do `.env`
      de lá;
@@ -111,7 +110,7 @@ O motor e as finanças estão no ar num commit novo, com:
 | C5 | o passo `editor` medido e executado com o ok | C0 | ✅ |
 | C6 | o CI semanal (`schedule`, segunda 12:00Z) | C0 | ✅ |
 | C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ✅ (`b56942f`, 36 ✅) |
-| C8 | o repo público, depois do último push da sessão | C7 | ⬜ |
+| C8 | o repo público, depois do último push da sessão | C7 | ✅ (21:44Z; gitleaks no histórico inteiro limpo antes) |
 
 #### Fase 1 — o código
 
