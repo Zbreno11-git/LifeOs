@@ -57,6 +57,8 @@ _ESCRITAS = {
     "add-iam-policy-binding",
     "remove-iam-policy-binding",
     "deploy",
+    "upload",
+    "disable",
 }
 
 
@@ -972,6 +974,9 @@ def test_contas_sem_o_dono_no_token_das_maos_nao_esta_pronta(nuvem, ctx, monkeyp
     [
         ({"cli", "maos"}, True),
         ({"cli", "maos", "agendador"}, True),
+        ({"cli", "maos", "agendador", "casa"}, True),
+        ({"cli", "maos", "casa"}, True),
+        ({"casa"}, False),
         ({"cli"}, False),
         ({"maos", "agendador"}, False),
         ({"cli", "maos", "motor"}, False),
@@ -1765,3 +1770,176 @@ def test_sem_dado_como_alarme_pede_duracao(nuvem):
         ]
         assert limiar["evaluationMissingData"] == "EVALUATION_MISSING_DATA_ACTIVE"
         assert int(limiar["duration"].removesuffix("s")) >= 60
+
+
+# --- a ponte de casa da voz do estúdio (Sessão H1, D70) ----------------------------------------
+
+CASA = "serviceAccount:viking-casa@viking-teste.iam.gserviceaccount.com"
+
+
+def _mundo_da_casa(*, conta=True, papel=None, invoca=True, chaves=(), cortada=False):
+    respostas = {
+        "projects get-iam-policy": {
+            "bindings": [{"role": papel, "members": [CASA]}] if papel else []
+        },
+        "run services get-iam-policy motor": {
+            "bindings": [{"role": "roles/run.invoker", "members": [CASA] if invoca else []}]
+        },
+        "iam service-accounts keys list": [{"keyOrigin": o} for o in chaves],
+    }
+    if conta:
+        respostas["iam service-accounts describe"] = {"disabled": cortada}
+    return _Gravador(respostas)
+
+
+@pytest.mark.parametrize(
+    ("mundo", "pronto", "trecho"),
+    [
+        ({"conta": False}, False, "falta a conta"),
+        ({"papel": "roles/editor"}, False, "papel no projeto"),
+        ({"invoca": False}, False, "não invoca"),
+        ({"chaves": ("GOOGLE_PROVIDED",)}, False, "não nasceram no laptop"),
+        ({"chaves": ("USER_PROVIDED",) * 3}, False, "no máximo 2"),
+        ({}, True, "sem chave ainda"),
+        ({"chaves": ("USER_PROVIDED",)}, True, "1 chave(s) do laptop"),
+        ({"chaves": ("USER_PROVIDED",), "cortada": True}, True, "CORTADA"),
+    ],
+)
+def test_a_casa_e_medida(nuvem, ctx, monkeypatch, mundo, pronto, trecho):
+    monkeypatch.setattr(nuvem, "_rodar", _mundo_da_casa(**mundo))
+    estado = nuvem._m_casa(ctx)
+    assert estado.pronto is pronto and trecho in estado.detalhe, estado.detalhe
+
+
+def test_a_casa_nasce_sem_papel_no_projeto_e_so_invoca_o_motor(nuvem, ctx, monkeypatch):
+    monkeypatch.setattr(nuvem, "_rodar", _Gravador())
+    criar, invocar = nuvem._c_casa(dataclasses.replace(ctx, prontos=frozenset({"contas"})))
+    assert criar[:5] == ["gcloud", "iam", "service-accounts", "create", "viking-casa"]
+    assert invocar[:5] == ["gcloud", "run", "services", "add-iam-policy-binding", "motor"]
+    assert "--role=roles/run.invoker" in invocar and f"--member={CASA}" in invocar
+    assert not any(c[1] == "projects" for c in nuvem._c_casa(ctx))
+
+
+def test_a_casa_depois_das_contas_e_por_ultimo(nuvem):
+    (passo,) = [p for p in nuvem.PASSOS if p.nome == "casa"]
+    assert passo.depende == ("contas",) and nuvem.PASSOS[-1] is passo
+
+
+def _certificado(tmp_path, *, bits=2048, rsa_=True, com_privada=False):
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa
+    from cryptography.x509.oid import NameOID
+
+    chave = (
+        rsa.generate_private_key(public_exponent=65537, key_size=bits)
+        if rsa_
+        else ec.generate_private_key(ec.SECP256R1())
+    )
+    nome = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "unused")])
+    agora = datetime.now(UTC)
+    certificado = (
+        x509.CertificateBuilder()
+        .subject_name(nome)
+        .issuer_name(nome)
+        .public_key(chave.public_key())
+        .serial_number(1)
+        .not_valid_before(agora)
+        .not_valid_after(agora + timedelta(days=365))
+        .sign(chave, hashes.SHA256())
+    )
+    pem = certificado.public_bytes(serialization.Encoding.PEM)
+    if com_privada:
+        pem += chave.private_bytes(
+            serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        )
+    arquivo = tmp_path / "casa-publica.pem"
+    arquivo.write_bytes(pem)
+    return arquivo
+
+
+def test_o_certificado_do_laptop_e_conferido(nuvem, tmp_path):
+    impressao = nuvem.conferir_certificado(_certificado(tmp_path))
+    assert len(impressao.split(":")) == 32
+
+
+@pytest.mark.parametrize(
+    ("mudanca", "trecho"),
+    [
+        ({"com_privada": True}, "CHAVE PRIVADA"),
+        ({"bits": 1024}, "2048"),
+        ({"rsa_": False}, "RSA"),
+    ],
+)
+def test_o_certificado_errado_e_recusado(nuvem, tmp_path, mudanca, trecho):
+    with pytest.raises(ValueError, match=trecho):
+        nuvem.conferir_certificado(_certificado(tmp_path, **mudanca))
+
+
+def test_lixo_nao_e_certificado(nuvem, tmp_path):
+    lixo = tmp_path / "x.pem"
+    lixo.write_text("oi")
+    with pytest.raises(ValueError, match="X.509"):
+        nuvem.conferir_certificado(lixo)
+
+
+def test_casa_chave_sem_executar_so_mostra(nuvem, ctx, monkeypatch, tmp_path, capsys):
+    gravador = _mundo_da_casa()
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem.casa_chave(ctx, _certificado(tmp_path), executar=False) == 0
+    assert {_verbo(c) for c in gravador.comandos} <= _LEITURAS
+    assert "Nada foi mudado" in capsys.readouterr().out
+
+
+def test_casa_chave_sobe_o_arquivo_pelo_caminho(nuvem, ctx, monkeypatch, tmp_path):
+    gravador = _mundo_da_casa()
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    certificado = _certificado(tmp_path)
+    nuvem.casa_chave(ctx, certificado, executar=True)
+    (upload,) = [c for c in gravador.comandos if "upload" in c]
+    assert str(certificado) in upload
+    assert "--iam-account=viking-casa@viking-teste.iam.gserviceaccount.com" in upload
+    assert not any("BEGIN" in a for a in upload)  # o conteúdo nunca no argv
+
+
+def test_casa_chave_recusa_a_terceira(nuvem, ctx, monkeypatch, tmp_path):
+    gravador = _mundo_da_casa(chaves=("USER_PROVIDED", "USER_PROVIDED"))
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem.casa_chave(ctx, _certificado(tmp_path), executar=True) == 1
+    assert not any("upload" in c for c in gravador.comandos)
+
+
+def test_casa_chave_com_a_privada_nao_sobe_nada(nuvem, ctx, monkeypatch, tmp_path):
+    gravador = _mundo_da_casa()
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem.casa_chave(ctx, _certificado(tmp_path, com_privada=True), executar=True) == 1
+    assert gravador.comandos == []
+
+
+@pytest.mark.parametrize(("religar", "verbo"), [(False, "disable"), (True, "enable")])
+def test_o_corte_de_emergencia(nuvem, ctx, monkeypatch, religar, verbo):
+    gravador = _Gravador()
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem.casa_corte(ctx, religar, executar=False) == 0
+    assert gravador.comandos == []
+    assert nuvem.casa_corte(ctx, religar, executar=True) == 0
+    (comando,) = gravador.comandos
+    assert comando[1:4] == ["iam", "service-accounts", verbo]
+    assert "viking-casa@viking-teste.iam.gserviceaccount.com" in comando
+
+
+def test_main_leva_os_subcomandos_da_casa(nuvem, ctx, monkeypatch, tmp_path):
+    vistos = []
+    monkeypatch.setattr(nuvem, "_contexto", lambda **_k: ctx)
+    monkeypatch.setattr(nuvem, "casa_corte", lambda _c, r, e: vistos.append(("corte", r, e)) or 0)
+    monkeypatch.setattr(nuvem, "casa_chave", lambda _c, p, e: vistos.append(("chave", p, e)) or 0)
+    nuvem.main(["casa-cortar", "--executar"])
+    nuvem.main(["casa-religar"])
+    nuvem.main(["casa-chave", str(tmp_path / "c.pem")])
+    assert vistos == [
+        ("corte", False, True),
+        ("corte", True, False),
+        ("chave", tmp_path / "c.pem", False),
+    ]

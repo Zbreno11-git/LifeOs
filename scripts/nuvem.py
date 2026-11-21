@@ -10,6 +10,8 @@ O ok do dono vem antes, na conversa, passo a passo: criar recurso ou gastar é d
     python scripts/nuvem.py deploy --executar     (constrói, envia, publica e prova)
     python scripts/nuvem.py segredo NOME [--executar]  (mede; ou sobe a versão pela entrada padrão)
     python scripts/nuvem.py prova-chat [MENSAGEM]      (um turno real no ar: gasta, só quando pedido)
+    python scripts/nuvem.py casa-chave CERT.pem [--executar]  (o certificado do laptop de casa)
+    python scripts/nuvem.py casa-cortar|casa-religar [--executar]  (o corte de emergência da voz)
 
 Roda com o login do `gcloud` do VPS, que é a conta do dono e alcança **todos** os projetos dele
 (D47 revista, 2026-09-29). Por isso todo `gcloud` sai de `_gcloud`, que acrescenta
@@ -1087,6 +1089,178 @@ def _c_alertas(ctx: Contexto, agora: datetime | None = None) -> list[list[str]]:
     return comandos
 
 
+# --- a ponte de casa da voz do estúdio (Sessão H1, D70) ----------------------------------------
+
+# O laptop de casa: só invoca o motor, e o motor só a deixa entrar nas rotas `/voz/*`
+# (`motor.QUEM_FALA`). A chave é um par gerado NO laptop: só o certificado público sobe
+# (`casa-chave`), e nenhuma chave gerada pelo Google existe nela (a exceção da D47 é só essa).
+CASA = "viking-casa"
+MAX_CHAVES_DA_CASA = 2  # a de agora e a da próxima rotação
+ORIGEM_DO_LAPTOP = "USER_PROVIDED"
+
+
+def _chaves_da_casa(ctx: Contexto) -> list[dict]:
+    chaves = _ler(
+        _gcloud(
+            ctx,
+            "iam",
+            "service-accounts",
+            "keys",
+            "list",
+            f"--iam-account={ctx.conta(CASA)}",
+            "--managed-by=user",
+        )
+    )
+    return [c for c in chaves or [] if isinstance(c, dict)]
+
+
+def _m_casa(ctx: Contexto) -> Estado:
+    conta = _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(CASA)))
+    if not isinstance(conta, dict):
+        return Estado(False, f"falta a conta {CASA}@")
+    membro = f"serviceAccount:{ctx.conta(CASA)}"
+    projeto = _ler(_gcloud(ctx, "projects", "get-iam-policy", ctx.projeto))
+    papeis = sorted(
+        b["role"] for b in (projeto or {}).get("bindings", []) if membro in b.get("members", [])
+    )
+    if papeis:
+        return Estado(False, f"{CASA}@ tem papel no projeto (não pode): {', '.join(papeis)}")
+    motor = _ler(
+        _gcloud(ctx, "run", "services", "get-iam-policy", SERVICO, f"--region={ctx.regiao}")
+    )
+    if membro not in _membros(motor, "roles/run.invoker"):
+        return Estado(False, f"{CASA}@ ainda não invoca o motor")
+    chaves = _chaves_da_casa(ctx)
+    do_google = [c for c in chaves if c.get("keyOrigin") != ORIGEM_DO_LAPTOP]
+    if do_google:
+        return Estado(
+            False, f"{len(do_google)} chave(s) que não nasceram no laptop: apagar (D47, D70)"
+        )
+    if len(chaves) > MAX_CHAVES_DA_CASA:
+        return Estado(False, f"{len(chaves)} chaves: no máximo {MAX_CHAVES_DA_CASA}")
+    cortada = " — CORTADA (`casa-religar --executar` volta)" if conta.get("disabled") else ""
+    if not chaves:
+        return Estado(
+            True,
+            f"{CASA}@ só invoca, sem chave ainda (o certificado do laptop sobe por `casa-chave "
+            f"CERT --executar`){cortada}",
+        )
+    return Estado(True, f"{CASA}@ só invoca; {len(chaves)} chave(s) do laptop{cortada}")
+
+
+def _c_casa(ctx: Contexto) -> list[list[str]]:
+    """Cria a conta que falta, sem papel nenhum no projeto, e dá a ela só o `run.invoker` do
+    motor (o motor ainda confere a rota: `QUEM_FALA`)."""
+    criar = (
+        "contas" not in ctx.prontos
+        or _ler(_gcloud(ctx, "iam", "service-accounts", "describe", ctx.conta(CASA))) is None
+    )
+    return [
+        *(
+            [
+                _gcloud(
+                    ctx,
+                    "iam",
+                    "service-accounts",
+                    "create",
+                    CASA,
+                    "--display-name=Viking: a ponte de casa (a voz do estúdio)",
+                )
+            ]
+            if criar
+            else []
+        ),
+        _gcloud(
+            ctx,
+            "run",
+            "services",
+            "add-iam-policy-binding",
+            SERVICO,
+            f"--region={ctx.regiao}",
+            f"--member=serviceAccount:{ctx.conta(CASA)}",
+            "--role=roles/run.invoker",
+        ),
+    ]
+
+
+def conferir_certificado(caminho: Path) -> str:
+    """A impressão SHA-256 do certificado X.509 do laptop, se ele for só isso: um certificado
+    com uma chave pública RSA de pelo menos 2048 bits (o que o `keys upload` aceita). Um arquivo
+    com chave privada é recusado alto: a privada nunca sai do laptop."""
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    dados = caminho.read_bytes()
+    if b"PRIVATE KEY" in dados:
+        raise ValueError(
+            "este arquivo tem uma CHAVE PRIVADA: ela não sai do laptop. Mande só o certificado "
+            "(o `casa-publica.pem` do `viking casa --preparar`) e apague a cópia daqui"
+        )
+    try:
+        certificado = x509.load_pem_x509_certificate(dados)
+    except ValueError as exc:
+        raise ValueError("não é um certificado X.509 em PEM") from exc
+    publica = certificado.public_key()
+    if not isinstance(publica, rsa.RSAPublicKey) or publica.key_size < 2048:
+        raise ValueError("o certificado tem de ter uma chave RSA de pelo menos 2048 bits")
+    return certificado.fingerprint(hashes.SHA256()).hex(":")
+
+
+def casa_chave(ctx: Contexto, caminho: Path, executar: bool) -> int:
+    """Confere o certificado do laptop e, com `--executar`, sobe a metade pública (`keys upload`,
+    pelo caminho do arquivo: o conteúdo nunca vai no argv)."""
+    try:
+        impressao = conferir_certificado(caminho)
+    except (OSError, ValueError) as exc:
+        print(f"❌ {exc}", file=sys.stderr)
+        return 1
+    print(f"certificado do laptop: SHA-256 {impressao}")
+    chaves = _chaves_da_casa(ctx)
+    if len(chaves) >= MAX_CHAVES_DA_CASA:
+        print(
+            f"❌ {CASA}@ já tem {len(chaves)} chaves: apague a velha antes "
+            "(`gcloud iam service-accounts keys delete`)",
+            file=sys.stderr,
+        )
+        return 1
+    comando = _gcloud(
+        ctx,
+        "iam",
+        "service-accounts",
+        "keys",
+        "upload",
+        str(caminho),
+        f"--iam-account={ctx.conta(CASA)}",
+    )
+    if not executar:
+        print(f"→ {_legivel(comando)}\nNada foi mudado (sem --executar).")
+        return 0
+    resultado = _rodar(comando)
+    if resultado.returncode != 0:
+        print(resultado.stderr.strip(), file=sys.stderr)
+        return 1
+    estado = _m_casa(ctx)
+    print(f"{'✅' if estado.pronto else '⬜'} casa: {estado.detalhe}")
+    return 0 if estado.pronto else 2
+
+
+def casa_corte(ctx: Contexto, religar: bool, executar: bool) -> int:
+    """O corte de emergência da voz (D70): desliga a conta da casa (o laptop para de conseguir
+    token em segundos; o que já pediu vale até expirar, no máximo 1 h) ou a religa."""
+    verbo = "enable" if religar else "disable"
+    comando = _gcloud(ctx, "iam", "service-accounts", verbo, ctx.conta(CASA))
+    if not executar:
+        print(f"→ {_legivel(comando)}\nNada foi mudado (sem --executar).")
+        return 0
+    resultado = _rodar(comando)
+    if resultado.returncode != 0:
+        print(resultado.stderr.strip(), file=sys.stderr)
+        return 1
+    print(f"✅ {CASA}@ {'religada' if religar else 'CORTADA'}")
+    return 0
+
+
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
     Passo(
@@ -1174,6 +1348,13 @@ PASSOS = (
         _m_alertas,
         _c_alertas,
         depende=("backup",),
+    ),
+    Passo(
+        "casa",
+        "a ponte de casa da voz do estúdio: só invoca, e só nas rotas /voz/* (H1, D70)",
+        _m_casa,
+        _c_casa,
+        depende=("contas",),
     ),
 )
 
@@ -1499,10 +1680,10 @@ def _segredos_so_como_volume(
 
 
 def _invocadores_certos(ctx: Contexto, quem: set[str]) -> bool:
-    """O terminal e as mãos sempre; o agendador@ depois do passo `agendador`; ninguém mais (nem
-    `allUsers`, nem o dono em pessoa, nem o motor@)."""
+    """O terminal e as mãos sempre; o agendador@ depois do passo `agendador` e a casa@ depois do
+    passo `casa`; ninguém mais (nem `allUsers`, nem o dono em pessoa, nem o motor@)."""
     precisam = {f"serviceAccount:{ctx.conta(nome)}" for nome in DO_DONO}
-    podem = precisam | {f"serviceAccount:{ctx.conta(AGENDADOR)}"}
+    podem = precisam | {f"serviceAccount:{ctx.conta(n)}" for n in (AGENDADOR, CASA)}
     return precisam <= quem <= podem
 
 
@@ -1538,7 +1719,7 @@ def provas(
     quem = _membros(politica, "roles/run.invoker")
     resultado.append(
         Prova(
-            "só o viking-cli@, o viking-maos@ (e o viking-agendador@) invocam",
+            "só o viking-cli@, o viking-maos@ (e o viking-agendador@ e o viking-casa@) invocam",
             _invocadores_certos(ctx, quem),
             ", ".join(sorted(quem)) or "ninguém",
         )
@@ -2229,6 +2410,17 @@ def main(argv: list[str]) -> int:
     if argv[:1] == ["prova-financas"]:
         argparse.ArgumentParser(prog="nuvem.py prova-financas").parse_args(argv[1:])
         return prova_financas(_contexto())
+    if argv[:1] == ["casa-chave"]:
+        leitor = argparse.ArgumentParser(prog="nuvem.py casa-chave")
+        leitor.add_argument("certificado", type=Path)
+        leitor.add_argument("--executar", action="store_true")
+        args = leitor.parse_args(argv[1:])
+        return casa_chave(_contexto(), args.certificado, args.executar)
+    if argv[:1] in (["casa-cortar"], ["casa-religar"]):
+        leitor = argparse.ArgumentParser(prog=f"nuvem.py {argv[0]}")
+        leitor.add_argument("--executar", action="store_true")
+        args = leitor.parse_args(argv[1:])
+        return casa_corte(_contexto(so_projeto=True), argv[0] == "casa-religar", args.executar)
     if argv[:1] == ["deploy"]:
         leitor = argparse.ArgumentParser(prog="nuvem.py deploy")
         leitor.add_argument("--executar", action="store_true")
