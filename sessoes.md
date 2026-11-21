@@ -16,9 +16,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **15 — coach 1: registrar.** A 14 fechou no Mac em 2026-10-09 (os documentos no
-  chat da nuvem, por tema, no ar em `56f0807`; D68), depois da 13b (as receitas; D67). A 11b
-  (formulários) segue na fila, sem posição decidida pelo dono.
+- **Sessão:** **14b — manutenção** (aberta em 2026-11-21, depois da mini-auditoria), depois a
+  **H1 — voz pelo pulso** (o ESP32 pelo servidor de casa; reabre a D2) e então a **15 — coach 1**.
+  A 14 fechou no Mac em 2026-10-09 (D68). A 11b (formulários) segue na fila, sem posição decidida.
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
@@ -1198,6 +1198,42 @@ O que estava escrito na abertura:
 - **Libs/repos a reaproveitar:** medir na abertura um leitor de PDF só com wheel (a árvore e o Mac
   Intel, se ler lá). Nenhum candidato aprovado ainda.
 
+## Sessão 14b — manutenção da mini-auditoria (criada e aberta em 2026-11-21)
+
+- **Por quê:** a mini-auditoria de 2026-11-21 (`docs/auditorias/mini-auditoria-2026-11-21.md`)
+  achou, depois de 43 dias sem push: 20 vulnerabilidades em 8 pacotes da imagem (a `certifi`
+  crítica, no TLS de saída), 2 testes vermelhos por data fixa, nenhuma auditoria agendada, nenhum
+  alerta se o envio de lembretes ou o backup parar, o fuso da nuvem ainda em Seattle (o dono já
+  mora em SP) e `roles/editor` na conta padrão do Compute.
+- **Entrega:** o lock atualizado (D45) e no ar; o teste com o relógio real; a prova do valor do
+  fuso no `deploy`; os passos `alertas` (canal de e-mail + 2 políticas de ausência) e `editor` no
+  `scripts/nuvem.py`; o CI semanal; o repo público (D50 revista, decisão do dono).
+- **O plano por checkpoints:** `PROGRESSO.md`.
+
+## Sessão H1 — voz pelo pulso: ESP32 → servidor de casa → motor (criada em 2026-11-21)
+
+- **Reabre a trilha de hardware (D2) por decisão do dono (2026-11-21):** "faz a manutenção
+  primeiro, depois o ESP32". Vem antes da 15.
+- **O que já se sabe (dito pelo dono em 2026-11-21):** XIAO ESP32-S3 **comum** (não a Sense: sem
+  microfone embutido), com o microfone INMP441 (I2S, não I2C) e o amplificador MAX98357A
+  externos, a combinação já escolhida no diário. Um **servidor de casa sempre ligado** (um laptop
+  antigo com Debian, Home Assistant e um túnel instalados) fica entre o aparelho e a nuvem.
+- **Escolhas previstas (a confirmar na abertura):**
+  - o ESP32 fala só com o servidor de casa, pela rede local: nenhuma chave no firmware;
+  - o servidor chama o motor só para fora (nada aberto para a internet), com uma **conta de
+    serviço própria** (`viking-casa@` ou parecido), só de invocar, listada em `QUEM_FALA` só nas
+    rotas do aparelho, revogável; **nunca** o login do gcloud do dono (alcança os outros projetos
+    dele). A credencial dessa conta no laptop é uma decisão da abertura (chave baixada contra a
+    D47, ou federação de identidade);
+  - a voz alcança uma lista curta de tools (a regra da S18), `interativo: false` (nada que pede
+    código), e a fala ambiente é tratada como dado do dono só depois de transcrita do botão;
+  - primeiro marco: botão → grava 5 s → servidor → transcrição devolvida (eco), sem executar nada.
+- **Medir na abertura:** se o `gemini-3.5-flash-lite` aceita áudio ou se a transcrição vai a um
+  modelo próprio (a página de modelos lida em 2026-11-21 só lista áudio nos `gemini-4-*` e um
+  `gemini-3.5-transcribe`); a latência real; o preço.
+- **Perguntas da abertura:** o que o pulso pode pedir (só lembrete e nota? o chat inteiro?), se
+  responde por voz (o MAX98357A) ou só por LED, e se o Home Assistant entra como ação.
+
 ## Sessão 15 — coach 1: registrar (planejada em 2026-09-28)
 
 - **Entrega:** "supino 4x8 80kg" fica guardado estruturado (exercício, séries, repetições,
@@ -1429,3 +1465,12 @@ Pagamentos S.A. - Instituição de Pagamento (Conta Pré-paga)").
 Da Gmail 2 (vistos no Mac, 2026-09-26, só texto): "vamos arquivar esses e-mails" depois de uma
 busca faz o Gemini pedir o remetente de novo; a instrução para um código vivo digitado sem verbo
 podia dizer o que aquele código foi (limpeza de quando, quantos e-mails).
+
+## Sessão final — repo privado de novo (criada em 2026-11-21)
+
+- **Quando:** quando o Viking for para o Home Assistant, ou antes, se o dono fizer algo comercial
+  (decisão do dono em 2026-11-21, ao tornar o repo público na 14b; D50 revista).
+- **Faz:** `gh repo edit Zbreno11-git/LifeOs --visibility private
+  --accept-visibility-change-consequences`; o `AGENTS.md` volta a dizer que o scanner de segredos
+  do GitHub não roda no privado (o gitleaks segue no CI e no hook).
+- **Ressalva:** forks e caches de enquanto o repo foi público não voltam.

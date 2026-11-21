@@ -227,17 +227,20 @@ def test_desfazer_disputado_so_um_leva():
 
 
 def test_contaveis_so_da_operacao_e_sem_as_que_falharam():
-    with registro.acao("gmail.enviar_para_si", {}, agora=T0) as marca:
+    # No relógio real: `contaveis` corta na retenção de 30 dias contada de agora (`_corte`), e
+    # com a data fixa do topo o teste caiu sozinho em 2026-10-27 (mini-auditoria, 14b).
+    agora = datetime.now(UTC)
+    with registro.acao("gmail.enviar_para_si", {}, agora=agora) as marca:
         marca.feito()
-    with pytest.raises(ValueError), registro.acao("gmail.enviar_para_si", {}, agora=T0):
+    with pytest.raises(ValueError), registro.acao("gmail.enviar_para_si", {}, agora=agora):
         raise ValueError("400")
-    with pytest.raises(_Ambigua), registro.acao("gmail.enviar_para_si", {}, agora=T0):
+    with pytest.raises(_Ambigua), registro.acao("gmail.enviar_para_si", {}, agora=agora):
         raise _Ambigua("timed out")
-    with registro.acao("calendario.criar", {}, agora=T0) as marca:
+    with registro.acao("calendario.criar", {}, agora=agora) as marca:
         marca.feito()
-    contadas = registro.contaveis("gmail.enviar_para_si", desde=T0 - timedelta(hours=1))
+    contadas = registro.contaveis("gmail.enviar_para_si", desde=agora - timedelta(hours=1))
     assert [a.estado for a in contadas] == ["feita", "incerta"]
-    assert registro.contaveis("gmail.enviar_para_si", desde=T0 + timedelta(hours=1)) == []
+    assert registro.contaveis("gmail.enviar_para_si", desde=agora + timedelta(hours=1)) == []
 
 
 def test_obter_acha_pelo_id_e_nao_acha_o_que_nao_existe():

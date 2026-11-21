@@ -5,7 +5,247 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-10-09 16:43Z: a 14 fechada (25 de 33); a próxima é a 15 (coach 1: registrar)
+## ▶️ RETOMAR AQUI — 2026-11-21: a 14b (manutenção) aberta; o plano abaixo, aprovado pelo dono
+
+**Estado:** o plano da 14b foi aprovado em 2026-11-21 (~18:50Z). O mapa de checkpoints abaixo é
+a fonte: retomar pelo primeiro ⬜. O Mac não entra nesta sessão (tudo é testável no VPS, e o
+deploy sai daqui com o ok do dono).
+
+### Plano — Sessão 14b: manutenção (a mini-auditoria de 2026-11-21)
+
+#### Context
+
+A mini-auditoria de 2026-11-21 (18:23–18:35Z, só leitura) achou a nuvem toda verde (13 ✅ e 34 ✅),
+mas quatro coisas apodreceram em 43 dias sem push:
+- 20 vulnerabilidades em 8 pacotes que vão para a imagem, com 21 alertas do Dependabot abertos. A
+  `certifi` é crítica e está no TLS de saída do motor.
+- 2 testes vermelhos por uma data fixa (`T0` em `tests/test_registro.py:24`), que saiu da janela de
+  30 dias.
+- Nenhuma auditoria agendada.
+- Nenhum alerta se o envio de lembretes ou o backup parar.
+
+Além disso, o fuso da nuvem ainda é Seattle (o dono já mora no Brasil) e a conta padrão do Compute
+tem `roles/editor`. A sessão entrega o reparo disso tudo, no ar, antes da sessão do ESP32.
+
+#### O que esta sessão entrega (uma frase verificável)
+
+O motor e as finanças estão no ar num commit novo, com:
+- `pip-audit` sem nenhuma vulnerabilidade;
+- a suíte inteira verde;
+- `VIKING_TIMEZONE=America/Sao_Paulo`, conferido por uma prova;
+- dois alertas de ausência ligados ao e-mail do dono;
+- o `roles/editor` removido da conta padrão do Compute;
+- o CI rodando toda segunda sozinho.
+
+#### O que ela NÃO faz (e para onde foi)
+
+- **A ponte ESP32 → servidor de casa → motor** vai para a nova "Sessão H1 — voz pelo pulso". Ela
+  entra no C0, em `sessoes.md`, **antes da 15**, com o que já se sabe: XIAO ESP32-S3 comum (não a
+  Sense), INMP441 + MAX98357A externos, o laptop Debian com Home Assistant e túnel sempre ligado
+  como ponte, e o laptop com uma conta própria, só de invocar, sem o login do dono. Isso reabre a
+  D2 por decisão do dono (2026-11-21).
+- **A 15 (coach 1)** fica intacta e passa para depois da H1.
+- **Os locks dos clones `jev-ultrafast` e `windows-mcp`** não são auditados: ficam como "não
+  verificado" no relatório. O Jev roda só no Mac.
+
+#### Respostas do dono (2026-11-21)
+
+| Pergunta | Resposta | Consequência |
+|---|---|---|
+| Ordem | manutenção primeiro, depois o ESP32 | A 14b agora, a H1 em seguida, a 15 depois |
+| Fuso | já no Brasil (SP) | `VIKING_NUVEM_FUSO=America/Sao_Paulo` no `.env` do VPS, com nova prova do valor; atualizar a memória do Claude e a armadilha "Três fusos" do `AGENTS.md` |
+| Alertas | e-mail do Google Cloud | 1 canal de e-mail + 2 políticas, por um passo novo do `nuvem.py`; o endereço fica no `.env`, nunca no repo |
+| Editor | tirar | um passo novo `editor` no `nuvem.py`, que mede e remove |
+| Deps agendadas | pip-audit semanal no CI | `schedule` no `testes.yml` (a suíte inteira, que também pega bomba-relógio de data) |
+| Visibilidade | "público como está agora"; voltar a privado numa sessão no fim do roteiro, quando o Viking for para o HA | C8 troca para público (D50 revista); a nova "Sessão final — repo privado de novo" escrita no fim de `sessoes.md` no C0 |
+| Ainda sem resposta | os 6 resumos semanais chegaram? | perguntar no fechamento; não trava nada |
+
+#### Decisões técnicas minhas (declaradas)
+
+| Decisão | Por quê | O que me faria mudar |
+|---|---|---|
+| `uv lock --upgrade` inteiro (D45), não só os 8 vulneráveis | é a regra da casa; o dry-run mostra `starlette` 1.7→1.10 e `websockets` 16→17 (versão maior) | a suíte quebrar num pacote: aí prendo só esse e registro o motivo |
+| O teste usa `agora = datetime.now(UTC)` em vez de `T0` | a regra testada (`contaveis` corta na retenção) depende do relógio real por desenho (`registro._corte`) | — |
+| O alerta de ausência mede o **sucesso** do Cloud Scheduler (o log `AttemptFinished` do job, ou uma métrica baseada nele), não o log do motor | as rotas agendadas não logam nada no sucesso (`motor.py:543-570`), e um alerta sobre `log.error` não pega um job que parou | o log real do Scheduler não separar sucesso de falha; aí uma linha INFO estruturada no motor, com teste |
+| A prova nova do deploy compara o **valor** do `VIKING_TIMEZONE` no ar com `_fuso()` | hoje o `deploy` só confere nomes de variáveis (`nuvem.py:1232-1250`) e `em_dia` só olha o commit: trocar o `.env` não seria aplicado e ninguém veria | — |
+| O passo `editor` tem `irreversivel=False` e uma prova de que ninguém usou a conta em 30 dias | é reversível com um `add-iam-policy-binding` | o log de atividade mostrar uso |
+
+#### Medido na abertura (2026-11-21, `date -u` 18:23–18:35Z)
+
+| O quê | Comando | Resultado | Consequência |
+|---|---|---|---|
+| Repo = GitHub | `git rev-list --left-right --count master...origin/master` | `0 0`, HEAD `babe586` | — |
+| No ar | `python scripts/nuvem.py deploy` | `56f0807`, 34 ✅, 0 commits desde nos caminhos da imagem | o deploy desta sessão leva um commit novo |
+| Vulnerabilidades | pip-audit com a invocação do CI | 20 em 8 pacotes (authlib, certifi, dnspython, fastmcp, joserfc, oauthlib, opentelemetry-api, pyasn1) | C1 |
+| Suíte | `python -m pytest -q` | `2 failed, 3198 passed` (os 2 em `test_contaveis_so_da_operacao_e_sem_as_que_falharam`) | C2 |
+| Fuso no ar | `run services describe motor` | `America/Los_Angeles` | C3 |
+| Alertas | `gcloud monitoring policies list` | nenhuma política | C4 |
+| IAM | `projects get-iam-policy` | `roles/editor` → `…-compute@developer` | C5 |
+
+#### Mapa de checkpoints
+
+| C | Fecha quando | Depende de | Estado |
+|---|---|---|---|
+| C0 | a H1 escrita em `sessoes.md` antes da 15; a 14b aberta no `PROGRESSO.md` | — | ✅ |
+| C1 | lock atualizado: pip-audit 0, suíte verde, CI verde pelo SHA | C2 (o teste consertado antes, para a suíte "antes" ser comparável) | ⬜ |
+| C2 | o teste da data consertado e a varredura de outras bombas feita (a +120 dias achou a 2ª: a tarifa do forte dobra em 2027-01-01) | C0 | ✅ |
+| C3 | o fuso trocado e a prova do valor no `deploy` | C0 | ⬜ |
+| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | ⬜ |
+| C5 | o passo `editor` medido e executado com o ok | C0 | ⬜ |
+| C6 | o CI semanal (`schedule`) | C0 | ⬜ |
+| C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ⬜ |
+| C8 | o repo público, depois do último push da sessão | C7 | ⬜ |
+
+#### Fase 1 — o código
+
+### C2 — a bomba-relógio de data (primeiro, para a suíte do C1 começar verde)
+**Faz:** em `tests/test_registro.py:229`, o teste passa a usar `agora = datetime.now(UTC)` no
+lugar de `T0`. Varredura: `grep -n "datetime(2026" tests/` cruzado com quem chama
+`registro.contaveis/obter/recentes/ultima_desfazivel` ou outra janela relativa ao relógio
+(`_corte`, TTLs, "nas últimas 24 h"). Se o `faketime` estiver instalado, uma rodada da suíte a
++120 dias, só para achar (sem `apt install` sem perguntar).
+**✅** `python -m pytest -q` → `3200 passed`.
+**🐞 Previsto → Depurar:** outro teste com a mesma forma, que só cairia depois (erros, classe de
+"teste que passa por motivo errado") → o `grep` acima e a rodada com o relógio adiantado.
+
+### C1 — o lock (D45)
+**Faz:** `uv lock --upgrade` num commit próprio, com a suíte antes (C2 verde) e depois, mais o
+pip-audit com a invocação exata de `.github/workflows/testes.yml:57-58`. Ler as notas de versão da
+`starlette` 1.10 e da `websockets` 17. Conferir o que some do lock (`keyring` e jaraco) e quem
+dependia disso.
+**✅** pip-audit → `No known vulnerabilities found`. Suíte → `3200 passed`. `uv lock --check` ok.
+`ruff`, `format`, `mypy`, `docker build` limpos. CI do SHA → `success`.
+**🐞 Previsto → Depurar:** uma mudança de API na `starlette` ou na `google-genai` que o cliente
+falso dos testes mascara → `python -m pytest tests/test_motor*.py -x`, e a fumaça do motor
+depois do deploy (as provas de `/fumaca/*`).
+
+### C3 — o fuso
+**Faz:** o `.env` do VPS passa a ter `VIKING_NUVEM_FUSO=America/Sao_Paulo`. Edito só essa linha
+por `sed`, sem imprimir o arquivo. Prova nova em `scripts/nuvem.py` (`provas`): o valor do
+`VIKING_TIMEZONE` no ar é igual a `_fuso()`, e `em_dia` passa a considerar o fuso. Teste em
+`tests/test_nuvem_script.py` com o `_Mundo`. Atualizar a armadilha "Três fusos" do `AGENTS.md` e a
+memória `user-fuso-seattle.md`.
+**✅** `python scripts/nuvem.py deploy` antes do deploy → a prova nova ❌ ("no ar Los_Angeles,
+esperado Sao_Paulo"); depois do deploy → ✅.
+**🐞 Previsto → Depurar:** o resumo de segunda e "amanhã" mudarem de hora. É o esperado; conferir
+pelo `estado/resumo-*` da próxima segunda (12:00Z = 9h em SP).
+
+### C4 — os alertas
+**Faz:** primeiro **medir o log real**, só lendo: um `AttemptFinished` de sucesso do
+`viking-lembretes` e do `viking-backup` (`resource.type="cloud_scheduler_job"`), e se há algum de
+falha em 30 dias. Ler a doc oficial de alerta por ausência de métrica (a duração máxima da janela,
+para o backup diário de 26 h). Depois, um passo novo `alertas` em `PASSOS`:
+- `medir`: o canal de e-mail existe e as 2 políticas existem, habilitadas, com o filtro esperado;
+- `comandos`: `monitoring channels create` + uma métrica baseada em log (se precisar) + as
+  `policies create`, com o JSON da política gerado pelo script.
+
+As políticas:
+- lembretes sem sucesso há 15 min;
+- backup sem sucesso há 26 h (ou o máximo que a doc permitir, com a prova "backup < 48 h" do
+  `deploy` cobrindo o resto).
+
+O e-mail vem de `VIKING_NUVEM_ALERTA_EMAIL` no `.env`, com `.env.example` e `AGENTS.md`
+atualizados. A API `monitoring.googleapis.com` entra no passo `apis`, se faltar. Testes:
+- os verbos novos em `_LEITURAS` e `_ESCRITAS` (`tests/test_nuvem_script.py:50-57`);
+- os índices `PASSOS[-N]` dos testes ajustados (`:1058, 1128, 1262`);
+- o JSON da política sem o e-mail;
+- o filtro igual ao medido.
+
+**✅** `python scripts/nuvem.py` → 15 ✅ (13 + `alertas` + `editor`), depois de `--executar
+alertas` **com o ok do dono na hora**.
+**🐞 Previsto → Depurar:** o filtro não casar com o log real (o caso da skill: alerta que nunca
+dispara) → `gcloud logging read` com o filtro exato da política, `--freshness=1h`, que deve
+devolver ~60 linhas do lembretes. Provar o disparo de verdade (pausar o job) **só com a palavra do
+dono**.
+
+### C5 — o editor
+**Faz:** um passo novo `editor`. `medir` lê `get-iam-policy` (reaproveita `_membros`,
+`nuvem.py:321`) e fica ✅ quando a conta padrão não tem `roles/editor`. `comandos`:
+`projects remove-iam-policy-binding --member=serviceAccount:<num>-compute@… --role=roles/editor`.
+Antes: o log de Admin Activity dos últimos 30 dias com essa conta como `principalEmail` (o esperado
+é 0).
+**✅** depois de `--executar editor` com o ok → `editor ✅`, e o `deploy` continua com 34+ ✅ (nada
+dependia dela).
+**🐞 Previsto → Depurar:** um build ou deploy que usava a conta em silêncio → as provas do
+`deploy` e o log de erro de 30 min.
+
+### C6 — o CI semanal
+**Faz:** `schedule: - cron: "0 12 * * 1"` em `.github/workflows/testes.yml`, com
+`tests/test_ci_workflow.py` atualizado (ele prende o arquivo). Ler a doc do GitHub sobre
+workflows agendados desligados depois de 60 dias sem atividade no repo, e registrar isso no
+`AGENTS.md`: é exatamente o caso de agora, então o gatilho de "nenhum push" fica escrito.
+**✅** `python -m pytest tests/test_ci_workflow.py` verde; `gh workflow view testes` mostra o
+`schedule`.
+
+#### Fase 2 — no ar e fechamento
+
+### C7
+1. O CI do último commit pelo SHA → `success`.
+2. `python scripts/nuvem.py deploy` só lendo: mostra o que vai mudar.
+3. **Pedir o ok do dono** e só então `deploy --executar`.
+4. As provas → todas ✅, incluindo a do fuso.
+5. `python scripts/nuvem.py` → 15 ✅.
+
+Mutações: se algum arquivo de `src/` mudar, `tests/test_mutacoes_ancoras.py`. A rodada inteira de
+`scripts/mutacoes.py` só se `src/` mudar numa regra coberta (o plano não prevê isso).
+
+Docs:
+- `docs/diario-de-bordo.md`;
+- `docs/decisoes.md`: D69 (fuso, alertas, editor, CI semanal), com os gatilhos;
+- `docs/erros.md`: a data fixa em teste, e 43 dias sem conferência porque a auditoria só rodava
+  em push;
+- `docs/barra-de-progresso.md`;
+- `sessoes.md`: a 14b riscada, o bloco "▶️" apontando para a H1;
+- `PROGRESSO.md`.
+
+O relatório da mini-auditoria vai para `docs/auditorias/mini-auditoria-2026-11-21.md`. Commit e
+push, e o resumo de 2–3 linhas.
+
+### C8 — o repo público (decisão do dono, 2026-11-21)
+**Faz:** gitleaks no histórico inteiro de novo (`bash scripts/gitleaks.sh git .`, que precisa dar
+"no leaks found") e a busca do e-mail do dono no histórico (0 linhas, como medido na abertura).
+Depois, `gh repo edit Zbreno11-git/LifeOs --visibility public
+--accept-visibility-change-consequences`. A D50 fica revista em `docs/decisoes.md`: público por
+decisão do dono, com o ID do projeto e os detalhes pessoais dos docs aceitos como estão, e o
+gatilho "algo comercial ou o Viking no HA → privado". O `AGENTS.md` deixa de dizer "o repo é
+privado desde 2026-09-29" (no comando do gitleaks), e o scanner de segredos do GitHub volta.
+No C0: a "Sessão final — repo privado de novo" no fim de `sessoes.md`, com o comando e a ressalva
+de que forks e caches de enquanto foi público não voltam.
+**✅** `gh repo view --json visibility -q .visibility` → `PUBLIC`.
+**🐞 Previsto → Depurar:** um dado pessoal num commit que a busca não pegou → aceito pelo dono
+("como está"); só registrar.
+
+#### Verificação ponta a ponta
+
+- `python -m pytest -q` → `3200 passed` (ou mais, com os testes novos).
+- pip-audit → 0.
+- `ruff`, `format`, `mypy` e `gitleaks` limpos.
+- CI pelo SHA → `success`.
+- `python scripts/nuvem.py` → 15 ✅.
+- `python scripts/nuvem.py deploy` → todas as provas ✅, com `VIKING_TIMEZONE=America/Sao_Paulo`
+  no ar.
+- Dependabot: `gh api …/dependabot/alerts` com `state=open` → 0, depois do push.
+- `gcloud logging read` com o filtro de cada política → devolve as linhas de sucesso esperadas.
+- Para o dono, no Mac: `viking chat --nuvem` com "que horas são e que dia é amanhã?" — confere o
+  fuso de SP; gasta ~US$ 0,001, só se ele quiser.
+
+#### Riscos e o que é irreversível
+
+- **O deploy** publica e afeta o envio de lembretes por 1–2 min → pedir ok; as provas logo
+  depois.
+- **A troca de fuso** muda a hora dos lembretes com prazo já criados? Não: o instante é guardado em
+  UTC (`reminders/interface.py`). Muda só a interpretação de pedidos novos e o horário do resumo.
+- **Remover o editor** é reversível com 1 comando → pedir ok.
+- **Criar canal e políticas** é grátis nesse volume (a ler na página de preços do Monitoring
+  antes) → pedir ok.
+- **Tornar o repo público** não se desfaz por inteiro (forks e caches ficam). O dono aceitou; vai
+  por último, depois do último push, para que nada desta sessão entre sem o gitleaks.
+- **Nenhum valor de segredo** e **nenhum e-mail do dono** em commit, log ou saída. Isso vale mais
+  ainda com o repo público: o endereço dos alertas fica só no `.env`.
+
+---
+
+### (o registro) RETOMAR AQUI — 2026-10-09 16:43Z: a 14 fechada (25 de 33); a próxima é a 15 (coach 1: registrar)
 
 **Estado (2026-10-09):**
 - **A 14 fechou no Mac** (a saída devolvida às 16:39Z; D68 "Como ficou"; o diário e a barra têm

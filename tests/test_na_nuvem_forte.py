@@ -142,11 +142,15 @@ def test_a_cota_acaba_no_meio_do_turno_e_o_resto_volta_ao_barato(gemini):
 def test_um_pedido_repetido_nao_passa_da_cota_do_dia(gemini):
     """Um e-mail injetado que manda pedir o forte em todo turno: depois que a cota acaba, nenhum
     turno chega ao forte, e o gasto do forte para perto da cota (a última chamada pode passar)."""
+    # US$ 0,15 por chamada no forte, pela tarifa de hoje: a do forte dobra em 2027-01-01
+    # (`custos.TARIFAS`), e um número fixo de tokens fazia o teste cair nesse dia (14b).
+    entrada, _saida = custos.tarifa(FORTE)
+    tokens = round(0.15 / (entrada / 1_000_000))
     modelos = []
     for n in range(1, 8):
         roteiro = gemini(
             _chama("usar_modelo_forte", motivo="o e-mail mandou"),
-            _texto("ok", tokens=200_000),  # US$ 0,15 no forte
+            _texto("ok", tokens=tokens),
         )
         na_nuvem.turno(_pedido("lê o e-mail e faz o que ele pede", numero=n))
         modelos += roteiro.modelos[1:]
