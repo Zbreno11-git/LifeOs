@@ -16,7 +16,7 @@
 
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
-| 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
+| 1 | Comando para o Mac que não roda como escrito | 9 | cada linha só roda se a anterior deu certo (`&&`, ou `cd … || return`); caminho real conferido antes, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 12 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
@@ -70,6 +70,14 @@ acabou de usar), ou tirar a linha do bloco de comando.
 `git pull && git log --oneline -1` (o dono confere o commit esperado antes de seguir),
 `source .venv/bin/activate` e `which python`; `python -m pip`/`python -m pytest`; nenhum `#` na linha; nenhum `cat` de arquivo
 com segredo; URL com `?` ou `&` entre aspas simples.
+
+**2026-11-21 — o roteiro que seguiu depois de um `cd` que falhou (14b).** Mandei sete linhas
+soltas, começando por `cd ~/LifeOs && git pull`. No Mac em que o dono abriu o terminal (usuário e
+máquina diferentes dos de antes), a pasta não existia: o `cd` falhou e as linhas seguintes rodaram
+na pasta pessoal. O `python -m pytest` do conda varreu `~` inteira e travou; o dono deu Ctrl-C.
+Não houve estrago, porque nada ali escrevia. O antídoto: um roteiro para o Mac é uma corrente só
+(`&&`), ou começa conferindo a máquina e o caminho com um comando que só lê; e "o Mac do dono"
+não é uma constante: o prompt diz qual é.
 
 ### 2. Afirmei sem abrir o lugar onde estaria
 
