@@ -41,9 +41,12 @@ def test_o_dia_a_dia_usa_as_tarifas_do_env():
 
 
 def test_modelo_fora_da_tabela_custa_a_tarifa_mais_cara():
-    """Erra para o lado de parar: um modelo novo, sem tarifa, nunca é contado barato."""
-    assert tarifa("gemini-9-ultra") == (1.50, 7.50)
-    assert tarifa("") == (1.50, 7.50)
+    """Erra para o lado de parar: um modelo novo, sem tarifa, nunca é contado barato — nem na
+    entrada nem na saída (a maior entrada é a do forte em 2027; a maior saída, a do TTS)."""
+    assert tarifa("gemini-9-ultra") == (1.50, 12.00)
+    assert tarifa("") == (1.50, 12.00)
+    todas = [(e, s) for f in custos.TARIFAS.values() for _d, e, s in f]
+    assert tarifa("x")[0] >= max(e for e, _ in todas) and tarifa("x")[1] >= max(s for _, s in todas)
 
 
 def test_o_prefixo_models_nao_muda_a_tarifa():

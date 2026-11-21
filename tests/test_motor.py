@@ -211,7 +211,7 @@ def test_toda_rota_tem_quem_fala_e_so_ela():
     assert set(motor.QUEM_FALA) == caminhos
     assert all(motor.QUEM_FALA[c] for c in caminhos)
     assert all(
-        conta in {motor.CLI, motor.MAOS, motor.AGENDADOR}
+        conta in {motor.CLI, motor.MAOS, motor.AGENDADOR, motor.CASA}
         for c in caminhos
         for conta in motor.QUEM_FALA[c]
     )

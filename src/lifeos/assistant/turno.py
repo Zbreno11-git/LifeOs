@@ -217,6 +217,16 @@ def _intro_na_nuvem(presentes: set[str]) -> str:
     return textwrap.fill(f"{inicio}, {_em_lista(['lembretes/notas gerais', *extras])}.", width=80)
 
 
+# A voz do estúdio (Sessão H1, D70): vai por último, e só quando quem chama é a ponte de casa.
+_VOZ = """- Esta conversa é por voz: o usuário falou num aparelho no estúdio dele, e a sua resposta vai
+  ser dita em voz alta. Responda curto (uma a três frases, a não ser que ele peça detalhe), em
+  português do Brasil, sem markdown, listas, tabelas, emojis nem links. Diga horários e valores
+  do jeito que se fala ("às três e meia da tarde").
+- A busca na web não existe por voz: se o pedido precisar dela, diga numa frase que essa você
+  busca no chat do terminal.
+- Para aprovar um envio ou uma limpeza, aqui o usuário toca duas vezes no botão do aparelho: diga
+  isso, e nunca peça para ele digitar ou falar um código."""
+
 ONDE = ("mac", "nuvem")
 _NUVEM = "@nuvem"  # no conjunto das presentes: o chat roda no motor (não é nome de tool)
 
@@ -282,6 +292,7 @@ def instrucao(
     memoria: Iterable[str] | None = None,
     receitas: Iterable[str] | None = None,
     documentos: Mapping[str, Iterable[str]] | None = None,
+    voz: bool = False,
 ) -> str:
     """O texto de sistema para este conjunto de tools, com a data de hoje (sem ela o modelo não
     resolve "amanhã"). `onde` é "mac" ou "nuvem", dito por quem chama: nada é deduzido.
@@ -289,7 +300,8 @@ def instrucao(
     texto igual ao de antes byte a byte); uma lista, mesmo vazia, põe a regra antes do tom.
     `receitas` são os nomes das receitas guardadas (Sessão 13b): `None` é sem receitas (o texto de
     antes da 13b, igual); só junto da memória. `documentos` são os temas e os arquivos de cada um
-    (Sessão 14): `None` ou vazio é o texto de antes da 14, igual; só junto da memória."""
+    (Sessão 14): `None` ou vazio é o texto de antes da 14, igual; só junto da memória. `voz`
+    (Sessão H1, D70) põe a seção da voz por último; só na nuvem."""
     if onde not in ONDE:
         raise ValueError(f"onde={onde!r}: use 'mac' ou 'nuvem'")
     if memoria is not None and onde != "nuvem":
@@ -298,6 +310,8 @@ def instrucao(
         raise ValueError("as receitas só existem junto da memória (D67)")
     if documentos is not None and memoria is None:
         raise ValueError("os documentos só existem junto da memória (D68)")
+    if voz and onde != "nuvem":
+        raise ValueError("a voz do estúdio só existe no chat da nuvem (D70)")
     presentes = {f.__name__ for f in ferramentas} | ({_NUVEM} if onde == "nuvem" else set())
     # A data entra em cada seção antes dos fatos: um fato com "{hoje}" escrito fica como está.
     partes = [
@@ -315,6 +329,8 @@ def instrucao(
     if documentos:  # depois do tom: a posição em que foi medido (C1 da 14)
         temas = "\n".join(f"{tema}: {', '.join(arquivos)}" for tema, arquivos in documentos.items())
         partes += [_DOCUMENTOS, nao_confiavel.bloco(_DOCUMENTOS_TEMAS, temas)]
+    if voz:
+        partes.append(_VOZ)
     return "\n".join(partes)
 
 

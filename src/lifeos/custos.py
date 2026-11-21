@@ -28,18 +28,24 @@ TARIFAS: dict[str, tuple[tuple[date, float, float], ...]] = {
     # do embedding não traz contagem de tokens (medido em 2026-10-08): a entrada é contada em bytes
     # do texto, um limite de cima (um token nunca tem menos de um byte), e o teto erra para parar.
     "gemini-embedding-2": ((_SEMPRE, 0.20, 0.0),),
+    # A fala da voz do estúdio (Sessão H1, D70): lido em 2026-11-21 na página de preços, US$ 0,50
+    # por 1M de texto de entrada e US$ 6,00 por 1M de áudio de saída até 2026-12-31, e o dobro
+    # depois. A transcrição usa o modelo do dia a dia (o áudio de entrada na mesma tarifa).
+    "gemini-3.8-flash-lite-tts": ((_SEMPRE, 0.50, 6.00), (date(2027, 1, 1), 1.00, 12.00)),
 }
 # Os modelos cuja entrada é contada em bytes (o limite de cima), não em tokens.
 POR_BYTES = frozenset({"gemini-embedding-2"})
 
 
 def tarifa(modelo: str, quando: date | None = None) -> tuple[float, float]:
-    """(entrada, saída) do modelo naquele dia. Um modelo fora da tabela custa a tarifa mais cara
-    dela: o teto erra para o lado de parar, nunca de subcontar."""
+    """(entrada, saída) do modelo naquele dia. Um modelo fora da tabela custa a entrada mais cara
+    e a saída mais cara dela, cada uma (desde a H1: o TTS tem a saída mais cara e uma entrada
+    barata, e a maior soma subcontaria a entrada): o teto erra para o lado de parar."""
     dia = quando or datetime.now(UTC).date()
     faixas = TARIFAS.get(modelo.removeprefix("models/"))
     if faixas is None:
-        return max(((e, s) for f in TARIFAS.values() for _d, e, s in f), key=sum)
+        todas = [(e, s) for f in TARIFAS.values() for _d, e, s in f]
+        return max(e for e, _s in todas), max(s for _e, s in todas)
     vigentes = [(e, s) for desde, e, s in faixas if desde <= dia]
     return vigentes[-1]
 

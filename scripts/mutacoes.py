@@ -2960,8 +2960,8 @@ MUTACOES = [
     Mutacao(
         "custos: modelo fora da tabela cobra a tarifa mais barata",
         "src/lifeos/custos.py",
-        "        return max(((e, s) for f in TARIFAS.values() for _d, e, s in f), key=sum)",
-        "        return min(((e, s) for f in TARIFAS.values() for _d, e, s in f), key=sum)",
+        "        return max(e for e, _s in todas), max(s for _e, s in todas)",
+        "        return min(e for e, _s in todas), min(s for _e, s in todas)",
         "tests/test_custos_modelos.py::test_modelo_fora_da_tabela_custa_a_tarifa_mais_cara",
     ),
     Mutacao(

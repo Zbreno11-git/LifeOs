@@ -177,6 +177,47 @@ SO_NA_NUVEM: dict[str, str] = {
 }
 
 
+# A voz do estúdio (Sessão H1, D70): o mesmo turno, pedido pela ponte de casa (`/voz/responder`).
+# O canal é dito pelo motor (pela rota e por quem chamou), nunca pelo corpo do pedido.
+CANAIS = ("chat", "voz")
+_CANAL: ContextVar[str] = ContextVar("viking_canal", default="chat")
+# O que a voz não alcança, e por quê (o dono pediu "absolutamente tudo"; isto é o que sobra fora).
+FORA_DA_VOZ: dict[str, str] = {
+    "buscar_na_web": (
+        "os termos do Grounding mandam mostrar as sugestões de busca a quem perguntou, e a voz "
+        "não mostra nada (D65, D70)"
+    ),
+}
+# O código de aprovação nas linhas do `ao_dono` (`gmail/tools.py`: "digite:  confirma NNNN"). Pela
+# voz ele sai do texto e vai só no campo `aprovacao`: a ponte guarda, e dois toques no botão o
+# mandam de volta (D70). `tests/test_na_nuvem_voz.py` prende a forma aos produtores.
+_CODIGO_NA_LINHA = re.compile(
+    r"confirma\s+`?(\d{" + str(confirmacao.DIGITOS) + r"})`?", re.IGNORECASE
+)
+TOQUE_DUPLO = "Para confirmar, toque duas vezes no botão do aparelho."
+
+
+def _aprovacoes_da_voz(so_ao_dono: list[str]) -> tuple[list[str], list[dict[str, str]]]:
+    """(o `ao_dono` sem nenhum código, as aprovações abertas) — o que a voz pode falar e o que só
+    a ponte guarda. Uma linha com código vira `TOQUE_DUPLO`; e se o número ainda aparecer em
+    outro lugar do texto, ele some também (nunca vai ao alto-falante nem ao TTS)."""
+    codigos: list[str] = []
+    limpos: list[str] = []
+    for bloco in so_ao_dono:
+        linhas = []
+        for linha in bloco.split("\n"):
+            achados = _CODIGO_NA_LINHA.findall(linha)
+            if achados:
+                codigos += [c for c in achados if c not in codigos]
+                linhas.append(TOQUE_DUPLO)
+            else:
+                linhas.append(linha)
+        limpos.append("\n".join(linhas))
+    for codigo in codigos:
+        limpos = [re.sub(rf"(?<!\d){codigo}(?!\d)", "····", b) for b in limpos]
+    return limpos, [{"codigo": c} for c in codigos]
+
+
 # A memória de fatos (Sessão 13, D48 e D66): só neste chat. Antes do turno, os fatos parecidos com
 # a mensagem entram no texto de sistema (no bloco delimitado); durante o turno, numa thread com um
 # cliente próprio (o mesmo teto e prazo), o extrator lê SÓ a mensagem que o dono digitou (nunca a
@@ -385,6 +426,8 @@ def ferramentas() -> list[Callable[..., Any]]:
         fora |= _DAS_FINANCAS
     if not config.MEMORIA:  # os documentos moram ao lado da memória (D68)
         fora.add("consultar_documentos")
+    if _CANAL.get() == "voz":
+        fora |= set(FORA_DA_VOZ)
     return [f for f in FERRAMENTAS if f.__name__ not in fora]
 
 
@@ -478,6 +521,7 @@ def _config(
             memoria=memoria,
             receitas=receitas,
             documentos=documentos,
+            voz=_CANAL.get() == "voz",
         ),
         temperature=turno_nucleo.TEMPERATURA,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(
@@ -515,15 +559,27 @@ def _resposta(
     }
 
 
-def turno(dados: Any) -> dict[str, Any]:
-    """Um turno do chat da nuvem, do pedido à resposta (tudo JSON)."""
+def turno(dados: Any, canal: str = "chat") -> dict[str, Any]:
+    """Um turno do chat da nuvem, do pedido à resposta (tudo JSON). `canal` é dito pelo motor:
+    "voz" (a ponte de casa, D70) tira o que a voz não alcança, pede resposta curta, liga o
+    `interativo` (os dois toques no botão são o canal de aprovação; o corpo não decide) e tira o
+    código do `ao_dono` para o campo `aprovacao`."""
+    if canal not in CANAIS:
+        raise ValueError(f"canal={canal!r}: use {CANAIS}")
     historico_json, mensagem, nota, sessao, numero, interativo = _validar(dados)
+    if canal == "voz":
+        interativo = True
     marca = _FORTE.set({"ligado": False})  # todo turno começa no modelo do dia a dia
+    marca_do_canal = _CANAL.set(canal)
     try:
         with ao_dono.coletar(interativo=interativo) as so_ao_dono, prazo.ate(PRAZO_DO_TURNO_S):
-            return _turno(historico_json, mensagem, nota, sessao, numero, so_ao_dono)
+            resposta = _turno(historico_json, mensagem, nota, sessao, numero, so_ao_dono)
     finally:
+        _CANAL.reset(marca_do_canal)
         _FORTE.reset(marca)
+    if canal == "voz":
+        resposta["ao_dono"], resposta["aprovacao"] = _aprovacoes_da_voz(resposta["ao_dono"])
+    return resposta
 
 
 def _antes_do_modelo(teto: custos.Teto) -> None:

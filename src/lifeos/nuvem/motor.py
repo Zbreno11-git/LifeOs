@@ -35,7 +35,7 @@ from typing import Any
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, StreamingResponse
 from starlette.routing import Route
 
 from lifeos import config, prazo, registro
@@ -50,6 +50,9 @@ MAX_CORPO_DAS_MAOS = 64 * 1024  # o resultado de uma tarefa tem até 20 mil cara
 
 
 CLI, MAOS, AGENDADOR = "viking-cli", "viking-maos", "viking-agendador"
+# A ponte de casa (Sessão H1, D70): o laptop do dono, com uma chave cuja metade privada nasceu e
+# fica lá. Só fala nas rotas `/voz/*`, e elas só com ela.
+CASA = "viking-casa"
 
 
 def quem_pode(rota: str) -> frozenset[str]:
@@ -246,6 +249,146 @@ async def chat(request: Request) -> JSONResponse:
     return JSONResponse(resposta)
 
 
+# --- a voz do estúdio (Sessão H1, D70): a ponte de casa ouve, pergunta e fala por aqui ---------
+
+MAX_CORPO_DA_VOZ = 1024 * 1024  # o WAV: `assistant/voz.MAX_WAV` (um teste confere que são iguais)
+MAX_CORPO_DA_FALA = 16 * 1024  # o texto a falar: `voz.MAX_TEXTO_FALADO` caracteres com folga
+FORMATO_DA_FALA = "audio/L16; rate=24000; channels=1"
+
+
+async def _corpo_limitado(request: Request, limite: int) -> bytes | None:
+    """O corpo, ou `None` se passou do limite (pelo cabeçalho, sem ler; ou pelo que chegou)."""
+    declarado = request.headers.get("content-length", "")
+    if declarado.isdigit() and int(declarado) > limite:
+        return None
+    corpo = await request.body()
+    return corpo if len(corpo) <= limite else None
+
+
+def _cliente_da_voz() -> Any:
+    """O cliente do Gemini da voz, com o teto do chat da nuvem antes e depois de cada chamada
+    (D59: nada gasta fora do teto)."""
+    from lifeos import custos
+    from lifeos.assistant import na_nuvem
+
+    cliente = na_nuvem._cliente()
+    teto = na_nuvem._teto()
+    custos.instrumentar(
+        cliente,
+        sessao=custos.Sessao(),
+        antes=lambda _modelo: teto.conferir(),
+        depois=lambda consumo: teto.somar(consumo.custo),
+    )
+    return cliente
+
+
+def _ouvir(wav: bytes) -> str:
+    from lifeos.assistant import voz
+
+    return voz.transcrever(_cliente_da_voz(), wav)
+
+
+def _turno_da_voz(dados: Any) -> dict[str, Any]:
+    from lifeos.assistant import na_nuvem
+
+    return na_nuvem.turno(dados, canal="voz")
+
+
+def _erro_da_voz(exc: Exception, oque: str) -> JSONResponse:
+    """O erro de uma chamada da voz: o teto é 429 com a frase; o resto, só o tipo (no log também)."""
+    from lifeos import custos
+
+    if isinstance(exc, custos.TetoAtingido):
+        return JSONResponse({"erro": "o teto de gasto do Viking foi atingido"}, 429)
+    log.error("%s falhou: %s", oque, type(exc).__name__)
+    return JSONResponse({"erro": f"o motor falhou ({type(exc).__name__})"}, 502)
+
+
+async def voz_saude(request: Request) -> JSONResponse:
+    """Só a identidade: a ponte confere que a credencial dela entra (`viking casa --conferir`)."""
+    await _quem(request)
+    return JSONResponse({"ok": True, "commit": COMMIT})
+
+
+async def voz_ouvir(request: Request) -> JSONResponse:
+    """O WAV do aparelho → o texto. O áudio é conferido antes de ir ao modelo, e nada dele (nem o
+    texto) vai ao log."""
+    await _quem(request)
+    from lifeos.assistant import voz
+
+    corpo = await _corpo_limitado(request, MAX_CORPO_DA_VOZ)
+    if corpo is None:
+        return JSONResponse({"erro": "o áudio passou do tamanho que o motor aceita"}, 413)
+    try:
+        segundos = voz.conferir_wav(corpo)
+    except voz.AudioInvalido as exc:
+        return JSONResponse({"erro": str(exc)}, 400)
+    try:
+        texto = await run_in_threadpool(_ouvir, corpo)
+    except Exception as exc:  # noqa: BLE001 - o teto é 429; o resto, só o tipo
+        return _erro_da_voz(exc, "ouvir")
+    return JSONResponse({"texto": texto, "segundos": round(segundos, 2)})
+
+
+async def voz_responder(request: Request) -> JSONResponse:
+    """O turno do chat pelo canal da voz (`na_nuvem.turno(..., canal="voz")`): o mesmo corpo do
+    `/chat`, e a resposta com o campo `aprovacao` no lugar do código."""
+    await _quem(request)
+    corpo = await _corpo_limitado(request, MAX_CORPO)
+    if corpo is None:
+        return JSONResponse({"erro": "a conversa passou do tamanho que o motor aceita"}, 413)
+    try:
+        dados = json.loads(corpo)
+    except ValueError:
+        return JSONResponse({"erro": "o corpo do pedido não é JSON"}, 400)
+    try:
+        resposta = await run_in_threadpool(_turno_da_voz, dados)
+    except ValueError as exc:
+        return JSONResponse({"erro": str(exc)}, 400)
+    except Exception as exc:  # noqa: BLE001 - o log leva só o tipo, nunca a conversa
+        log.error("turno da voz falhou: %s", type(exc).__name__)
+        return JSONResponse({"erro": f"o motor falhou ({type(exc).__name__})"}, 500)
+    return JSONResponse(resposta)
+
+
+async def voz_falar(request: Request) -> JSONResponse | StreamingResponse:
+    """O texto → o áudio (PCM 24 kHz, mono, 16 bits), uma frase de cada vez: a primeira é feita
+    antes de responder (um erro ali ainda vira status), e as outras vão saindo no streaming. Um
+    erro no meio corta o áudio e fica no log (só o tipo)."""
+    await _quem(request)
+    from lifeos.assistant import voz
+
+    corpo = await _corpo_limitado(request, MAX_CORPO_DA_FALA)
+    if corpo is None:
+        return JSONResponse({"erro": "o texto passou do tamanho que o motor fala"}, 413)
+    try:
+        dados = json.loads(corpo)
+    except ValueError:
+        return JSONResponse({"erro": "o corpo do pedido não é JSON"}, 400)
+    texto = dados.get("texto") if isinstance(dados, dict) else None
+    if not isinstance(texto, str) or len(texto) > voz.MAX_TEXTO_FALADO:
+        return JSONResponse({"erro": "o texto tem de ser uma frase curta"}, 400)
+    pedacos = voz.frases(texto)
+    if not pedacos:
+        return JSONResponse({"erro": "não há o que falar"}, 400)
+    try:
+        cliente = await run_in_threadpool(_cliente_da_voz)
+        primeiro = await run_in_threadpool(voz.falar_frase, cliente, pedacos[0])
+    except Exception as exc:  # noqa: BLE001 - o teto é 429; o resto, só o tipo
+        return _erro_da_voz(exc, "falar")
+
+    def audio() -> Any:
+        yield primeiro
+        for frase in pedacos[1:]:
+            try:
+                yield voz.falar_frase(cliente, frase)
+            except Exception as exc:  # noqa: BLE001 - o áudio para; o log leva só o tipo
+                log.error("falar (no meio) falhou: %s", type(exc).__name__)
+                return
+
+    return StreamingResponse(audio(), media_type=FORMATO_DA_FALA)
+
+
 # Quem fala com cada rota (Sessão 11, D61): uma conta, uma porta. O `viking-maos@` vive num Mac e
 # o `viking-agendador@` é o Cloud Scheduler: nenhum dos dois lê a conversa nem os lembretes.
 QUEM_FALA: dict[str, frozenset[str]] = {
@@ -278,6 +421,11 @@ QUEM_FALA: dict[str, frozenset[str]] = {
     "/documentos/aprender": frozenset({CLI}),
     "/documentos/esquecer": frozenset({CLI}),
     "/documentos/desfazer": frozenset({CLI}),
+    # A voz do estúdio (Sessão H1, D70): só a ponte de casa, e ela só aqui.
+    "/voz/saude": frozenset({CASA}),
+    "/voz/ouvir": frozenset({CASA}),
+    "/voz/responder": frozenset({CASA}),
+    "/voz/falar": frozenset({CASA}),
 }
 
 
@@ -811,5 +959,9 @@ ROTAS = [
     Route("/documentos/aprender", documentos_aprender, methods=["POST"]),
     Route("/documentos/esquecer", documentos_esquecer, methods=["POST"]),
     Route("/documentos/desfazer", documentos_desfazer, methods=["POST"]),
+    Route("/voz/saude", voz_saude, methods=["GET"]),
+    Route("/voz/ouvir", voz_ouvir, methods=["POST"]),
+    Route("/voz/responder", voz_responder, methods=["POST"]),
+    Route("/voz/falar", voz_falar, methods=["POST"]),
 ]
 app = Starlette(routes=ROTAS)
