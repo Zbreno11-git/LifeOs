@@ -12,7 +12,15 @@ foi aprovado pelo dono em 2026-11-21. **Pendência P0 (da 14b):** depois de 2026
 `python scripts/nuvem.py --executar alertas` sem pipe. A placa não respondia pelo túnel às 22:43Z
 (o chip, não o túnel): pedir ao dono antes do C4.
 
-**Checkpoints:** P0 ⬜ · C0 🟡 (docs e lock) · C1–C8 ⬜.
+**Checkpoints:** P0 ⬜ · C0 ✅ · C1 ✅ (`f697aa2`) · C2 ✅ (`c8d434b`) · C3 ✅ (`50c4430`, e o
+202 + `GET /estado` em `6939a5c`) · C4 🟡 (o firmware `/root/esp32/projects/viking-voz` compila nas
+duas variantes, sem aviso; falta gravar, com a placa plugada e o ok) · C5–C8 ⬜ (os oks do dono).
+
+**Achado do C4 (2026-11-21):** o `HTTPClient::setTimeout` do Arduino-ESP32 é `uint16_t` em ms (o
+`-Woverflow` mostrou 330000 → 2320). A ponte passou a aceitar na hora (202) e o aparelho pergunta
+`GET /estado`.
+
+**C6 pronto para rodar no Mac:** `scripts/vozes.py` (3 frases × 5 vozes do Gemini TTS, < US$ 0,01).
 
 ### Plano — Sessão H1: a voz do estúdio (ESP32 → servidor de casa → motor)
 
