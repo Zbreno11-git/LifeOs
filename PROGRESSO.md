@@ -87,9 +87,9 @@ O motor e as finanças estão no ar num commit novo, com:
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
 | C0 | a H1 escrita em `sessoes.md` antes da 15; a 14b aberta no `PROGRESSO.md` | — | ✅ |
-| C1 | lock atualizado: pip-audit 0, suíte verde, CI verde pelo SHA | C2 (o teste consertado antes, para a suíte "antes" ser comparável) | ⬜ |
+| C1 | lock atualizado: pip-audit 0, suíte verde (o CI pelo SHA no push) | C2 | ✅ |
 | C2 | o teste da data consertado e a varredura de outras bombas feita (a +120 dias achou a 2ª: a tarifa do forte dobra em 2027-01-01) | C0 | ✅ |
-| C3 | o fuso trocado e a prova do valor no `deploy` | C0 | ⬜ |
+| C3 | o fuso trocado e a prova do valor no `deploy` (o `.env` do VPS em SP; o no ar troca no deploy do C7) | C0 | ✅ |
 | C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | ⬜ |
 | C5 | o passo `editor` medido e executado com o ok | C0 | ⬜ |
 | C6 | o CI semanal (`schedule`) | C0 | ⬜ |

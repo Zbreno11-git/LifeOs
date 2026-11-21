@@ -304,8 +304,10 @@ class _Mundo:
         vazios_no_ar=None,
         financas=False,
         financas_no_ar=False,
+        fuso_no_ar="America/Los_Angeles",
     ):
         self.nuvem = nuvem
+        self.fuso_no_ar = fuso_no_ar
         # segredos sem versão no Secret Manager; o da Pluggy (11d) só com `financas=True`
         self.vazios = set(vazios) | ({"viking-pluggy"} if not financas else set())
         # os que a revisão no ar não monta (por padrão, os mesmos que estão sem versão)
@@ -330,6 +332,7 @@ class _Mundo:
                 if s.nome not in self.vazios_no_ar
             ]
             env = [{"name": "VIKING_FINANCAS_URL", "value": "x"}] if self.financas_no_ar else []
+            env.append({"name": "VIKING_TIMEZONE", "value": self.fuso_no_ar})
             servico = {
                 "spec": {
                     "template": {
@@ -434,6 +437,15 @@ def test_o_head_ja_no_ar_so_prova(nuvem, ctx, mundo, capsys):
     assert nuvem.deploy(ctx, executar=True) == 0
     assert not _publicou(m)
     assert "só as provas" in capsys.readouterr().out
+
+
+def test_fuso_trocado_no_env_publica_mesmo_sem_commit(nuvem, ctx, mundo, capsys):
+    """14b (D69): o dono se mudou e só o `.env` mudou. A imagem no ar é o HEAD, mas o fuso dela é
+    o velho: "nada mudou" deixaria Seattle no ar sem ninguém ver."""
+    m = mundo(no_ar=SHA, fuso_no_ar="America/Sao_Paulo")
+    assert nuvem.deploy(ctx, executar=True) == 0
+    assert _publicou(m)
+    assert "só as provas" not in capsys.readouterr().out
 
 
 def test_commit_que_nao_mexe_na_imagem_nao_publica_de_novo(nuvem, ctx, mundo, monkeypatch):
@@ -1447,9 +1459,19 @@ def _provas_das_financas(
 def test_as_provas_das_financas_passam_no_certo_e_nao_chamam_a_pluggy(nuvem, ctx, monkeypatch):
     provas_, chamadas = _provas_das_financas(nuvem, ctx, monkeypatch)
     assert [n for n, p in provas_.items() if not p.passou] == []
-    assert len(provas_) == 11
+    assert len(provas_) == 12  # a 12ª: o fuso (14b)
     assert all("pluggy.ai" not in url for url in chamadas)
     assert f"{URL_DO_MOTOR}/fumaca/financas" in chamadas
+
+
+def test_a_prova_do_fuso_das_financas_pega_o_fuso_velho(nuvem, ctx, monkeypatch):
+    env = [
+        e if e["name"] != "VIKING_TIMEZONE" else {"name": "VIKING_TIMEZONE", "value": "UTC"}
+        for e in _servico_das_financas()["spec"]["template"]["spec"]["containers"][0]["env"]
+    ]
+    servico = _servico_das_financas(conteiner={"env": env})
+    provas_, _ = _provas_das_financas(nuvem, ctx, monkeypatch, servico=servico)
+    assert not provas_["finanças: o fuso no ar = o do .env"].passou
 
 
 @pytest.mark.parametrize(

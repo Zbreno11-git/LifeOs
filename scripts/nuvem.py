@@ -984,11 +984,18 @@ class Situacao:
     mudou_desde: int | None  # commits nos caminhos da imagem desde a do ar
     volumes_no_ar: frozenset[str] = frozenset()  # os segredos montados na revisão no ar
     financas_no_ar: bool = False  # o motor no ar tem a URL do serviço de finanças (11d)
+    # O VIKING_TIMEZONE da revisão no ar (14b, D69): trocar só o `.env` não muda a imagem, e sem
+    # isto o `deploy` dizia "nada mudou" com o fuso velho no ar.
+    fuso_no_ar: str = ""
 
 
 def _variaveis(servico: dict) -> dict[str, dict]:
     conteiner = servico["spec"]["template"]["spec"]["containers"][0]
     return {v.get("name"): v for v in conteiner.get("env", [])}
+
+
+def _fuso_de(servico: dict) -> str:
+    return str(_variaveis(servico).get("VIKING_TIMEZONE", {}).get("value", ""))
 
 
 def _volumes(servico: dict) -> frozenset[str]:
@@ -1022,9 +1029,11 @@ def situacao(ctx: Contexto) -> Situacao:
     no_ar = mudou = None
     volumes: frozenset[str] = frozenset()
     financas = False
+    fuso = ""
     if isinstance(servico, dict):
         volumes = _volumes(servico)
         financas = "VIKING_FINANCAS_URL" in _variaveis(servico)
+        fuso = _fuso_de(servico)
         imagem = servico["spec"]["template"]["spec"]["containers"][0]["image"]
         no_ar = imagem.rsplit(":", 1)[-1]
         mudou = int(
@@ -1039,6 +1048,7 @@ def situacao(ctx: Contexto) -> Situacao:
         mudou_desde=mudou,
         volumes_no_ar=volumes,
         financas_no_ar=financas,
+        fuso_no_ar=fuso,
     )
 
 
@@ -1274,6 +1284,8 @@ def provas(
     resultado.append(Prova("imagem no ar = a esperada", imagem == _imagem(ctx, sha), no_ar))
     certo, detalhe = _segredos_so_como_volume(servico, montados, financas)
     resultado.append(Prova("segredos só como volume, nada no ambiente", certo, detalhe))
+    fuso = _fuso_de(servico)
+    resultado.append(Prova("o fuso no ar = o do .env (VIKING_NUVEM_FUSO)", fuso == _fuso(), fuso))
     # O `status.url` é a URL antiga, com hash; a determinística (com o número do projeto) é a
     # audience que o motor exige, e o Cloud Run a lista nesta anotação (medido em 2026-09-30).
     anotacoes = servico["metadata"].get("annotations", {})
@@ -1461,6 +1473,8 @@ def _provas_das_financas(
             " ".join(comando)[:120],
         )
     )
+    fuso = _fuso_de(servico)
+    provas_.append(Prova("finanças: o fuso no ar = o do .env", fuso == _fuso(), fuso))
     conta = modelo.get("serviceAccountName", "")
     provas_.append(Prova(f"finanças: a conta é o {FINANCAS}@", conta == ctx.conta(FINANCAS), conta))
     variaveis = _variaveis(servico)
@@ -1681,6 +1695,7 @@ def deploy(ctx: Contexto, executar: bool) -> int:
         and agora.mudou_desde == 0
         and agora.volumes_no_ar == {s.nome for s in montados}
         and agora.financas_no_ar == financas
+        and agora.fuso_no_ar == _fuso()
     )
     esperado = agora.no_ar if em_dia and agora.no_ar else agora.head
     if executar:

@@ -722,7 +722,10 @@ de chegar a alguém (`calendar/service.no_fuso_do_dono`, em `_evento_de`); o dia
 do banco, em Brasília (`financas/service.FUSO_DOS_BANCOS`), não o do dono. A D39 continua (as tools
 recebem horário sem fuso e recusam fuso diferente do do dono). Os testes fixam `service.TIMEZONE` em
 Brasília no dublê do calendário porque o VPS está em UTC — e os de fuso rodam também com o dono
-noutro fuso, que é o caso real.
+noutro fuso, que é o caso real. **Desde ~fim de outubro de 2026 o dono mora em São Paulo** (dito em
+2026-11-21): o fuso dele e o da agenda coincidem hoje, mas continuam sendo regras separadas (ele
+pode se mudar de novo). Na nuvem o fuso é `VIKING_NUVEM_FUSO` (o `.env` do VPS), e o `deploy`
+publica e prova o valor no ar (14b, D69): trocar só o `.env` antes não chegava ao motor.
 
 **Escape `\uXXXX` dentro do parâmetro de uma ferramenta vira o caractere de verdade.** Vale para a
 de escrita e para o comando de terminal — o parâmetro é JSON: escrever `"\u202e"` num teste pela
