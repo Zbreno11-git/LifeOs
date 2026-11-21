@@ -1701,7 +1701,7 @@ def test_o_canal_de_outro_e_mail_nao_conta(nuvem, ctx, monkeypatch):
 
 
 def _politicas_certas(nuvem):
-    return [nuvem._politica(t, o, j, CANAL) for t, o, j in nuvem.VIGIADAS]
+    return [nuvem._politica(t, o, j, d, CANAL) for t, o, j, d in nuvem.VIGIADAS]
 
 
 def test_alertas_completos_estao_prontos_e_nao_recriam_nada(nuvem, ctx, monkeypatch):
@@ -1730,6 +1730,7 @@ def test_alertas_completos_estao_prontos_e_nao_recriam_nada(nuvem, ctx, monkeypa
             evaluationMissingData="EVALUATION_MISSING_DATA_INACTIVE"
         ),
         lambda p: p.update(notificationChannels=[]),
+        lambda p: p["conditions"][0]["conditionThreshold"].update(duration="60s"),
         lambda p: p["conditions"][0]["conditionThreshold"].update(filter='metric.type="x"'),
     ],
 )
@@ -1750,6 +1751,17 @@ def test_politica_torta_nao_conta_como_pronta(nuvem, ctx, monkeypatch, estraga):
 
 
 def test_a_janela_do_backup_cabe_no_limite_e_cobre_um_dia(nuvem):
-    janelas = {t: j for t, _o, j in nuvem.VIGIADAS}
-    assert 24 * 3600 < janelas["viking-backup"] <= 90_000  # o máximo de uma política de limiar
-    assert janelas["viking-lembretes"] >= 5 * 60  # um minuto perdido (502) não é alarme
+    total = {t: j + d for t, _o, j, d in nuvem.VIGIADAS}
+    assert 24 * 3600 < total["viking-backup"] <= 90_000  # uma métrica de log alerta sobre 25 h
+    assert total["viking-lembretes"] >= 5 * 60  # um minuto perdido (502) não é alarme
+
+
+def test_sem_dado_como_alarme_pede_duracao(nuvem):
+    """A API recusou a 1ª política (2026-11-21 21:35Z): `EVALUATION_MISSING_DATA_ACTIVE` "must
+    have a non-zero duration"."""
+    for tarefa, oque, janela, duracao in nuvem.VIGIADAS:
+        limiar = nuvem._politica(tarefa, oque, janela, duracao, CANAL)["conditions"][0][
+            "conditionThreshold"
+        ]
+        assert limiar["evaluationMissingData"] == "EVALUATION_MISSING_DATA_ACTIVE"
+        assert int(limiar["duration"].removesuffix("s")) >= 60

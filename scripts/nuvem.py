@@ -902,8 +902,10 @@ def _c_editor(ctx: Contexto) -> list[list[str]]:
 # política: menos de 1 sucesso na janela, ou nenhum dado, avisa o e-mail do dono. O filtro é o
 # que o Scheduler escreve, medido em 2026-11-21 (`AttemptFinished` com `httpRequest.status` 200;
 # a falha sai como ERROR com 502/500). As rotas do motor não logam o sucesso, por isso o log é o
-# do Scheduler. A janela do backup é o máximo de uma política de limiar (25 h = 90.000 s, lido em
-# 2026-11-21), e o backup roda a cada 24 h.
+# do Scheduler. Cada política é (janela da soma, duração): avisa quando a soma fica abaixo de 1
+# pela duração inteira, ou seja, depois de janela + duração sem sucesso. A duração não pode ser
+# zero com "sem dado conta" (a API recusou, 2026-11-21 21:35Z), e uma métrica de log só alerta
+# sobre as últimas 25 h (lido em 2026-11-21): o backup, que roda a cada 24 h, usa 24 h + 1 h.
 METRICA_DO_AGENDADOR = "viking_agendador_ok"
 FILTRO_DO_SUCESSO = (
     'resource.type="cloud_scheduler_job" AND '
@@ -912,8 +914,8 @@ FILTRO_DO_SUCESSO = (
 )
 CANAL_DO_DONO = "viking: o e-mail do dono"
 VIGIADAS = (
-    (TAREFA_DO_AGENDADOR, "o envio de lembretes", 900),
-    (TAREFA_DO_BACKUP, "o backup no Drive", 90_000),
+    (TAREFA_DO_AGENDADOR, "o envio de lembretes", 600, 300),
+    (TAREFA_DO_BACKUP, "o backup no Drive", 86_400, 3_600),
 )
 
 
@@ -928,14 +930,14 @@ def _filtro_da_politica(tarefa: str) -> str:
     )
 
 
-def _politica(tarefa: str, oque: str, janela_s: int, canal: str) -> dict:
+def _politica(tarefa: str, oque: str, janela_s: int, duracao_s: int, canal: str) -> dict:
     """A política, inteira: o JSON que vai ao `gcloud` (sem o e-mail; só o nome do canal)."""
     return {
         "displayName": _nome_da_politica(oque),
         "combiner": "OR",
         "conditions": [
             {
-                "displayName": f"nenhum sucesso de {tarefa} em {janela_s // 60} min",
+                "displayName": f"nenhum sucesso de {tarefa} em {(janela_s + duracao_s) // 60} min",
                 "conditionThreshold": {
                     "filter": _filtro_da_politica(tarefa),
                     "aggregations": [
@@ -947,7 +949,7 @@ def _politica(tarefa: str, oque: str, janela_s: int, canal: str) -> dict:
                     ],
                     "comparison": "COMPARISON_LT",
                     "thresholdValue": 1,
-                    "duration": "0s",
+                    "duration": f"{duracao_s}s",
                     "evaluationMissingData": "EVALUATION_MISSING_DATA_ACTIVE",
                     "trigger": {"count": 1},
                 },
@@ -991,7 +993,9 @@ def _ler_alertas(ctx: Contexto) -> _Alertas:
     )
 
 
-def _politica_certa(politica: dict, tarefa: str, janela_s: int, canal: str | None) -> bool:
+def _politica_certa(
+    politica: dict, tarefa: str, janela_s: int, duracao_s: int, canal: str | None
+) -> bool:
     condicoes = politica.get("conditions") or [{}]
     limiar = condicoes[0].get("conditionThreshold") or {}
     agregacao = (limiar.get("aggregations") or [{}])[0]
@@ -1000,6 +1004,7 @@ def _politica_certa(politica: dict, tarefa: str, janela_s: int, canal: str | Non
         and len(condicoes) == 1
         and limiar.get("filter") == _filtro_da_politica(tarefa)
         and agregacao.get("alignmentPeriod") == f"{janela_s}s"
+        and limiar.get("duration") == f"{duracao_s}s"
         and limiar.get("comparison") == "COMPARISON_LT"
         and limiar.get("evaluationMissingData") == "EVALUATION_MISSING_DATA_ACTIVE"
         and canal is not None
@@ -1024,11 +1029,11 @@ def _m_alertas(ctx: Contexto) -> Estado:
         faltam.append("a métrica existe com outro filtro")
     if lido.canal is None:
         faltam.append("o canal de e-mail do dono")
-    for tarefa, oque, janela in VIGIADAS:
+    for tarefa, oque, janela, duracao in VIGIADAS:
         politica = lido.politicas.get(_nome_da_politica(oque))
         if politica is None:
             faltam.append(f"a política ({oque})")
-        elif not _politica_certa(politica, tarefa, janela, lido.canal):
+        elif not _politica_certa(politica, tarefa, janela, duracao, lido.canal):
             faltam.append(f"a política ({oque}) existe, mas não está como esperado")
     if faltam:
         return Estado(False, "faltam: " + "; ".join(faltam))
@@ -1072,10 +1077,10 @@ def _c_alertas(ctx: Contexto, agora: datetime | None = None) -> list[list[str]]:
     if comandos:
         return comandos
     idade = _idade_da_metrica_s(lido.metrica, agora)
-    for tarefa, oque, janela in VIGIADAS:
-        if _nome_da_politica(oque) in lido.politicas or idade < janela:
+    for tarefa, oque, janela, duracao in VIGIADAS:
+        if _nome_da_politica(oque) in lido.politicas or idade < janela + duracao:
             continue
-        politica = _politica(tarefa, oque, janela, str(lido.canal))
+        politica = _politica(tarefa, oque, janela, duracao, str(lido.canal))
         comandos.append(
             _gcloud(ctx, "monitoring", "policies", "create", f"--policy={json.dumps(politica)}")
         )

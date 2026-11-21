@@ -12,8 +12,9 @@
   0 ❌, `VIKING_TIMEZONE=America/Sao_Paulo`, nenhum minuto do envio perdido.
 - **`nuvem.py`:** `editor` ✅, removido às 21:14Z com o ok. Em `alertas`, a métrica
   `viking_agendador_ok` (criada às 21:17Z; recebe pontos, lido na API do Monitoring às 21:22Z) e o
-  canal de e-mail existem. A política do envio nasce às ~21:33Z, por uma rodada em segundo plano;
-  a do backup **só depois de 2026-11-22 ~22:20Z** (a métrica tem de viver 25 h):
+  canal de e-mail existem; a política do envio existe desde 21:37Z (a 1ª tentativa, às 21:33Z,
+  foi recusada pela API: duração zero; consertado no código). A do backup **só depois de
+  2026-11-22 ~22:20Z** (a métrica tem de viver 25 h):
   `python scripts/nuvem.py --executar alertas`, e então `python scripts/nuvem.py` → 15 ✅.
 - **Portões:** suíte `3183 passed`; pip-audit 0; ruff, format, mypy e gitleaks limpos; CI do
   `b56942f` em `success`.
@@ -106,7 +107,7 @@ O motor e as finanças estão no ar num commit novo, com:
 | C1 | lock atualizado: pip-audit 0, suíte verde (o CI pelo SHA no push) | C2 | ✅ |
 | C2 | o teste da data consertado e a varredura de outras bombas feita (a +120 dias achou a 2ª: a tarifa do forte dobra em 2027-01-01) | C0 | ✅ |
 | C3 | o fuso trocado e a prova do valor no `deploy` (o `.env` do VPS em SP; o no ar troca no deploy do C7) | C0 | ✅ |
-| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | 🟡 a métrica e o canal; a do envio às ~21:33Z, a do backup depois de 2026-11-22 ~22:20Z |
+| C4 | o passo `alertas` (canal + 2 políticas) medido e criado com o ok | C0 | 🟡 a métrica, o canal e a política do envio (21:37Z); a do backup depois de 2026-11-22 ~22:20Z |
 | C5 | o passo `editor` medido e executado com o ok | C0 | ✅ |
 | C6 | o CI semanal (`schedule`, segunda 12:00Z) | C0 | ✅ |
 | C7 | o deploy com o ok, as provas e os docs fechados | C1–C6 | ✅ (`b56942f`, 36 ✅) |

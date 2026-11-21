@@ -1076,7 +1076,7 @@ segunda vez; terminou sem estrago).
 - **Dois passos novos no `nuvem.py`:**
   - `editor`, executado com o ok do dono às 21:14Z. Antes, 0 usos da conta em 400 dias.
   - `alertas`: a métrica `viking_agendador_ok`, com o filtro medido no log do Scheduler, e o canal
-    de e-mail, às 21:15Z. As políticas nascem depois de a métrica viver a janela de cada uma.
+    de e-mail, às 21:15Z; a política do envio às 21:37Z (a 1ª tentativa foi recusada: a API exige duração maior que zero com "sem dado conta", D69). As políticas nascem depois de a métrica viver a janela de cada uma.
 - **O CI toda segunda**, às 12:00Z.
 - **O deploy às 21:17Z**, com o ok do dono: motor e finanças em `b56942f`, **36 ✅ e 0 ❌**, o fuso
   `America/Sao_Paulo` no ar, e nenhum minuto do envio de lembretes perdido.

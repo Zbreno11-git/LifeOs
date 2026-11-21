@@ -18,9 +18,9 @@
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 8 | caminho real `~/LifeOs`, `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 11 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 3 | Estimei em vez de medir | 12 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
-| 5 | A ferramenta fez outra coisa do que eu li | 16 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 17 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 19 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 3 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
@@ -376,6 +376,13 @@ nada foi medido errado; refeito com a 1ª chamada de verdade, forçada na tool. 
 forma de um pedido (não só o preço ou o limite) também é do terceiro e se lê antes; virou armadilha
 no `AGENTS.md`.
 
+**2026-11-21 — a política de alerta com duração zero (14b, C4).** Li a página de alerta por
+ausência e a de limites antes de desenhar, e escrevi a política com `duration: 0s` e "sem dado
+conta como alarme". A API recusou: `evaluation_missing_data … must have a non-zero duration`, uma
+regra que as páginas que eu li não diziam. O que tem de novo: ler o limite do terceiro não basta
+quando a regra está só na validação; a primeira criação de um recurso novo é a medição, e o
+recurso volta para o teste (`test_sem_dado_como_alarme_pede_duracao`).
+
 ### 4. Teste que não separava o certo do errado
 
 **2026-09-20 — tools do Gemini sem argumento.** O `from __future__ import annotations` quebrava
@@ -680,6 +687,12 @@ do commit do lock, mandei um laço em background `until gh run list --commit 050
 era `050b46e1…`. O `gh` não acha nada, e o laço nunca terminaria. Pego ao conferir o CI à mão
 (`success`) e o laço foi parado. O que tem de novo: um prefixo de SHA digitado de memória; o SHA
 sai do `git rev-parse`, nunca da cabeça.
+
+**2026-11-21 — o `| tail` que escondeu a falha (14b, C4).** Rodei o `--executar alertas` em
+segundo plano com `… | tail -2 | cut`, e o "exited with code 0" era o do `cut`: o `nuvem.py` tinha
+saído com 1 (a API recusou a política). Só a medição seguinte, que não achou a política, mostrou.
+Antídoto: um comando que escreve na nuvem roda sem pipe, com a saída num arquivo e o `$?` impresso
+logo depois.
 
 ### 6. Conserto que cobriu um ponto e não o vizinho
 
