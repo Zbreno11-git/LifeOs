@@ -14,6 +14,7 @@ import importlib.util
 import json
 import stat
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -280,12 +281,14 @@ TOKEN = "t" * 43
 
 
 class _PonteFalsa:
-    def __init__(self, resultado=None, erro=None):
+    def __init__(self, resultado=None, erro=None, segurar=None):
         self.resultado = resultado or ponte.Resultado("ok", "viking")
-        self.erro, self.chamadas = erro, []
+        self.erro, self.segurar, self.chamadas = erro, segurar, []
 
     def falou(self, wav):
         self.chamadas.append(("falou", wav))
+        if self.segurar is not None:
+            self.segurar.wait(5)
         if self.erro:
             raise self.erro
         return self.resultado
@@ -296,7 +299,11 @@ class _PonteFalsa:
 
 
 def _cliente(falsa):
-    return TestClient(servidor.app(falsa, TOKEN))
+    aplicacao = servidor.app(falsa, TOKEN)
+    return TestClient(aplicacao), aplicacao.state.trabalho
+
+
+AUTH = {"Authorization": f"Bearer {TOKEN}"}
 
 
 @pytest.mark.parametrize(
@@ -304,48 +311,69 @@ def _cliente(falsa):
 )
 def test_sem_o_token_do_aparelho_nada_chega_a_ponte(cabecalho):
     falsa = _PonteFalsa()
-    cliente = _cliente(falsa)
+    cliente, _ = _cliente(falsa)
     cabecalhos = {"Authorization": cabecalho} if cabecalho else {}
     assert cliente.post("/falar", content=WAV, headers=cabecalhos).status_code == 401
     assert cliente.post("/toque", headers=cabecalhos).status_code == 401
     assert cliente.get("/saude", headers=cabecalhos).status_code == 401
+    assert cliente.get("/estado", headers=cabecalhos).status_code == 401
     assert falsa.chamadas == []
 
 
-def test_com_o_token_a_fala_e_o_toque_chegam():
+def test_a_fala_e_aceita_na_hora_e_o_resultado_sai_no_estado():
     falsa = _PonteFalsa(ponte.Resultado("aguardando", "viking", "segredo da fala"))
-    cliente = _cliente(falsa)
-    auth = {"Authorization": f"Bearer {TOKEN}"}
-    resposta = cliente.post("/falar", content=WAV, headers=auth)
-    assert resposta.json() == {"estado": "aguardando", "origem": "viking"}  # a fala não vai
-    assert cliente.post("/toque", headers=auth).status_code == 200
-    assert cliente.get("/saude", headers=auth).json() == {"ok": True}
+    cliente, trabalho = _cliente(falsa)
+    assert cliente.get("/estado", headers=AUTH).json()["estado"] == "ocioso"
+    resposta = cliente.post("/falar", content=WAV, headers=AUTH)
+    assert (resposta.status_code, resposta.json()) == (202, {"estado": "pensando"})
+    trabalho.esperar(5)
+    final = cliente.get("/estado", headers=AUTH)
+    assert final.json() == {"estado": "aguardando", "origem": "viking"}  # a fala não vai
+    assert cliente.post("/toque", headers=AUTH).status_code == 202
+    trabalho.esperar(5)
+    assert cliente.get("/saude", headers=AUTH).json() == {"ok": True}
     assert falsa.chamadas == [("falou", WAV), ("toque",)]
+
+
+def test_uma_fala_em_curso_recusa_a_proxima():
+    segurar = threading.Event()
+    falsa = _PonteFalsa(segurar=segurar)
+    cliente, trabalho = _cliente(falsa)
+    assert cliente.post("/falar", content=WAV, headers=AUTH).status_code == 202
+    assert cliente.post("/falar", content=WAV, headers=AUTH).status_code == 429
+    assert cliente.post("/toque", headers=AUTH).status_code == 429
+    assert cliente.get("/estado", headers=AUTH).json()["estado"] == "pensando"
+    segurar.set()
+    trabalho.esperar(5)
+    assert cliente.get("/estado", headers=AUTH).json()["estado"] == "ok"
+    assert len(falsa.chamadas) == 1
 
 
 def test_audio_grande_ou_vazio_nao_chega_a_ponte():
     falsa = _PonteFalsa()
-    cliente = _cliente(falsa)
-    auth = {"Authorization": f"Bearer {TOKEN}"}
+    cliente, _ = _cliente(falsa)
     grande = b"x" * (servidor.MAX_WAV + 1)
-    assert cliente.post("/falar", content=grande, headers=auth).status_code == 413
-    assert cliente.post("/falar", content=b"", headers=auth).status_code == 400
+    assert cliente.post("/falar", content=grande, headers=AUTH).status_code == 413
+    assert cliente.post("/falar", content=b"", headers=AUTH).status_code == 400
     assert falsa.chamadas == []
 
 
-def test_ocupada_e_429_e_erro_e_so_o_tipo(caplog):
-    auth = {"Authorization": f"Bearer {TOKEN}"}
-    ocupada = _cliente(_PonteFalsa(erro=ponte.Ocupada("x")))
-    assert ocupada.post("/falar", content=WAV, headers=auth).status_code == 429
-    quebra = _cliente(_PonteFalsa(erro=RuntimeError("o dono disse: segredo")))
-    resposta = quebra.post("/falar", content=WAV, headers=auth)
-    assert resposta.status_code == 500 and "segredo" not in resposta.text
+@pytest.mark.parametrize(
+    ("erro", "estado"), [(ponte.Ocupada("x"), "ocupado"), (RuntimeError("segredo"), "erro")]
+)
+def test_o_erro_da_ponte_vira_estado_e_o_log_so_o_tipo(caplog, erro, estado):
+    cliente, trabalho = _cliente(_PonteFalsa(erro=erro))
+    cliente.post("/falar", content=WAV, headers=AUTH)
+    trabalho.esperar(5)
+    resposta = cliente.get("/estado", headers=AUTH)
+    assert resposta.json()["estado"] == estado and "segredo" not in resposta.text
     assert "segredo" not in caplog.text
 
 
 def test_toda_rota_da_ponte_comeca_pelo_token():
     arvore = ast.parse(Path(servidor.__file__).read_text())
     funcoes = {n.name: n for n in ast.walk(arvore) if isinstance(n, ast.AsyncFunctionDef)}
+    assert len(servidor.ROTAS) == 4
     for rota in servidor.ROTAS:
         corpo = funcoes[rota.endpoint.__name__].body
         if isinstance(corpo[0], ast.Expr) and isinstance(corpo[0].value, ast.Constant):
