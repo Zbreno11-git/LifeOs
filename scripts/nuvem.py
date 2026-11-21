@@ -50,6 +50,9 @@ APIS = (
     "billingbudgets.googleapis.com",
     # a chave do Gemini, os tokens da agenda, do Gmail e do Drive, e a Pluggy (o serviço de finanças)
     "secretmanager.googleapis.com",
+    # os alertas de ausência dos agendadores (Sessão 14b, D69): a métrica sai do log do Scheduler
+    "logging.googleapis.com",
+    "monitoring.googleapis.com",
 )
 REPOSITORIO = "viking"  # Artifact Registry
 GUARDAR_IMAGENS = 5
@@ -862,6 +865,223 @@ def _c_financas(ctx: Contexto) -> list[list[str]]:
     return comandos
 
 
+# --- o editor da conta padrão do Compute e os alertas (Sessão 14b, D69) ------------------------
+
+
+def _conta_do_compute(ctx: Contexto, *, ler: bool = True) -> str:
+    """A conta que o GCP cria sozinho com o Compute, `<número>-compute@developer`. Nenhum serviço
+    do Viking roda com ela (cada um tem a sua), e ela nasce com `roles/editor` no projeto. Sem
+    `ler` (a listagem de um projeto que talvez nem exista), o número fica de marcador."""
+    dados = _ler(_gcloud(ctx, "projects", "describe", ctx.projeto)) if ler else None
+    numero = dados.get("projectNumber") if isinstance(dados, dict) else "NUMERO"
+    return f"serviceAccount:{numero}-compute@developer.gserviceaccount.com"
+
+
+def _m_editor(ctx: Contexto) -> Estado:
+    politica = _ler(_gcloud(ctx, "projects", "get-iam-policy", ctx.projeto))
+    if _conta_do_compute(ctx) in _membros(politica, "roles/editor"):
+        return Estado(False, "a conta padrão do Compute ainda é editor do projeto inteiro")
+    return Estado(True, "a conta padrão do Compute sem roles/editor")
+
+
+def _c_editor(ctx: Contexto) -> list[list[str]]:
+    return [
+        _gcloud(
+            ctx,
+            "projects",
+            "remove-iam-policy-binding",
+            ctx.projeto,
+            f"--member={_conta_do_compute(ctx, ler='contas' in ctx.prontos)}",
+            "--role=roles/editor",
+            "--condition=None",
+        )
+    ]
+
+
+# Um sucesso de cada tarefa do Scheduler vira um ponto numa métrica de log, e cada tarefa tem uma
+# política: menos de 1 sucesso na janela, ou nenhum dado, avisa o e-mail do dono. O filtro é o
+# que o Scheduler escreve, medido em 2026-11-21 (`AttemptFinished` com `httpRequest.status` 200;
+# a falha sai como ERROR com 502/500). As rotas do motor não logam o sucesso, por isso o log é o
+# do Scheduler. A janela do backup é o máximo de uma política de limiar (25 h = 90.000 s, lido em
+# 2026-11-21), e o backup roda a cada 24 h.
+METRICA_DO_AGENDADOR = "viking_agendador_ok"
+FILTRO_DO_SUCESSO = (
+    'resource.type="cloud_scheduler_job" AND '
+    'jsonPayload."@type"="type.googleapis.com/google.cloud.scheduler.logging.AttemptFinished" '
+    "AND httpRequest.status=200"
+)
+CANAL_DO_DONO = "viking: o e-mail do dono"
+VIGIADAS = (
+    (TAREFA_DO_AGENDADOR, "o envio de lembretes", 900),
+    (TAREFA_DO_BACKUP, "o backup no Drive", 90_000),
+)
+
+
+def _nome_da_politica(oque: str) -> str:
+    return f"viking: {oque} parou"
+
+
+def _filtro_da_politica(tarefa: str) -> str:
+    return (
+        f'metric.type="logging.googleapis.com/user/{METRICA_DO_AGENDADOR}" AND '
+        f'resource.type="cloud_scheduler_job" AND resource.label.job_id="{tarefa}"'
+    )
+
+
+def _politica(tarefa: str, oque: str, janela_s: int, canal: str) -> dict:
+    """A política, inteira: o JSON que vai ao `gcloud` (sem o e-mail; só o nome do canal)."""
+    return {
+        "displayName": _nome_da_politica(oque),
+        "combiner": "OR",
+        "conditions": [
+            {
+                "displayName": f"nenhum sucesso de {tarefa} em {janela_s // 60} min",
+                "conditionThreshold": {
+                    "filter": _filtro_da_politica(tarefa),
+                    "aggregations": [
+                        {
+                            "alignmentPeriod": f"{janela_s}s",
+                            "perSeriesAligner": "ALIGN_SUM",
+                            "crossSeriesReducer": "REDUCE_SUM",
+                        }
+                    ],
+                    "comparison": "COMPARISON_LT",
+                    "thresholdValue": 1,
+                    "duration": "0s",
+                    "evaluationMissingData": "EVALUATION_MISSING_DATA_ACTIVE",
+                    "trigger": {"count": 1},
+                },
+            }
+        ],
+        "alertStrategy": {"autoClose": "86400s"},
+        "notificationChannels": [canal],
+        "documentation": {
+            "content": (
+                f"A tarefa {tarefa} do Cloud Scheduler não teve sucesso na janela. Comece por "
+                "`python scripts/nuvem.py` e `python scripts/nuvem.py deploy` (só leem)."
+            ),
+            "mimeType": "text/markdown",
+        },
+        "enabled": True,
+    }
+
+
+@dataclass(frozen=True)
+class _Alertas:
+    metrica: dict | None
+    canal: str | None  # o nome (`projects/…/notificationChannels/…`) do canal do dono
+    politicas: dict[str, dict]  # displayName → política
+
+
+def _ler_alertas(ctx: Contexto) -> _Alertas:
+    metrica = _ler(_gcloud(ctx, "logging", "metrics", "describe", METRICA_DO_AGENDADOR))
+    canais = _ler(_gcloud(ctx, "beta", "monitoring", "channels", "list"))
+    meus = [
+        c
+        for c in canais or []
+        if c.get("displayName") == CANAL_DO_DONO
+        and c.get("type") == "email"
+        and (c.get("labels") or {}).get("email_address") == ctx.dono
+    ]
+    politicas = _ler(_gcloud(ctx, "monitoring", "policies", "list"))
+    return _Alertas(
+        metrica=metrica if isinstance(metrica, dict) else None,
+        canal=meus[0]["name"] if meus else None,
+        politicas={p.get("displayName", ""): p for p in politicas or []},
+    )
+
+
+def _politica_certa(politica: dict, tarefa: str, janela_s: int, canal: str | None) -> bool:
+    condicoes = politica.get("conditions") or [{}]
+    limiar = condicoes[0].get("conditionThreshold") or {}
+    agregacao = (limiar.get("aggregations") or [{}])[0]
+    return (
+        politica.get("enabled") is True
+        and len(condicoes) == 1
+        and limiar.get("filter") == _filtro_da_politica(tarefa)
+        and agregacao.get("alignmentPeriod") == f"{janela_s}s"
+        and limiar.get("comparison") == "COMPARISON_LT"
+        and limiar.get("evaluationMissingData") == "EVALUATION_MISSING_DATA_ACTIVE"
+        and canal is not None
+        and canal in (politica.get("notificationChannels") or [])
+    )
+
+
+def _idade_da_metrica_s(metrica: dict | None, agora: datetime | None = None) -> float:
+    criada = (metrica or {}).get("createTime")
+    if not criada:
+        return 0.0
+    momento = datetime.fromisoformat(str(criada))
+    return ((agora or datetime.now(UTC)) - momento).total_seconds()
+
+
+def _m_alertas(ctx: Contexto) -> Estado:
+    lido = _ler_alertas(ctx)
+    faltam = []
+    if lido.metrica is None:
+        faltam.append("a métrica dos sucessos")
+    elif lido.metrica.get("filter") != FILTRO_DO_SUCESSO:
+        faltam.append("a métrica existe com outro filtro")
+    if lido.canal is None:
+        faltam.append("o canal de e-mail do dono")
+    for tarefa, oque, janela in VIGIADAS:
+        politica = lido.politicas.get(_nome_da_politica(oque))
+        if politica is None:
+            faltam.append(f"a política ({oque})")
+        elif not _politica_certa(politica, tarefa, janela, lido.canal):
+            faltam.append(f"a política ({oque}) existe, mas não está como esperado")
+    if faltam:
+        return Estado(False, "faltam: " + "; ".join(faltam))
+    return Estado(
+        True, "lembretes sem sucesso em 15 min e backup sem sucesso em 25 h avisam o dono"
+    )
+
+
+def _c_alertas(ctx: Contexto, agora: datetime | None = None) -> list[list[str]]:
+    """Em rodadas, porque cada uma depende da anterior: (1) a métrica e o canal; (2) cada política,
+    só depois de a métrica ter vivido a janela dela inteira (antes, "nenhum dado" dispararia um
+    alerta falso: a do envio 15 min depois, a do backup 25 h depois). Repetir o passo cria só o
+    que falta; uma política que existe torta não se recria (o `medir` aponta)."""
+    lido = _ler_alertas(ctx) if "backup" in ctx.prontos else _Alertas(None, None, {})
+    comandos: list[list[str]] = []
+    if lido.metrica is None:
+        comandos.append(
+            _gcloud(
+                ctx,
+                "logging",
+                "metrics",
+                "create",
+                METRICA_DO_AGENDADOR,
+                "--description=um sucesso de uma tarefa do Scheduler do Viking (14b, D69)",
+                f"--log-filter={FILTRO_DO_SUCESSO}",
+            )
+        )
+    if lido.canal is None:
+        comandos.append(
+            _gcloud(
+                ctx,
+                "beta",
+                "monitoring",
+                "channels",
+                "create",
+                f"--display-name={CANAL_DO_DONO}",
+                "--type=email",
+                f"--channel-labels=email_address={ctx.dono}",
+            )
+        )
+    if comandos:
+        return comandos
+    idade = _idade_da_metrica_s(lido.metrica, agora)
+    for tarefa, oque, janela in VIGIADAS:
+        if _nome_da_politica(oque) in lido.politicas or idade < janela:
+            continue
+        politica = _politica(tarefa, oque, janela, str(lido.canal))
+        comandos.append(
+            _gcloud(ctx, "monitoring", "policies", "create", f"--policy={json.dumps(politica)}")
+        )
+    return comandos
+
+
 PASSOS = (
     Passo("projeto", "o projeto só do Viking", _m_projeto, _c_projeto),
     Passo(
@@ -935,6 +1155,20 @@ PASSOS = (
         _m_financas,
         _c_financas,
         depende=("apis", "contas"),
+    ),
+    Passo(
+        "editor",
+        "a conta padrão do Compute sem papel de editor no projeto (14b)",
+        _m_editor,
+        _c_editor,
+        depende=("contas",),
+    ),
+    Passo(
+        "alertas",
+        "o dono recebe um e-mail se o envio de lembretes ou o backup parar (14b)",
+        _m_alertas,
+        _c_alertas,
+        depende=("backup",),
     ),
 )
 

@@ -220,7 +220,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   Secret Manager
   pela entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
   quando pedido). O passo `agendador` (Sessão 11) liga o Cloud Scheduler que dispara o envio de
-  lembretes a cada minuto, só depois do portão da 10c; o passo `backup` (Sessão 11c) liga a
+  lembretes a cada minuto, só depois do portão da 10c; os passos `editor` e `alertas` (Sessão 14b,
+  D69) tiram o `roles/editor` da conta padrão do Compute e avisam o e-mail do dono (o da conta do
+  `gcloud`, nunca no repo) quando o envio de lembretes ou o backup param de ter sucesso (a métrica
+  sai do log do Scheduler; cada política só nasce depois de a métrica viver a janela dela, 15 min e
+  25 h, senão o primeiro alerta seria falso); o passo `backup` (Sessão 11c) liga a
   tarefa `viking-backup` (todo dia às 09:00 UTC) e roda uma na hora; o passo `financas` (Sessão
   11d, D64) cria a conta `viking-financas@` e o segredo `viking-pluggy` (que sobe do Mac, com
   `segredo viking-pluggy`), e o `deploy` publica o serviço `financas` antes do motor quando o

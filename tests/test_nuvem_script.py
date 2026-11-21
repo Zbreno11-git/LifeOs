@@ -8,10 +8,12 @@ teste chama o `gcloud` de verdade: `_rodar` é trocado por um gravador.
 """
 
 import ast
+import dataclasses
 import importlib.util
 import json
 import subprocess
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -53,6 +55,7 @@ _ESCRITAS = {
     "enable",
     "set-cleanup-policies",
     "add-iam-policy-binding",
+    "remove-iam-policy-binding",
     "deploy",
 }
 
@@ -1067,7 +1070,8 @@ def test_a_tarefa_do_agendador_chama_so_a_rota_do_envio_com_oidc(nuvem, ctx, mon
 
 def test_o_agendador_vem_antes_do_backup_e_sem_flag_nada_e_criado(nuvem):
     (passo,) = [p for p in nuvem.PASSOS if p.nome == "agendador"]
-    assert nuvem.PASSOS[-3] is passo and "contas" in passo.depende
+    nomes = [p.nome for p in nuvem.PASSOS]
+    assert nomes.index("agendador") < nomes.index("backup") and "contas" in passo.depende
     assert "só para a conta do dono" in passo.irreversivel and "US$" in passo.irreversivel
 
 
@@ -1136,9 +1140,9 @@ def test_com_a_tarefa_ja_criada_o_passo_so_roda_o_backup(nuvem, ctx, monkeypatch
     assert rodar[1:5] == ["scheduler", "jobs", "run", "viking-backup"]
 
 
-def test_o_backup_e_o_ultimo_passo_e_diz_que_nunca_apaga(nuvem):
-    passo = nuvem.PASSOS[-2]  # depois dele, só o das finanças (11d)
-    assert passo.nome == "backup" and passo.depende == ("agendador",)
+def test_o_backup_vem_depois_do_agendador_e_diz_que_nunca_apaga(nuvem):
+    (passo,) = [p for p in nuvem.PASSOS if p.nome == "backup"]
+    assert passo.depende == ("agendador",)
     assert "nunca apaga" in passo.irreversivel and "US$" in passo.irreversivel
 
 
@@ -1270,9 +1274,9 @@ def test_a_medida_reprova_quem_mais_le_o_segredo_da_pluggy(nuvem, ctx, monkeypat
         assert "vazio (sobe do Mac" in estado.detalhe
 
 
-def test_o_passo_das_financas_e_o_ultimo_e_nao_toca_o_motor(nuvem):
-    passo = nuvem.PASSOS[-1]
-    assert passo.nome == "financas" and set(passo.depende) == {"apis", "contas"}
+def test_o_passo_das_financas_nao_toca_o_motor(nuvem):
+    (passo,) = [p for p in nuvem.PASSOS if p.nome == "financas"]
+    assert set(passo.depende) == {"apis", "contas"}
     assert nuvem.SEGREDO_DAS_FINANCAS not in nuvem.SEGREDOS
     assert nuvem.SEGREDO_DAS_FINANCAS in nuvem.TODOS_OS_SEGREDOS
 
@@ -1572,3 +1576,180 @@ def test_a_prova_do_chat_confere_a_busca_e_os_modelos_da_arvore(nuvem):
     assert not nuvem._prova_do_chat({"commit": "velho", "gmail": True}).passou
     assert not nuvem._prova_do_chat(certo | {"modelo": "gemini-2.5-flash"}).passou
     assert not nuvem._prova_do_chat(certo | {"forte": "gemini-3.1-pro-preview"}).passou
+
+
+# --- o editor da conta padrão e os alertas (Sessão 14b, D69) -----------------------------------
+
+COMPUTE = "serviceAccount:42-compute@developer.gserviceaccount.com"
+
+
+def _iam_do_projeto(*com_editor):
+    return {"bindings": [{"role": "roles/editor", "members": list(com_editor)}]}
+
+
+def test_o_editor_da_conta_padrao_e_medido_e_removido_so_dela(nuvem, ctx, monkeypatch):
+    gravador = _Gravador(
+        {
+            "projects describe": {"projectNumber": "42"},
+            "projects get-iam-policy": _iam_do_projeto(COMPUTE, "user:dono@example.com"),
+        }
+    )
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert not nuvem._m_editor(ctx).pronto
+    (comando,) = nuvem._c_editor(dataclasses.replace(ctx, prontos=frozenset({"contas"})))
+    assert comando[:3] == ["gcloud", "projects", "remove-iam-policy-binding"]
+    assert f"--member={COMPUTE}" in comando and "--role=roles/editor" in comando
+    assert not any("dono@" in a for a in comando)
+
+
+def test_sem_o_editor_o_passo_esta_pronto(nuvem, ctx, monkeypatch):
+    gravador = _Gravador(
+        {
+            "projects describe": {"projectNumber": "42"},
+            "projects get-iam-policy": _iam_do_projeto("user:dono@example.com"),
+        }
+    )
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem._m_editor(ctx).pronto
+
+
+CANAL = "projects/viking-teste/notificationChannels/7"
+AGORA = datetime(2026, 11, 21, 21, 0, tzinfo=UTC)
+
+
+def _metrica(nuvem, criada_ha_s):
+    criada = (AGORA - timedelta(seconds=criada_ha_s)).isoformat().replace("+00:00", "Z")
+    return {
+        "name": nuvem.METRICA_DO_AGENDADOR,
+        "filter": nuvem.FILTRO_DO_SUCESSO,
+        "createTime": criada,
+    }
+
+
+def _canal(email="dono@example.com"):
+    return {
+        "name": CANAL,
+        "displayName": "viking: o e-mail do dono",
+        "type": "email",
+        "labels": {"email_address": email},
+    }
+
+
+def _alertas(nuvem, ctx, monkeypatch, respostas):
+    monkeypatch.setattr(nuvem, "_rodar", _Gravador(respostas))
+    return dataclasses.replace(ctx, prontos=frozenset({"backup"}))
+
+
+def test_alertas_do_zero_criam_a_metrica_e_o_canal_antes_das_politicas(nuvem, ctx, monkeypatch):
+    pronto = _alertas(nuvem, ctx, monkeypatch, {})
+    comandos = nuvem._c_alertas(pronto, agora=AGORA)
+    assert [c[1:4] for c in comandos] == [
+        ["logging", "metrics", "create"],
+        ["beta", "monitoring", "channels"],
+    ]
+    assert f"--log-filter={nuvem.FILTRO_DO_SUCESSO}" in comandos[0]
+    assert "--channel-labels=email_address=dono@example.com" in comandos[1]
+    assert "faltam" in nuvem._m_alertas(pronto).detalhe
+
+
+@pytest.mark.parametrize(
+    ("idade_s", "esperadas"),
+    [
+        (60, []),  # antes de 15 min, "nenhum dado" seria um alerta falso
+        (20 * 60, ["viking-lembretes"]),
+        (26 * 3600, ["viking-lembretes", "viking-backup"]),
+    ],
+)
+def test_cada_politica_so_nasce_depois_da_janela_dela(nuvem, ctx, monkeypatch, idade_s, esperadas):
+    pronto = _alertas(
+        nuvem,
+        ctx,
+        monkeypatch,
+        {
+            "logging metrics describe": _metrica(nuvem, idade_s),
+            "beta monitoring channels list": [_canal()],
+            "monitoring policies list": [],
+        },
+    )
+    comandos = nuvem._c_alertas(pronto, agora=AGORA)
+    politicas = [
+        json.loads(a.removeprefix("--policy="))
+        for c in comandos
+        for a in c
+        if a.startswith("--policy=")
+    ]
+    assert [
+        p["conditions"][0]["conditionThreshold"]["filter"].rsplit('"', 2)[-2] for p in politicas
+    ] == esperadas
+    for politica in politicas:
+        assert politica["notificationChannels"] == [CANAL]
+        assert "dono@example.com" not in json.dumps(politica)  # o e-mail só no canal
+
+
+def test_o_canal_de_outro_e_mail_nao_conta(nuvem, ctx, monkeypatch):
+    pronto = _alertas(
+        nuvem,
+        ctx,
+        monkeypatch,
+        {
+            "logging metrics describe": _metrica(nuvem, 30 * 3600),
+            "beta monitoring channels list": [_canal("outro@example.com")],
+            "monitoring policies list": [],
+        },
+    )
+    assert any("channels" in c for c in nuvem._c_alertas(pronto, agora=AGORA))
+
+
+def _politicas_certas(nuvem):
+    return [nuvem._politica(t, o, j, CANAL) for t, o, j in nuvem.VIGIADAS]
+
+
+def test_alertas_completos_estao_prontos_e_nao_recriam_nada(nuvem, ctx, monkeypatch):
+    pronto = _alertas(
+        nuvem,
+        ctx,
+        monkeypatch,
+        {
+            "logging metrics describe": _metrica(nuvem, 30 * 3600),
+            "beta monitoring channels list": [_canal()],
+            "monitoring policies list": _politicas_certas(nuvem),
+        },
+    )
+    assert nuvem._m_alertas(pronto).pronto
+    assert nuvem._c_alertas(pronto, agora=AGORA) == []
+
+
+@pytest.mark.parametrize(
+    "estraga",
+    [
+        lambda p: p.update(enabled=False),
+        lambda p: p["conditions"][0]["conditionThreshold"]["aggregations"][0].update(
+            alignmentPeriod="60s"
+        ),
+        lambda p: p["conditions"][0]["conditionThreshold"].update(
+            evaluationMissingData="EVALUATION_MISSING_DATA_INACTIVE"
+        ),
+        lambda p: p.update(notificationChannels=[]),
+        lambda p: p["conditions"][0]["conditionThreshold"].update(filter='metric.type="x"'),
+    ],
+)
+def test_politica_torta_nao_conta_como_pronta(nuvem, ctx, monkeypatch, estraga):
+    politicas = _politicas_certas(nuvem)
+    estraga(politicas[1])
+    pronto = _alertas(
+        nuvem,
+        ctx,
+        monkeypatch,
+        {
+            "logging metrics describe": _metrica(nuvem, 30 * 3600),
+            "beta monitoring channels list": [_canal()],
+            "monitoring policies list": politicas,
+        },
+    )
+    assert not nuvem._m_alertas(pronto).pronto
+
+
+def test_a_janela_do_backup_cabe_no_limite_e_cobre_um_dia(nuvem):
+    janelas = {t: j for t, _o, j in nuvem.VIGIADAS}
+    assert 24 * 3600 < janelas["viking-backup"] <= 90_000  # o máximo de uma política de limiar
+    assert janelas["viking-lembretes"] >= 5 * 60  # um minuto perdido (502) não é alarme

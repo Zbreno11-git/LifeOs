@@ -153,3 +153,8 @@ def test_contrato_do_firestore_roda_no_ci_e_nao_e_pulado():
     assert "bash scripts/emulador_firestore.sh" in codigo
     assert 'VIKING_EXIGIR_EMULADOR: "1"' in codigo
     assert "JAVA_HOME_21_X64" in codigo
+
+
+def test_roda_toda_semana_sem_push():
+    """14b (D69): sem push, o pip-audit e a suíte ficaram 43 dias sem rodar."""
+    assert re.search(r'^  schedule:\n    - cron: "\d+ \d+ \* \* \d"$', _codigo(), re.MULTILINE)

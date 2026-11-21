@@ -1,13 +1,18 @@
-# Portões do Viking a cada push: os mesmos que `AGENTS.md` ("Comandos") manda rodar à mão.
-# O CI verifica, não publica: sem segredo nenhum, permissão só de leitura, actions fixadas por SHA
-# (a tag fica no comentário). D45. O repo virou privado em 2026-09-29 (D58); a regra fica, e o
-# gitleaks entrou no lugar do secret scanning do GitHub.
+# Portões do Viking a cada push e toda segunda: os mesmos que `AGENTS.md` ("Comandos") manda rodar
+# à mão. O CI verifica, não publica: sem segredo nenhum, permissão só de leitura, actions fixadas
+# por SHA (a tag fica no comentário). D45. O gitleaks fica mesmo com o repo público (D50 revista na
+# 14b): é ele que olha o histórico inteiro a cada push.
+# A rodada de segunda (14b, D69) existe porque o pip-audit só rodava em push, e de 2026-10-09 a
+# 11-21 não houve push: 43 dias sem conferir. No repo público, o GitHub desliga um `schedule`
+# depois de 60 dias sem atividade; a rodada vermelha manda e-mail ao dono.
 name: testes
 
 on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * 1"
 
 permissions:
   contents: read
