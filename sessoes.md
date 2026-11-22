@@ -16,20 +16,18 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H2 — a palavra de ativação, em curso desde 2026-11-22** (a 1ª etapa fechada: o ganho 2, o modo de coleta e o piloto gravado; o próximo é a resposta do agente do Colab e a coleta grande). Depois, a escolher com o dono entre a **H1h** (o reforço da voz: o endereço de e-mail
-  soletrado e achado pelo nome, a velocidade, o HA que reconheceu 1 de 2), a **H2** (a palavra de
-  ativação: o modo de coleta primeiro, e o agente do Colab espera o piloto), a **H1b** (o som no
+- **Sessão:** **H2c1 — a coleta da wake word, 1 de 4** (o plano abaixo, na seção "Sessões H2c1–H2c4";
+  D71). A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
+  Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
+  dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
+  velocidade, com 13 s medidos do soltar ao `ok`, e o HA que reconheceu 1 de 2), a **H1b** (o som no
   aparelho, quando o MAX98357A chegar), a **H3** e a **15 — coach 1**. A H1 fechou no Mac em
-  2026-11-22 (D70, a parte final); a 14b, em 2026-11-21. A 11b (formulários) segue na fila, sem
-  posição decidida.
-- **Pendente da H1, só no VPS (o Mac não tem o emulador do Firestore):** as 3 mutações da voz cujo
-  teste é `tests/test_na_nuvem_voz.py` (`python scripts/mutacoes.py "voz: o interativo da voz vem do
-  corpo" "voz: a linha do código fica no que vai ser falado" "voz: a busca na web alcança a voz"`).
+  2026-11-22 (D70); a 14b, em 2026-11-21, e os alertas dela estão no ar desde 2026-11-22 ~22:55Z.
+  As 3 mutações da voz, no VPS, morreram 3 de 3 (2026-11-22 ~23:02Z). A 11b (formulários) segue na
+  fila, sem posição decidida.
 - **Fora do repo, no estúdio:** o som do laptop sai pela Scarlett 2i2 (`~/.asoundrc` no laptop);
   sem ela plugada, a voz falha com erro no LED. A luz NEEWER RGB62 precisa de uma ESP32 com o
   ESPHome (o laptop não tem Bluetooth).
-- **Pendente da 14b:** a política de alerta do backup só pode nascer depois de
-  2026-11-22 ~22:20Z (`python scripts/nuvem.py --executar alertas`, e então 15 ✅).
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
     regras e recusas na D53.
@@ -1362,9 +1360,7 @@ O que estava escrito na abertura:
   - o firmware de uso de volta com o ganho 2, conferido no ar.
 
   **Falta:**
-  - a resposta do agente do Colab sobre o piloto;
-  - a coleta grande em sessões (150+ positivos variados, 16 h+ de negativos do estúdio normal, em
-    3–4 sessões; o dono decide quando deixa gravando);
+  - a coleta grande, em 4 sessões (H2c1–H2c4, logo abaixo; D71);
   - o TFLM e o micro_frontend no arduino-esp32 4.0.0, com o CSV de paridade do chip contra o
     `parity_v2`;
   - a voz do aparelho, com o ok do gasto.
@@ -1387,6 +1383,109 @@ O que estava escrito na abertura:
 - **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
+
+## Sessões H2c1–H2c4 — a coleta grande da wake word (planejadas em 2026-11-22; D71)
+
+**O total:** ~4 h do estúdio normal, 150 "Hey Viking" (38 + 38 + 37 + 37) e ~60 frases
+parecidas. São 4 sessões, **cada uma num dia e numa condição diferentes**, e cada uma em pastas
+próprias:
+- `real_positive/AAAA-MM-DD_cN_takes`;
+- `real_negative/AAAA-MM-DD_cN_parecidas`;
+- `real_negative/AAAA-MM-DD_cN_estudio`.
+
+A H2c4 inteira fica guardada para o teste (o agente do Colab confirma).
+
+**O que vale nas 4:**
+- **Antes de gravar, o roteiro na tela e o "vai" do dono.** Os takes rodam numa janela do
+  Terminal que espera o Enter, e eu leio os resultados nos arquivos.
+- **A ordem é sempre a mesma:** os takes (~5 min), depois as parecidas (~3 min), depois o estúdio
+  normal (1 h). O estúdio normal roda sem a pessoa olhar para a tela, com `caffeinate -i` para o
+  Mac não dormir. Um cliente por vez na porta.
+- **Durante o estúdio normal, o dono não diz "Hey Viking"** (fala, trabalha e toca música à
+  vontade). Se escapar, ele me diz a hora, e eu corto o trecho.
+- **O ✅ de cada sessão:**
+  - todo arquivo com `lacunas: []` e 0 checksums errados;
+  - o `ganho` igual a 2 em todos;
+  - as saturadas contadas, e se elas se concentrarem em graves, avisar o Colab (é o gatilho do
+    passa-alta, D71);
+  - a lista do `pre_fala` (o barulho antes da fala);
+  - as horas da sessão;
+  - o zip com o LEIA-ME e os SHA256SUMS, que o dono sobe para o Drive com a mensagem ao Colab.
+- **A voz do estúdio fica desligada só enquanto a coleta roda** (o firmware único volta ao uso
+  sozinho no fim).
+- **A prova do "≤ 1 falsa por dia" não sai daqui.** Ela vem de uma semana de uso com a placa
+  ouvindo, na sessão que põe o modelo na placa (D71).
+
+### H2c1 — o firmware único, as ferramentas e a coleta 1 (o estúdio quieto, de dia)
+
+1. **O firmware único** (~30 min):
+   - a placa liga no modo de uso de sempre. Nos primeiros ~1,5 s depois do boot, se chegar a linha
+     `VKC1 COLETA` pela USB, ela entra no modo de coleta (o mesmo `coletar()`, o mesmo
+     `converter()`);
+   - no modo de coleta, a linha `VKC1 USO` reinicia a placa no modo de uso. O `coleta.py` manda o
+     `COLETA` ao abrir a porta e o `USO` ao fechar, mesmo depois de um Ctrl-C;
+   - os testes: a mesma linha nos dois lados, lida do `main.cpp`; e o boot de uso não espera mais
+     que 1,5 s;
+   - as mutações: o comando ignorado, e o `USO` que não reinicia;
+   - os portões: os dois lados compilam sem aviso, e o env `xiao_s3_coleta` some.
+2. **As ferramentas:**
+   - `takes --dica TEXTO`: a dica aparece na tela a cada take e vai para o `.seq.json`, para o
+     Colab separar por distância e tom. A numeração continua de uma rodada para a outra;
+   - `pacote --sessao …`: o zip, o LEIA-ME (os níveis, a distância e o tom de cada take, o
+     `pre_fala`, as horas), os SHA256SUMS e a conferência do zip lido de volta;
+   - o `caffeinate`.
+3. **Gravar a placa (com o ok) e conferir:**
+   - o boot de uso chega ao PRONTO;
+   - uma fala de teste dá a resposta certa (centavos);
+   - `coleta.py medir --minutos 1`: 0 lacunas e o `ganho=2`, e depois a placa volta ao PRONTO
+     sozinha.
+4. **Os 38 takes** (estúdio quieto, de dia; o dono sentado, a placa no lugar de sempre):
+   - 10 a ~50 cm, voz normal;
+   - 10 a ~1 m, voz normal;
+   - 10 a ~1,5 m, voz normal;
+   - 8 a ~2 m, um pouco mais alto.
+5. **15 parecidas** (`--negativo`): "Hey King", "hey vizinho", "Viking" no meio de uma frase ("vi
+   um viking na TV"), "hey, liga", "ei, Vi". A lista sai do LEIA-ME e o Colab pode trocar.
+6. **1 h de estúdio normal** (quieto: o dono trabalhando, teclado, mouse, cadeira, falando
+   sozinho), enquanto eu fecho os docs.
+7. **O pacote, o Drive e a mensagem ao Colab.** Pedir a ele o ok da 1ª sessão antes da 2ª, porque
+   ela é a primeira com a 2 m e as parecidas.
+
+### H2c2 — a coleta 2: com música
+
+- **38 takes** com música tocando nas caixas da Scarlett, em volume de fundo a médio:
+  - 10 a ~50 cm, normal;
+  - 10 a ~1 m, mais baixo;
+  - 10 a ~1,5 m, mais rápido;
+  - 8 a ~2 m, normal.
+- **15 parecidas**, com a música.
+- **1 h de estúdio normal com música:** os gêneros que o dono ouve, com grave (é onde o passa-alta
+  pode aparecer). O dono trabalha junto.
+
+### H2c3 — a coleta 3: de noite, com conversa
+
+- **37 takes** de noite:
+  - 10 a ~50 cm, cansado ou rouco;
+  - 10 a ~1 m, de lado para a placa;
+  - 10 a ~1,5 m, normal;
+  - 7 de outro canto do estúdio.
+- **15 parecidas.**
+- **1 h de estúdio com fala que não é a palavra:** uma ligação ou chamada de vídeo, um vídeo ou
+  podcast nas caixas, o dono falando. São os negativos que mais valem: a maior parte das ativações
+  falsas vem de fala.
+- **Se o dono der o ok do gasto** (centavos): 10 min da voz do próprio Viking (o TTS) pelas caixas,
+  gravados pelo mic, para o aparelho não acordar com a própria voz.
+
+### H2c4 — a coleta 4: um dia comum, guardada para o teste
+
+- Outro dia e outro horário, **tudo misturado** como num dia de uso:
+  - **37 takes** em todas as condições de antes, sem ordem: a dica sorteada pelo `coleta.py`;
+  - **15 parecidas;**
+  - **1 h de estúdio** do jeito que o estúdio estiver.
+- O LEIA-ME marca a sessão como **teste**: ela nunca entra no treino. É o número de falsas por hora
+  em que dá para confiar (com os limites da D71).
+- **No fim, a conta da coleta inteira:** as horas, os takes por distância e tom, as saturadas, e a
+  lista do que o Colab descartou.
 
 ## Sessão H3 — o Viking mandando no Home Assistant (criada em 2026-11-21, na abertura da H1)
 

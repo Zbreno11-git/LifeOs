@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~23:10Z — a **H2** no Mac: C1–C6 ✅ e o piloto aprovado pelo agente do Colab; o próximo é a coleta grande, quando o dono decidir
+## ▶️ RETOMAR AQUI — 2026-11-22, ~23:15Z — a **H2** no Mac: C1–C6 ✅, o piloto aprovado pelo agente do Colab, e as 4 coletas planejadas (H2c1–H2c4, D71); o próximo é a H2c1
 
 - **C4, o piloto (rodado por mim, com o "vai" do dono):**
   - a sala: 59,8 s, "✅ contínuo", com o RMS de 56 a 337;
@@ -34,14 +34,17 @@
   O firmware de coleta novo **ainda não foi gravado**: vai na próxima coleta, com o ok.
 - **O agente do Colab aprovou o piloto** (parte 5, no `sessoes.md`, H2), e o `pre_fala` que ele
   pediu (o barulho antes da fala, medido na faixa) está no `coleta.py`.
-- **O próximo:** a coleta grande em sessões, quando o dono decidir (o firmware de coleta novo
-  precisa ser gravado antes, com o ok dele):
+- **Planejado em 2026-11-22 ~23:15Z (D71):** a coleta grande em **4 sessões, H2c1–H2c4**, no
+  `sessoes.md`, cada uma com ~1 h de estúdio normal, 37–38 takes e 15 parecidas. O dono decidiu 4 h
+  (não 16) e **um firmware só** (a H2c1 o faz e o grava, com o ok). As 3 mutações da voz morreram no
+  VPS (3 de 3, ~23:02Z).
+- **O próximo: a H2c1** (o plano no `sessoes.md`). O que segue abaixo é o resumo anterior:
   - os positivos variados (a hora, o lugar, o tom, com ruído);
   - os negativos do estúdio "normal": horas com o dono trabalhando ou com música. O dono pediu
     para **não deixar gravando ainda**.
 - **No VPS:** o `alertas --executar` rodou pelo dono às ~22:55Z (`✅ alertas: lembretes sem
   sucesso em 15 min e backup sem sucesso em 25 h avisam o dono`, `exit=0`): os dois alertas da 14b
-  estão no ar. Falta lá: as 3 mutações da voz (o bloco anterior abaixo).
+  estão no ar. As 3 mutações da voz também rodaram lá: 3 de 3 mortas.
 
 ### O bloco anterior (~19:55Z)
 
