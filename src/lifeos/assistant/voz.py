@@ -26,7 +26,7 @@ from lifeos.browser._redacao import limpar_controles
 
 # O que o aparelho grava (o INMP441 a 16 kHz, convertido para 16 bits no firmware).
 TAXA_DE_ENTRADA = 16_000
-MAX_WAV = 1024 * 1024  # ~32 s de áudio a 16 kHz, mono, 16 bits; o firmware para em 15 s
+MAX_WAV = 1024 * 1024  # ~32 s de áudio a 16 kHz, mono, 16 bits; o firmware para em 30 s
 MIN_SEGUNDOS = 0.3  # um toque sem fala
 # A transcrição (medido em 2026-11-21 na página de modelos e preços: o Flash-Lite aceita áudio, a
 # 32 tokens/s e US$ 0,30/1M, ≈ US$ 0,0006/min; o `gemini-3.5-transcribe` custa US$ 0,003/min).

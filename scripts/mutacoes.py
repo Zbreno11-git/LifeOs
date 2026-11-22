@@ -3697,6 +3697,13 @@ MUTACOES = [
         "tests/test_casa.py::test_dois_toques_depois_da_janela_nao_aprovam",
     ),
     Mutacao(
+        "voz: o firmware grava mais do que o motor aceita",
+        "firmware/viking-voz/src/main.cpp",
+        "constexpr uint32_t MAX_GRAVACAO_S = 30;",
+        "constexpr uint32_t MAX_GRAVACAO_S = 40;",
+        "tests/test_firmware_voz.py::test_a_gravacao_mais_longa_do_firmware_cabe_no_motor_e_na_ponte",
+    ),
+    Mutacao(
         "casa: o token do aparelho comparado com ==",
         "src/lifeos/casa/servidor.py",
         "not hmac.compare_digest(dado.encode(), esperado.encode())",

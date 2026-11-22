@@ -436,7 +436,7 @@ void loop() {
   // primeiro de dois). O LED só acende de "gravando" se passou do toque.
   uint32_t amostras = gravarDecidindo(apertouEm);
   if (amostras) {
-    // Passou do teto (15 s) ainda apertado: espera soltar, para não começar outra gravação.
+    // Passou do teto (MAX_GRAVACAO_S) ainda apertado: espera soltar, para não começar outra.
     while (apertado()) {
       delay(10);
       esp_task_wdt_reset();

@@ -16,11 +16,19 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H1 — a voz do estúdio** (em curso desde 2026-11-21; o ESP32 pelo servidor de casa;
-  reabre a D2, D70), depois a H1b/H2/H3 quando o dono quiser, e a
-  **15 — coach 1**. A 14b (a manutenção da mini-auditoria) fechou no Mac em 2026-11-21; a 14, em
-  2026-10-09 (D68). A 11b (formulários) segue na fila, sem posição decidida.
-- **Pendente da 14b, sem travar a H1:** a política de alerta do backup só pode nascer depois de
+- **Sessão:** **a escolher com o dono** entre a **H1h** (o reforço da voz: o endereço de e-mail
+  soletrado e achado pelo nome, a velocidade, o HA que reconheceu 1 de 2), a **H2** (a palavra de
+  ativação: o modo de coleta primeiro, e o agente do Colab espera o piloto), a **H1b** (o som no
+  aparelho, quando o MAX98357A chegar), a **H3** e a **15 — coach 1**. A H1 fechou no Mac em
+  2026-11-22 (D70, a parte final); a 14b, em 2026-11-21. A 11b (formulários) segue na fila, sem
+  posição decidida.
+- **Pendente da H1, só no VPS (o Mac não tem o emulador do Firestore):** as 3 mutações da voz cujo
+  teste é `tests/test_na_nuvem_voz.py` (`python scripts/mutacoes.py "voz: o interativo da voz vem do
+  corpo" "voz: a linha do código fica no que vai ser falado" "voz: a busca na web alcança a voz"`).
+- **Fora do repo, no estúdio:** o som do laptop sai pela Scarlett 2i2 (`~/.asoundrc` no laptop);
+  sem ela plugada, a voz falha com erro no LED. A luz NEEWER RGB62 precisa de uma ESP32 com o
+  ESPHome (o laptop não tem Bluetooth).
+- **Pendente da 14b:** a política de alerta do backup só pode nascer depois de
   2026-11-22 ~22:20Z (`python scripts/nuvem.py --executar alertas`, e então 15 ✅).
 - **Revisão sênior e pesquisa do roteiro: feitas em 2026-09-28** (pedido do dono).
   - Fontes em `docs/fontes/pesquisa-roteiro.md`; as escolhas, na seção de cada sessão abaixo;
@@ -1213,7 +1221,7 @@ O que estava escrito na abertura:
   `scripts/nuvem.py`; o CI semanal; o repo público (D58 revista, item 3, decisão do dono).
 - **O plano por checkpoints:** `PROGRESSO.md`.
 
-## Sessão H1 — a voz do estúdio: ESP32 → servidor de casa → motor (criada em 2026-11-21; aberta no mesmo dia)
+## Sessão H1 — a voz do estúdio: ESP32 → servidor de casa → motor (criada em 2026-11-21; aberta no mesmo dia; fechada no Mac em 2026-11-22, com as 5 verificações do E2E)
 
 - **Reabre a trilha de hardware (D2) por decisão do dono (2026-11-21):** "faz a manutenção
   primeiro, depois o ESP32". Vem antes da 15. Decisões da abertura: D70.
@@ -1307,6 +1315,8 @@ O que estava escrito na abertura:
 - **Decidido pelo dono (2026-11-22, na H1):** a frase "Hey Viking", dita "VI-king" (à
   portuguesa); só o dono ativa; **no máximo 1 ativação falsa por dia**; latência até ~1 s; a
   coleta só **depois de fechar a H1**. Ativar só começa a gravar, nunca aprova (D26/D70).
+  **"Só o dono ativa" não é requisito** (decidido em 2026-11-22, depois de o agente do Colab
+  explicar que o microWakeWord não reconhece quem fala: qualquer voz acorda, e isso só grava).
 - **O treino** (microWakeWord, streaming int8) roda no Colab, por outro agente (o Claude in Chrome
   do dono), com o notebook no Drive dele. O que ele pediu deste lado, respondido em 2026-11-22:
   - um **modo de coleta** no firmware (WAV 16 kHz/mono/16 bits pelo mesmo caminho do mic, pela USB

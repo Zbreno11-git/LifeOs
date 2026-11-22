@@ -1046,6 +1046,59 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-22 — Sessão H1 fechada no Mac: a voz do estúdio, da placa às caixas, com as 5 verificações
+
+**Onde:** no Mac do dono (a XIAO na USB dele, o laptop de casa por SSH na mesma Wi-Fi); o deploy
+no VPS, pelo dono. **Decidido pelo dono:**
+- o sotaque `pt-BR` sem estilo;
+- substituir o ESPHome da XIAO pelo `viking-voz`;
+- aceitar o risco do token do aparelho colado no chat;
+- o E2E antes da velocidade;
+- a coleta da wake word depois de fechar a H1;
+- o hardening da voz numa sessão própria (H1h).
+
+**Feito:**
+- **o laptop:**
+  - o `uv`, o clone e o serviço `systemd --user` com `Linger`;
+  - o `casa-chave` com 1 chave `USER_PROVIDED` e o `--conferir` ✅;
+- **a placa, camada a camada, cada uma vista no serial:**
+  - o boot;
+  - o botão (o de 4 pernas na diagonal);
+  - o mic, com o ganho 8 → 4;
+  - a rede (a antena U.FL, -35 dBm, a ponte `/saude` 200 com o certificado fixado);
+- a pinagem do protótipo em `firmware/viking-voz/ESQUEMA.md`;
+- o `montar_segredos.sh` (o `segredos.h` sem imprimir nada);
+- **o filtro de silêncio do motor**, medido em 3 rodadas na placa: o fundo variou 4×, e só a régua relativa separou;
+- o deploy `3bc72ef` (37 ✅).
+
+**O E2E (as 5):**
+1. o HA respondeu sozinho 1 de 2 vezes;
+2. a agenda certa, a ~5,5 s do soltar ao `aplay`;
+3. a aprovação pelos dois toques funcionou, e a janela abriu só depois do último pedaço;
+4. o interruptor do HA: nada chega ao motor;
+5. `casa-cortar` → com a ponte reiniciada, `RefreshError` e nada no motor; religada, voltou.
+
+**Achado no E2E:**
+- o alto-falante do laptop está danificado; o som sai pela Scarlett 2i2 do dono, pelo `~/.asoundrc`;
+- o teto de 15 s cortou um ditado sem aviso, e foi para 30 s, com o LED avisando (erros, classe 7);
+- **um endereço de e-mail ditado e lido em voz não se confere de ouvido**: dois "oi" de teste foram a um domínio errado com a aprovação do dono (vai para a H1h);
+- o laptop não tem Bluetooth;
+- a NEEWER RGB62 do estúdio continua anunciando pelo Bluetooth quando é desligada pelo app, e some quando é desligada no botão (o caminho é uma ESP32 com o ESPHome).
+
+**A wake word (H2):** outro agente (o Claude in Chrome do dono) treina no Colab. Os contratos estão
+na H2 do `sessoes.md`. A fórmula inteira da entrada do modelo foi conferida aqui contra o vetor de
+paridade dele: 7880 de 7880. Os dados de voz nunca vêm ao repo (`.gitignore`).
+
+**Portões (2026-11-22 ~19:10Z, no Mac):**
+- a suíte, sozinha: `2888 passed, 466 skipped`;
+- o `ruff check` limpo, e o `ruff format --check` com 214 arquivos já formatados;
+- as mutações da H1: 23 de 23 mortas pelo teste esperado;
+- as 3 cujo teste só roda com o emulador do Firestore ficam para o VPS.
+
+**A revisão:**
+- a 2ª passada achou dois comentários que ainda diziam 15 s, e nada que ligasse o teto do firmware ao do motor. Agora `tests/test_firmware_voz.py` liga os dois, e foi visto caindo com 40 s;
+- a de segurança confirmou que as `/voz/*` são só da `casa@`, com a identidade como 1ª instrução.
+
 ### 2026-11-21 — Sessão H1 aberta: a voz do estúdio (reabre a D2)
 
 **Decidido pelo dono (2 rodadas na abertura):** o aparelho fica fixo no estúdio, com "todas as

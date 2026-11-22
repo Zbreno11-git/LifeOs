@@ -69,7 +69,10 @@ quadro muda, e o que está acima sobre o VPS vale para o VPS:
   host`): **não há túnel**, é SSH direto pela rede de casa (o alias `home-server` do
   `~/.ssh/config` do Mac, por chave, `BatchMode` funciona), então só com o Mac na mesma Wi-Fi. O
   `sudo` lá pede senha: o dono roda, com o ok dele. Nenhum túnel ou encaminhamento aponta para a
-  porta 8765 da ponte (ela é só da rede de casa). Os IPs da rede de casa nunca vão para o repo.
+  porta 8765 da ponte (ela é só da rede de casa). Os IPs da rede de casa nunca vão para o repo. O
+  alto-falante do laptop está danificado: o som sai pela Scarlett 2i2 do dono no USB (o
+  `~/.asoundrc` de lá faz dela o padrão do ALSA; sem ela, a voz erra com 3 piscadas). O laptop não
+  tem Bluetooth.
 - **A memória do Claude no VPS não viaja:** o que importa dela está neste arquivo, no `AGENTS.md`
   e no bloco do `PROGRESSO.md`.
 

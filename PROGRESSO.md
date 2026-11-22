@@ -5,7 +5,43 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~18:35Z — a H1 segue **no Mac**; o deploy `3bc72ef` no ar (37 ✅); o E2E com 1 e 2 feitas, a 3 a refazer para outra conta (o teto de 30 s gravado); faltam a 3, a 4, a 5 e o C8
+## ▶️ RETOMAR AQUI — 2026-11-22, ~19:07Z — a **H1 fechada** no Mac (o E2E com as 5 verificações); a próxima sessão é escolha do dono
+
+**O próximo passo, numa linha:** abrir a sessão que o dono escolher (H1h, H2, H1b, H3 ou 15) pelo
+`sessoes.md`, "▶️ Começar a próxima sessão por aqui"; no VPS, depois de 22:20Z, `python
+scripts/nuvem.py --executar alertas; echo "exit=$?"`, e as 3 mutações da voz que só rodam lá.
+
+**O fechamento (C8, 2026-11-22 ~18:58–19:10Z):**
+- **O E2E, as 5 verificações:**
+  - 4: o interruptor desligado → `fala: desligado`, nenhum pedido ao motor;
+  - 5: `casa-cortar --executar` + a ponte reiniciada → `fala: erro`; o `--conferir` mostra
+    `RefreshError`, nada no motor; `casa-religar` + reiniciar → o motor aceita (`3bc72ef`) e a
+    voz volta;
+  - as outras três estão no registro abaixo.
+- **A revisão, 2ª passada ("o que o conserto tornou falso?"):**
+  - dois comentários ainda diziam 15 s (`voz.py`, `main.cpp`), consertados;
+  - nada ligava o teto do firmware ao `MAX_WAV`: agora `tests/test_firmware_voz.py` liga, e cai com
+    40 s (visto); a mutação dele está no `scripts/mutacoes.py`.
+- **A revisão de segurança ("por onde mais se chega lá?"):** as 4 `/voz/*` têm a identidade como 1ª
+  instrução, e só a `casa@` entra nelas.
+- **Mutações da H1 no Mac: 23 de 23 mortas pelo teste esperado.** As 3 cujo teste é
+  `test_na_nuvem_voz.py` são puladas no Mac (sem o emulador): rodar no VPS.
+- **Os portões:**
+  - `ruff check` "All checks passed!" e `ruff format --check` "214 files already formatted";
+  - a suíte da 1ª rodada: 2884 passed, 2 failed. Os 2 são testes de crescimento de tempo, e eu
+    rodava outro `pytest` por cima. Sozinhos, 3 de 3: `5 passed`;
+  - **a suíte limpa, sozinha: `2888 passed, 466 skipped in 70.39s`** (os pulados: o emulador do
+    Firestore e o extra `nuvem`, que o Mac não tem);
+  - o `voz.py` mudou só um comentário (15 → 30 s) desde o `3bc72ef` no ar: o próximo deploy o leva,
+    sem mudança de comportamento.
+- **Docs:** a D70 final (`decisoes.md`), o diário, a barra (27 de 40), o `sessoes.md` (a H1
+  fechada, o ▶️, a H1h), o `AGENTS.md` (o corte não instantâneo, os dados de voz fora do repo, o
+  firmware) e o `CLAUDE.md` (a Scarlett, sem Bluetooth).
+- **Pendente e decidido pelo dono:** o hardening da voz (H1h); a velocidade; a luz NEEWER (uma ESP32
+  com o ESPHome); a H2 (o modo de coleta primeiro). **A wake word acorda com qualquer voz**: o dono
+  decidiu que "só ele ativar" não é requisito (acordar só grava; aprovar é o botão).
+
+### (o registro) a H1 no Mac, 2026-11-22 ~12:20–18:57Z
 
 **Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
 - HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`

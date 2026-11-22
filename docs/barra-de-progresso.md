@@ -7,14 +7,49 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-11-21 (Sessão 14b fechada no seu Mac).**
+**Última atualização: 2026-11-22 (Sessão H1 fechada no seu Mac e no estúdio).**
 
-`██████████████░░░░░░ 26 de 36 sessões fechadas`
+`██████████████░░░░░░ 27 de 40 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14 e 14b; parciais: nenhuma; na fila: H1
-(voz pelo pulso), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total
-passou de 33 para 36 em 2026-11-21: a 14b (manutenção), a H1 e a sessão final.
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b e H1; parciais: nenhuma; na fila: H1b (o som no
+aparelho), H1h (o reforço da voz), H2 (a palavra de ativação), H3 (o Viking mandando no Home
+Assistant), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total passou
+de 36 para 40 em 2026-11-22: a H1b, a H2 e a H3 já estavam no roteiro desde 21/11 e não tinham
+entrado na conta, e a H1h nasceu hoje.
+
+## 2026-11-22 — Sessão H1: o Viking ganhou voz no estúdio (fechada no seu Mac)
+
+**O que funciona agora:** você segura o botão do aparelho na mesa, fala e solta. A resposta sai
+em voz, com a voz que você escolheu (Charon, em português do Brasil), pelas suas caixas de som.
+- **"O que eu tenho amanhã?"** respondeu certo, uns 5 a 6 segundos depois de você soltar.
+- **Pedidos simples para a casa** (como "que horas são") vão primeiro ao Home Assistant, que
+  responde sozinho, sem gastar nada. Funcionou numa de duas vezes; a outra caiu no Viking, que
+  também respondeu certo.
+- **Um e-mail para outra pessoa só sai com dois toques no botão**, depois de ele ler o e-mail
+  inteiro em voz alta. Sem os toques, nada sai.
+- **Para desligar a voz na hora:** o botão "Viking voz" no app do Home Assistant do iPhone. Com
+  ele desligado, nada do que você fala sai de casa.
+- **Para cortar de vez** (se o laptop for roubado, por exemplo): um comando desliga a conta da casa
+  no Google. Ele não é instantâneo: pega quando a ponte do laptop pede uma credencial nova, em até 1
+  hora, ou na hora se ela for reiniciada.
+- **Silêncio não gasta:** se você aperta e não fala nada, o Viking percebe antes de chamar o
+  Gemini.
+- **Uma fala pode ter até 30 segundos.** Quando estiver acabando, o LED pisca rápido.
+
+**O que deu errado e ficou anotado:**
+- **Endereço de e-mail ditado não funciona bem.** Duas vezes o "oi" de teste foi para um endereço
+  errado ("team" em vez de "teen"), porque ouvir um endereço lido em voz não dá para conferir.
+  Isso vai para a sessão de reforço (H1h): soletrar o endereço e achar a pessoa pelo nome, só
+  entre quem você já mandou e-mail.
+- **O alto-falante do laptop está quebrado.** O som sai pela sua Scarlett até o aparelho ganhar o
+  próprio alto-falante (H1b).
+- **A demora de 5 a 6 segundos** dá para diminuir; também está na H1h, para medir antes de mexer.
+
+**A luz do estúdio (NEEWER RGB62):** dá para ligar pelo Home Assistant, desde que o botão dela
+fique sempre ligado e ela fique no carregador: desligada pelo app, ela continua ouvindo o
+Bluetooth; desligada no botão, não. Precisa da sua outra ESP32-S3 perto dela (o laptop não tem
+Bluetooth). Fica para depois.
 
 ## 2026-11-21 — Sessão 14b: a manutenção depois de 43 dias parado (fechada no seu Mac)
 
