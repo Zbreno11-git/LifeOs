@@ -16,7 +16,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **a escolher com o dono** entre a **H1h** (o reforço da voz: o endereço de e-mail
+- **Sessão:** **H2 — a palavra de ativação, em curso desde 2026-11-22** (o plano no `PROGRESSO.md`: o ganho 2, o modo de coleta, o piloto). Depois, a escolher com o dono entre a **H1h** (o reforço da voz: o endereço de e-mail
   soletrado e achado pelo nome, a velocidade, o HA que reconheceu 1 de 2), a **H2** (a palavra de
   ativação: o modo de coleta primeiro, e o agente do Colab espera o piloto), a **H1b** (o som no
   aparelho, quando o MAX98357A chegar), a **H3** e a **15 — coach 1**. A H1 fechou no Mac em
@@ -1304,7 +1304,7 @@ O que estava escrito na abertura:
      a transcrição antes de mexer no ganho (o ganho muda o treino da wake word: avisar o agente do
      Colab antes).
 
-## Sessão H2 — a palavra de ativação (criada em 2026-11-21, na abertura da H1)
+## Sessão H2 — a palavra de ativação (criada em 2026-11-21, na abertura da H1; aberta no Mac em 2026-11-22)
 
 - **Entrega:** "Hey Viking" acorda o aparelho sem o botão (o botão continua, e os dois toques
   continuam sendo a aprovação).

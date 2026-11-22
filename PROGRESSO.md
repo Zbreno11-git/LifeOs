@@ -5,7 +5,114 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~19:07Z — a **H1 fechada** no Mac (o E2E com as 5 verificações); a próxima sessão é escolha do dono
+## ▶️ RETOMAR AQUI — 2026-11-22, ~19:25Z — a **H2 aberta** no Mac (a wake word): ganho 2 congelado, o modo de coleta e o piloto; em C0
+
+**Aberta em 2026-11-22 ~19:18Z (medido):** `a055705`, CI `completed success`; `uv lock --upgrade
+--dry-run` → "No lockfile changes detected"; árvore limpa. **Decidido pelo dono:** o ganho **2**
+congelado (o firmware trunca antes de multiplicar: o ganho só desloca o volume, e a fala de perto
+parava de saturar); os takes guiados pela **tela do Mac**, sem o botão; abrir a H2 agora.
+
+**O plano (aprovado pelo dono):**
+
+### O desenho
+
+### Firmware: `firmware/viking-voz/src/main.cpp` e `platformio.ini`
+1. **`GANHO = 4` → `2`**, com o comentário da decisão (o motivo e "não mudar sem avisar o agente do
+   Colab: é retreino").
+2. **O mesmo caminho do áudio nos dois modos.** O laço de conversão que hoje está dentro de
+   `gravar()` sai para uma função `converter(const int32_t *in, int n, int16_t *out, uint32_t
+   &saturadas)`: o `>>8`, o passa-alta 0,995 com o estado global, o `(int)(y/256)*GANHO` e o
+   corte. `gravar()` e a coleta chamam essa mesma função, para não haver duas cópias da regra.
+3. **O modo de coleta por compilação:** um env `[env:xiao_s3_coleta]` em `platformio.ini`, com
+   `extends = env:xiao_s3` e `build_flags = -DMODO_COLETA=1`. O env padrão continua sendo o de uso.
+   Com `MODO_COLETA`:
+   - o boot é o mesmo, e a Wi-Fi se conecta e fica ociosa, como no uso real. Não se pede nada à
+     ponte;
+   - o laço lê o I2S sem parar, em blocos de 512 amostras (32 ms), chama o `converter`, e manda um
+     **quadro binário** pela USB. O quadro é `"VKC1"` + `seq` (u32) + `t_us` (u32, `micros()` da
+     leitura) + `n` (u16) + `flags` (u16; bit 0 = botão apertado) + `n`×int16 + FNV-1a de 32 bits
+     de tudo depois do mágico, em little-endian, 1044 bytes a cada 32 ms (~32,6 KB/s);
+   - `Serial.setTxBufferSize(8192)` antes do `begin`, e um prazo de envio curto: **a USB nunca
+     segura o laço do I2S**. Um quadro perdido aparece como um buraco no `seq`, ou como um
+     checksum errado, do lado do Mac;
+   - uma linha de texto rara, `coleta: status …` com a contagem e o maior tempo de volta do laço,
+     a cada ~10 s. O leitor do Mac separa o texto dos quadros pelo mágico.
+
+### Mac: `firmware/viking-voz/coleta.py` (novo; stdlib + `pyserial`, roda na venv do `~/esp32-mac`, como o `serial_log.py`)
+- **Funções puras, testáveis sem a placa:**
+  - `fnv1a32`;
+  - um `Leitor` que recebe bytes e devolve quadros válidos, o texto e os erros. Ele se
+    ressincroniza pelo mágico e conta os checksums errados;
+  - uma `Continuidade` que acumula `seq` e `t_us`. Ela registra os **buracos de seq** e os
+    **buracos de tempo**: amostras recebidas comparadas com o tempo decorrido × 16000, com
+    tolerância de ~0,1 s. Assim um transbordo do DMA do I2S, que não pula o `seq`, também aparece;
+  - o WAV (PCM 16 bits, mono, 16 kHz) e o `NOME.seq.json`, com o formato aceito pelo agente:
+    `{blocos, primeiro_seq, ultimo_seq, lacunas: [[seq, amostra_no_wav], …]}`, mais
+    `checksums_errados`, `deriva_s`, `ganho: 2` e o commit do firmware;
+  - o nome de sessão `AAAA-MM-DD_descricao` (regex), e a **recusa de gravar dentro do repo**
+    (o destino resolvido nunca fica sob `REPO_ROOT`).
+- **Três subcomandos:**
+  - `sala --sessao 2026-11-22_estudio_tarde --minutos 1`: gravação contínua para
+    `~/viking-wakeword/real_negative/<sessao>/parte_NNN.wav`, uma parte por hora;
+  - `takes --sessao 2026-11-22_piloto --n 10 [--frase "Hey Viking"] [--negativo]`: grava sem
+    parar e mostra na tela "take 3/10 · 3, 2, 1 · **FALE: Hey Viking**". Cada take sai de 0,5 s
+    antes do "FALE" até 2,5 s depois (3 s no total), em `real_positive/<sessao>/take_NNN.wav`, ou
+    em `real_negative/` com `--negativo`, para os casos difíceis ("Hey King" e outros). Depois de
+    cada take, a tela mostra o pico, o RMS de 100 ms mais alto e as amostras saturadas;
+  - `medir --minutos 2`: só confere a continuidade, sem gravar o áudio.
+- **O resumo no fim:** os arquivos, as horas acumuladas na sessão, as lacunas e os checksums
+  errados. Se houver lacuna, a saída diz em voz alta que "esse arquivo não serve para teste".
+
+### Testes: `tests/test_coleta.py` (carrega o `coleta.py` pelo caminho, como o `test_firmware_voz.py`)
+- o FNV-1a pelos valores conhecidos (`""` → `0x811c9dc5`, `"a"` → `0xe40c292c`);
+- o leitor: quadros inteiros, quadros cortados em pedaços, lixo e texto entre quadros, um checksum
+  errado (contado, nunca aceito);
+- a continuidade: um buraco de seq; um buraco de tempo sem buraco de seq (o caso do DMA); a
+  sequência limpa → lacunas vazias;
+- o take cortado nas amostras certas (0,5 s antes, 2,5 s depois);
+- o WAV e o `.seq.json` no formato combinado;
+- o destino dentro do repo recusado; o nome de sessão torto recusado;
+- **a paridade com o firmware:** o mágico, o tamanho do bloco e o `GANHO` lidos do `main.cpp`
+  (o `_constante` do `test_firmware_voz.py`), comparados com o `coleta.py`.
+- Mutações curadas novas em `scripts/mutacoes.py`, uma por regra que decide: o checksum ignorado,
+  o buraco de tempo ignorado, o destino no repo aceito, o take cortado sem o 0,5 s antes.
+
+### Docs
+- `BRINGUP.md`: a camada 6 (a coleta), com os comandos;
+- a H2 do `sessoes.md` aberta, com os passos;
+- o `PROGRESSO.md` com o plano por checkpoints, atualizado a cada etapa;
+- o diário e a D70, com o ganho 2 e o motivo;
+- o comentário do filtro de silêncio em `voz.py` ganha uma linha: a régua é relativa, então não
+  muda com o ganho (só comentário; vai no próximo deploy, sem mudança de comportamento).
+
+## Os checkpoints (em ordem; cada um com o seu commit e push)
+
+| C | Faz | ✅ Checkpoint | 🐞 Previsto → depurar |
+|---|---|---|---|
+| C0 | O plano no `PROGRESSO.md` e a H2 aberta no `sessoes.md` | commit | — |
+| C1 | `converter` + `GANHO 2` + o env de coleta + o `coleta.py` + os testes | `pio run -e xiao_s3` e `-e xiao_s3_coleta` com SUCCESS e sem aviso; `pytest` da suíte inteira verde; as mutações novas mortas | o `HWCDC` sem `setTxBufferSize` nesta versão do core → ler o header do core 4.0.0 |
+| C2 | **Com o ok do dono:** parar o que estiver na porta e gravar o env `xiao_s3_coleta` | "Hash of data verified"; o boot no serial (`wifi: ok`) e as linhas `coleta: status` | o `serve` travado → `kickstart` (com o ok) |
+| C3 | `coleta.py medir --minutos 2` | **0 lacunas de seq, 0 checksums errados, deriva < 0,1 s**, ~3750 quadros | lacunas → medir o tempo de volta do laço no `status`; buffer maior; ou o RFC2217 → testar a vazão |
+| C4 | **O piloto, com o roteiro mostrado antes e o "vai" do dono:** `sala --minutos 1` (sala parada) e `takes --n 10` (0,5 a 1,5 m) | 1 WAV de ~60 s e 10 takes de 3 s, todos com `lacunas: []`; o nível de cada take impresso; o dono sobe a pasta para o Drive | um take sem fala → refazer só ele |
+| C5 | **Com o ok:** gravar de volta o env de uso (ganho 2) e fazer 1 fala de teste ("o que eu tenho amanhã?", centavos) + 1 aperto em silêncio | o boot ✅; a resposta certa nas caixas; o silêncio → `fala: vazio` | a transcrição pior com o ganho 2 → medir o RMS e voltar com o dado |
+| C6 | A mensagem para o agente do Colab (o ganho 2: as faixas dele caem pela metade; o formato; onde está o piloto) e os docs | commit + push; o bloco pronto para o dono colar | — |
+
+## A verificação de ponta a ponta
+- os portões (`python -m pytest`, `ruff check`, `ruff format --check`, `pio run` dos dois envs),
+  com a linha literal citada;
+- o C3 prova a USB e o DMA com números (seq, checksum, deriva);
+- o C4 produz o piloto real, conferido pelo `.seq.json` de cada arquivo;
+- o C5 prova que o uso continua bom com o ganho 2 (transcrição e filtro de silêncio no ar);
+- nada de voz no `git status` (o `.gitignore`) antes de cada commit.
+
+## O que fica para depois (a H2 segue)
+- a coleta grande: em sessões, no ritmo do dono, com o Mac parado no estúdio;
+- portar o TFLM e o micro_frontend para o arduino-esp32 4.0.0, conferir as 13 ops e o
+  `MicroResourceVariables`, e o CSV de paridade do chip contra o `parity_v2`;
+- a voz do aparelho (o TTS pelas caixas, gravado pelo mic), com o ok do dono para o gasto.
+
+
+### (o registro) a H1 fechada — 2026-11-22, ~19:07Z
 
 **O próximo passo, numa linha:** abrir a sessão que o dono escolher (H1h, H2, H1b, H3 ou 15) pelo
 `sessoes.md`, "▶️ Começar a próxima sessão por aqui"; no VPS, depois de 22:20Z, `python
