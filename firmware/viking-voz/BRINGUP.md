@@ -33,6 +33,9 @@ e trazido para este repo em 2026-11-22, para seguir no Mac: lá a placa está na
 
 ## Pinos
 
+A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.md` (desde
+2026-11-22). A tabela abaixo é o resumo; mudou um pino, muda lá primeiro.
+
 | Função | GPIO (rótulo) | Direção | Pull | Conflitos conferidos |
 |---|---|---|---|---|
 | I2S BCLK (INMP441 SCK) | 7 (D8) | saída | — | o mesmo do teste |
@@ -64,7 +67,9 @@ e trazido para este repo em 2026-11-22, para seguir no Mac: lá a placa está na
 1. [x] Boot: "== Viking voz (H1) ==", o chip, a PSRAM livre, "botao: D1 (GPIO2), solto".
    **Visto em 2026-11-22 13:44Z** (gravado do Mac, sem o `segredos.h`): `chip ESP32-S3 rev 2;
    psram livre: 8386096 bytes`, `botao: D1 (GPIO2), solto` (ainda sem botão ligado: o pull-up).
-2. [ ] Botão: segurar mostra "botao: apertou (fala)", depois "gravado: …" e "soltou"; dois toques
+2. [x] Botão (2026-11-22 14:13Z, no protoboard): `botao: fala`, `soltou (7164 ms)`, `dois toques`.
+   Antes, o botão de 4 pernas num mesmo par dava `APERTADO no boot?` (ver `ESQUEMA.md`).
+   O roteiro: segurar mostra "botao: apertou (fala)", depois "gravado: …" e "soltou"; dois toques
    mostram "botao: dois toques".
 3. [ ] Mic: o "gravado" mostra o pico e o RMS da fala a ~30 cm. Calibrar o `GANHO`: a meta é o pico
    da fala normal sem saturar (`saturadas=0`).

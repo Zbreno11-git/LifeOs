@@ -160,6 +160,26 @@ bool esperarBotao(bool alvo, uint32_t prazoMs) {
 // da H1 mediu que esperar os 400 ms antes cortava "Qual" de "Qual é a minha agenda"). Soltar
 // precisa de 2 blocos seguidos (~64 ms) para valer (o debounce). Devolve o número de amostras; 0
 // se o I2S parar de entregar.
+// A medição para o filtro de silêncio (C4, camada 3, 2026-11-22): o RMS de cada quadro de 100 ms e
+// o pico sem as pontas, onde caem os cliques do botão (a gravação nasce no aperto e morre no
+// soltar). Só imprime; não muda o que vai à ponte.
+constexpr uint32_t QUADRO = TAXA / 10;      // 100 ms
+constexpr uint32_t PONTA = TAXA * 15 / 100;  // 150 ms de cada lado
+void medir(uint32_t n) {
+  int32_t picoMeio = 0;
+  for (uint32_t i = PONTA; n > 2 * PONTA && i < n - PONTA; i++) {
+    int32_t a = gravacao[i] < 0 ? -gravacao[i] : gravacao[i];
+    if (a > picoMeio) picoMeio = a;
+  }
+  Serial.printf("medida: pico sem as pontas=%ld; rms por 100 ms:", (long)picoMeio);
+  for (uint32_t q = 0; q + QUADRO <= n; q += QUADRO) {
+    double s2 = 0;
+    for (uint32_t i = q; i < q + QUADRO; i++) s2 += (double)gravacao[i] * gravacao[i];
+    Serial.printf(" %.0f", sqrt(s2 / QUADRO));
+  }
+  Serial.println();
+}
+
 constexpr int BLOCOS_PARA_SOLTAR = 2;
 constexpr int LEITURAS_CURTAS_MAX = 50;  // ~50 leituras sem um bloco inteiro: o I2S parou
 uint32_t gravar() {
@@ -206,6 +226,7 @@ uint32_t gravar() {
   }
   Serial.printf("gravado: %.2f s, pico=%ld, rms=%.0f, saturadas=%lu (ganho %d)\n", n / (float)TAXA,
                 (long)pico, n ? sqrt(soma2 / n) : 0.0, (unsigned long)saturadas, GANHO);
+  medir(n);
   return n;
 }
 
