@@ -16,7 +16,7 @@
 
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
-| 1 | Comando para o Mac que não roda como escrito | 9 | cada linha só roda se a anterior deu certo (`&&`, ou `cd … || return`); caminho real `~/Desktop/LifeOs` (medido em 2026-11-21; antes estava anotado `~/LifeOs`), `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
+| 1 | Comando para o Mac que não roda como escrito | 10 | cada linha só roda se a anterior deu certo (`&&`, ou `cd … || return`); caminho real `~/Desktop/LifeOs` (medido em 2026-11-21; antes estava anotado `~/LifeOs`), `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
@@ -78,6 +78,15 @@ na pasta pessoal. O `python -m pytest` do conda varreu `~` inteira e travou; o d
 Não houve estrago, porque nada ali escrevia. O antídoto: um roteiro para o Mac é uma corrente só
 (`&&`), ou começa conferindo a máquina e o caminho com um comando que só lê; e "o Mac do dono"
 não é uma constante: o prompt diz qual é.
+
+**2026-11-22 (H1) — um comando que imprime um segredo, num roteiro de copiar e colar.** O
+`viking casa --preparar` imprime as linhas do `segredos.h` (com o `APARELHO_TOKEN`) para o dono
+copiar ao firmware. Eu avisei "não cole aqui a saída", e a saída inteira veio colada no chat: o
+token do aparelho ficou na conversa. O raio é pequeno (só vale na rede de casa, na porta da ponte,
+que não sai para fora), e o dono aceitou o risco em vez de refazer. O que tem de novo: a regra
+"nunca imprimir segredo" valia para os **meus** comandos; aqui quem imprimia era o **código** que eu
+escrevi, e um aviso não segura um copiar e colar. **Antídoto:** um segredo que vai a outro lugar
+sai num arquivo fechado (600), nunca na tela; o terminal diz só onde ele está.
 
 ### 2. Afirmei sem abrir o lugar onde estaria
 

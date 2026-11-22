@@ -29,6 +29,7 @@ import argparse
 import dataclasses
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -1232,6 +1233,7 @@ def casa_chave(ctx: Contexto, caminho: Path, executar: bool) -> int:
         "upload",
         str(caminho),
         f"--iam-account={ctx.conta(CASA)}",
+        "--format=value(name.basename())",  # o id, que o laptop grava com `--chave-id`
     )
     if not executar:
         print(f"→ {_legivel(comando)}\nNada foi mudado (sem --executar).")
@@ -1240,6 +1242,14 @@ def casa_chave(ctx: Contexto, caminho: Path, executar: bool) -> int:
     if resultado.returncode != 0:
         print(resultado.stderr.strip(), file=sys.stderr)
         return 1
+    chave_id = resultado.stdout.strip()
+    if re.fullmatch(r"[0-9a-f]{16,}", chave_id):
+        print(f"o id da chave: {chave_id}\n  no laptop: viking casa --chave-id {chave_id}")
+    else:  # subiu, mas o gcloud não devolveu o id na forma esperada: ele está na lista
+        print(
+            f"⚠️ o id não veio; leia com: gcloud iam service-accounts keys list "
+            f"--iam-account={ctx.conta(CASA)} --project={ctx.projeto} --managed-by=user"
+        )
     estado = _m_casa(ctx)
     print(f"{'✅' if estado.pronto else '⬜'} casa: {estado.detalhe}")
     return 0 if estado.pronto else 2

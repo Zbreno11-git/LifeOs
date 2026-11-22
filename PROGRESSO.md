@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~12:40Z — a H1 segue **no Mac**; o sotaque fechado, o próximo é o laptop (C7)
+## ▶️ RETOMAR AQUI — 2026-11-22, ~13:10Z — a H1 segue **no Mac**; o laptop com `--conferir` ✅, falta o serviço e a placa
 
 **Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
 - HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`
@@ -28,6 +28,29 @@
 - **C6, o sotaque:** `python scripts/vozes.py --sotaque` tocado no Mac (2026-11-22 ~12:30Z,
   ~US$ 0,01, 2180 tokens); **o dono escolheu a 2 (`IDIOMA="pt-BR"`, `ESTILO=None`)**, que já é o
   código: nada muda em `voz.py` nem no teste.
+- **C7, o laptop (2026-11-22, ~12:45–13:05Z):**
+  - o `uv` 0.12.10 (o do CI) em `~/.local/bin`, pelo instalador oficial com a versão fixada;
+  - o clone público em `~/LifeOs`, `uv sync --locked --extra casa`; `tests/test_casa.py` **lá**
+    (Python 3.13.5): 72 passed;
+  - o HA (o dono, com outro agente): o token de longa duração `viking-casa` e o ajudante
+    `input_boolean.viking_voz` ligado;
+  - o dono rodou o `--preparar --nome <IP do laptop>`. **Risco aceito pelo dono:** a saída, com o
+    `APARELHO_TOKEN`, veio colada no chat; o token só vale na rede de casa, na porta da ponte, e o
+    dono preferiu seguir a refazer (`docs/erros.md`, classe 1). **Pendência:** o `--preparar`
+    gravar o `segredos.h` num arquivo 600 em vez de imprimir;
+  - só o `casa-publica.pem` veio ao Mac (`scp`; X.509, RSA 2048, nenhuma linha `PRIVATE`); o
+    `casa-chave` só lendo, e com o ok do dono `--executar`: **1 chave `USER_PROVIDED`**, até
+    2027-11-22, nenhuma do Google. O `casa-chave` não mostrava o id: agora mostra (com teste);
+  - `viking casa --chave-id` e `--conferir`: **tudo ✅** (o motor aceita a casa, `c65f765`);
+  - o som sem sessão na tela: o usuário está no grupo `audio` e o PipeWire não roda (o `aplay` vai
+    direto à placa);
+  - **falta:** o serviço (`scripts/viking-casa.service`) e o `loginctl enable-linger` (o `sudo` é
+    do dono). O IP do laptop vem por DHCP: reservar no roteador o do laptop e o da XIAO.
+- **Portões no Mac (2026-11-22 ~13:10Z):** `pytest` 2879 passed / 466 skipped (os 7 do gitleaks
+  agora rodam); `ruff` ok. Medidos e **não** meus: o `mypy` dá 13 `import-untyped` do
+  `google.cloud.firestore` (o Mac tem o pacote sem o extra `nuvem`; os arquivos não foram tocados),
+  e o `test_entrada_gigante_nao_explode` caiu 1 vez na suíte inteira e passou 3 de 3 sozinho (mede
+  crescimento de tempo; a CPU disputada do Mac de 2017).
 
 ---
 

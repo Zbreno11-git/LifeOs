@@ -1,0 +1,19 @@
+# A ponte de casa da voz do estúdio (Sessão H1, D70), como serviço do usuário no laptop de casa.
+# Instalar (no laptop, sem sudo; o `loginctl enable-linger` pede sudo e é o dono que roda):
+#   mkdir -p ~/.config/systemd/user
+#   cp ~/LifeOs/scripts/viking-casa.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now viking-casa
+# A configuração (os tokens, a chave da conta, o HTTPS) vem só de ~/.config/viking-casa/ (700/600);
+# nada de segredo aqui nem no ambiente. O log vai ao journal e diz só o estado e a origem de cada
+# fala (`journalctl --user -u viking-casa`), nunca a transcrição.
+[Unit]
+Description=Viking: a ponte de casa da voz do estúdio
+
+[Service]
+ExecStart=%h/LifeOs/.venv/bin/viking casa
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

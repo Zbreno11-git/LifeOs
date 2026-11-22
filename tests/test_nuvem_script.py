@@ -1904,6 +1904,39 @@ def test_casa_chave_sobe_o_arquivo_pelo_caminho(nuvem, ctx, monkeypatch, tmp_pat
     assert not any("BEGIN" in a for a in upload)  # o conteúdo nunca no argv
 
 
+class _GravadorQueSobe(_Gravador):
+    """O `keys upload` de verdade devolve o recurso criado; com o `--format`, só o id."""
+
+    def __init__(self, respostas, saida_do_upload):
+        super().__init__(respostas.respostas)
+        self.saida_do_upload = saida_do_upload
+
+    def __call__(self, comando):
+        if "upload" in comando:
+            self.comandos.append(comando)
+            return subprocess.CompletedProcess(comando, 0, self.saida_do_upload, "")
+        return super().__call__(comando)
+
+
+def test_casa_chave_mostra_o_id_que_o_laptop_grava(nuvem, ctx, monkeypatch, tmp_path, capsys):
+    chave_id = "9c" * 20
+    gravador = _GravadorQueSobe(_mundo_da_casa(chaves=("USER_PROVIDED",)), chave_id + "\n")
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem.casa_chave(ctx, _certificado(tmp_path), executar=True) == 0
+    (upload,) = [c for c in gravador.comandos if "upload" in c]
+    assert "--format=value(name.basename())" in upload
+    assert f"viking casa --chave-id {chave_id}" in capsys.readouterr().out
+
+
+def test_casa_chave_sem_o_id_aponta_a_lista(nuvem, ctx, monkeypatch, tmp_path, capsys):
+    gravador = _GravadorQueSobe(_mundo_da_casa(chaves=("USER_PROVIDED",)), "name: algo torto")
+    monkeypatch.setattr(nuvem, "_rodar", gravador)
+    assert nuvem.casa_chave(ctx, _certificado(tmp_path), executar=True) == 0
+    saida = capsys.readouterr().out
+    assert "--chave-id" not in saida
+    assert "keys list" in saida and "--project=" in saida
+
+
 def test_casa_chave_recusa_a_terceira(nuvem, ctx, monkeypatch, tmp_path):
     gravador = _mundo_da_casa(chaves=("USER_PROVIDED", "USER_PROVIDED"))
     monkeypatch.setattr(nuvem, "_rodar", gravador)
