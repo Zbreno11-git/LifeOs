@@ -82,6 +82,9 @@
   - **Próximo:** a camada 5 (segurar, falar, soltar: `/falar` 202 → o estado final → a voz no
     laptop). Gasta Gemini (o motor no ar é o `c65f765`: sem o filtro de silêncio, sem `pt-BR`, sem
     os consertos da revisão), então só com o ok do dono; o E2E de verdade é depois do deploy.
+  - **Decidido pelo dono (~16:55Z):** a camada 5 **depois do deploy** (vale como o E2E, com as 5
+    verificações); o modo de coleta da wake word **depois de fechar a H1** (as respostas ao agente
+    do Colab e o orçamento estão na H2 do `sessoes.md`). O próximo: o dono roda o deploy no VPS.
 - **Portões no Mac (2026-11-22 ~13:10Z):** `pytest` 2879 passed / 466 skipped (os 7 do gitleaks
   agora rodam); `ruff` ok. Medidos e **não** meus: o `mypy` dá 13 `import-untyped` do
   `google.cloud.firestore` (o Mac tem o pacote sem o extra `nuvem`; os arquivos não foram tocados),

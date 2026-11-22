@@ -1278,6 +1278,23 @@ O que estava escrito na abertura:
   `ml-experiment-discipline` do `/root/esp32` (dataset com o INMP441 final, split por gravação,
   falsas ativações por hora como a métrica). Comparar com o microWakeWord do ESPHome antes de
   treinar do zero.
+- **Decidido pelo dono (2026-11-22, na H1):** a frase "Hey Viking", dita "VI-king" (à
+  portuguesa); só o dono ativa; **no máximo 1 ativação falsa por dia**; latência até ~1 s; a
+  coleta só **depois de fechar a H1**. Ativar só começa a gravar, nunca aprova (D26/D70).
+- **O treino** (microWakeWord, streaming int8) roda no Colab, por outro agente (o Claude in Chrome
+  do dono), com o notebook no Drive dele. O que ele pediu deste lado, respondido em 2026-11-22:
+  - um **modo de coleta** no firmware (WAV 16 kHz/mono/16 bits pelo mesmo caminho do mic, pela USB
+    até o Mac, um contador por bloco para provar que nada caiu; de perto pelo botão, de longe por
+    gravação contínua cortada pela energia; os arquivos em `~/viking-wakeword/`, fora do repo, e o
+    dono sobe para o Drive). Os dados de voz nunca vêm ao repo;
+  - a **paridade do frontend** (micro_frontend: 30 ms/10 ms, 40 canais): ele manda um WAV de
+    referência e as features dele, e a placa roda o mesmo WAV, injetado, e devolve as dela;
+  - o **TFLM no arduino-esp32 4.0.0** (as ops de variável de recurso: VarHandle, ReadVariable,
+    AssignVariable, CallOnce) **não conferido**: é o primeiro passo;
+  - o orçamento (limites meus, a medir com a Wi-Fi e o TLS ligados): modelo + frontend ≤ 300 KB
+    de flash; arena ≤ 40 KB (teto 64 KB) na SRAM interna; ≤ 10 ms por passo de 30 ms no core 1;
+  - a decisão: média de 5 probabilidades > limiar, 2 s de espera, o limiar no NVS, suspensa
+    enquanto o aparelho fala e durante um turno.
 
 ## Sessão H3 — o Viking mandando no Home Assistant (criada em 2026-11-21, na abertura da H1)
 
