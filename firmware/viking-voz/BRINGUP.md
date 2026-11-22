@@ -12,8 +12,12 @@ e trazido para este repo em 2026-11-22, para seguir no Mac: lá a placa está na
   imprime a PSRAM livre.
 - **USB:** USB-Serial/JTAG nativa, plugada no Mac do dono. O `~/esp32-mac` serve a placa por
   RFC2217 em `127.0.0.1:4000` no próprio Mac (o LaunchAgent `com.esp32.serve`).
-- **Firmware atual:** o `viking-hardware-teste` (o teste do mic com palmas), gravado do VPS. Este é
-  um projeto novo; o de teste fica no VPS (`/root/esp32/projects/viking-hardware-teste`).
+- **Firmware atual (medido em 2026-11-22):** um ESPHome mínimo (`xiao-estudio`: só `wifi`, `api`,
+  `ota` e `logger`; nada de mic nem botão), gravado pelo container ESPHome do laptop de casa e
+  ligado ao HA. O dono autorizou substituí-lo pelo `viking-voz` (2026-11-22): o Viking alcança o
+  HA pela ponte, não pelo ESPHome. Ele volta, se um dia quiser, pelo ESPHome do laptop (USB).
+  Antes dele, o `viking-hardware-teste` (o teste do mic), que fica no VPS
+  (`/root/esp32/projects/viking-hardware-teste`).
 
 ## Fontes
 
@@ -78,9 +82,11 @@ pelo `service.sh`. O que falta instalar: o PlatformIO (o `pio`), que nunca rodou
   pelo servidor).
 - **Ler o serial:** `~/esp32-mac/.venv/bin/python serial_log.py 15 --reset` (desde o boot) ou sem
   `--reset`; a saída também em `logs/serial.log` (fora do git).
-- **A rede do Mac faz inspeção TLS:** se o `pio` ou o `uv` recusarem certificado, use o pacote de
+- **Se a rede do Mac fizer inspeção TLS** (a corporativa; a de casa, em 2026-11-22, não faz) e o
+  `pio` ou o `uv` recusarem certificado, use o pacote de
   certificados em que o macOS confia, que o `~/esp32-mac/setup.sh` monta (`macos-ca.pem`, por
   `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`). Isso não contorna nada da rede; não proponha mais que isso.
-- **Camadas 4 e 5 (a rede de casa):** a placa precisa estar na Wi-Fi do laptop de casa. Se o Mac
-  não estiver nessa rede, a placa vai para casa e o serial passa a ser lido no laptop (a USB dele,
-  pelo túnel do Mac ao laptop), ou só pelo LED. Decidir com o dono antes.
+- **Camadas 4 e 5 (a rede de casa):** a placa precisa estar na Wi-Fi do laptop de casa. Em
+  2026-11-22 o Mac está nessa mesma Wi-Fi, então a placa fica na USB do Mac e o serial se lê daqui.
+  Se o Mac estiver noutra rede, a placa vai para casa e o serial passa a ser lido no laptop, ou só
+  pelo LED.

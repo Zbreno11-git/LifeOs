@@ -5,7 +5,32 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~02:30Z — a H1 segue **no Mac** (decisão do dono, 2026-11-22)
+## ▶️ RETOMAR AQUI — 2026-11-22, ~12:40Z — a H1 segue **no Mac**; o sotaque fechado, o próximo é o laptop (C7)
+
+**Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
+- HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`
+  → **2870 passed, 473 skipped** em 85 s (os pulados: o emulador do Firestore com o extra `nuvem`,
+  e 7 do gitleaks fora do cache); `uv lock --upgrade --dry-run` sem mudança.
+- **A rede do Mac é a Wi-Fi de casa** (sem inspeção TLS), a mesma do laptop: o bloco dizia
+  "corporativa". Corrigido no `CLAUDE.md` e no `BRINGUP.md`.
+- **Não há túnel ao laptop:** é SSH direto pela rede de casa (alias `home-server`, por chave,
+  `BatchMode` funciona; o `sudo` lá pede senha, o dono roda). Medido no laptop (o levantamento, pelo
+  dono): Debian 13, Python 3.13.5, 2 núcleos, 2,3 GB livres, `aplay` vê a placa da Intel, avahi
+  ativo, `Linger=no`, os containers do HA e do ESPHome de pé (`network_mode: host`), HA 200, **sem
+  `uv`**. O IP fixo do laptop: o dono acredita que está reservado (a conferir no roteador).
+- **A XIAO não está na USB do Mac:** está na Wi-Fi, com um ESPHome mínimo (`wifi`, `api`, `ota`,
+  `logger`; nada de mic nem botão; lidos só os nomes dos blocos do YAML). O dono autorizou
+  substituí-lo pelo `viking-voz` (2026-11-22); para gravar, ela vem para a USB do Mac.
+- **O PlatformIO já existe** em `~/.platformio/penv` (Core 6.2.0, fora do PATH): o bloco dizia
+  "nunca rodou no Mac".
+- **P0:** o dono rodou `--executar alertas` no VPS às ~12h UTC: nada criado, `exit=2`, como o
+  desenho manda (a métrica não viveu as 25 h). Rodar de novo depois de 22:20Z.
+- **C6, o sotaque:** `python scripts/vozes.py --sotaque` tocado no Mac (2026-11-22 ~12:30Z,
+  ~US$ 0,01, 2180 tokens); **o dono escolheu a 2 (`IDIOMA="pt-BR"`, `ESTILO=None`)**, que já é o
+  código: nada muda em `voz.py` nem no teste.
+
+---
+
 
 **Por que o Mac:** a XIAO está na USB dele e o laptop de casa se alcança pelo túnel dele; do VPS,
 cada passo de hardware e do laptop era um copia e cola do dono. O VPS continua sendo onde mora o

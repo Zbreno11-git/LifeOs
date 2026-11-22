@@ -57,15 +57,19 @@ quadro muda, e o que está acima sobre o VPS vale para o VPS:
   do faturamento, do orçamento e do fuso, que só o `.env` do VPS tem). No Mac rodam os
   subcomandos que pedem só o projeto: `segredo`, `casa-chave`, `casa-cortar` e `casa-religar`.
   Todo `gcloud` com o `--project` do Viking (o `_gcloud` põe; o projeto padrão é outro do dono).
-- **A rede do Mac é corporativa** (inspeção TLS, Tailscale bloqueado). Se o `uv` ou o `pio`
-  recusarem certificado, use o pacote do Keychain que o `~/esp32-mac/setup.sh` monta
-  (`macos-ca.pem`, por `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`). Não proponha contornar mais nada.
+- **A rede do Mac depende de onde ele está.** Em 2026-11-22 é a Wi-Fi de casa do dono, sem
+  inspeção TLS (o `uv sync` passou sem certificado extra), a mesma do laptop de casa. Numa rede
+  corporativa (inspeção TLS, Tailscale bloqueado, como antes), se o `uv` ou o `pio` recusarem
+  certificado, use o pacote do Keychain que o `~/esp32-mac/setup.sh` monta (`macos-ca.pem`, por
+  `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`). Não proponha contornar mais nada.
 - **A placa:** `firmware/viking-voz/BRINGUP.md` ("No Mac") e a skill `esp32-development`: o boot log
   antes de gravar, uma camada por vez, nunca apagar a flash de primeira, "funcionou" só visto no
   serial, um cliente por vez na porta.
-- **O laptop de casa** (Debian, 4 GB de RAM, o HA em Docker): pelo túnel do Mac; pergunte ao dono
-  como se entra (o alias de SSH) antes de presumir. Nada de `sudo` sem o ok dele, e nenhum túnel
-  ou encaminhamento aponta para a porta 8765 da ponte (ela é só da rede de casa).
+- **O laptop de casa** (Debian 13, 4 GB de RAM, o HA e o ESPHome em Docker com `network_mode:
+  host`): **não há túnel**, é SSH direto pela rede de casa (o alias `home-server` do
+  `~/.ssh/config` do Mac, por chave, `BatchMode` funciona), então só com o Mac na mesma Wi-Fi. O
+  `sudo` lá pede senha: o dono roda, com o ok dele. Nenhum túnel ou encaminhamento aponta para a
+  porta 8765 da ponte (ela é só da rede de casa). Os IPs da rede de casa nunca vão para o repo.
 - **A memória do Claude no VPS não viaja:** o que importa dela está neste arquivo, no `AGENTS.md`
   e no bloco do `PROGRESSO.md`.
 
