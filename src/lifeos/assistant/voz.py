@@ -69,6 +69,8 @@ MAX_FRASES = 12
 # Medido: o silêncio parado deu 0 trechos acima de 4× nas 4 gravações; "liga a luz", baixo, o mais
 # longe que o braço deixava (o dono não mediu a distância), deu 4; mexer na mesa sem falar deu 3.
 # Este filtro só barra o **silêncio parado**: perder uma fala custa mais que transcrever um barulho.
+# As medições foram com o ganho 4 do firmware; desde 2026-11-22 o ganho é 2 (congelado para a wake
+# word). A régua é relativa ao fundo da própria gravação, então o ganho não a muda.
 QUADRO_S = 0.1
 PONTA_S = 0.2
 FATOR_DE_FALA = 4

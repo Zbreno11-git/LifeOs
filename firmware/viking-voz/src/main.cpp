@@ -32,6 +32,11 @@
 #ifndef TEM_SEGREDOS
 #define TEM_SEGREDOS 0
 #endif
+// O modo de coleta da wake word (H2): o env `xiao_s3_coleta` do `platformio.ini` liga. O áudio vai
+// sem parar pela USB ao `coleta.py` do Mac, pelo mesmo `converter` do uso; nada vai à ponte.
+#ifndef MODO_COLETA
+#define MODO_COLETA 0
+#endif
 
 constexpr int PIN_BCLK = 7;      // D8
 constexpr int PIN_WS = 8;        // D9
@@ -49,11 +54,13 @@ constexpr uint32_t MAX_AMOSTRAS = TAXA * MAX_GRAVACAO_S;
 constexpr uint32_t SEGURAR_MS = 400;       // menos que isto é um toque
 constexpr uint32_t ENTRE_TOQUES_MS = 600;  // o segundo toque tem de vir antes disto
 constexpr uint32_t DEBOUNCE_MS = 30;
-// O ganho de 24 bits -> 16 bits, calibrado com a fala do dono em 2026-11-22 (protoboard, o
-// diagnóstico de 100 ms): com 8, a fala a ~50 cm saturava (921 amostras no teto); com 4, o pico do
-// meio da gravação foi 19344 a ~50 cm e 4584 falando baixo o mais longe que o braço deixava, e só
-// o tranco do aperto (o 1º trecho) bate no teto. O ganho não muda a distância fala/silêncio.
-constexpr int GANHO = 4;
+// O ganho de 24 bits -> 16 bits, **congelado em 2 pelo dono em 2026-11-22** (a abertura da H2).
+// A conta é `(int)(y/256) * GANHO`: trunca antes de multiplicar, então o ganho só desloca o volume
+// (a mesma informação, o passo de quantização = GANHO). Com 8 a fala a ~50 cm saturava (921
+// amostras); com 4, uma fala alta de perto ainda saturou 189 no E2E; com 2 há 6 dB a mais de folga.
+// **Não mudar sem avisar o agente que treina a wake word** (o domínio do treino é este áudio: mudar
+// o ganho depois da coleta é retreino). O filtro de silêncio do motor é relativo e não depende dele.
+constexpr int GANHO = 2;
 // O `HTTPClient::setTimeout` é `uint16_t` em ms (330000 virava 2320: o aviso -Woverflow da
 // compilação de 2026-11-21). Por isso a ponte aceita na hora (202, "pensando") e o aparelho
 // pergunta `GET /estado` a cada segundo até o resultado, com um teto total.
@@ -194,10 +201,33 @@ void medir(uint32_t n) {
   Serial.println();
 }
 
+// O caminho do áudio, um só para o uso e para a coleta (o que o modelo da wake word aprende é
+// exatamente isto): o I2S entrega frames de 32 bits com os 24 de dado alinhados à esquerda; `>>8`,
+// o passa-alta de 1ª ordem (tira o DC; o estado é contínuo entre chamadas), e o 24 -> 16 bits
+// truncado em direção ao zero **antes** do ganho, cortado no int16. Devolve as saturadas somadas.
+float prevX = 0, prevY = 0;
+void converter(const int32_t *entrada, int n, int16_t *saida, uint32_t &saturadas) {
+  for (int i = 0; i < n; i++) {
+    float x = entrada[i] >> 8;
+    float y = x - prevX + 0.995f * prevY;
+    prevX = x;
+    prevY = y;
+    int32_t s = (int32_t)(y / 256.0f) * GANHO;
+    if (s > 32767) {
+      s = 32767;
+      saturadas++;
+    }
+    if (s < -32768) {
+      s = -32768;
+      saturadas++;
+    }
+    saida[i] = (int16_t)s;
+  }
+}
+
 constexpr int BLOCOS_PARA_SOLTAR = 2;
 constexpr int LEITURAS_CURTAS_MAX = 50;  // ~50 leituras sem um bloco inteiro: o I2S parou
 uint32_t gravar() {
-  static float prevX = 0, prevY = 0;
   uint32_t n = 0;
   int32_t pico = 0;
   double soma2 = 0;
@@ -215,25 +245,14 @@ uint32_t gravar() {
       continue;
     }
     curtas = 0;
+    converter(bloco, BLOCO, gravacao + n, saturadas);
     for (int i = 0; i < BLOCO; i++) {
-      float x = bloco[i] >> 8;               // 24 bits alinhados à esquerda num frame de 32
-      float y = x - prevX + 0.995f * prevY;  // passa-alta: tira o DC (como no teste do mic)
-      prevX = x;
-      prevY = y;
-      int32_t s = (int32_t)(y / 256.0f) * GANHO;  // 24 -> 16 bits, com o ganho
-      if (s > 32767) {
-        s = 32767;
-        saturadas++;
-      }
-      if (s < -32768) {
-        s = -32768;
-        saturadas++;
-      }
-      gravacao[n++] = (int16_t)s;
+      int32_t s = gravacao[n + i];
       int32_t a = s < 0 ? -s : s;
       if (a > pico) pico = a;
       soma2 += (double)s * s;
     }
+    n += BLOCO;
     esp_task_wdt_reset();
     soltos = apertado() ? 0 : soltos + 1;
     if (soltos >= BLOCOS_PARA_SOLTAR) break;
@@ -371,9 +390,75 @@ void mostrar(const String &estado) {
 }
 #endif
 
+// --- a coleta da wake word (H2) ----------------------------------------------------------------------
+
+#if MODO_COLETA
+// Um quadro por bloco do I2S (32 ms), little-endian: "VKC1" | seq u32 | t_us u32 (micros() logo
+// depois da leitura) | n u16 | flags u16 (bit 0 = botão apertado) | n × int16 | FNV-1a 32 de tudo
+// entre o mágico e ele. O `coleta.py` do Mac confere o seq (buraco = quadro perdido), o checksum e o
+// tempo (um transbordo do DMA do I2S não pula o seq, mas aparece no t_us).
+constexpr char MAGICO[4] = {'V', 'K', 'C', '1'};
+constexpr int QUADRO_BYTES = 4 + 4 + 4 + 2 + 2 + BLOCO * 2 + 4;
+constexpr uint32_t STATUS_A_CADA_MS = 10000;
+uint8_t quadro[QUADRO_BYTES];
+int16_t blocoColetado[BLOCO];
+
+uint32_t fnv1a(const uint8_t *dados, size_t n) {
+  uint32_t h = 2166136261u;
+  for (size_t i = 0; i < n; i++) {
+    h ^= dados[i];
+    h *= 16777619u;
+  }
+  return h;
+}
+
+void coletar() {
+  static uint32_t seq = 0, descartados = 0, curtas = 0, saturadas = 0, maiorVoltaUs = 0;
+  static uint32_t ultimoStatus = 0;
+  size_t lidos = i2s.readBytes((char *)bloco, sizeof(bloco));
+  esp_task_wdt_reset();
+  if (lidos < sizeof(bloco)) {
+    curtas++;  // o bloco incompleto se perde: o Mac vê pelo t_us
+    return;
+  }
+  uint32_t t = micros();
+  converter(bloco, BLOCO, blocoColetado, saturadas);
+  uint16_t n = BLOCO, flags = apertado() ? 1 : 0;
+  memcpy(quadro, MAGICO, 4);
+  memcpy(quadro + 4, &seq, 4);
+  memcpy(quadro + 8, &t, 4);
+  memcpy(quadro + 12, &n, 2);
+  memcpy(quadro + 14, &flags, 2);
+  memcpy(quadro + 16, blocoColetado, BLOCO * 2);
+  uint32_t soma = fnv1a(quadro + 4, QUADRO_BYTES - 8);
+  memcpy(quadro + QUADRO_BYTES - 4, &soma, 4);
+  // O quadro vai inteiro ou não vai: meio quadro viraria lixo no Mac, e esperar a USB atrasaria o
+  // I2S. Sem espaço, descarta, e o seq pula (o Mac conta a lacuna).
+  if (Serial.availableForWrite() >= QUADRO_BYTES) {
+    Serial.write(quadro, QUADRO_BYTES);
+  } else {
+    descartados++;
+  }
+  seq++;
+  uint32_t volta = micros() - t;
+  if (volta > maiorVoltaUs) maiorVoltaUs = volta;
+  if (millis() - ultimoStatus >= STATUS_A_CADA_MS) {
+    ultimoStatus = millis();
+    Serial.printf("\ncoleta: status seq=%lu descartados=%lu curtas=%lu saturadas=%lu maior_volta_us=%lu\n",
+                  (unsigned long)seq, (unsigned long)descartados, (unsigned long)curtas,
+                  (unsigned long)saturadas, (unsigned long)maiorVoltaUs);
+    maiorVoltaUs = 0;
+  }
+}
+#endif
+
 // --- o laço ----------------------------------------------------------------------------------------
 
 void setup() {
+#if MODO_COLETA
+  Serial.setTxBufferSize(16384);  // ~15 quadros de folga para a USB
+  Serial.setTxTimeoutMs(5);
+#endif
   Serial.begin(115200);
   delay(500);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -412,6 +497,17 @@ void setup() {
   xTaskCreatePinnedToCore(tarefaDoLed, "led", 2048, nullptr, 1, nullptr, 0);
   Serial.printf("botao: D1 (GPIO%d), %s\n", PIN_BOTAO, apertado() ? "APERTADO no boot?" : "solto");
 
+#if MODO_COLETA
+#if TEM_SEGREDOS
+  WiFi.mode(WIFI_STA);  // a Wi-Fi ligada e ociosa, como no uso: o mic grava o aparelho real
+  WiFi.setAutoReconnect(true);
+  garantirWifi();
+#endif
+  Serial.printf("coleta: ganho=%d taxa=%lu bloco=%d quadro=%d\n", GANHO, (unsigned long)TAXA, BLOCO,
+                QUADRO_BYTES);
+  Serial.println(">>> COLETA: o audio vai sem parar pela USB (o coleta.py do Mac) <<<");
+  return;
+#endif
 #if TEM_SEGREDOS
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
@@ -429,6 +525,10 @@ void setup() {
 }
 
 void loop() {
+#if MODO_COLETA
+  coletar();
+  return;
+#endif
   esp_task_wdt_reset();
   if (!esperarBotao(true, 1000)) return;  // nada apertado
   uint32_t apertouEm = millis();

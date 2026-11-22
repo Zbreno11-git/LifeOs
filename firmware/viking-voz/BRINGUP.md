@@ -84,8 +84,14 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
    `montar_segredos.sh`): `wifi: ok, sinal -35 dBm`, `hora: ok`, `ponte /saude: HTTP 200, estado
    ok`, com o certificado fixado. O roteiro: "wifi: ok", "hora: ok" e "ponte: saude -> ok". Se o
    nome não resolver, rodar o script de novo com o IP do laptop (está no certificado).
-5. [ ] A fala inteira: "ponte /falar: HTTP 202, estado pensando", depois o estado final, e a voz
-   no laptop.
+5. [x] A fala inteira (o E2E da H1, 2026-11-22): `ponte /falar: HTTP 202, estado pensando`, o
+   estado final e a voz nas caixas (pela Scarlett do laptop; ver `CLAUDE.md`).
+6. [ ] A coleta da wake word (H2): o env `xiao_s3_coleta` (`pio run -e xiao_s3_coleta -t upload`)
+   manda o áudio sem parar pela USB; no Mac, `~/esp32-mac/.venv/bin/python coleta.py medir
+   --minutos 2` tem de dar 0 lacunas, 0 checksums errados e nenhuma suspeita de buraco; depois
+   `coleta.py sala …` e `coleta.py takes …` gravam em `~/viking-wakeword/` (fora do repo), numa
+   pasta por sessão (`AAAA-MM-DD_descricao`). O de uso volta com `pio run -t upload`. O ganho é 2,
+   congelado (o comentário do `GANHO`).
 
 ## No Mac (desde 2026-11-22)
 
