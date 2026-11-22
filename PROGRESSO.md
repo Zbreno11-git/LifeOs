@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~16:50Z — a H1 segue **no Mac**; o laptop ✅ (C7), a placa nas camadas 1–4 ✅ (a rede), o filtro de silêncio no código; o próximo é a camada 5 (a fala inteira) e o deploy
+## ▶️ RETOMAR AQUI — 2026-11-22, ~18:35Z — a H1 segue **no Mac**; o deploy `3bc72ef` no ar (37 ✅); o E2E com 1 e 2 feitas, a 3 a refazer para outra conta (o teto de 30 s gravado); faltam a 3, a 4, a 5 e o C8
 
 **Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
 - HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`
@@ -85,6 +85,37 @@
   - **Decidido pelo dono (~16:55Z):** a camada 5 **depois do deploy** (vale como o E2E, com as 5
     verificações); o modo de coleta da wake word **depois de fechar a H1** (as respostas ao agente
     do Colab e o orçamento estão na H2 do `sessoes.md`). O próximo: o dono roda o deploy no VPS.
+- **O deploy (2026-11-22 ~17:05Z, o dono no VPS):** `3bc72ef` no motor e nas finanças, **37 ✅ / 0
+  ❌** (antes, só lendo: os 4 ❌ eram a imagem velha).
+- **O E2E (2026-11-22, ~17:47–18:15Z; o vigia marca tudo no relógio do Mac: o serial e, por um
+  SSH contínuo, o log da ponte e o `aplay` do laptop, que difere ~330 ms do Mac):**
+  - **o alto-falante do laptop está danificado** (o dono): o chip (ALC269VB) com o pino do
+    alto-falante certo, sem mudo, EAPD ligado, e o som do sistema não sai. Saída agora: a
+    **Scarlett 2i2** do dono no USB do laptop, pelo `~/.asoundrc` (o padrão do ALSA → `hw:USB`,
+    com `plug`; desfazer = apagar o arquivo). Ouvido: o teste do sistema e o formato da ponte;
+  - **1 (o HA primeiro):** "que horas são" → `fala: ok ha` na 1ª vez; na 2ª, `ok viking` (o HA não
+    reconheceu; a transcrição não é guardada, então não sei por quê);
+  - **2:** "o que eu tenho amanhã?" → certo (o dono), `ok viking`. Tempos (o log do Cloud Run):
+    a placa à ponte 0,75 s, ouvir 1,5 s, responder 3,1 s, o `aplay` aberto 5,5 s depois de soltar
+    (o 1º som é depois disso: medir na etapa da velocidade); o 1º ouvir do dia levou 3,6 s (o
+    motor acordando, provável);
+  - **3, para a própria conta:** saiu sem código, **certo** (D46: a própria conta é livre);
+  - **3, para outra conta do dono:** a leitura inteira (34 s), `aguardando` só depois do último
+    pedaço, os dois toques 20 s depois → enviado. **Mas o destino saiu errado** (`teamhealth` no
+    lugar do domínio certo): a placa gravou 15 s de 22,5 s segurados, cortando a soletração sem
+    aviso (`docs/erros.md`, classe 7), e o dono não percebeu a troca na leitura. Consertado no
+    firmware (30 s; o LED pisca nos últimos 3 s e depois do fim) e gravado com o ok do dono
+    (18:35Z, boot ✅). **Recusado pelo dono por ora:** soletrar o destinatário na leitura;
+  - **a refazer:** a 3 para a outra conta; depois a 4 (o interruptor) e a 5 (`casa-cortar`).
+- **A velocidade (decidido: depois do E2E):** medir na ponte o tempo de cada etapa e o 1º som (e se
+  o HA reconheceu, sem o texto); depois juntar as idas ao motor, comparar os modelos de transcrição
+  (o `flash-lite` contra o `transcribe`, com a voz do dono) e ler o preço do motor sempre acordado.
+- **A luz do estúdio (NEEWER RGB62; trabalho à parte, depois do E2E):** o laptop **não tem
+  Bluetooth** (nenhum adaptador; o `rfkill` só tem Wi-Fi). Medido do Mac (um `bleak` na pasta
+  temporária, só escutando): ela anuncia `NEEWER-RGB62`; **desligada no botão some**; **desligada
+  pelo app continua anunciando**. Então: o botão sempre ligado, a luz no USB-C, e o HA pela outra
+  ESP32-S3 do dono com o ESPHome (o `neewerlight` do litui é da RGB660: a RGB62 a provar na
+  bancada). O NeewerLite (Mac) lista a RGB62 (a pesquisa do Sonnet, com as fontes).
 - **Portões no Mac (2026-11-22 ~13:10Z):** `pytest` 2879 passed / 466 skipped (os 7 do gitleaks
   agora rodam); `ruff` ok. Medidos e **não** meus: o `mypy` dá 13 `import-untyped` do
   `google.cloud.firestore` (o Mac tem o pacote sem o extra `nuvem`; os arquivos não foram tocados),

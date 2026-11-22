@@ -1295,6 +1295,32 @@ O que estava escrito na abertura:
     de flash; arena ≤ 40 KB (teto 64 KB) na SRAM interna; ≤ 10 ms por passo de 30 ms no core 1;
   - a decisão: média de 5 probabilidades > limiar, 2 s de espera, o limiar no NVS, suspensa
     enquanto o aparelho fala e durante um turno.
+- **O que o agente do Colab mandou de volta (2026-11-22; dito por ele, não conferido aqui):**
+  - o frontend do treino é o `pymicro-features` 2.0.2, com os parâmetros do
+    `preprocessor_settings.h` do ESPHome; o **pacote de paridade** (`parity.zip`: o WAV de
+    referência, o CSV das features dele e um README) está com o dono. O retorno que ele espera é o
+    CSV das features **do chip** para esse WAV;
+  - as ops do modelo streaming (a lista do resolver do `micro_wake_word` do ESPHome), a validar
+    no TFLM primeiro: CallOnce, VarHandle, ReadVariable, AssignVariable, Reshape, StridedSlice,
+    Concatenation, Conv2D, DepthwiseConv2D, Mul, Add, Mean, FullyConnected, Logistic, Quantize,
+    AveragePool2D, MaxPool2D, Pad, Pack, SplitV; com `MicroResourceVariables`;
+  - a entrada int8 do modelo: `((raw*256+333)/666)-128` (a escala e o zero_point reais virão no
+    README do modelo; conferir lá, não aqui);
+  - a coleta aceita como proposta (perto pelo botão; 1 m e 1,5 m contínuo, cortado pela energia;
+    200 ms das pontas fora; os takes saturados marcados): 150+ positivos, 16+ h de negativos com 8+
+    h só para teste; a voz do aparelho (o TTS original e o tocado no Mac) quando o dono autorizar.
+- **O contrato da 2ª mensagem (2026-11-22, a do notebook v1.3; dito por ele):** a entrada do modelo
+  `[1, 3, 40]` int8, escala 0,101961 e zp -128 (o valor do frontend × 0,0390625, **não** a fórmula
+  do ESPHome); a saída uint8, escala 1/256, zp 0; 13 ops (ASSIGN_VARIABLE, CALL_ONCE,
+  CONCATENATION, CONV_2D, DEPTHWISE_CONV_2D, FULLY_CONNECTED, LOGISTIC, QUANTIZE, READ_VARIABLE,
+  RESHAPE, SPLIT_V, STRIDED_SLICE, VAR_HANDLE); a arena até ~10,9 KB (o teto dele, sem reuso); o
+  modelo de fumaça (60,8 KB) não vale como qualidade. **Divergências respondidas:** o CSV int8 do
+  pacote usa a fórmula do ESPHome (pedi um novo, com a regra de arredondamento); o firmware
+  **trunca** e só então multiplica pelo ganho (as amostras são múltiplas de 4), o que a augmentation
+  dele tem de imitar; distância até 4 m e outras vozes são extras que o dono decide.
+- **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
+  sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
+  `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
 
 ## Sessão H3 — o Viking mandando no Home Assistant (criada em 2026-11-21, na abertura da H1)
 

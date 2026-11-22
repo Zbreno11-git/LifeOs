@@ -17,12 +17,12 @@
 | Nº | Classe | Ocorrências | Antídoto em uma linha |
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 10 | cada linha só roda se a anterior deu certo (`&&`, ou `cd … || return`); caminho real `~/Desktop/LifeOs` (medido em 2026-11-21; antes estava anotado `~/LifeOs`), `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
-| 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
+| 2 | Afirmei sem abrir o lugar onde estaria | 32 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 19 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
-| 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
+| 7 | Regra de reconhecimento desenhada pelo caso típico | 15 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 5 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
 
 ---
@@ -307,6 +307,14 @@ Escrevi "05:16Z" e depois "05:35Z" no título do bloco do `PROGRESSO.md` no mesm
 o `date -u`, que respondeu 05:15Z e 05:34Z. Pegos lendo a saída, corrigidos antes do commit. O que
 tem de novo: rodar o `date -u` no mesmo comando não basta se o texto já foi escrito antes dele; a
 hora entra no texto num comando **depois** de lida.
+
+**2026-11-22 (H1, E2E) — o plano dizia que o `viking registro` mostraria o envio pela voz.** A
+verificação 3 do plano da H1 mandava conferir o e-mail que saiu pela voz no `viking registro`. Antes
+de pedir, abri o código: o `viking registro` do Mac lê o store do `VIKING_STORE` dele (o SQLite
+local), e o envio pela voz é registrado na nuvem (Firestore); a `/fumaca/registro` do motor só
+confere que o registro funciona, não lista. Pego antes de o dono rodar; a prova passou a ser a
+caixa de entrada e os Enviados. O que tem de novo: um passo de verificação num plano também é uma
+afirmação sobre o código, e se abre antes de entrar no plano.
 
 ### 3. Estimei em vez de medir
 
@@ -993,6 +1001,15 @@ o `viking registro`, a `acoes_recentes` e o backup mostravam o id errado. Conser
 UUID exato e solto fica de fora (32 hex não cabem num cartão); colado a letra, `_` ou hífen, não
 (seria o meio de um token, e parti-lo o deixaria escapar: testado com um JWT). O que tem de novo: o
 vizinho legítimo de uma regra de texto de página inclui o identificador que o próprio sistema gera.
+
+**2026-11-22 (H1, E2E) — o teto de 15 s da gravação, desenhado pela frase curta.** Escolhi 15 s
+pensando em "liga a luz" e "o que eu tenho amanhã". No E2E o dono ditou um e-mail e soletrou o
+endereço segurando 22,5 s: a placa gravou 15 (`gravado: 14.98 s`) e cortou a soletração **sem
+aviso** (o LED seguia aceso). A transcrição montou outro domínio, o dono não percebeu na leitura, e
+o e-mail de teste foi a um endereço errado (irreversível). Conserto: 30 s (o WAV cabe no teto de
+1 MiB da ponte e do motor) e o LED piscando nos últimos 3 s e depois do fim, até soltar. O que tem
+de novo: o vizinho legítimo de um limite de duração é o ditado (endereço, número, soletração), e
+um corte nunca é silencioso.
 
 ### 8. Comando que escreve com alcance maior que a mudança
 

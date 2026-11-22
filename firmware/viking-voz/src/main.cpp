@@ -11,10 +11,11 @@
 // src/segredos.h (fora do git); sem ele, o firmware roda só o diagnóstico (botão, LED, microfone).
 //
 // O botão:
-//   segurar (>= 400 ms) = gravar enquanto estiver apertado (até 15 s) e mandar a fala à ponte;
+//   segurar (>= 400 ms) = gravar enquanto estiver apertado (até 30 s) e mandar a fala à ponte;
 //   dois toques curtos  = aprovar o que o Viking pediu (um envio de e-mail, uma limpeza).
-// O LED: aceso = gravando; piscando rápido = esperando a resposta; piscando devagar = esperando os
-// dois toques; 1 piscada = ok; 2 longas = a voz está desligada no HA; 3 rápidas = erro.
+// O LED: aceso = gravando; piscando bem rápido com o botão apertado = a gravação está acabando (ou
+// acabou: o resto não entra); piscando rápido = esperando a resposta; piscando devagar = esperando
+// os dois toques; 1 piscada = ok; 2 longas = a voz está desligada no HA; 3 rápidas = erro.
 
 #include <Arduino.h>
 #include <ESP_I2S.h>
@@ -39,7 +40,11 @@ constexpr int PIN_BOTAO = 2;     // D1
 constexpr int PIN_LED_EXT = 43;  // D6
 constexpr uint32_t TAXA = 16000;
 constexpr int BLOCO = 512;  // amostras por leitura (~32 ms)
-constexpr uint32_t MAX_GRAVACAO_S = 15;
+// O teto de uma fala. Era 15 s: no E2E de 2026-11-22 o dono ditou um endereço de e-mail segurando
+// 22,5 s, a placa gravou 15 e cortou a soletração sem aviso (o e-mail foi a outro endereço). 30 s
+// dão um WAV de 960.044 bytes, abaixo do teto de 1 MiB da ponte e do motor (`MAX_WAV`).
+constexpr uint32_t MAX_GRAVACAO_S = 30;
+constexpr uint32_t AVISO_S = 3;  // o LED avisa quando faltam estes segundos
 constexpr uint32_t MAX_AMOSTRAS = TAXA * MAX_GRAVACAO_S;
 constexpr uint32_t SEGURAR_MS = 400;       // menos que isto é um toque
 constexpr uint32_t ENTRE_TOQUES_MS = 600;  // o segundo toque tem de vir antes disto
@@ -65,6 +70,7 @@ enum class Led : uint8_t { Ocioso, Gravando, Esperando, Aguardando, Ok, Desligad
 volatile Led led = Led::Ocioso;
 volatile uint32_t aguardandoAte = 0;
 volatile uint32_t gravandoDesde = 0;  // o aperto em curso (0 = nenhum): o LED acende passado o toque
+volatile bool avisoDeLimite = false;  // a gravação está no fim (ou passou dele) e o botão segue apertado
 
 void ledFisico(bool aceso) {
   digitalWrite(LED_BUILTIN, aceso ? LOW : HIGH);
@@ -85,6 +91,13 @@ void tarefaDoLed(void *) {
   for (;;) {
     switch (led) {
       case Led::Ocioso:
+        if (avisoDeLimite) {  // está acabando (ou acabou): pisca bem rápido até soltar
+          ledFisico(true);
+          delay(60);
+          ledFisico(false);
+          delay(60);
+          break;
+        }
         // Um aperto em curso que passou do toque já é fala: o LED acende enquanto grava.
         ledFisico(gravandoDesde && millis() - gravandoDesde >= SEGURAR_MS);
         delay(20);
@@ -224,6 +237,14 @@ uint32_t gravar() {
     esp_task_wdt_reset();
     soltos = apertado() ? 0 : soltos + 1;
     if (soltos >= BLOCOS_PARA_SOLTAR) break;
+    if (!avisoDeLimite && n >= MAX_AMOSTRAS - AVISO_S * TAXA) {
+      avisoDeLimite = true;
+      Serial.printf("gravacao: faltam %lu s\n", (unsigned long)AVISO_S);
+    }
+  }
+  if (n + BLOCO > MAX_AMOSTRAS && apertado()) {
+    Serial.printf("gravacao: chegou ao limite de %lu s; o que vier depois nao entra\n",
+                  (unsigned long)MAX_GRAVACAO_S);
   }
   Serial.printf("gravado: %.2f s, pico=%ld, rms=%.0f, saturadas=%lu (ganho %d)\n", n / (float)TAXA,
                 (long)pico, n ? sqrt(soma2 / n) : 0.0, (unsigned long)saturadas, GANHO);
@@ -420,6 +441,7 @@ void loop() {
       delay(10);
       esp_task_wdt_reset();
     }
+    avisoDeLimite = false;
     Serial.printf("botao: soltou (%lu ms)\n", (unsigned long)(millis() - apertouEm));
     led = Led::Ocioso;
 #if TEM_SEGREDOS

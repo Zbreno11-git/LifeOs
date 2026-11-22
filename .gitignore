@@ -26,3 +26,10 @@ jev-ultrafast/
 
 .DS_Store
 .mutacao.lock
+
+# A voz e os dados da wake word (H2) nunca vão ao repo público: gravações, pacotes do treino e o
+# dataset ficam em ~/viking-wakeword/ (fora daqui) e no Drive do dono. Desde 2026-11-22, quando um
+# parity.zip caiu solto na raiz.
+*.wav
+*.zip
+viking-wakeword/
