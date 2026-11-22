@@ -5,46 +5,101 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~23:15Z — a **H2** no Mac: C1–C6 ✅, o piloto aprovado pelo agente do Colab, e as 4 coletas planejadas (H2c1–H2c4, D71); o próximo é a H2c1
+## ▶️ RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 
-- **C4, o piloto (rodado por mim, com o "vai" do dono):**
-  - a sala: 59,8 s, "✅ contínuo", com o RMS de 56 a 337;
-  - os takes: 10 "Hey Viking" (1–4 a ~50 cm, 5–7 a ~1 m, 8–10 a ~1,5 m), todos com `lacunas: []`
-    e 0 saturadas, e o RMS máximo de 941 a 3502;
-  - o zip é `~/viking-wakeword/piloto_2026-11-22.zip`, com o LEIA-ME, os SHA256SUMS e os
-    `.seq.json`. O dono sobe para o Drive e cola a mensagem para o agente do Colab.
+**Estado, medido em 2026-11-22 ~23:20Z:** HEAD `7f5c3f1` no `origin/master`, com o CI `completed
+success`; árvore limpa; nada em segundo plano; nenhuma trava. **A placa tem o firmware de uso**
+(env `xiao_s3`, ganho 2, gravado ~22:37Z e conferido: PRONTO, uma fala certa, o silêncio deu
+`vazio`). O firmware de coleta novo (o ganho na linha de status) compila, mas **não foi gravado**.
+No VPS não sobra nada: o `alertas` foi feito (`exit=0`, ~22:55Z), e as 3 mutações da voz morreram
+3 de 3 (~23:02Z).
 
-  Os takes rodaram numa janela do Terminal aberta por `osascript`, que espera o Enter, com o `tee`
-  para um log que eu leio: assim o dono vê a contagem ao vivo.
-- **C5:**
-  - o firmware de uso foi gravado de volta (env `xiao_s3`, ganho 2, "Hash of data verified"), e o
-    boot chegou ao PRONTO;
-  - a fala de teste teve pico de 19414, 0 saturadas, e a resposta certa nas caixas. Do soltar até
-    o `ok` foram 13 s (para a velocidade da H1h);
-  - um aperto em silêncio deu `vazio`.
+**O próximo passo (pedido do dono, nesta ordem):**
+1. **Planejar a H2c1** com a skill `software-build`: o plano por checkpoints (formato em
+   `.claude/skills/software-build/referencia/plano-de-sessao.md`), com o desenho do firmware
+   único, o `takes --dica` e o `pacote`. **Incluir o roteiro da gravação, para o dono ler antes**:
+   - os 38 takes, com a distância e o tom de cada bloco;
+   - as 15 frases parecidas, com a lista;
+   - a hora do estúdio normal;
+   - quando eu aviso cada troca, e quanto tempo cada parte leva.
 
-  O `serve` estava travado ("Remote does not seem to support RFC2217"); o `kickstart`, com o ok
-  do dono, resolveu.
-- **Os ajustes depois do piloto:**
-  - o take com 3,0 s depois do FALE (o take 9 ficou com ~0,2 s de sala);
-  - `ganho=` também na linha `coleta: status` (a sala saiu com `"ganho": null`, porque a linha do
-    boot se perdeu antes de a porta abrir);
-  - um arquivo sem ganho sai ⚠️, não ✅.
+   Mostrar ao dono e esperar o ok.
+2. **Implementar** (o firmware único, as ferramentas, os testes, as mutações), e **gravar a placa
+   com o ok**.
+3. **A coleta**, um passo por vez, com o "vai" do dono em cada parte.
+4. **O pós:** a revisão em duas passadas, os portões lidos, o diário, o PROGRESSO, o `sessoes.md`,
+   a barra, commit e push. Depois, o zip e a mensagem ao Colab para o dono colar.
 
-  O firmware de coleta novo **ainda não foi gravado**: vai na próxima coleta, com o ok.
-- **O agente do Colab aprovou o piloto** (parte 5, no `sessoes.md`, H2), e o `pre_fala` que ele
-  pediu (o barulho antes da fala, medido na faixa) está no `coleta.py`.
-- **Planejado em 2026-11-22 ~23:15Z (D71):** a coleta grande em **4 sessões, H2c1–H2c4**, no
-  `sessoes.md`, cada uma com ~1 h de estúdio normal, 37–38 takes e 15 parecidas. O dono decidiu 4 h
-  (não 16) e **um firmware só** (a H2c1 o faz e o grava, com o ok). As 3 mutações da voz morreram no
-  VPS (3 de 3, ~23:02Z).
-- **O próximo: a H2c1** (o plano no `sessoes.md`). O que segue abaixo é o resumo anterior:
-  - os positivos variados (a hora, o lugar, o tom, com ruído);
-  - os negativos do estúdio "normal": horas com o dono trabalhando ou com música. O dono pediu
-    para **não deixar gravando ainda**.
-- **No VPS:** o `alertas --executar` rodou pelo dono às ~22:55Z (`✅ alertas: lembretes sem
-  sucesso em 15 min e backup sem sucesso em 25 h avisam o dono`, `exit=0`): os dois alertas da 14b
-  estão no ar. As 3 mutações da voz também rodaram lá: 3 de 3 mortas.
+**A resposta do dono sobre a hora do estúdio normal (2026-11-22; escrita no `sessoes.md`,
+H2c1):**
+- ele trabalha normalmente: fala, digita, atende ligação, põe música. Não fica parado nem calado;
+- a única regra é **não dizer "Hey Viking"** nessa hora ("Viking" solto numa frase pode). Se
+  escapar, ele diz a hora, e o trecho se corta;
+- os takes e as parecidas vêm **antes**, guiados pela tela;
+- **eu aviso cada troca:** o roteiro e o "vai" antes dos takes; "agora 1 h normal, não diga a
+  palavra"; "acabou, a voz voltou".
+
+**Reler, nesta ordem:**
+1. o `CLAUDE.md` e o `AGENTS.md`;
+2. este bloco;
+3. o `sessoes.md`: o bloco ▶️ e a seção "Sessões H2c1–H2c4", que é o plano-base;
+4. a D71 e a D70 em `docs/decisoes.md` (o ganho 2 congelado);
+5. as skills `software-build`, `esp32-development` e `testes-que-provam`;
+6. o `firmware/viking-voz/src/main.cpp` (o `MODO_COLETA`, o `coletar()`, o `converter()`), o
+   `firmware/viking-voz/coleta.py`, `tests/test_coleta.py` e `firmware/viking-voz/platformio.ini`;
+7. a memória `testes-com-o-dono-no-hardware.md`.
+
+**Não pode ser esquecido:**
+- **A porta da placa.** O `serve` (RFC2217 em 127.0.0.1:4000) trava a cada vez que a USB é
+  replugada e às vezes sozinho ("Remote does not seem to support RFC2217"); `launchctl kickstart
+  -k gui/$UID/com.esp32.serve`, **com o ok do dono**, depois esperar a porta abrir (~5 s). Um
+  cliente por vez; `env -u ESPTOOL_CFGFILE` em todo `pio` e `python` da placa. O `pio` fica em
+  `~/.platformio/penv/bin/pio`; o Python da placa é `~/esp32-mac/.venv/bin/python`.
+- **Os takes ao vivo.** Uma janela do Terminal aberta por `osascript` roda um script do scratchpad
+  que espera o Enter, com `tee` para um log; eu leio o log e os `.seq.json` depois. A minha saída
+  do Bash não aparece ao vivo para o dono.
+- **Os dados de voz nunca entram no repo.** Eles ficam em `~/viking-wakeword/`, cada sessão numa
+  pasta `AAAA-MM-DD_cN_…`. O `.gitignore` recusa `*.wav`, `*.zip` e `viking-wakeword/`; o
+  `git status` vem antes de cada commit.
+- **O ganho 2 está congelado** (`test_o_ganho_esta_congelado_em_2`). Os níveis se trocam com o
+  Colab **na faixa** (125–7500 Hz). O `pre_fala` (0,45–0,70 s, limite 1,4) já existe.
+- **O piloto** (`~/viking-wakeword/piloto_2026-11-22.zip`): o pacote da H2c1 deve sair no mesmo
+  formato, com o LEIA-ME, os SHA256SUMS e os `.seq.json`.
+- **Os portões se leem pela linha literal** (`grep -E "passed|failed"`). Dois testes de tempo
+  falham às vezes com o Mac ocupado e passam sozinhos: `test_entrada_gigante_nao_explode` e
+  `test_texto_gigante_nao_explode` (`docs/erros.md`, classe 5).
+- **O VPS** (horário do repo em UTC; o dono em São Paulo): o deploy e a infraestrutura rodam lá.
+  Os testes do Firestore só lá. O `voz.py` tem uma mudança só de comentário desde o
+  deploy `3bc72ef`, que vai no próximo deploy.
+
+**Depende do dono:**
+- o ok do plano da H2c1;
+- o ok para gravar a placa;
+- o "vai" de cada parte da gravação;
+- o dia da sessão;
+- subir o zip para o Drive.
+
+**Verificar antes de confiar neste bloco:**
+- `git status --short` vazio, e HEAD `7f5c3f1` (ou mais novo, só com commits deste bloco);
+- `gh run list --limit 1`: o SHA do HEAD com `success`;
+- `ls /dev/cu.usbmodem*` (a placa na USB);
+- `lsof -nP -iTCP:4000` (o `serve` ouvindo, e nenhum cliente).
+
+### Feito na H2 em 2026-11-22 (o resumo; o detalhe está no diário)
+
+- **C1–C3:** o ganho 2; o `converter()` único; o env de coleta; o `coleta.py`; a USB medida (0
+  lacunas em 3.697 quadros).
+- **C4, o piloto:**
+  - a sala: 59,8 s, contínua;
+  - 10 takes de 0,5 a 1,5 m, com `lacunas: []` e 0 saturadas.
+- **C5:** o firmware de uso de volta com o ganho 2, conferido.
+- **Os ajustes:**
+  - o take com 3,0 s depois do FALE;
+  - o ganho na linha de status;
+  - um arquivo sem ganho sai ⚠️;
+  - o `pre_fala`.
+- **O agente do Colab aprovou o piloto** (parte 5, no `sessoes.md`). A coleta grande foi planejada
+  em 4 sessões (D71).
 
 ### O bloco anterior (~19:55Z)
 

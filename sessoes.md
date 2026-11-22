@@ -1403,6 +1403,12 @@ A H2c4 inteira fica guardada para o teste (o agente do Colab confirma).
   Mac não dormir. Um cliente por vez na porta.
 - **Durante o estúdio normal, o dono não diz "Hey Viking"** (fala, trabalha e toca música à
   vontade). Se escapar, ele me diz a hora, e eu corto o trecho.
+  **Na hora do estúdio normal, o dono não fica parado nem calado** (dito por ele em 2026-11-22): é
+  um dia comum de estúdio, e é o que ensina o aparelho a não acordar sozinho. **Eu aviso cada
+  troca:**
+  - o roteiro e o "vai" antes dos takes;
+  - "agora 1 h normal, não diga a palavra";
+  - "acabou, a voz do estúdio voltou".
 - **O ✅ de cada sessão:**
   - todo arquivo com `lacunas: []` e 0 checksums errados;
   - o `ganho` igual a 2 em todos;
