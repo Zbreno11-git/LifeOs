@@ -1065,6 +1065,14 @@ ESP32-S3 não tem DAC. O chip não respondia pelo túnel (22:43Z).
 **Feito:** o lock (`google-auth` 2.63.1, suíte 3185 antes e depois); a H1 reescrita e as H1b, H2 e
 H3 criadas em `sessoes.md`; a D70; o plano por checkpoints no `PROGRESSO.md`.
 
+**Depois, no mesmo dia (23:00–00:10Z):** as rotas `/voz/*` do motor e o canal da voz no turno
+(C1); o passo `casa`, o `casa-chave` e o corte de emergência no `nuvem.py` (C2); a ponte `viking
+casa` (C3); o firmware `viking-voz` no `/root/esp32` (C4, compilado, não gravado). Com o ok do
+dono: a `viking-casa@` criada (23:49Z) e o deploy de `c65f765` (23:54Z), com 37 ✅ depois da prova
+nova da voz. Suíte 3324; mutações novas 14 de 14 mortas. **Pego na compilação:** o prazo do
+`HTTPClient` do Arduino é `uint16_t` em ms (330 s viravam 2,3 s), e a ponte passou a responder
+na hora e o aparelho a perguntar o estado (erros, classe 3).
+
 ### 2026-11-21 — Sessão 14b fechada no Mac: a mini-auditoria e a manutenção
 
 **Por quê:** 43 dias sem push. A mini-auditoria (`docs/auditorias/mini-auditoria-2026-11-21.md`,

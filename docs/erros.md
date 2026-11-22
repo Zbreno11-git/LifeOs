@@ -18,10 +18,10 @@
 |---|---|---|---|
 | 1 | Comando para o Mac que não roda como escrito | 9 | cada linha só roda se a anterior deu certo (`&&`, ou `cd … || return`); caminho real `~/Desktop/LifeOs` (medido em 2026-11-21; antes estava anotado `~/LifeOs`), `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
-| 3 | Estimei em vez de medir | 12 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
+| 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 17 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 19 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 20 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 3 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
 
@@ -390,6 +390,15 @@ conta como alarme". A API recusou: `evaluation_missing_data … must have a non-
 regra que as páginas que eu li não diziam. O que tem de novo: ler o limite do terceiro não basta
 quando a regra está só na validação; a primeira criação de um recurso novo é a medição, e o
 recurso volta para o teste (`test_sem_dado_como_alarme_pede_duracao`).
+
+**2026-11-21 (H1) — um prazo de 330 s num campo que só guarda 65 s.** No firmware do aparelho
+da voz, pus `http.setTimeout(330000)` (o turno do motor mais a fala inteira) sem ler o tipo do
+parâmetro: o `HTTPClient::setTimeout` do Arduino-ESP32 recebe `uint16_t` em ms, e 330000 vira
+2320 (2,3 s). Só apareceu porque compilei a variante com rede: o `-Woverflow` avisou. O aparelho
+desistiria de toda resposta em 2,3 s. Conserto: a ponte aceita na hora (202) e o aparelho pergunta
+`GET /estado` a cada segundo. **Antídoto:** antes de escolher um limite para a API de um terceiro,
+ler a assinatura dela (o tipo também é um limite), e compilar todas as variantes, não só a que não
+usa o trecho.
 
 ### 4. Teste que não separava o certo do errado
 
@@ -840,6 +849,14 @@ registro (um UUID solto fica fora da redação) cobria os ids nossos; o vizinho 
 Gmail, "(ID: …)", que passava inteira pela mesma redação, e um id do Gmail (16 hex) só de dígitos
 tem a forma de um cartão de 16 dígitos: não dava para protegê-lo na regra geral sem abrir um buraco.
 Consertado no lugar dele: o id fora da redação, o conteúdo dentro (como o `ler_email` já fazia).
+
+**2026-11-21 (H1) — a tarifa do modelo desconhecido, que a tarifa nova desmontaria.** Ao pôr o
+TTS em `custos.TARIFAS` (entrada US$ 0,50, saída US$ 6,00, o dobro em 2027), a regra "fora da
+tabela cobra a mais cara" escolhia a faixa de **maior soma**: passaria a ser (1,00, 12,00), e um
+modelo desconhecido com muita entrada (o `gemini-3.5-transcribe`, a US$ 2,00 de entrada) seria
+contado abaixo do que custa. Peguei ao rodar o teste da tarifa, que esperava (1,50, 7,50). A regra
+virou "a maior entrada e a maior saída, cada uma". **Antídoto:** ao acrescentar uma linha numa
+tabela, reler toda regra que escolhe "a maior" ou "a menor" dela.
 
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 

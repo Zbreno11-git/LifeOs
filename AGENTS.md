@@ -186,6 +186,17 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     leitura: até 5 trechos no bloco de não confiável, e o que achou volta ao dono no campo
     `documentos` da resposta, a linha 📄), `servico.py` (as rotas `/documentos*`) e
     `terminal.py` (`viking documentos`: o arquivo conferido no Mac, só o nome sem a pasta sobe)
+  - `casa/` — a ponte de casa da voz do estúdio (Sessão H1, D70), **no laptop de casa do dono**
+    (Debian, Home Assistant em Docker): `servidor.py` (HTTPS na rede de casa, só o aparelho, com
+    o token dele em tempo constante como primeira instrução; a fala é aceita na hora, 202, e o
+    aparelho pergunta `GET /estado`), `ponte.py` (o interruptor `input_boolean.viking_voz` do HA
+    antes de tudo, fechado se o HA cair; ouvir no motor; o agente local do HA primeiro; só o
+    `no_intent_match` vai ao turno do Viking; a conversa em memória, zerada em 5 min; o código da
+    aprovação guardado só aqui por 1 min depois da fala, e dois toques no botão o mandam), `ha.py`,
+    `remoto.py` (as `/voz/*` com o token da `viking-casa@`, assinado pela chave deste laptop),
+    `som.py` (`aplay`), `config.py` (a pasta `~/.config/viking-casa/`, 700/600, recusada se aberta)
+    e `terminal.py` (`viking casa`). O firmware do aparelho mora fora deste repo, em
+    `/root/esp32/projects/viking-voz` (git local do VPS)
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
@@ -200,7 +211,10 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     (`/financas` e `/fumaca/financas`, do `cli@`; Sessão 11d), e as da memória (`/memoria`,
     `/memoria/esquecer`, `/desfazer`, `/corrigir`, `/reindexar` e `/fumaca/memoria`, do `cli@`;
     Sessão 13), e as dos documentos (`/documentos`, `/documentos/aprender`, com o corpo até
-    4 MiB, `/esquecer` e `/desfazer`, do `cli@`; Sessão 14);
+    4 MiB, `/esquecer` e `/desfazer`, do `cli@`; Sessão 14), e as da voz do estúdio (`/voz/saude`,
+    `/voz/ouvir` com o WAV conferido antes do modelo, `/voz/responder` com o turno pelo canal
+    "voz" e `/voz/falar` com o áudio frase por frase em streaming; **só** da `viking-casa@`, e ela
+    só nelas; Sessão H1, D70; `assistant/voz.py` transcreve e fala sem tools e sem a conversa);
     `identidade.py` é a verificação do token dos dois serviços (a mesma régua; Sessão 11d);
     `financas.py` é o **serviço de finanças** (D64): outro Cloud Run, a mesma imagem com outro
     comando, a conta `viking-financas@` (a única que lê o `viking-pluggy`), só o `viking-motor@`
@@ -220,7 +234,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   Secret Manager
   pela entrada padrão (nunca no argv nem na saída); `prova-chat` faz um turno real no ar (gasta; só
   quando pedido). O passo `agendador` (Sessão 11) liga o Cloud Scheduler que dispara o envio de
-  lembretes a cada minuto, só depois do portão da 10c; os passos `editor` e `alertas` (Sessão 14b,
+  lembretes a cada minuto, só depois do portão da 10c; o passo `casa` (Sessão H1, D70) cria a
+  `viking-casa@` sem papel no projeto, só com o `run.invoker` do motor, e `casa-chave CERT`
+  sobe só o certificado público gerado no laptop (recusa um arquivo com chave privada; nenhuma
+  chave gerada pelo Google, a exceção da D47), e `casa-cortar`/`casa-religar` desligam e religam
+  a conta (o corte de emergência da voz); os passos `editor` e `alertas` (Sessão 14b,
   D69) tiram o `roles/editor` da conta padrão do Compute e avisam o e-mail do dono (o da conta do
   `gcloud`, nunca no repo) quando o envio de lembretes ou o backup param de ter sucesso (a métrica
   sai do log do Scheduler; cada política só nasce depois de a métrica viver a janela dela, 15 min e
@@ -306,6 +324,12 @@ python scripts/nuvem.py prova-chat
 python scripts/nuvem.py prova-financas
                                # o status das conexões, do ar (chama a Pluggy: só GET, e só
                                # quando o dono pedir; sem IDs nem valores)
+python scripts/nuvem.py casa-chave casa-publica.pem
+                               # o certificado da conta da casa (gerado no laptop); com
+                               # --executar sobe só a metade pública. casa-cortar e
+                               # casa-religar (com --executar) desligam e religam a voz
+python scripts/vozes.py        # no Mac: 3 frases em cada voz do Gemini TTS, tocadas uma a uma
+                               # (gasta < US$ 0,01; só com o ok do dono)
 python scripts/mutacoes.py     # teste dos testes: mutações curadas das regras de apagar,
                                # acessar, egress e das contas de finanças (à mão; não
                                # editar nada enquanto roda;
@@ -351,6 +375,10 @@ viking documentos              # os documentos que o Viking aprendeu (na nuvem);
                                # arquivo no mesmo tema substitui), --todos, --esquecer ID,
                                # --desfazer ID. No chat da nuvem, o modelo consulta por tema
                                # e a linha 📄 diz o que ele achou
+viking casa                     # no laptop de casa: serve a voz do estúdio (HTTPS para o
+                               # aparelho); --preparar gera aqui a chave da conta, o HTTPS e o
+                               # token do aparelho; --chave-id ID depois do casa-chave; --conferir
+                               # mede tudo sem gastar. Instala com `uv sync --locked --extra casa`
 viking lembretes                # os pendentes; --enviar manda por e-mail (para a sua conta) os
                                # vencidos nas últimas 24 h, um cada, uma vez só (0/2/1)
                                # (só num terminal interativo); --nuvem lista os da nuvem;
@@ -617,6 +645,16 @@ vai ao log, a um documento, a um commit ou ao Claude, e os testes usam texto inv
 **forma** medida (o link é um redirecionamento `vertexaisearch`, o título é o domínio). A
 chamada da busca não leva as nossas tools nem a conversa: a página que a busca lê não alcança o
 modelo que envia e-mail (`tests/test_busca.py`).
+
+**Pela voz, o código de aprovação nunca vai ao que é falado.** O canal "voz" (`na_nuvem.turno(...,
+canal="voz")`, só pela `/voz/responder` da `viking-casa@`) liga o `interativo` pelo canal (os dois
+toques no botão são o gesto físico que o modelo não alcança, D70), e `_aprovacoes_da_voz` tira a
+linha `confirma NNNN` do `ao_dono` para o campo `aprovacao` (a regex é presa aos produtores por
+`test_a_linha_do_codigo_casa_com_quem_a_produz`: um texto novo de código com outra forma derruba o
+teste). A ponte guarda o código, nunca o manda ao TTS, e o manda de volta como `confirma NNNN` nos
+dois toques. A busca na web fica fora da voz (`FORA_DA_VOZ`): os termos do Grounding mandam
+mostrar as sugestões. O HA nunca é alcançado pelo modelo: só a transcrição da fala do dono vai ao
+agente local dele, antes do Viking.
 
 **No motor, o stdout e o stderr são o log do Cloud Run.** Um `print` do código de aprovação ali
 iria para o log, não ao dono. Por isso o que só o dono vê passa por `ao_dono.mostrar`, que no

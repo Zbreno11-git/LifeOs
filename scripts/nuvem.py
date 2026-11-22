@@ -1768,6 +1768,16 @@ def provas(
     commit = versao.json().get("commit") if versao.status_code == 200 else None
     detalhe = f"HTTP {versao.status_code}" + (f", depois de {esperou} s" if esperou else "")
     resultado.append(Prova("viking-cli@: /versao = a imagem no ar", commit == sha, detalhe))
+    # A voz do estúdio (H1, D70): a rota existe e só a casa@ entra; o terminal leva o 403 do
+    # nosso código (não a página do Google, nem o 404 de uma rota que não subiu).
+    voz = requests.get(f"{url}/voz/saude", headers=cabecalho, timeout=60)
+    resultado.append(
+        Prova(
+            "viking-cli@: /voz/saude recusado pelo motor (a voz é só da casa@)",
+            voz.status_code == 403 and voz.text.strip() == "identidade sem acesso",
+            f"HTTP {voz.status_code} {voz.text.strip()[:40]!r}",
+        )
+    )
     # A busca vetorial da memória (Sessão 13): o índice que o emulador não pede, exercido no ar.
     for rota in ("/lembretes", "/fumaca/vencidos", "/fumaca/registro", "/fumaca/memoria"):
         resposta = requests.get(f"{url}{rota}", headers=cabecalho, timeout=60)
