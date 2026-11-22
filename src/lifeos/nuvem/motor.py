@@ -324,6 +324,8 @@ async def voz_ouvir(request: Request) -> JSONResponse:
         segundos = voz.conferir_wav(corpo)
     except voz.AudioInvalido as exc:
         return JSONResponse({"erro": str(exc)}, 400)
+    if not await run_in_threadpool(voz.tem_fala, corpo):  # o silêncio parado não vai ao modelo
+        return JSONResponse({"texto": "", "segundos": round(segundos, 2), "silencio": True})
     try:
         texto = await run_in_threadpool(_ouvir, corpo)
     except Exception as exc:  # noqa: BLE001 - o teto é 429; o resto, só o tipo

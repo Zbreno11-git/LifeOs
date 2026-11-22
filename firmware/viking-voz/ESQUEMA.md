@@ -67,8 +67,10 @@ mostrar ruído estranho, reabrir o datasheet antes.
 
 ## O produto (a decidir)
 
-- A distância de fala: **de 50 cm a 1,5 m**, com o aparelho na mesa (o dono, 2026-11-22). O ganho e
-  o filtro de silêncio se medem nessas duas distâncias.
+- A distância de fala: **de 50 cm a 1,5 m**, com o aparelho na mesa (o dono, 2026-11-22). Medido só
+  até onde o braço alcança o botão (as distâncias não foram medidas a fita): longe de verdade pede a
+  palavra de ativação (H2), e ali o ruído da sala é o risco (o dono, 2026-11-22). O mexer na mesa
+  sem falar já se mede como "fala" fraca (3 trechos acima de 4× o fundo).
 - O MAX98357A (H1b): os pinos saem do datasheet dele e da tabela de pinos livres da XIAO (fora dos
   strapping GPIO0/3/45/46 e da USB 19/20), e entram aqui antes do código.
 - A caixa, o furo do mic e a fonte de 5 V: a medir quando o som do aparelho existir.

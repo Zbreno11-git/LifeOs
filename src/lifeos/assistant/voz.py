@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import io
 import re
+import sys
 import wave
+from array import array
 from collections.abc import Iterator
 from typing import Any
 
@@ -48,8 +50,8 @@ VOZ = "Charon"
 # a transcrição de volta ouviu "Leu" no lugar de "Li"; com ele, "Li"; uma frase só). O estilo vai no
 # `speech_metadata` da parte, **fora do texto**: a página diz que o texto é "strictly a verbatim
 # transcript" e manda separar as instruções para não serem lidas em voz alta (medido: não foram).
-# Com o estilo, a mesma frase levou 5,0 s em vez de 4,4 s. Liga ou não: o dono ouvindo
-# (`scripts/vozes.py --sotaque`).
+# Com o estilo, a mesma frase levou 5,0 s em vez de 4,4 s. O dono ouviu as 4 variantes no Mac
+# (`scripts/vozes.py --sotaque`, 2026-11-22) e escolheu o `pt-BR` sem estilo.
 IDIOMA: str | None = "pt-BR"
 ESTILO_BRASILEIRO = "português do Brasil, sotaque paulistano; calmo, elegante e natural"
 ESTILO: str | None = None
@@ -57,6 +59,20 @@ TAXA_DE_SAIDA = 24_000  # a página: PCM 24 kHz, mono, 16 bits little-endian
 MAX_TEXTO_FALADO = 2_000  # caracteres: uma resposta da voz é curta (a seção de sistema pede)
 MAX_FRASE = 400
 MAX_FRASES = 12
+
+
+# O filtro de silêncio (C4 da H1, medido na XIAO em 2026-11-22, três rodadas de 5 gravações, o
+# RMS de cada 100 ms impresso pelo firmware): sem fala, o modelo pode inventar texto. Um limiar fixo
+# não serve (o fundo da sala variou 4× entre duas rodadas); o que separou foi o **relativo**: um
+# trecho de 100 ms com fala fica pelo menos `FATOR_DE_FALA`× acima do fundo da própria gravação
+# (o 10º percentil dos trechos). As pontas (`PONTA_S`) ficam fora: lá caem os cliques do botão.
+# Medido: o silêncio parado deu 0 trechos acima de 4× nas 4 gravações; "liga a luz", baixo, o mais
+# longe que o braço deixava (o dono não mediu a distância), deu 4; mexer na mesa sem falar deu 3.
+# Este filtro só barra o **silêncio parado**: perder uma fala custa mais que transcrever um barulho.
+QUADRO_S = 0.1
+PONTA_S = 0.2
+FATOR_DE_FALA = 4
+MIN_QUADROS_DE_FALA = 2
 
 
 class AudioInvalido(ValueError):
@@ -92,6 +108,25 @@ def conferir_wav(dados: bytes) -> float:
     if segundos < MIN_SEGUNDOS:
         raise AudioInvalido("o áudio é curto demais para ter fala")
     return segundos
+
+
+def tem_fala(dados: bytes) -> bool:
+    """Se o WAV (já conferido por `conferir_wav`) tem fala, pela régua medida acima. Na dúvida
+    (gravação curta demais para medir), diz que tem: quem decide é a transcrição."""
+    with wave.open(io.BytesIO(dados), "rb") as arquivo:
+        amostras = array("h", arquivo.readframes(arquivo.getnframes()))
+    if sys.byteorder == "big":  # o WAV é little-endian
+        amostras.byteswap()
+    quadro, ponta = int(QUADRO_S * TAXA_DE_ENTRADA), int(PONTA_S * TAXA_DE_ENTRADA)
+    meio = amostras[ponta : len(amostras) - ponta]
+    niveis = sorted(
+        (sum(a * a for a in meio[i : i + quadro]) / quadro) ** 0.5
+        for i in range(0, len(meio) - quadro + 1, quadro)
+    )
+    if len(niveis) < 2 * MIN_QUADROS_DE_FALA:
+        return True
+    fundo = niveis[len(niveis) // 10]
+    return sum(n > FATOR_DE_FALA * fundo for n in niveis) >= MIN_QUADROS_DE_FALA
 
 
 def _sem_pensar() -> types.AutomaticFunctionCallingConfig:

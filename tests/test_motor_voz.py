@@ -36,15 +36,38 @@ def _token_da_casa():
     return base._token(email=CASA)
 
 
-def _wav(segundos=1.0, taxa=16_000, canais=1, largura=2, quadros=None):
+def _amostras_de_niveis(niveis, por_quadro=1600):
+    """Um sinal cujo trecho `i` de 100 ms tem RMS `niveis[i]` (uma onda quadrada: ±nível)."""
+    amostras = []
+    for nivel in niveis:
+        amostras += [nivel, -nivel] * (por_quadro // 2)
+    return amostras
+
+
+def _wav_de_amostras(amostras, taxa=16_000, canais=1, largura=2):
     saida = io.BytesIO()
     with wave.open(saida, "wb") as arquivo:
         arquivo.setnchannels(canais)
         arquivo.setsampwidth(largura)
         arquivo.setframerate(taxa)
-        n = int(segundos * taxa) if quadros is None else quadros
-        arquivo.writeframes(b"\x00" * (n * canais * largura))
+        arquivo.writeframes(struct.pack(f"<{len(amostras)}h", *amostras))
     return saida.getvalue()
+
+
+def _wav(segundos=1.0, taxa=16_000, canais=1, largura=2, quadros=None):
+    """Um WAV com "fala" (fundo baixo e o meio alto), para o filtro de silêncio deixar passar; nos
+    formatos errados, zeros (o motor recusa antes de olhar o conteúdo)."""
+    n = int(segundos * taxa) if quadros is None else quadros
+    if (taxa, canais, largura) != (16_000, 1, 2):
+        saida = io.BytesIO()
+        with wave.open(saida, "wb") as arquivo:
+            arquivo.setnchannels(canais)
+            arquivo.setsampwidth(largura)
+            arquivo.setframerate(taxa)
+            arquivo.writeframes(b"\x00" * (n * canais * largura))
+        return saida.getvalue()
+    niveis = [3000 if 0.3 <= i * 1600 / max(n, 1) < 0.7 else 200 for i in range(n // 1600 + 1)]
+    return _wav_de_amostras(_amostras_de_niveis(niveis)[:n])
 
 
 @pytest.fixture
@@ -320,6 +343,63 @@ def test_falar_texto_longo_demais_e_recusado(cliente, falas):
 
 def test_conferir_wav_devolve_a_duracao():
     assert voz.conferir_wav(_wav(3.0)) == 3.0
+
+
+# O RMS de cada 100 ms, medido na XIAO em 2026-11-22 (o firmware de diagnóstico, ganho 4; o 1º e o
+# último trecho trazem o clique do botão). Só números: nada da voz do dono.
+LIGA_A_LUZ_BAIXO_LONGE = [5151, 340, 290, 346, 332, 315, 330, 283, 266, 311, 268, 176, 259, 374,
+    302, 345, 296, 321, 317, 273, 284, 380, 446, 576, 1188, 1711, 1688, 1088, 815, 414, 317, 216,
+    327, 284, 269, 249, 216, 279, 246, 221, 259, 221, 227, 221, 250, 218]  # fmt: skip
+SILENCIO_PARADO = [972, 232, 235, 239, 236, 218, 266, 202, 234, 287, 228, 255, 247, 208, 233, 245,
+    234, 276, 229, 237, 225, 271, 249, 207, 212, 235, 249, 253, 276, 247, 230, 270, 273, 292, 290,
+    245, 233, 204, 202, 184, 226, 238, 231, 265, 205, 294, 267, 329, 258, 227, 202, 278, 240, 298,
+    255, 213, 314, 280, 232, 207, 294, 239, 252, 254, 261, 233, 348, 313, 273, 266]  # fmt: skip
+# A rodada com a sala mais barulhenta (o fundo ~4× maior), com o silêncio mais alto medido (608).
+SILENCIO_DA_SALA_BARULHENTA = [833, 332, 282, 337, 264, 478, 608, 338, 244, 247, 251, 319, 179,
+    252, 256, 269, 278, 378, 303, 270, 267, 274, 345, 422, 330, 348, 296, 345, 362, 300, 396, 264,
+    277, 273, 229, 232, 257, 281, 316, 276, 294, 338, 384, 381, 286, 398, 425, 388, 353, 253, 298,
+    303, 327, 401, 481, 327]  # fmt: skip
+
+
+def _de(niveis):
+    return _wav_de_amostras(_amostras_de_niveis(niveis))
+
+
+@pytest.mark.parametrize(
+    ("niveis", "esperado"),
+    [
+        (LIGA_A_LUZ_BAIXO_LONGE, True),  # o comando mais fraco medido: 4 trechos acima de 4×
+        (SILENCIO_PARADO, False),
+        (SILENCIO_DA_SALA_BARULHENTA, False),
+    ],
+)
+def test_o_filtro_de_silencio_nas_gravacoes_medidas(niveis, esperado):
+    assert voz.tem_fala(_de(niveis)) is esperado
+
+
+def test_o_limiar_e_de_dois_trechos_acima_de_quatro_vezes_o_fundo():
+    fundo = [250] * 40
+    um, dois = fundo[:20] + [1100] + fundo[21:], fundo[:20] + [1100, 1100] + fundo[22:]
+    assert voz.tem_fala(_de(um)) is False
+    assert voz.tem_fala(_de(dois)) is True
+    no_limite = fundo[:20] + [1000, 1000] + fundo[22:]  # exatamente 4× não conta
+    assert voz.tem_fala(_de(no_limite)) is False
+
+
+def test_os_cliques_das_pontas_nao_viram_fala():
+    assert voz.tem_fala(_de([20000, 20000] + [250] * 40 + [15000, 15000])) is False
+
+
+def test_o_zero_digital_e_silencio_e_o_curto_demais_passa():
+    assert voz.tem_fala(_wav_de_amostras([0] * 32_000)) is False
+    assert voz.tem_fala(_de([250] * 6)) is True  # 0,6 s: sem trechos para medir, a dúvida passa
+
+
+def test_o_silencio_volta_vazio_sem_chamar_o_modelo(cliente, ouvidos):
+    resposta = _post(cliente, "/voz/ouvir", _de(SILENCIO_PARADO), _token_da_casa())
+    assert resposta.status_code == 200
+    assert resposta.json() == {"texto": "", "segundos": 7.0, "silencio": True}
+    assert ouvidos == []
 
 
 def test_frases_juntam_as_curtas_e_cortam_as_longas():

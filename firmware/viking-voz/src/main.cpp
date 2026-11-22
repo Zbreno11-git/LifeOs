@@ -44,10 +44,11 @@ constexpr uint32_t MAX_AMOSTRAS = TAXA * MAX_GRAVACAO_S;
 constexpr uint32_t SEGURAR_MS = 400;       // menos que isto é um toque
 constexpr uint32_t ENTRE_TOQUES_MS = 600;  // o segundo toque tem de vir antes disto
 constexpr uint32_t DEBOUNCE_MS = 30;
-// O ganho de 24 bits -> 16 bits. O INMP441 dá a fala normal muito baixa: o diagnóstico imprime o
-// pico e o RMS de cada gravação, e o ganho se calibra com a fala real do dono (skill electronics:
-// calibrar, não chutar). Valor de partida, a medir.
-constexpr int GANHO = 8;
+// O ganho de 24 bits -> 16 bits, calibrado com a fala do dono em 2026-11-22 (protoboard, o
+// diagnóstico de 100 ms): com 8, a fala a ~50 cm saturava (921 amostras no teto); com 4, o pico do
+// meio da gravação foi 19344 a ~50 cm e 4584 falando baixo o mais longe que o braço deixava, e só
+// o tranco do aperto (o 1º trecho) bate no teto. O ganho não muda a distância fala/silêncio.
+constexpr int GANHO = 4;
 // O `HTTPClient::setTimeout` é `uint16_t` em ms (330000 virava 2320: o aviso -Woverflow da
 // compilação de 2026-11-21). Por isso a ponte aceita na hora (202, "pensando") e o aparelho
 // pergunta `GET /estado` a cada segundo até o resultado, com um teto total.

@@ -71,7 +71,12 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
    Antes, o botão de 4 pernas num mesmo par dava `APERTADO no boot?` (ver `ESQUEMA.md`).
    O roteiro: segurar mostra "botao: apertou (fala)", depois "gravado: …" e "soltou"; dois toques
    mostram "botao: dois toques".
-3. [ ] Mic: o "gravado" mostra o pico e o RMS da fala a ~30 cm. Calibrar o `GANHO`: a meta é o pico
+3. [x] Mic (2026-11-22 14:37–14:51Z, três rodadas de 5 gravações, no protoboard): o `GANHO` é
+   **4** (com 8 a fala de perto saturava); o silêncio parado nunca teve trecho de 100 ms acima de
+   4× o fundo da gravação, e a fala mais fraca ("liga a luz", baixo, de longe) teve 4. As
+   distâncias são **aproximadas** (o dono não mediu; com o botão na mão, "longe" é o braço
+   esticado). Daí o filtro de silêncio do motor (`voz.tem_fala`, com as sequências medidas nos
+   testes). O roteiro: o "gravado" mostra o pico e o RMS da fala a ~30 cm. Calibrar o `GANHO`: a meta é o pico
    da fala normal sem saturar (`saturadas=0`).
 4. [ ] Rede (com o `segredos.h`): "wifi: ok", "hora: ok" e "ponte: saude -> ok", com o certificado
    fixado. Se o `.local` não resolver, usar o IP com `--nome IP` no `viking casa --preparar`.

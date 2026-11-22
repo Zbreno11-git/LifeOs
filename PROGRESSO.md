@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~13:50Z — a H1 segue **no Mac**; o laptop ✅ (C7), a placa gravada e a camada 1 ✅; esperando o mic e o botão
+## ▶️ RETOMAR AQUI — 2026-11-22, ~15:10Z — a H1 segue **no Mac**; o laptop ✅ (C7), a placa nas camadas 1–3 ✅ e o filtro de silêncio no código; o próximo é o `segredos.h` (camadas 4–5)
 
 **Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
 - HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`
@@ -56,7 +56,20 @@
     desde o VPS, 9,1/11,7%: **pendência** fixar a versão);
   - gravado com o ok do dono (`pio run -t upload`, "Hash of data verified"), a variante de
     diagnóstico; **camada 1 ✅ no serial** (`BRINGUP.md`);
-  - **esperando o dono ligar o INMP441 e o botão** para as camadas 2 e 3.
+  - o protoboard montado pelo dono (nada soldado): a pinagem em `firmware/viking-voz/ESQUEMA.md`,
+    a fonte única para o produto; o botão de 4 pernas num par só dava "APERTADO no boot?" (na
+    diagonal, certo). O `serve` fica preso a cada desplugar (reiniciado com o ok do dono);
+  - **camada 2 ✅** (o segurar e os dois toques); **camada 3 ✅**: três rodadas, `GANHO` 8 → **4**
+    (saturava de perto). As distâncias são aproximadas (o braço no botão);
+  - **o filtro de silêncio** (`voz.tem_fala`, chamado no `/voz/ouvir` antes do modelo: o silêncio
+    volta `{"texto": "", "silencio": true}`): ≥ 2 trechos de 100 ms acima de 4× o 10º percentil,
+    sem as pontas de 200 ms. Barra só o silêncio parado (0 trechos nas 4 medidas); "liga a luz"
+    baixo de longe deu 4; mexer na mesa deu 3 e passa à transcrição **de propósito** (perder uma
+    fala custa mais). 7 testes com as sequências medidas, e 5 mutações em `scripts/mutacoes.py`
+    (rodadas à mão: as 5 morreram). **Vai ao ar no deploy.**
+  - **Próximo:** o dono cria o `src/segredos.h` (as linhas que o `--preparar` imprimiu, mais a Wi-Fi
+    de casa) e grava a variante com rede (o ok); camadas 4 e 5 com a placa na USB do Mac (a mesma
+    Wi-Fi do laptop).
 - **Portões no Mac (2026-11-22 ~13:10Z):** `pytest` 2879 passed / 466 skipped (os 7 do gitleaks
   agora rodam); `ruff` ok. Medidos e **não** meus: o `mypy` dá 13 `import-untyped` do
   `google.cloud.firestore` (o Mac tem o pacote sem o extra `nuvem`; os arquivos não foram tocados),
