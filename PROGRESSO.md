@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~22:50Z — a **H2** no Mac: C1–C6 ✅ (o piloto gravado e zipado, o firmware de uso de volta com o ganho 2); o próximo é a resposta do agente do Colab
+## ▶️ RETOMAR AQUI — 2026-11-22, ~23:10Z — a **H2** no Mac: C1–C6 ✅ e o piloto aprovado pelo agente do Colab; o próximo é a coleta grande, quando o dono decidir
 
 - **C4, o piloto (rodado por mim, com o "vai" do dono):**
   - a sala: 59,8 s, "✅ contínuo", com o RMS de 56 a 337;
@@ -32,17 +32,20 @@
   - um arquivo sem ganho sai ⚠️, não ✅.
 
   O firmware de coleta novo **ainda não foi gravado**: vai na próxima coleta, com o ok.
-- **O próximo:** a resposta do agente do Colab sobre o piloto (o nível, o recorte, as distâncias).
-  Depois dela, a coleta grande em sessões:
+- **O agente do Colab aprovou o piloto** (parte 5, no `sessoes.md`, H2), e o `pre_fala` que ele
+  pediu (o barulho antes da fala, medido na faixa) está no `coleta.py`.
+- **O próximo:** a coleta grande em sessões, quando o dono decidir (o firmware de coleta novo
+  precisa ser gravado antes, com o ok dele):
   - os positivos variados (a hora, o lugar, o tom, com ruído);
   - os negativos do estúdio "normal": horas com o dono trabalhando ou com música. O dono pediu
     para **não deixar gravando ainda**.
-- **No VPS, depois das 22:20Z:** `python scripts/nuvem.py --executar alertas` e as 3 mutações da
-  voz (o bloco anterior abaixo).
+- **No VPS:** o `alertas --executar` rodou pelo dono às ~22:55Z (`✅ alertas: lembretes sem
+  sucesso em 15 min e backup sem sucesso em 25 h avisam o dono`, `exit=0`): os dois alertas da 14b
+  estão no ar. Falta lá: as 3 mutações da voz (o bloco anterior abaixo).
 
 ### O bloco anterior (~19:55Z)
 
-# ▶️ RETOMAR AQUI — 2026-11-22, ~19:55Z — a **H2** no Mac: C1 (o código) e C2–C3 (o firmware de coleta gravado, a USB medida) ✅; o próximo é o piloto (C4)
+**(era o RETOMAR) 2026-11-22, ~19:55Z — a **H2** no Mac: C1 (o código) e C2–C3 (o firmware de coleta gravado, a USB medida) ✅; o próximo é o piloto (C4)**
 
 **Feito até aqui (2026-11-22):**
 - **C1 (`1ef92c4`):** o ganho 2; o `converter()` único; o env `xiao_s3_coleta`; o `coleta.py` com

@@ -1368,6 +1368,22 @@ O que estava escrito na abertura:
   - o TFLM e o micro_frontend no arduino-esp32 4.0.0, com o CSV de paridade do chip contra o
     `parity_v2`;
   - a voz do aparelho, com o ok do gasto.
+- **A resposta do agente do Colab ao piloto (parte 5, notebook v1.6, 2026-11-22; medido por ele):**
+  - **pode seguir para a coleta grande.** O ganho 2 se confirmou na grade (todas as amostras
+    pares), com o pico de 11.342 e 3× de folga, e a relação sinal-ruído na faixa de 22,5 a
+    32,5 dB;
+  - **62% da energia da sala fica abaixo de 125 Hz** (o ronco, perto do corte de ~12,7 Hz do
+    nosso passa-alta), que o frontend não vê. O passa-alta fica como está. **Reabre** se as
+    saturadas da coleta grande se concentrarem em graves (porta, caminhão, música). Os níveis
+    se trocam sempre **na faixa** (125–7500 Hz), porque no tempo o ruído sai ~1,6× maior;
+  - o ronco revelou um defeito no cortador de silêncio dele, já corrigido. As faixas dele com o
+    ganho 2, na faixa: SPEECH_RMS 350–6000 e MIC_NOISE_RMS 40–120;
+  - o FALE é silencioso: o take 10 foi barulho solto. Ele pediu que o resumo aponte os takes
+    com barulho antes da fala. Feito: o `pre_fala` mede, na faixa, a janela de 0,45 a 0,70 s
+    sobre o fundo do take, com o limite de 1,4. No piloto deu 1,01–1,08 em 9 takes e 1,67 no
+    10, como ele mediu;
+  - **as sessões:** as 16 h de negativos em 3–4 sessões (dias, horários e condições
+    diferentes) e os 150 takes em vários dias, uma subpasta datada por sessão.
 - **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.

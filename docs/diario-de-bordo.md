@@ -1077,6 +1077,17 @@ sem o botão. "Só o dono ativa" não é requisito.
 - Um arquivo sem ganho não sai mais como ✅.
 - 19 testes de coleta; a mutação nova morreu.
 
+**A resposta do agente do Colab (parte 5):** o piloto serve, e a coleta grande pode seguir. O
+ganho 2 ficou confirmado. 62% da energia da sala está abaixo de 125 Hz, faixa que o modelo não
+ouve: o ronco revelou um defeito no cortador de silêncio dele, já corrigido. O passa-alta fica
+como está e reabre se as saturadas se concentrarem em graves. Ele pediu que os takes com barulho
+antes da fala sejam apontados: o `pre_fala` faz isso na faixa do modelo e, no piloto, aponta só
+o take 10 (1,67× o fundo, como ele mediu). São 21 testes de coleta, e as 2 mutações novas
+morreram.
+
+**No VPS:** o dono rodou o `alertas --executar` (`exit=0`). Os dois alertas da 14b, o dos
+lembretes e o do backup, estão no ar.
+
 ### 2026-11-22 — Sessão H1 fechada no Mac: a voz do estúdio, da placa às caixas, com as 5 verificações
 
 **Onde:** no Mac do dono (a XIAO na USB dele, o laptop de casa por SSH na mesma Wi-Fi); o deploy

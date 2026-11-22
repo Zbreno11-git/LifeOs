@@ -184,6 +184,31 @@ def test_os_niveis_contam_a_saturacao_e_o_rms_por_100_ms():
     )
 
 
+def _take(barulho=None) -> array:
+    """3 s de um fundo fraco (ruído determinístico na faixa), com um barulho opcional somado em
+    0,45–0,70 s, a janela antes da fala."""
+    import math
+    import random
+
+    sorteio = random.Random(7)
+    amostras = [sorteio.gauss(0, 50) for _ in range(3 * coleta.TAXA)]
+    if barulho is not None:
+        for i in range(int(0.45 * coleta.TAXA), int(0.70 * coleta.TAXA)):
+            amostras[i] += 400 * math.sin(2 * math.pi * barulho * i / coleta.TAXA)
+    return array("h", (int(a) for a in amostras))
+
+
+def test_o_barulho_antes_da_fala_e_apontado():
+    assert coleta.pre_fala(_take())["pre_fala_barulho"] is False
+    com_barulho = coleta.pre_fala(_take(barulho=1_000))
+    assert com_barulho["pre_fala_barulho"] is True and com_barulho["pre_fala_razao"] > 2
+
+
+def test_o_ronco_abaixo_da_faixa_do_modelo_nao_conta_como_barulho():
+    # 20 Hz: o ronco que o piloto mostrou, que o frontend do treino (125–7500 Hz) não vê
+    assert coleta.pre_fala(_take(barulho=20))["pre_fala_barulho"] is False
+
+
 def test_o_quadro_do_coleta_py_e_o_do_firmware():
     fonte = FIRMWARE.read_text()
     assert "constexpr char MAGICO[4] = {'V', 'K', 'C', '1'};" in fonte

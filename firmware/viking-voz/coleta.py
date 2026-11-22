@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import struct
 import subprocess
@@ -238,6 +239,53 @@ def niveis(amostras: array) -> dict:
     }
 
 
+# A faixa que o modelo ouve: o micro_frontend do treino vê de 125 a 7500 Hz. No piloto
+# (2026-11-22), 62% da energia da sala estava abaixo de 125 Hz (o ronco, medido pelo agente do
+# Colab), e um nível medido sem esse corte engana. O barulho antes da fala se mede na faixa.
+BANDA_HZ = 125
+# a janela do take em volta do "FALE" (que aparece em 0,5 s), antes da reação de quem fala; a
+# mesma que o agente do Colab mediu
+PRE_FALA_S = (0.45, 0.70)
+# a janela sobre o fundo do take: no piloto, 9 takes deram 1,00 e o com barulho, 1,67 (pelo Colab)
+PRE_FALA_LIMITE = 1.4
+
+
+def na_banda(amostras) -> list[float]:
+    """Um passa-alta de 2ª ordem (Butterworth, pelas fórmulas do RBJ) em BANDA_HZ."""
+    w0 = 2 * math.pi * BANDA_HZ / TAXA
+    alfa, c = math.sin(w0) / (2 * math.sqrt(0.5)), math.cos(w0)
+    a0 = 1 + alfa
+    b0, b1, b2 = (1 + c) / 2 / a0, -(1 + c) / a0, (1 + c) / 2 / a0
+    a1, a2 = -2 * c / a0, (1 - alfa) / a0
+    x1 = x2 = y1 = y2 = 0.0
+    saida = []
+    for x in amostras:
+        y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+        x2, x1, y2, y1 = x1, x, y1, y
+        saida.append(y)
+    return saida
+
+
+def _rms(valores) -> float:
+    return (sum(v * v for v in valores) / len(valores)) ** 0.5 if valores else 0.0
+
+
+def pre_fala(take) -> dict:
+    """O barulho antes da fala, para o agente do Colab descartar o take sem ouvir: a janela
+    PRE_FALA_S sobre o fundo do take (o p10 dos trechos de 100 ms), os dois na faixa do modelo."""
+    banda, quadro = na_banda(take), TAXA // 10
+    trechos = sorted(_rms(banda[i : i + quadro]) for i in range(0, len(banda) - quadro + 1, quadro))
+    fundo = trechos[len(trechos) // 10] if trechos else 0.0
+    inicio, fim = (int(s * TAXA) for s in PRE_FALA_S)
+    janela = _rms(banda[inicio:fim])
+    razao = janela / fundo if fundo else math.inf
+    return {
+        "fundo_na_banda": round(fundo, 1),
+        "pre_fala_razao": round(razao, 2),
+        "pre_fala_barulho": razao > PRE_FALA_LIMITE,
+    }
+
+
 def gravar_wav(caminho: Path, amostras: array) -> None:
     caminho.parent.mkdir(parents=True, exist_ok=True)
     dados = array("h", amostras)
@@ -393,7 +441,7 @@ def takes(args: argparse.Namespace) -> int:
     pasta = destino_seguro(Path(args.raiz), args.sessao, tipo)
     placa = Placa(args.url)
     amostras, cont = array("h"), Continuidade()
-    ruins, feitos = 0, 0
+    ruins, feitos, barulhentos = 0, 0, []
 
     def esperar(segundos: float) -> None:
         fim = time.time() + segundos
@@ -433,15 +481,19 @@ def takes(args: argparse.Namespace) -> int:
                 "antes_s": ANTES_S,
                 "depois_s": DEPOIS_S,
                 **niveis(take),
+                **pre_fala(take),
             }
             gravar_seq(wav, resumo)
             nv = niveis(take)
+            if resumo["pre_fala_barulho"]:
+                barulhentos.append(wav.name)
             veredito = _veredito(resumo)
             ruins += not veredito.startswith("✅")
             feitos += 1
             print(
                 f"   {wav.name}: pico {nv['pico']} · rms100 máx {nv['rms_100ms_max']} · "
-                f"saturadas {nv['saturadas']} · {veredito}",
+                f"saturadas {nv['saturadas']} · antes da fala {resumo['pre_fala_razao']}× o fundo · "
+                f"{veredito}",
                 flush=True,
             )
     except KeyboardInterrupt:
@@ -449,6 +501,9 @@ def takes(args: argparse.Namespace) -> int:
     finally:
         placa.fechar()
     print(f"\n{feitos} takes em {pasta}; {ruins} com problema.")
+    if barulhentos:
+        # o agente do Colab descarta estes sem ouvir (a janela antes da fala acima do fundo)
+        print(f"com barulho antes da fala: {', '.join(barulhentos)}")
     return 1 if ruins else 0
 
 

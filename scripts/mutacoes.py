@@ -3761,6 +3761,20 @@ MUTACOES = [
         "tests/test_coleta.py::test_um_arquivo_sem_o_ganho_nao_sai_como_bom",
     ),
     Mutacao(
+        "coleta: o barulho antes da fala medido fora da faixa do modelo",
+        "firmware/viking-voz/coleta.py",
+        "    banda, quadro = na_banda(take), TAXA // 10",
+        "    banda, quadro = list(take), TAXA // 10",
+        "tests/test_coleta.py::test_o_ronco_abaixo_da_faixa_do_modelo_nao_conta_como_barulho",
+    ),
+    Mutacao(
+        "coleta: o barulho antes da fala nunca é apontado",
+        "firmware/viking-voz/coleta.py",
+        '        "pre_fala_barulho": razao > PRE_FALA_LIMITE,',
+        '        "pre_fala_barulho": False,',
+        "tests/test_coleta.py::test_o_barulho_antes_da_fala_e_apontado",
+    ),
+    Mutacao(
         "casa: o token do aparelho comparado com ==",
         "src/lifeos/casa/servidor.py",
         "not hmac.compare_digest(dado.encode(), esperado.encode())",
