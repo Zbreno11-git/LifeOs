@@ -1270,6 +1270,32 @@ O que estava escrito na abertura:
 - **Junto:** "pensar enquanto fala" (o turno do Gemini em streaming, falando frase a frase enquanto
   gera), se a latência medida na H1 incomodar.
 
+## Sessão H1h — o hardening da voz (criada em 2026-11-22, no E2E da H1, a pedido do dono)
+
+- **Por quê (medido no E2E de 2026-11-22):** um e-mail para outra conta do dono saiu **duas vezes**
+  para um domínio errado ("team" no lugar de "teen"): na 1ª o teto de 15 s cortou a soletração
+  (consertado na H1: 30 s com aviso no LED); na 2ª, dentro do teto, a transcrição ou o modelo
+  trocou o domínio, e o dono aprovou sem entender a leitura falada. A proteção dos dois toques só
+  vale com uma leitura que se entende.
+- **O que entra (a decidir com o dono, nesta ordem):**
+  1. **Soletrar todo endereço falado** (na ponte, `casa/ponte.texto_para_falar`: "breno, arroba, tê,
+     é, é, ene…"), com teste; só no laptop, sem deploy. Recusado na H1 como item do motor; o dono
+     pediu agora para o hardening;
+  2. **Achar o destinatário pelo nome**, só entre os endereços para os quais o dono **já mandou**
+     e-mail (os Enviados: o dono os escolheu); nunca pelo remetente de e-mails recebidos (um estranho
+     manda de um endereço parecido e vira o "contato"). Hoje a busca mostra só o remetente; o
+     destinatário de um enviado é código novo;
+  3. pela voz, um e-mail para um endereço **que nunca recebeu e-mail do dono** é recusado (ou só
+     pelo chat), enquanto o 2 não existir;
+  4. **por que o HA reconheceu "que horas são" uma vez e não a outra** (sem guardar a transcrição:
+     registrar só se o HA reconheceu e qual intenção);
+  5. a **velocidade** (5,5 s do soltar ao `aplay`): medir cada etapa na ponte e o 1º som, juntar as
+     idas ao motor, comparar `flash-lite` e `transcribe` com a voz do dono, o preço do motor
+     sempre acordado;
+  6. a **saturação** da fala de perto (189 amostras numa fala alta, com o ganho 4): ver se atrapalha
+     a transcrição antes de mexer no ganho (o ganho muda o treino da wake word: avisar o agente do
+     Colab antes).
+
 ## Sessão H2 — a palavra de ativação (criada em 2026-11-21, na abertura da H1)
 
 - **Entrega:** "Hey Viking" acorda o aparelho sem o botão (o botão continua, e os dois toques

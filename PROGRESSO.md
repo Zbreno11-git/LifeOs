@@ -106,7 +106,13 @@
     aviso (`docs/erros.md`, classe 7), e o dono não percebeu a troca na leitura. Consertado no
     firmware (30 s; o LED pisca nos últimos 3 s e depois do fim) e gravado com o ok do dono
     (18:35Z, boot ✅). **Recusado pelo dono por ora:** soletrar o destinatário na leitura;
-  - **a refazer:** a 3 para a outra conta; depois a 4 (o interruptor) e a 5 (`casa-cortar`).
+  - **a 3 refeita (18:40Z), com o teto de 30 s (o limite visto: o LED piscou, o serial avisou e o
+    filtro barrou o silêncio, `fala: vazio`):** a leitura (29 s), `aguardando`, dois toques →
+    enviado, **de novo ao domínio errado**; o dono aprovou sem entender a leitura. O mecanismo
+    (ler inteiro, abrir a janela no fim, os toques) funciona; o endereço ditado e lido em voz, não.
+    **Decidido pelo dono:** seguir o E2E e tratar numa sessão de hardening (**H1h** no
+    `sessoes.md`, com a lista);
+  - **a seguir:** a 4 (o interruptor) e a 5 (`casa-cortar`).
 - **A velocidade (decidido: depois do E2E):** medir na ponte o tempo de cada etapa e o 1º som (e se
   o HA reconheceu, sem o texto); depois juntar as idas ao motor, comparar os modelos de transcrição
   (o `flash-lite` contra o `transcribe`, com a voz do dono) e ler o preço do motor sempre acordado.
