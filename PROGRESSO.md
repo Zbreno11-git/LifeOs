@@ -16,8 +16,10 @@ foi aprovado pelo dono em 2026-11-21. **Pendência P0 (da 14b):** depois de 2026
 202 + `GET /estado` em `6939a5c`) · C4 🟡 (o firmware `/root/esp32/projects/viking-voz` compila nas
 duas variantes, sem aviso; falta gravar: a placa plugada, o botão no D1 e o ok do dono) · **C5 ✅**
 (2026-11-21 23:49Z: `--executar casa` → ✅, a conta sem chave; 23:54Z: deploy de `c65f765`, 36 ✅,
-e depois a prova nova "viking-cli@: /voz/saude recusado pelo motor" → 37 ✅) · C6 ⬜ (o dono roda
-`scripts/vozes.py` no Mac) · C7 ⬜ (o levantamento do laptop, o `--preparar`, o `casa-chave`) ·
+e depois a prova nova "viking-cli@: /voz/saude recusado pelo motor" → 37 ✅) · C6 🟡 (a voz:
+**Charon**, escolhida pelo dono no Mac em 2026-11-22, "masculina e elegante"; o pt-BR puxa um pouco
+para Portugal, "e-mail" sai estranho, e ele aceitou por enquanto; no código, falta no ar: entra no
+próximo deploy, que pede o ok; a transcrição se mede com a voz dele no C7) · C7 ⬜ (o levantamento do laptop, o `--preparar`, o `casa-chave`) ·
 C8 🟡 (as 14 mutações novas: 14 mortas pelo teste esperado; os docs; falta o fechamento).
 
 **Achado do C4 (2026-11-21):** o `HTTPClient::setTimeout` do Arduino-ESP32 é `uint16_t` em ms (o
