@@ -7,7 +7,10 @@ e trazido para este repo em 2026-11-22, para seguir no Mac: lá a placa está na
 ## Placa
 
 - **Placa:** Seeed XIAO ESP32S3, a comum (sem a Sense; dito pelo dono em 2026-11-21).
-- **SoC:** ESP32-S3. A revisão sai no boot log (`chip … rev N`): **a medir**.
+- **SoC:** ESP32-S3 (QFN56) **rev 0.2** (`esptool flash-id` e o boot log, 2026-11-22).
+- **Flash medida:** GigaDevice (`c8`/`4017`), **8 MB** detectados, quad, 3,3 V por eFuse
+  (`esptool flash-id`, 2026-11-22). O bootloader do ESPHome dizia "4 MB": era o cabeçalho da
+  imagem dele, não o chip.
 - **Memória:** 8 MB de flash e 8 MB de PSRAM (`CLAUDE.md` do workspace e wiki da Seeed). O boot
   imprime a PSRAM livre.
 - **USB:** USB-Serial/JTAG nativa, plugada no Mac do dono. O `~/esp32-mac` serve a placa por
@@ -58,7 +61,9 @@ e trazido para este repo em 2026-11-22, para seguir no Mac: lá a placa está na
 
 ## Camadas (cada uma vista no serial antes da próxima)
 
-1. [ ] Boot: "== Viking voz (H1) ==", o chip, a PSRAM livre, "botao: D1 (GPIO2), solto".
+1. [x] Boot: "== Viking voz (H1) ==", o chip, a PSRAM livre, "botao: D1 (GPIO2), solto".
+   **Visto em 2026-11-22 13:44Z** (gravado do Mac, sem o `segredos.h`): `chip ESP32-S3 rev 2;
+   psram livre: 8386096 bytes`, `botao: D1 (GPIO2), solto` (ainda sem botão ligado: o pull-up).
 2. [ ] Botão: segurar mostra "botao: apertou (fala)", depois "gravado: …" e "soltou"; dois toques
    mostram "botao: dois toques".
 3. [ ] Mic: o "gravado" mostra o pico e o RMS da fala a ~30 cm. Calibrar o `GANHO`: a meta é o pico
@@ -79,7 +84,14 @@ pelo `service.sh`. O que falta instalar: o PlatformIO (o `pio`), que nunca rodou
 - **Compilar:** `cd ~/Desktop/LifeOs/firmware/viking-voz && pio run` (a 1ª vez baixa a plataforma
   pioarduino e o toolchain do macOS x86_64).
 - **Gravar:** `pio run -t upload` (pelo `127.0.0.1:4000`; o reset da USB-Serial/JTAG é aplicado
-  pelo servidor).
+  pelo servidor). O `pio` está em `~/.platformio/penv/bin/pio` (Core 6.2.0, fora do PATH).
+  **O cliente nunca leva o `ESPTOOL_CFGFILE`** (o `esptool-usbjtag.cfg` é do servidor): com ele
+  dos dois lados, o reset dobra e o `esptool` falha com "getting no sync reply: The serial TX path
+  seems to be down" (medido em 2026-11-22; sem ele, conecta da aplicação rodando).
+- **O servidor preso numa porta velha:** se a placa sair e voltar com o mesmo nome, o
+  `rfc2217_local.py` pode seguir com o descritor velho (`[Errno 6] Device not configured` a cada
+  cliente; visto em 2026-11-22, de pé desde 20/11). Conserto: `launchctl kickstart -k
+  gui/$UID/com.esp32.serve` (com o ok do dono).
 - **Ler o serial:** `~/esp32-mac/.venv/bin/python serial_log.py 15 --reset` (desde o boot) ou sem
   `--reset`; a saída também em `logs/serial.log` (fora do git).
 - **Se a rede do Mac fizer inspeção TLS** (a corporativa; a de casa, em 2026-11-22, não faz) e o

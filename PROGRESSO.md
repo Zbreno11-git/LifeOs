@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~13:10Z — a H1 segue **no Mac**; o laptop com `--conferir` ✅, falta o serviço e a placa
+## ▶️ RETOMAR AQUI — 2026-11-22, ~13:50Z — a H1 segue **no Mac**; o laptop ✅ (C7), a placa gravada e a camada 1 ✅; esperando o mic e o botão
 
 **Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
 - HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`
@@ -46,6 +46,17 @@
     direto à placa);
   - **falta:** o serviço (`scripts/viking-casa.service`) e o `loginctl enable-linger` (o `sudo` é
     do dono). O IP do laptop vem por DHCP: reservar no roteador o do laptop e o da XIAO.
+- **O laptop fechado (2026-11-22 ~13:20Z):** o serviço `viking-casa` (`systemd --user`) ativo,
+  `Linger=yes` (o `sudo` foi do dono); do Mac, `/estado`, `/falar` e `/toque` sem token ou com
+  token errado → **401** nas quatro tentativas.
+- **C4, a placa (2026-11-22 ~13:30–13:45Z):**
+  - o `serve` estava preso num descritor velho (de pé desde 20/11): reiniciado com o ok do dono;
+  - o boot do ESPHome lido antes de gravar; `esptool flash-id`: S3 rev 0.2, **8 MB** (GigaDevice);
+  - `pio run` no Mac: RAM 9,3%, flash 11,8%, zero avisos (o pioarduino "stable" pode ter mudado
+    desde o VPS, 9,1/11,7%: **pendência** fixar a versão);
+  - gravado com o ok do dono (`pio run -t upload`, "Hash of data verified"), a variante de
+    diagnóstico; **camada 1 ✅ no serial** (`BRINGUP.md`);
+  - **esperando o dono ligar o INMP441 e o botão** para as camadas 2 e 3.
 - **Portões no Mac (2026-11-22 ~13:10Z):** `pytest` 2879 passed / 466 skipped (os 7 do gitleaks
   agora rodam); `ruff` ok. Medidos e **não** meus: o `mypy` dá 13 `import-untyped` do
   `google.cloud.firestore` (o Mac tem o pacote sem o extra `nuvem`; os arquivos não foram tocados),

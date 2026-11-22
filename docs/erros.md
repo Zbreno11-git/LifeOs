@@ -20,7 +20,7 @@
 | 2 | Afirmei sem abrir o lugar onde estaria | 31 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
-| 5 | A ferramenta fez outra coisa do que eu li | 17 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 19 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 4 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
@@ -719,6 +719,16 @@ segundo plano com `… | tail -2 | cut`, e o "exited with code 0" era o do `cut`
 saído com 1 (a API recusou a política). Só a medição seguinte, que não achou a política, mostrou.
 Antídoto: um comando que escreve na nuvem roda sem pipe, com a saída num arquivo e o `$?` impresso
 logo depois.
+
+**2026-11-22 (H1) — a configuração do servidor dada ao cliente.** Para ler a flash da XIAO pelo
+RFC2217, rodei o `esptool` com `ESPTOOL_CFGFILE=esptool-usbjtag.cfg`, cujo comentário diz "aplicada
+localmente pelo esp_rfc2217_server". O cliente aplicou a sequência e o servidor também: duas vezes
+"getting no sync reply: The serial TX path seems to be down". Sem reset (`--before no-reset`) a
+sincronia funcionou, o que isolou o reset; sem o arquivo no cliente, conectou da aplicação rodando.
+**Antídoto:** antes de passar uma configuração a uma ferramenta, ler de quem ela é (o comentário
+dizia); e diante de uma falha nova, separar as metades (aqui: a sincronia sem reset) antes de repetir.
+No mesmo dia, um teste meu da ponte deu 400 em vez de 401: o `set -- $r` do zsh não divide palavras,
+e o método foi "GET /estado" inteiro. Refeito com o comando escrito por extenso: 401 em todas.
 
 ### 6. Conserto que cobriu um ponto e não o vizinho
 
