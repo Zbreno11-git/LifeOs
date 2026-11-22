@@ -5,28 +5,129 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-21, 23:05Z — a H1 aberta (o plano aprovado pelo dono); C0 em curso
+## ▶️ RETOMAR AQUI — 2026-11-22, ~02:30Z — a H1 segue **no Mac** (decisão do dono, 2026-11-22)
 
-**Estado:** o lock em `eb9ef6a` (google-auth 2.63.1; a suíte 3185 antes e depois). O plano abaixo
-foi aprovado pelo dono em 2026-11-21. **Pendência P0 (da 14b):** depois de 2026-11-22 22:20Z,
-`python scripts/nuvem.py --executar alertas` sem pipe. A placa não respondia pelo túnel às 22:43Z
-(o chip, não o túnel): pedir ao dono antes do C4.
+**Por que o Mac:** a XIAO está na USB dele e o laptop de casa se alcança pelo túnel dele; do VPS,
+cada passo de hardware e do laptop era um copia e cola do dono. O VPS continua sendo onde mora o
+**deploy** e a infraestrutura (`scripts/nuvem.py` sem subcomando e com `--executar`). Regras da
+sessão no Mac: `CLAUDE.md`, "Quando a sessão roda no Mac".
 
-**Checkpoints:** P0 ⬜ · C0 ✅ · C1 ✅ (`f697aa2`) · C2 ✅ (`c8d434b`) · C3 ✅ (`50c4430`, e o
-202 + `GET /estado` em `6939a5c`) · C4 🟡 (o firmware `/root/esp32/projects/viking-voz` compila nas
-duas variantes, sem aviso; falta gravar: a placa plugada, o botão no D1 e o ok do dono) · **C5 ✅**
-(2026-11-21 23:49Z: `--executar casa` → ✅, a conta sem chave; 23:54Z: deploy de `c65f765`, 36 ✅,
-e depois a prova nova "viking-cli@: /voz/saude recusado pelo motor" → 37 ✅) · C6 🟡 (a voz:
-**Charon**, escolhida pelo dono no Mac em 2026-11-22, "masculina e elegante"; o pt-BR puxa um pouco
-para Portugal, "e-mail" sai estranho, e ele aceitou por enquanto; no código, falta no ar: entra no
-próximo deploy, que pede o ok; a transcrição se mede com a voz dele no C7) · C7 ⬜ (o levantamento do laptop, o `--preparar`, o `casa-chave`) ·
-C8 🟡 (as 14 mutações novas: 14 mortas pelo teste esperado; os docs; falta o fechamento).
+**Estado (medido em 2026-11-22):**
+- **No ar:** o motor de `c65f765` (deploy de 2026-11-21 23:54Z, 37 ✅ / 0 ❌), com as `/voz/*` e a
+  `viking-casa@` (criada às 23:49Z, **sem chave** ainda).
+- **No código, ainda não no ar** (o próximo deploy, do VPS e com o ok do dono, leva tudo; tem de
+  ser **antes** do E2E, porque a ponte nova manda `inteiro` e o motor de `c65f765` o ignora):
+  - a voz **Charon** (o dono escolheu em 2026-11-22);
+  - o idioma `pt-BR` no `SpeechConfig` e o estilo no `speech_metadata`;
+  - os consertos da revisão do Sonnet:
+    - a aprovação só abre com o texto inteiro ouvido;
+    - o erro no meio do áudio derruba a conexão;
+    - o teto preso ou fecha;
+    - `frases()` sem `_`/emoji estragando.
+- **Firmware:** `firmware/viking-voz/` (trazido do VPS em 2026-11-22). Compila sem aviso nas duas
+  variantes (diagnóstico: RAM 9,1%, flash 11,7%; com rede: 15,1% / 31,5%), **nunca gravado**. A
+  gravação agora nasce no aperto (o começo da fala não se perde).
+- Suíte, mutações e CI: ver o commit deste bloco.
 
-**Achado do C4 (2026-11-21):** o `HTTPClient::setTimeout` do Arduino-ESP32 é `uint16_t` em ms (o
-`-Woverflow` mostrou 330000 → 2320). A ponte passou a aceitar na hora (202) e o aparelho pergunta
-`GET /estado`.
+**Checkpoints:**
+- **P0** ⬜: o alerta do backup. Só no VPS, depois de **2026-11-22 22:20Z** (19:20 em SP).
+- **C0–C3** ✅.
+- **C4** 🟡: o firmware está pronto; falta gravar (o ok do dono) e as camadas.
+- **C5** ✅: a conta e o deploy de `c65f765`.
+- **C6** 🟡:
+  - a voz é a **Charon**;
+  - o sotaque: medido no VPS em 2026-11-22 01:41Z (US$ 0,004):
+    - a API aceita `language_code="pt-BR"` e o `speech_metadata.style`, e o estilo **não** é lido
+      em voz alta (a transcrição de volta);
+    - sem `pt-BR`, a transcrição ouviu "Leu" no lugar de "Li"; uma frase só;
+    - o dono ouve as 4 variantes no Mac e escolhe;
+  - a transcrição com a voz dele fica para o C7.
+- **C7** ⬜: o laptop.
+- **C8** 🟡: as mutações e os docs; falta o fechamento.
 
-**C6 pronto para rodar no Mac:** `scripts/vozes.py` (3 frases × 5 vozes do Gemini TTS, < US$ 0,01).
+**Próximo passo, em ordem (no Mac):**
+1. **Abrir:**
+   - `git pull`;
+   - `git log --oneline -1` igual ao commit deste bloco;
+   - `uv sync --locked --extra dev`;
+   - `python -m pytest -q` (no Mac, os testes que pedem o emulador ou o clone do Jev são pulados;
+     anote quantos);
+   - ler o que está em "O que reler".
+2. **O sotaque (C6):** `python scripts/vozes.py --sotaque` (gasta ≈ US$ 0,01; o ok foi dado em
+   2026-11-22). Ele toca a Charon em 4 variantes: 1 sem nada, 2 `pt-BR`, 3 estilo, 4 os dois.
+   - O dono escolhe, e isso vira `voz.IDIOMA` e `voz.ESTILO` em `src/lifeos/assistant/voz.py`
+     (hoje é a 2: `IDIOMA="pt-BR"`, `ESTILO=None`).
+   - O teste `test_o_estilo_vai_fora_do_texto_e_o_idioma_na_configuracao` prende o `IDIOMA`:
+     se o escolhido não tiver `pt-BR`, ajuste a asserção.
+   - Commit e push.
+3. **O laptop de casa (C7):**
+   - Pergunte ao dono como se entra pelo túnel e rode o levantamento só de leitura (o comando está
+     em "Para o dono" abaixo).
+   - Instale: o `uv`; o clone de `https://github.com/Zbreno11-git/LifeOs` (público); `uv sync
+     --locked --extra casa` (Python ≥ 3.12: o `uv` baixa se o do Debian for o 3.11). A ponte
+     importada usa ~25 MB (medido no VPS).
+   - **O dono roda o `viking casa --preparar` num terminal dele no laptop**: ele pede o token do
+     HA por `getpass`, e o agente nunca o vê. Passe `--nome <IP fixo do laptop>` se o roteador
+     reservar um, porque o ESP32 pode não resolver `.local`.
+   - O certificado `casa-publica.pem` (só ele) vem ao Mac por `scp`. Depois: `python
+     scripts/nuvem.py casa-chave casa-publica.pem` (só lê), e com o ok `--executar` (roda no Mac
+     desde 2026-11-22: só o projeto). Por fim, `viking casa --chave-id ID` no laptop.
+   - No HA (o dono, pela interface): o ajudante "Viking voz" (`input_boolean.viking_voz`) e o
+     token de longa duração (já pedido no `--preparar`).
+   - `viking casa --conferir` com tudo ✅, e então um serviço `systemd --user` (o `loginctl
+     enable-linger` pede `sudo`: o dono). Nada de túnel para a porta 8765.
+4. **A placa (C4):** seguir `firmware/viking-voz/BRINGUP.md`, "No Mac".
+   - Conferir: `~/esp32-mac/service.sh status`.
+   - Instalar o `pio`: nunca rodou no Mac; `uv tool install platformio` é o candidato, a conferir.
+   - `pio run`.
+   - **O ok do dono para gravar** (ele ainda não deu); então `pio run -t upload` e
+     `serial_log.py 15 --reset`, camada por camada.
+   - Calibrar o `GANHO` com o pico e o RMS da fala dele, e anotar o RMS do silêncio: é a base do
+     filtro de silêncio (ver as pendências).
+   - O dono cria o `src/segredos.h` (o agente nunca o lê).
+   - As camadas 4 e 5 pedem a placa na Wi-Fi de casa: decidir com o dono onde ela fica (o serial
+     pelo laptop ou só pelo LED).
+5. **O deploy (no VPS, com o ok):** `python scripts/nuvem.py deploy` e depois `--executar`, com o
+   CI do SHA verde. Isso vem antes do E2E.
+6. **O E2E:** as 5 verificações do plano (abaixo).
+7. **C8:** a barra de progresso, o diário, a D70 final, `sessoes.md` e este bloco apontando para a
+   próxima sessão.
+
+**Pendências da revisão (2026-11-22), adiadas com motivo:**
+- **O filtro de silêncio** (o modelo pode inventar texto num aperto sem fala): precisa do RMS medido
+  no C4 (camada 3) para o limiar; antes disso o número seria chute. Entra em `voz.conferir_wav`
+  com teste.
+- **O `casa-cortar` não é instantâneo:** um token de identidade já emitido vale até 1 h (doc do
+  Google). Para o corte valer na hora, o desligar imediato é o interruptor do HA. Escrever na D70
+  ao fechar; uma bandeira de corte no motor fica para depois, se o dono quiser.
+- **A ponte escuta em `0.0.0.0`:** o token em tempo constante e o HTTPS fixado protegem. Prender ao
+  IP da rede de casa depende de o roteador reservar um IP (no C7).
+- **Firmware:** se a resposta 202 se perder ("sem-rede"), o LED mostra erro com a ponte trabalhando.
+  Só se aparecer no E2E.
+- **Já respondido por medição (2026-11-22 01:41Z):** o TTS conta os tokens do áudio na saída (586
+  de saída para ~23 s de fala, os 25 tokens/s da página), então o teto cobra o áudio de verdade.
+
+**O que reler, em ordem:**
+1. `CLAUDE.md` (a seção do Mac).
+2. `AGENTS.md`.
+3. Este bloco.
+4. O plano abaixo.
+5. `docs/decisoes.md` (a D70).
+6. `firmware/viking-voz/BRINGUP.md`.
+7. A skill `esp32-development` (`.claude/skills/`).
+8. `src/lifeos/casa/` (a `ponte.py` e a `terminal.py`).
+9. `docs/erros.md` (as classes 1 e 6).
+
+**Não pode ser esquecido:**
+- O repo é público: nenhum e-mail, ID ou número de projeto, SSID, IP de casa ou token em commit.
+- O `segredos.h` e a pasta `~/.config/viking-casa/` nunca se leem.
+- O laptop nunca usa o login do `gcloud` do dono.
+- O código de aprovação nunca é falado; o de desfazer é falado de propósito.
+- Comandos para o dono: zsh, `&&`, sem `#`, `python -m`.
+- O `HTTPClient::setTimeout` é `uint16_t` (por isso o 202 + `GET /estado`).
+
+**Para o dono (o levantamento do laptop, só leitura):**
+`uname -m && (cat /etc/debian_version || true) && python3 --version && nproc && free -h && df -h ~ && (command -v uv git aplay curl || true) && (aplay -l || true) && (systemctl is-active avahi-daemon || true) && (loginctl show-user "$USER" -p Linger || true) && (docker ps --format '{{.Names}} {{.Image}} {{.Status}}' || true) && (curl -s -o /dev/null -w 'HA %{http_code}\n' http://127.0.0.1:8123/ || true) && (hostname -I || true)`
 
 ### Plano — Sessão H1: a voz do estúdio (ESP32 → servidor de casa → motor)
 

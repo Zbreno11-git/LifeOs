@@ -2425,7 +2425,9 @@ def main(argv: list[str]) -> int:
         leitor.add_argument("certificado", type=Path)
         leitor.add_argument("--executar", action="store_true")
         args = leitor.parse_args(argv[1:])
-        return casa_chave(_contexto(), args.certificado, args.executar)
+        # Só o projeto, como o `segredo`: roda também no Mac (o certificado vem do laptop pelo
+        # túnel do Mac, sem passar pelo VPS; H1, 2026-11-22).
+        return casa_chave(_contexto(so_projeto=True), args.certificado, args.executar)
     if argv[:1] in (["casa-cortar"], ["casa-religar"]):
         leitor = argparse.ArgumentParser(prog=f"nuvem.py {argv[0]}")
         leitor.add_argument("--executar", action="store_true")

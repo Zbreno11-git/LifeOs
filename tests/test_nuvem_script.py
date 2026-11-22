@@ -1931,8 +1931,8 @@ def test_o_corte_de_emergencia(nuvem, ctx, monkeypatch, religar, verbo):
 
 
 def test_main_leva_os_subcomandos_da_casa(nuvem, ctx, monkeypatch, tmp_path):
-    vistos = []
-    monkeypatch.setattr(nuvem, "_contexto", lambda **_k: ctx)
+    vistos, contextos = [], []
+    monkeypatch.setattr(nuvem, "_contexto", lambda **k: contextos.append(k) or ctx)
     monkeypatch.setattr(nuvem, "casa_corte", lambda _c, r, e: vistos.append(("corte", r, e)) or 0)
     monkeypatch.setattr(nuvem, "casa_chave", lambda _c, p, e: vistos.append(("chave", p, e)) or 0)
     nuvem.main(["casa-cortar", "--executar"])
@@ -1943,3 +1943,5 @@ def test_main_leva_os_subcomandos_da_casa(nuvem, ctx, monkeypatch, tmp_path):
         ("corte", True, False),
         ("chave", tmp_path / "c.pem", False),
     ]
+    # Os três rodam no Mac também: só o projeto, nunca o faturamento nem o orçamento do VPS.
+    assert contextos == [{"so_projeto": True}] * 3

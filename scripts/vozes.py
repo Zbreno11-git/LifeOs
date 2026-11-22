@@ -7,6 +7,9 @@ frases em 5 vozes, menos de US$ 0,01). Só com o ok do dono.
 
     python scripts/vozes.py                      (as vozes de VOZES)
     python scripts/vozes.py --vozes Kore,Puck    (só estas)
+    python scripts/vozes.py --sotaque            (a Charon nas 4 variantes do sotaque: sem nada,
+                                                  o idioma pt-BR, o estilo, os dois; 12 frases,
+                                                  ≈ US$ 0,01)
 
 A chave é a `GEMINI_API_KEY` do `.env` deste computador. Nenhum áudio fica em disco: o arquivo
 temporário de cada frase é apagado depois de tocar. Os nomes das vozes vêm da página de geração de
@@ -63,10 +66,30 @@ def _tocar(pcm: bytes) -> None:
         os.unlink(caminho)
 
 
+# O sotaque (C6, 2026-11-22): (nome, idioma, estilo). O dono ouve e escolhe; o escolhido vira o
+# `voz.IDIOMA` e o `voz.ESTILO`.
+SOTAQUES = (
+    ("1. sem idioma e sem estilo (como você ouviu antes)", None, None),
+    ("2. idioma pt-BR", "pt-BR", None),
+    ("3. estilo brasileiro", None, voz.ESTILO_BRASILEIRO),
+    ("4. idioma pt-BR + estilo brasileiro", "pt-BR", voz.ESTILO_BRASILEIRO),
+)
+
+
 def main(argv: list[str]) -> int:
     leitor = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    leitor.add_argument("--vozes", default=",".join(VOZES))
+    leitor.add_argument("--vozes", default=None)
+    leitor.add_argument("--sotaque", action="store_true")
     args = leitor.parse_args(argv)
+    nomes = [v.strip() for v in (args.vozes or "").split(",") if v.strip()]
+    if args.sotaque:
+        rodadas = [
+            (f"{nome} · {rotulo}", nome, idioma, estilo)
+            for nome in (nomes or [voz.VOZ])
+            for rotulo, idioma, estilo in SOTAQUES
+        ]
+    else:
+        rodadas = [(nome, nome, None, None) for nome in (nomes or list(VOZES))]
     if not config.GEMINI_API_KEY:
         print("❌ falta a GEMINI_API_KEY no .env deste computador")
         return 1
@@ -80,9 +103,9 @@ def main(argv: list[str]) -> int:
     sessao = custos.Sessao()
     custos.instrumentar(cliente, sessao=sessao)
     print(f"modelo: {voz.MODELO_DE_FALAR}")
-    for nome in [v.strip() for v in args.vozes.split(",") if v.strip()]:
-        voz.VOZ = nome
-        print(f"\n== voz {nome} ==")
+    for titulo, nome, idioma, estilo in rodadas:
+        voz.VOZ, voz.IDIOMA, voz.ESTILO = nome, idioma, estilo
+        print(f"\n== {titulo} ==")
         for frase in FRASES:
             inicio = time.monotonic()
             try:

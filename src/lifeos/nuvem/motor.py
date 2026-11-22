@@ -273,12 +273,13 @@ def _cliente_da_voz() -> Any:
 
     cliente = na_nuvem._cliente()
     teto = na_nuvem._teto()
-    custos.instrumentar(
+    if not custos.instrumentar(
         cliente,
         sessao=custos.Sessao(),
         antes=lambda _modelo: teto.conferir(),
         depois=lambda consumo: teto.somar(consumo.custo),
-    )
+    ):  # o SDK mudou por dentro: sem o gancho, a voz gastaria fora do teto (fecha)
+        raise RuntimeError("o teto não se prendeu ao cliente da voz")
     return cliente
 
 
@@ -354,7 +355,9 @@ async def voz_responder(request: Request) -> JSONResponse:
 async def voz_falar(request: Request) -> JSONResponse | StreamingResponse:
     """O texto → o áudio (PCM 24 kHz, mono, 16 bits), uma frase de cada vez: a primeira é feita
     antes de responder (um erro ali ainda vira status), e as outras vão saindo no streaming. Um
-    erro no meio corta o áudio e fica no log (só o tipo)."""
+    erro no meio **derruba a conexão** (a ponte vê a falha, não um fim normal) e fica no log (só o
+    tipo). Com `inteiro`, o texto que não se fala sem corte é recusado (413) antes do modelo: é o
+    de uma aprovação, e aprovar o que não se ouviu é o que a D26 impede."""
     await _quem(request)
     from lifeos.assistant import voz
 
@@ -368,6 +371,8 @@ async def voz_falar(request: Request) -> JSONResponse | StreamingResponse:
     texto = dados.get("texto") if isinstance(dados, dict) else None
     if not isinstance(texto, str) or len(texto) > voz.MAX_TEXTO_FALADO:
         return JSONResponse({"erro": "o texto tem de ser uma frase curta"}, 400)
+    if dados.get("inteiro") is True and not voz.cabe_inteiro(texto):
+        return JSONResponse({"erro": "longo demais para falar inteiro"}, 413)
     pedacos = voz.frases(texto)
     if not pedacos:
         return JSONResponse({"erro": "não há o que falar"}, 400)
@@ -382,9 +387,9 @@ async def voz_falar(request: Request) -> JSONResponse | StreamingResponse:
         for frase in pedacos[1:]:
             try:
                 yield voz.falar_frase(cliente, frase)
-            except Exception as exc:  # noqa: BLE001 - o áudio para; o log leva só o tipo
+            except Exception as exc:
                 log.error("falar (no meio) falhou: %s", type(exc).__name__)
-                return
+                raise
 
     return StreamingResponse(audio(), media_type=FORMATO_DA_FALA)
 

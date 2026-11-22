@@ -1,0 +1,4 @@
+# Os segredos da Wi-Fi e da ponte de casa: nunca no git (skill esp32-development; o repo é público).
+src/segredos.h
+.pio/
+logs/

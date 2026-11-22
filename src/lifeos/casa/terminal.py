@@ -30,6 +30,7 @@ from lifeos.casa import config
 
 VALIDADE_DA_CONTA_DIAS = 365  # a rotação da chave da conta (o Google aceita sem limite aqui)
 VALIDADE_DO_TLS_DIAS = 10 * 365  # o certificado fixado no aparelho: trocar = gravar o firmware
+AVISAR_DIAS = 30  # o `--conferir` avisa antes de a chave da conta vencer (e a voz parar)
 
 
 def _nome(cn: str):  # o tipo é do `cryptography`
@@ -146,14 +147,26 @@ def preparar(nomes_extra: list[str]) -> int:
         print(f"❌ {exc}")
         return 1
     tls = (base / config.TLS_CERTIFICADO).read_text()
+    # O ESP32 nem sempre resolve um nome `.local` (o mDNS do firmware não está ligado): com um
+    # `--nome` (o IP fixo do laptop, reservado no roteador), é ele que vai ao firmware.
+    host = nomes_extra[0] if nomes_extra else nomes[0]
+    aviso_do_host = (
+        ""
+        if nomes_extra
+        else (
+            "   (se o aparelho não achar o laptop por esse nome: --preparar de novo, numa pasta\n"
+            "    nova, com --nome <o IP fixo do laptop>, e use o IP aqui)\n"
+        )
+    )
     print(
         f"\n✅ pronto. Próximos passos:\n"
-        f"1. Copie para o VPS o certificado público da conta (só ele; a chave privada fica):\n"
+        f"1. Copie para o Mac (ou o VPS) o certificado público da conta (só ele; a privada fica):\n"
         f"   {base / config.PUBLICA}\n"
         f"   e lá: python scripts/nuvem.py casa-chave casa-publica.pem --executar\n"
         f"2. Depois: viking casa --chave-id <o id que o casa-chave mostrar>\n"
         f"3. No src/segredos.h do firmware (fora do git), além da sua Wi-Fi:\n"
-        f'   #define PONTE_HOST "{nomes[0]}"\n'
+        f'   #define PONTE_HOST "{host}"\n'
+        f"{aviso_do_host}"
         f"   #define PONTE_PORTA {config.PORTA_PADRAO}\n"
         f'   #define APARELHO_TOKEN "{token}"\n'
         f'   static const char PONTE_CERTIFICADO[] = R"PEM(\n{tls})PEM";\n'
@@ -170,10 +183,19 @@ def gravar_chave_id(chave_id: str) -> int:
     arquivo = cfg.caminho(config.ARQUIVO)
     dados = json.loads(arquivo.read_text()) | {"chave_id": chave_id}
     novo = arquivo.with_suffix(".novo")
+    novo.unlink(missing_ok=True)  # o de uma tentativa que caiu no meio
     config.gravar_fechado(novo, json.dumps(dados, indent=2).encode())
     novo.replace(arquivo)
     print("✅ o id da chave gravado")
     return 0
+
+
+def dias_da_chave(certificado: Path, agora: dt.datetime | None = None) -> int:
+    """Quantos dias faltam para o certificado da conta vencer (o Google recusa a chave depois)."""
+    from cryptography import x509
+
+    validade = x509.load_pem_x509_certificate(certificado.read_bytes()).not_valid_after_utc
+    return (validade - (agora or dt.datetime.now(dt.UTC))).days
 
 
 def _montar(cfg: config.Config):  # a ponte, com as dependências de verdade
@@ -199,6 +221,14 @@ def conferir() -> int:
     print("✅ a pasta e os arquivos fechados (700/600)")
     falhas = 0 if cfg.chave_id else 1
     print("✅ o id da chave gravado" if cfg.chave_id else "❌ falta `viking casa --chave-id ID`")
+    dias = dias_da_chave(cfg.caminho(config.PUBLICA))
+    if dias < 0:
+        print("❌ a chave da conta venceu: gere outra (--preparar numa pasta nova) e suba")
+        falhas += 1
+    elif dias < AVISAR_DIAS:
+        print(f"⚠️ a chave da conta vence em {dias} dias: gere outra e suba antes")
+    else:
+        print(f"✅ a chave da conta vale por mais {dias} dias")
     motor, ha, _ponte = _montar(cfg)
     interruptor = ha.ligado()
     print(

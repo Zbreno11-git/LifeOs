@@ -17,6 +17,10 @@ COMANDO = ("aplay", "-q", "-t", "raw", "-f", "S16_LE", "-r", "24000", "-c", "1",
 MAX_S = 180  # a fala mais longa (12 frases) com folga
 
 
+class ErroDoSom(RuntimeError):
+    """O `aplay` não tocou até o fim (morreu, travou e o teto o matou, ou saiu com erro)."""
+
+
 class Tocador:
     def __init__(self, comando: Sequence[str] = COMANDO, max_s: float = MAX_S):
         self.comando = list(comando)
@@ -24,8 +28,9 @@ class Tocador:
         self._um_por_vez = threading.Lock()
 
     def tocar(self, pedacos: Iterable[bytes]) -> int:
-        """Toca até o fim (ou até o teto de tempo) e devolve quantos bytes foram ao alto-falante.
-        Um erro do lado de quem manda os pedaços para o áudio e sobe."""
+        """Toca até o fim e devolve quantos bytes foram ao alto-falante. O `aplay` que não chega
+        ao fim (morreu, o teto o matou, saiu com erro) é `ErroDoSom`: quem chama precisa saber que
+        o dono não ouviu tudo. Um erro do lado de quem manda os pedaços para o áudio e sobe."""
         with self._um_por_vez:
             processo = subprocess.Popen(  # o comando é fixo, sem shell
                 self.comando, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL
@@ -40,11 +45,13 @@ class Tocador:
                     enviados += len(pedaco)
                 processo.stdin.close()
                 processo.wait()
-            except BrokenPipeError:
-                pass  # o `aplay` morreu (o teto, ou a placa): o que foi, foi
+            except BrokenPipeError as exc:
+                raise ErroDoSom("o aplay parou antes do fim (o teto, ou a placa de som)") from exc
             finally:
                 relogio.cancel()
                 if processo.poll() is None:
                     processo.kill()
                     processo.wait()
+            if processo.returncode != 0:
+                raise ErroDoSom(f"o aplay saiu com {processo.returncode}")
             return enviados

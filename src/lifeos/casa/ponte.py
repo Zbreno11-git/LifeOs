@@ -27,12 +27,17 @@ from typing import Any
 
 from lifeos.casa.ha import HA
 from lifeos.casa.remoto import ErroDoMotor, Motor
+from lifeos.casa.som import ErroDoSom
 
 INATIVA_S = 5 * 60  # uma conversa por voz que parou por 5 min recomeça do zero
 JANELA_S = 60  # os dois toques valem por 1 min depois de o Viking pedir
 MAX_FALA = 2_000  # o teto do `/voz/falar` (`assistant/voz.MAX_TEXTO_FALADO`)
 _SO_ENFEITE = re.compile(r"^[\s\W_]*$")  # uma linha de "────" ou de "•" não se fala
 _CODIGO = re.compile(r"\d{4}")  # a forma de um código de aprovação (`confirmacao.DIGITOS`)
+NAO_LI_INTEIRO = (
+    "Essa proposta é longa demais para eu ler inteira em voz alta, então não abri a aprovação: "
+    "nada foi feito. Peça pelo chat."
+)
 
 
 class Ocupada(RuntimeError):
@@ -69,8 +74,8 @@ class Conversa:
         abertas = [a for a in resposta.get("aprovacao") or [] if isinstance(a, dict)]
         codigos = [a.get("codigo") for a in abertas]
         codigos = [c for c in codigos if isinstance(c, str) and _CODIGO.fullmatch(c)]
-        if codigos:  # a janela abre de verdade depois da fala (`Ponte._turno`)
-            self.codigo, self.codigo_ate = codigos[-1], agora + JANELA_S
+        if codigos:  # fechada até a fala inteira chegar ao alto-falante (`Ponte._turno`)
+            self.codigo, self.codigo_ate = codigos[-1], 0.0
 
 
 @dataclass(frozen=True)
@@ -84,9 +89,9 @@ class Resultado:
 
 
 def texto_para_falar(resposta: dict[str, Any]) -> str:
-    """O que vai ao alto-falante: o que só o dono vê (sem as linhas de enfeite) e a resposta. O
-    código já veio fora (o motor o tirou); a ponte ainda mascara o código aberto, se aparecer
-    (`Ponte._dizer`)."""
+    """O que vai ao alto-falante, inteiro: o que só o dono vê (sem as linhas de enfeite) e a
+    resposta. O código já veio fora (o motor o tirou); a ponte ainda mascara o código aberto, se
+    aparecer (`Ponte._dizer`). Quem corta é quem fala, e uma aprovação não se corta."""
     partes: list[str] = []
     for bloco in resposta.get("ao_dono") or []:
         if isinstance(bloco, str):
@@ -97,7 +102,7 @@ def texto_para_falar(resposta: dict[str, Any]) -> str:
         valor = resposta.get(campo)
         if isinstance(valor, str) and valor.strip():
             partes.append(valor.strip() if campo == "resposta" else f"Atenção: {valor.strip()}")
-    return "\n".join(partes)[:MAX_FALA]
+    return "\n".join(partes)
 
 
 class Ponte:
@@ -122,24 +127,46 @@ class Ponte:
         self.conversa.ultima = agora
         return self.conversa
 
-    def _dizer(self, fala: str, ocultar: str = "") -> None:
+    def _dizer(self, fala: str, ocultar: str = "", *, inteiro: bool = False) -> None:
         """Fala pelo motor e toca aqui. O código aberto (`ocultar`) nunca vai ao TTS, nem se o
-        texto o trouxer por engano."""
+        texto o trouxer por engano. Com `inteiro`, nada se corta: o motor recusa (413) o que não
+        cabe, e a falha no meio do áudio ou do `aplay` sobe."""
         if ocultar:
             fala = re.sub(rf"(?<!\d){re.escape(ocultar)}(?!\d)", "····", fala)
         if fala.strip():
-            self.tocar(self.motor.falar(fala[:MAX_FALA]))
+            self.tocar(self.motor.falar(fala if inteiro else fala[:MAX_FALA], inteiro=inteiro))
 
     def _turno(self, mensagem: str) -> Resultado:
         conversa = self._conversa()
         resposta = self.motor.responder(conversa.pedido(mensagem))
         conversa.absorver(resposta, self.relogio())
         fala = texto_para_falar(resposta)
-        self._dizer(fala, ocultar=conversa.codigo)
         if not conversa.codigo:
+            self._dizer(fala)
             return Resultado("ok", "viking", fala)
+        # Uma aprovação: os dois toques só valem para o que o dono ouviu inteiro (D26, D70). O
+        # texto que não cabe, o áudio que parou e o `aplay` que morreu fecham a proposta.
+        codigo, conversa.codigo = conversa.codigo, ""
+        if len(fala) > MAX_FALA:
+            self._avisar(NAO_LI_INTEIRO)
+            return Resultado("erro", "viking", NAO_LI_INTEIRO)
+        try:
+            self._dizer(fala, ocultar=codigo, inteiro=True)
+        except ErroDoMotor as exc:
+            if exc.status == 413:
+                self._avisar(NAO_LI_INTEIRO)
+                return Resultado("erro", "viking", NAO_LI_INTEIRO)
+            raise
+        conversa.codigo = codigo
         conversa.codigo_ate = self.relogio() + JANELA_S  # um minuto depois de ele terminar de falar
         return Resultado("aguardando", "viking", fala)
+
+    def _avisar(self, fala: str) -> None:
+        """Um aviso curto, sem aprovação: se nem ele sai, o LED de erro basta."""
+        try:
+            self._dizer(fala)
+        except (ErroDoMotor, ErroDoSom):
+            pass
 
     def _com_a_vez(self, trabalho: Callable[[], Resultado]) -> Resultado:
         if not self._uma_por_vez.acquire(blocking=False):
@@ -149,7 +176,7 @@ class Ponte:
             if not interruptor.ligado:
                 return Resultado("desligado", fala=interruptor.motivo)
             return trabalho()
-        except ErroDoMotor as exc:
+        except (ErroDoMotor, ErroDoSom) as exc:
             return Resultado("erro", fala=str(exc))
         finally:
             self._uma_por_vez.release()

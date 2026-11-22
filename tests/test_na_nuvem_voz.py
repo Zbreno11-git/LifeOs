@@ -154,3 +154,15 @@ def test_o_codigo_some_do_texto_mesmo_fora_da_linha():
     assert not any(aparece(CODIGO, b) for b in limpos)
     assert limpos[0].startswith(na_nuvem.TOQUE_DUPLO) and limpos[1] == "nada aqui 12:30"
     assert len(CODIGO) == confirmacao.DIGITOS
+
+
+def test_o_codigo_de_desfazer_e_falado_de_proposito():
+    """Decisão de 2026-11-22 (a revisão da H1 perguntou): o `desfaz NNNN` de uma limpeza é falado.
+    Ele só devolve à caixa o que foi arquivado (reversível, D26), nunca aprova nada; e falado, o
+    dono pode desfazer pela própria voz. O que não se fala é o código que aprova (`confirma`)."""
+    from lifeos.gmail import tools as gmail_tools
+
+    linha = "Arquivei 3 e-mails. Para desfazer até 14:30: desfaz 5678"
+    assert "desfaz {execucao.codigo}" in Path(gmail_tools.__file__).read_text()  # o produtor
+    limpos, abertas = na_nuvem._aprovacoes_da_voz([linha])
+    assert limpos == [linha] and abertas == []

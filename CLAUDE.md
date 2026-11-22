@@ -42,6 +42,33 @@ do push**: até lá o trabalho não chegou na máquina onde ele roda.
 Quando algo precisar de validação ao vivo, monte o comando completo para o dono colar no terminal do
 Mac e peça a saída — não presuma o resultado. Vários bugs desta base só apareceram assim.
 
+## Quando a sessão roda no Mac (desde 2026-11-22)
+
+Para o hardware da H1 o dono passou a abrir o Claude Code também no Mac (o repo em
+`~/Desktop/LifeOs`): lá a XIAO está na USB e o laptop de casa se alcança pelo túnel do Mac. O
+quadro muda, e o que está acima sobre o VPS vale para o VPS:
+
+- **No Mac moram os segredos de verdade:** o `.env` (Gemini; Pluggy, que alcança PIX), o
+  `secrets/` (os tokens do Gmail, da agenda e do Drive), o `.env` do clone do Jev (OpenRouter) e o
+  `gcloud` com a conta do dono. Nada de `viking chat`, `gmail`, `financas`, `maos`, `backup`,
+  `prova-*` ou outro comando que gaste, envie, apague ou arquive sem o dono pedir; arquivo de
+  segredo nunca se lê (`grep -o '^[A-Z_]*=' .env` confere os nomes).
+- **O que fica no VPS:** o `deploy` e os passos de infraestrutura de `scripts/nuvem.py` (precisam
+  do faturamento, do orçamento e do fuso, que só o `.env` do VPS tem). No Mac rodam os
+  subcomandos que pedem só o projeto: `segredo`, `casa-chave`, `casa-cortar` e `casa-religar`.
+  Todo `gcloud` com o `--project` do Viking (o `_gcloud` põe; o projeto padrão é outro do dono).
+- **A rede do Mac é corporativa** (inspeção TLS, Tailscale bloqueado). Se o `uv` ou o `pio`
+  recusarem certificado, use o pacote do Keychain que o `~/esp32-mac/setup.sh` monta
+  (`macos-ca.pem`, por `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE`). Não proponha contornar mais nada.
+- **A placa:** `firmware/viking-voz/BRINGUP.md` ("No Mac") e a skill `esp32-development`: o boot log
+  antes de gravar, uma camada por vez, nunca apagar a flash de primeira, "funcionou" só visto no
+  serial, um cliente por vez na porta.
+- **O laptop de casa** (Debian, 4 GB de RAM, o HA em Docker): pelo túnel do Mac; pergunte ao dono
+  como se entra (o alias de SSH) antes de presumir. Nada de `sudo` sem o ok dele, e nenhum túnel
+  ou encaminhamento aponta para a porta 8765 da ponte (ela é só da rede de casa).
+- **A memória do Claude no VPS não viaja:** o que importa dela está neste arquivo, no `AGENTS.md`
+  e no bloco do `PROGRESSO.md`.
+
 ## Ao propor comandos para o dono rodar
 
 Ele usa zsh no macOS, com conda base ativo junto do venv. Consequências práticas estão em

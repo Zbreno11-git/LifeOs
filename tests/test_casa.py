@@ -10,6 +10,7 @@ da janela aprovam? Um token errado chega à ponte? A pasta aberta para outros us
 """
 
 import ast
+import datetime as dt
 import importlib.util
 import json
 import stat
@@ -57,6 +58,8 @@ class _Motor:
         self.respostas = list(respostas)
         self.pedidos: list[dict] = []
         self.falas: list[str] = []
+        self.inteiros: list[bool] = []
+        self.falha_ao_falar: BaseException | None = None
         self.ouvidos = 0
 
     def ouvir(self, _wav):
@@ -70,8 +73,11 @@ class _Motor:
             raise passo
         return passo
 
-    def falar(self, texto):
+    def falar(self, texto, *, inteiro=False):
         self.falas.append(texto)
+        self.inteiros.append(inteiro)
+        if self.falha_ao_falar is not None and inteiro:
+            raise self.falha_ao_falar
         yield texto.encode()
 
 
@@ -190,9 +196,9 @@ _PREVIA = (
 )
 
 
-def _com_aprovacao():
+def _com_aprovacao(texto="Li o e-mail; toque duas vezes para enviar."):
     return _resposta(
-        "Li o e-mail; toque duas vezes para enviar.",
+        texto,
         ao_dono=[_PREVIA],
         aprovacao=[{"codigo": CODIGO}],
     )
@@ -242,6 +248,58 @@ def test_a_janela_abre_depois_da_fala():
     p.falou(WAV)
     relogio.agora += 30
     assert p.tocou_duas_vezes().estado == "ok"
+
+
+def test_a_aprovacao_e_falada_inteira_e_so_abre_depois():
+    motor = _Motor(respostas=[_com_aprovacao(), _resposta("Ok.")])
+    p, _ = _ponte(motor, _HA())
+    assert p.falou(WAV).estado == "aguardando"
+    assert motor.inteiros == [True]  # o motor recusa o que não se fala sem corte
+
+
+@pytest.mark.parametrize(
+    "falha",
+    [
+        remoto.ErroDoMotor("falar: HTTP 502", status=502),
+        remoto.ErroDoMotor("falar: o áudio parou no meio (ConnectionError)"),
+    ],
+)
+def test_a_fala_da_aprovacao_que_falha_fecha_a_proposta(falha):
+    """O TTS caiu, o áudio parou: o dono não ouviu o e-mail, então dois toques não o enviam."""
+    motor = _Motor(respostas=[_com_aprovacao()])
+    motor.falha_ao_falar = falha
+    p, _ = _ponte(motor, _HA())
+    assert p.falou(WAV).estado == "erro"
+    assert p.tocou_duas_vezes().estado == "nada" and len(motor.pedidos) == 1
+
+
+def test_o_aplay_que_morre_na_aprovacao_fecha_a_proposta():
+    motor = _Motor(respostas=[_com_aprovacao()])
+
+    def tocar_e_morrer(pedacos):
+        b"".join(pedacos)
+        raise som.ErroDoSom("o aplay parou antes do fim")
+
+    p = ponte.Ponte(motor, _HA(), tocar_e_morrer, _Relogio())
+    assert p.falou(WAV).estado == "erro"
+    assert p.tocou_duas_vezes().estado == "nada" and len(motor.pedidos) == 1
+
+
+def test_a_proposta_longa_demais_nao_abre_e_o_dono_ouve_por_que():
+    motor = _Motor(respostas=[_com_aprovacao()])
+    motor.falha_ao_falar = remoto.ErroDoMotor("falar: HTTP 413", status=413)
+    p, _ = _ponte(motor, _HA())
+    resultado = p.falou(WAV)
+    assert resultado.estado == "erro" and resultado.fala == ponte.NAO_LI_INTEIRO
+    assert motor.falas[-1] == ponte.NAO_LI_INTEIRO and motor.inteiros[-1] is False
+    assert p.tocou_duas_vezes().estado == "nada"
+
+
+def test_a_proposta_maior_que_a_fala_nem_vai_ao_motor():
+    motor = _Motor(respostas=[_com_aprovacao("x" * ponte.MAX_FALA)])
+    p, _ = _ponte(motor, _HA())
+    assert p.falou(WAV).fala == ponte.NAO_LI_INTEIRO
+    assert motor.inteiros == [False] and p.tocou_duas_vezes().estado == "nada"
 
 
 def test_uma_fala_nova_fecha_a_aprovacao_aberta():
@@ -513,7 +571,24 @@ def test_o_motor_ouve_responde_e_fala():
     assert (metodo, url) == ("POST", URL + "/voz/ouvir") and kwargs["data"] == b"wav"
     http.resposta = _RespostaDoMotor(200, pedacos=[b"a", b"", b"b"])
     assert b"".join(motor.falar("Oi.")) == b"ab" and http.resposta.fechada
-    assert http.pedidos[-1][2]["json"] == {"texto": "Oi."} and http.pedidos[-1][2]["stream"]
+    assert http.pedidos[-1][2]["json"] == {"texto": "Oi.", "inteiro": False}
+    assert http.pedidos[-1][2]["stream"]
+
+
+class _PedacosQueCaem(_RespostaDoMotor):
+    def iter_content(self, _tamanho):
+        yield b"a"
+        raise ConnectionError("a conexão caiu")  # o motor derrubou no meio
+
+
+def test_o_audio_que_para_no_meio_e_erro_nunca_fim_normal():
+    """O motor derruba a conexão quando uma frase falha no meio: a ponte vê a falha (e uma
+    aprovação se fecha), em vez de tocar meio áudio e dizer `ok`."""
+    http = _HTTPDoMotor(_PedacosQueCaem(200))
+    motor = remoto.Motor(URL, http)
+    with pytest.raises(remoto.ErroDoMotor, match="parou no meio"):
+        b"".join(motor.falar("Oi.", inteiro=True))
+    assert http.resposta.fechada and http.pedidos[-1][2]["json"]["inteiro"] is True
 
 
 @pytest.mark.parametrize(("status", "teto"), [(429, True), (403, False), (502, False)])
@@ -629,6 +704,20 @@ def test_gravar_o_id_da_chave(preparada, capsys):
     assert stat.S_IMODE((base / config.ARQUIVO).stat().st_mode) == 0o600
 
 
+def test_gravar_o_id_da_chave_depois_de_uma_tentativa_que_caiu(preparada):
+    base, _ = preparada
+    (base / "casa.novo").write_text("{}")  # o arquivo temporário de uma tentativa no meio
+    assert terminal.gravar_chave_id("0123456789abcdef0123456789abcdef01234567") == 0
+
+
+def test_os_dias_da_chave_da_conta(preparada):
+    base, _ = preparada
+    certificado = base / config.PUBLICA
+    assert terminal.VALIDADE_DA_CONTA_DIAS - 2 <= terminal.dias_da_chave(certificado)
+    depois = dt.datetime.now(dt.UTC) + dt.timedelta(days=terminal.VALIDADE_DA_CONTA_DIAS + 1)
+    assert terminal.dias_da_chave(certificado, depois) < 0
+
+
 # --- o alto-falante -------------------------------------------------------------------------------
 
 
@@ -645,7 +734,17 @@ def test_o_tocador_tem_teto_de_tempo():
     def pedacos():
         yield b"x" * 70_000  # passa do buffer do pipe: o `sleep` não lê, e o teto o mata
 
-    assert tocador.tocar(pedacos()) == 0
+    with pytest.raises(som.ErroDoSom):
+        tocador.tocar(pedacos())
+
+
+def test_o_aplay_que_sai_com_erro_e_erro():
+    with pytest.raises(som.ErroDoSom, match="saiu com 1"):
+        som.Tocador(["false"]).tocar([])
+
+
+def test_o_aplay_que_toca_ate_o_fim_devolve_os_bytes():
+    assert som.Tocador(["cat"]).tocar([b"ab", b"c"]) == 3
 
 
 def test_o_comando_do_aplay_e_o_formato_do_motor():

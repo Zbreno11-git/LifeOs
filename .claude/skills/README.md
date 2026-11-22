@@ -155,3 +155,13 @@ Todas seguem a mesma forma, para que se leia qualquer uma sabendo onde procurar:
 
 A skill ensina **como agir**. Ela não substitui o `README` do projeto nem o
 runbook dele: o que é específico de um projeto continua morando nele.
+
+---
+
+## Skills de hardware (desde 2026-11-22)
+
+`esp32-development` e `electronics` vêm de https://github.com/magnus919/agent-skills (MIT,
+commit 9e45d5e de 2026-09-27), pela cópia auditada do workspace ESP32 do VPS (só Markdown e
+modelos; sem rede, sudo, eval ou hooks). Vieram para cá para a sessão do Mac (a H1: a placa está
+na USB de lá). A única mudança é o aviso do topo da `esp32-development`, que aponta para
+`firmware/viking-voz/BRINGUP.md`.

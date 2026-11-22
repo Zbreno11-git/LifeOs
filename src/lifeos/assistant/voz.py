@@ -39,11 +39,20 @@ PEDIDO_DE_TRANSCRICAO = (
 )
 # A fala (TTS): o Gemini Flash-Lite TTS, o mais barato da pesquisa de 2026-11-21 (US$ 6/1M de
 # áudio de saída a 25 tokens/s). A voz é a que o dono escolheu ouvindo (C6, 2026-11-22: "masculina
-# e elegante"), entre Kore, Puck, Charon, Aoede e Leda. O sotaque puxa um pouco para Portugal
-# ("e-mail"): o modelo detecta a língua sozinho e a página não lista pt-BR; o dono aceitou assim
-# por enquanto (o Chirp 3 HD, com pt-BR na tabela, é o caminho se incomodar).
+# e elegante"), entre Kore, Puck, Charon, Aoede e Leda.
 MODELO_DE_FALAR = "gemini-3.8-flash-lite-tts"
 VOZ = "Charon"
+# O sotaque puxava para Portugal ("e-mail", ouvido pelo dono). A página de geração de fala (lida em
+# 2026-11-22) diz que o modelo detecta a língua sozinho e lista só "Portuguese"; o SDK tem o
+# `SpeechConfig.language_code`, e a API o aceitou com "pt-BR" (medido em 2026-11-22 01:41Z: sem ele,
+# a transcrição de volta ouviu "Leu" no lugar de "Li"; com ele, "Li"; uma frase só). O estilo vai no
+# `speech_metadata` da parte, **fora do texto**: a página diz que o texto é "strictly a verbatim
+# transcript" e manda separar as instruções para não serem lidas em voz alta (medido: não foram).
+# Com o estilo, a mesma frase levou 5,0 s em vez de 4,4 s. Liga ou não: o dono ouvindo
+# (`scripts/vozes.py --sotaque`).
+IDIOMA: str | None = "pt-BR"
+ESTILO_BRASILEIRO = "português do Brasil, sotaque paulistano; calmo, elegante e natural"
+ESTILO: str | None = None
 TAXA_DE_SAIDA = 24_000  # a página: PCM 24 kHz, mono, 16 bits little-endian
 MAX_TEXTO_FALADO = 2_000  # caracteres: uma resposta da voz é curta (a seção de sistema pede)
 MAX_FRASE = 400
@@ -113,17 +122,17 @@ def transcrever(cliente: Any, wav: bytes) -> str:
     return texto[:MAX_TEXTO_OUVIDO]
 
 
-# Markdown que escapou da seção de sistema: dito em voz alta, vira "asterisco".
-_MARCAS = re.compile(r"[*_`#>|~]+")
+# Markdown que escapou da seção de sistema: dito em voz alta, vira "asterisco". O `_` só sai na
+# borda de uma palavra (o itálico): dentro dela é parte de um endereço ("joao_silva@…"), e o `#` e o
+# `>` só no começo da linha (título e citação).
+_MARCAS = re.compile(r"[*`|~]+|(?<!\w)_+|_+(?!\w)|^[ \t]*[#>]+", re.MULTILINE)
 _FIM_DE_FRASE = re.compile(r"(?<=[.!?…:;])\s+|\n+")
+_TEM_O_QUE_DIZER = re.compile(r"[^\W_]")  # uma letra ou um dígito: "—" ou um emoji sozinho, não
 
 
-def frases(texto: str) -> list[str]:
-    """O texto em frases para falar uma de cada vez (a primeira começa a tocar antes de a última
-    estar pronta). Frases curtas se juntam; nenhuma passa de `MAX_FRASE`; no máximo
-    `MAX_FRASES`."""
+def _todas_as_frases(texto: str) -> list[str]:
     limpo = _MARCAS.sub("", limpar_controles(texto or ""))[:MAX_TEXTO_FALADO]
-    pedacos = [p.strip() for p in _FIM_DE_FRASE.split(limpo) if p and p.strip()]
+    pedacos = [p.strip() for p in _FIM_DE_FRASE.split(limpo) if p and _TEM_O_QUE_DIZER.search(p)]
     juntas: list[str] = []
     for pedaco in pedacos:
         while len(pedaco) > MAX_FRASE:  # uma frase enorme corta no último espaço que couber
@@ -135,7 +144,20 @@ def frases(texto: str) -> list[str]:
             juntas[-1] = f"{juntas[-1]} {pedaco}"
         elif pedaco:
             juntas.append(pedaco)
-    return juntas[:MAX_FRASES]
+    return juntas
+
+
+def frases(texto: str) -> list[str]:
+    """O texto em frases para falar uma de cada vez (a primeira começa a tocar antes de a última
+    estar pronta). Frases curtas se juntam; nenhuma passa de `MAX_FRASE`; no máximo
+    `MAX_FRASES`."""
+    return _todas_as_frases(texto)[:MAX_FRASES]
+
+
+def cabe_inteiro(texto: str) -> bool:
+    """Se o texto se fala inteiro, sem corte (o tamanho e o número de frases). Uma aprovação pela
+    voz só se abre com o texto inteiro dito: aprovar o que não se ouviu é o que a D26 impede."""
+    return len(texto or "") <= MAX_TEXTO_FALADO and len(_todas_as_frases(texto)) <= MAX_FRASES
 
 
 def _pcm(resposta: Any) -> bytes:
@@ -172,16 +194,21 @@ def _pcm(resposta: Any) -> bytes:
 
 
 def falar_frase(cliente: Any, frase: str) -> bytes:
-    """O PCM de uma frase. Uma chamada só, sem tools e sem a conversa."""
+    """O PCM de uma frase. Uma chamada só, sem tools e sem a conversa: o texto vai como o único
+    texto da parte, e o estilo (quando há) no `speech_metadata`, nunca colado nele."""
+    metadados = types.SpeechMetadata(style=ESTILO) if ESTILO else None
     resposta = cliente.models.generate_content(
         model=MODELO_DE_FALAR,
-        contents=frase,
+        contents=[
+            types.Content(role="user", parts=[types.Part(text=frase, speech_metadata=metadados)])
+        ],
         config=types.GenerateContentConfig(
             response_modalities=["AUDIO"],
             speech_config=types.SpeechConfig(
+                language_code=IDIOMA,
                 voice_config=types.VoiceConfig(
                     prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=VOZ)
-                )
+                ),
             ),
             automatic_function_calling=_sem_pensar(),
         ),

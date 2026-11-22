@@ -89,12 +89,23 @@ class Motor:
             raise ErroDoMotor("o turno: a resposta não é um objeto")
         return dados
 
-    def falar(self, texto: str) -> Iterator[bytes]:
-        """O áudio (PCM 24 kHz, mono, 16 bits) em pedaços, à medida que chega."""
+    def falar(self, texto: str, *, inteiro: bool = False) -> Iterator[bytes]:
+        """O áudio (PCM 24 kHz, mono, 16 bits) em pedaços, à medida que chega. Com `inteiro`, o
+        motor recusa (413) o texto que não se fala sem corte. O áudio que para no meio (o motor
+        derruba a conexão) é `ErroDoMotor`, nunca um fim normal."""
         resposta = self._pedir(
-            "POST", "/voz/falar", "falar", json={"texto": texto}, timeout=PRAZO_S, stream=True
+            "POST",
+            "/voz/falar",
+            "falar",
+            json={"texto": texto, "inteiro": inteiro},
+            timeout=PRAZO_S,
+            stream=True,
         )
         try:
-            yield from (p for p in resposta.iter_content(PEDACO) if p)
+            for pedaco in resposta.iter_content(PEDACO):
+                if pedaco:
+                    yield pedaco
+        except Exception as exc:  # a conexão caiu no meio (o motor ou a rede)
+            raise ErroDoMotor(f"falar: o áudio parou no meio ({type(exc).__name__})") from exc
         finally:
             resposta.close()

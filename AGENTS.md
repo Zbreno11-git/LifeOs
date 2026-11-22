@@ -195,8 +195,8 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
     aprovação guardado só aqui por 1 min depois da fala, e dois toques no botão o mandam), `ha.py`,
     `remoto.py` (as `/voz/*` com o token da `viking-casa@`, assinado pela chave deste laptop),
     `som.py` (`aplay`), `config.py` (a pasta `~/.config/viking-casa/`, 700/600, recusada se aberta)
-    e `terminal.py` (`viking casa`). O firmware do aparelho mora fora deste repo, em
-    `/root/esp32/projects/viking-voz` (git local do VPS)
+    e `terminal.py` (`viking casa`). O firmware do aparelho mora em `firmware/viking-voz/`
+    (desde 2026-11-22; antes no git local do VPS), e se grava do Mac (`BRINGUP.md`, "No Mac")
   - `mcp_server/` — servidor MCP próprio do Viking (calendário + lembretes como tools). Apagar e
     reagendar só **pedem**: o dono aprova em `viking aprovar` (D36)
   - `nuvem/` — a nuvem (Sessão 10, D58): `motor.py` é o serviço no Cloud Run (Starlette), fechado
@@ -249,6 +249,11 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   segredo tem versão. As provas do deploy nunca chamam a Pluggy; `prova-financas` (o status das
   conexões, do ar) só quando o dono pedir. `scripts/gitleaks.sh` e `scripts/emulador_firestore.sh` baixam o scanner e o emulador
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
+- `firmware/viking-voz/` — o firmware do aparelho do estúdio (XIAO ESP32-S3, Arduino-ESP32 3.x pelo
+  pioarduino; Sessão H1, D70): `src/main.cpp`, o `segredos.exemplo.h` (o `segredos.h` de verdade
+  fica fora do git), o `BRINGUP.md` (pinos, camadas, os comandos no Mac) e o `serial_log.py`.
+  Skills do hardware em `.claude/skills/esp32-development` e `electronics` (MIT, copiadas do
+  workspace do VPS).
 - `tests/` — pytest para `src/lifeos`.
 - `uv.lock` — a versão exata de cada dependência, igual no Mac, no VPS e no CI (`uv sync --locked`,
   D45). `pyproject.toml` diz as plataformas que o lock tem de servir sem compilar nada.
@@ -654,7 +659,13 @@ linha `confirma NNNN` do `ao_dono` para o campo `aprovacao` (a regex é presa ao
 teste). A ponte guarda o código, nunca o manda ao TTS, e o manda de volta como `confirma NNNN` nos
 dois toques. A busca na web fica fora da voz (`FORA_DA_VOZ`): os termos do Grounding mandam
 mostrar as sugestões. O HA nunca é alcançado pelo modelo: só a transcrição da fala do dono vai ao
-agente local dele, antes do Viking.
+agente local dele, antes do Viking. Uma aprovação só abre com o texto **inteiro** ouvido (2026-11-22, a revisão
+da H1): a ponte pede a fala com `inteiro` (o motor recusa com 413 o que passaria de 2.000 caracteres
+ou 12 frases), uma frase que falha no meio derruba a conexão (nunca um fim normal), o `aplay` que
+não chega ao fim é `ErroDoSom`, e a janela dos dois toques abre só depois do último pedaço tocado;
+qualquer falha fecha a proposta (`tests/test_casa.py`). O `desfaz NNNN` de uma limpeza é falado
+**de propósito**: só devolve à caixa o que foi arquivado, e o dono desfaz pela voz
+(`test_o_codigo_de_desfazer_e_falado_de_proposito`).
 
 **No motor, o stdout e o stderr são o log do Cloud Run.** Um `print` do código de aprovação ali
 iria para o log, não ao dono. Por isso o que só o dono vê passa por `ao_dono.mostrar`, que no

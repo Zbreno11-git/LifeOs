@@ -10,6 +10,7 @@ para no erro? A transcrição e a fala vão ao modelo sem tools e sem a conversa
 """
 
 import io
+import json
 import struct
 import wave
 
@@ -247,9 +248,47 @@ def test_falar_para_no_meio_quando_uma_frase_falha(cliente, falas, caplog):
     texto = "Primeira frase que é longa o bastante para ficar sozinha aqui. " + (
         "Agora a segunda quebra aqui no meio, longa o bastante também. Terceira nunca sai daqui."
     )
-    resposta = _post(cliente, "/voz/falar", f'{{"texto": "{texto}"}}'.encode(), _token_da_casa())
-    assert resposta.status_code == 200 and len(falas) == 1
+    # A frase que falha derruba a conexão (o cliente de teste a vê como a exceção do servidor): a
+    # ponte vê a falha, nunca um fim normal com meio áudio.
+    with pytest.raises(RuntimeError):
+        _post(cliente, "/voz/falar", f'{{"texto": "{texto}"}}'.encode(), _token_da_casa())
+    assert len(falas) == 1
     assert "RuntimeError" in caplog.text and "segredo" not in caplog.text
+
+
+def test_falar_inteiro_recusa_o_que_nao_cabe_antes_do_modelo(cliente, falas):
+    longo = " ".join(
+        f"Frase número {i} que é longa o bastante para ficar sozinha." for i in range(20)
+    )
+    assert not voz.cabe_inteiro(longo) and len(voz.frases(longo)) == voz.MAX_FRASES
+    corpo = json.dumps({"texto": longo, "inteiro": True}).encode()
+    resposta = _post(cliente, "/voz/falar", corpo, _token_da_casa())
+    assert resposta.status_code == 413 and falas == []
+    sem_inteiro = json.dumps({"texto": longo}).encode()
+    assert _post(cliente, "/voz/falar", sem_inteiro, _token_da_casa()).status_code == 200
+
+
+def test_a_voz_sem_o_teto_preso_fecha(monkeypatch):
+    """O gancho do teto depende de um método interno do SDK: sem ele, a voz não gasta."""
+    from lifeos.assistant import na_nuvem
+
+    monkeypatch.setattr(na_nuvem, "_cliente", lambda: object())
+    monkeypatch.setattr(na_nuvem, "_teto", lambda: object())
+    monkeypatch.setattr(custos, "instrumentar", lambda *_a, **_k: False)
+    with pytest.raises(RuntimeError, match="teto"):
+        motor._cliente_da_voz()
+
+
+@pytest.mark.parametrize(
+    ("texto", "esperado"),
+    [
+        ("Mande para joao_silva@exemplo.com.", ["Mande para joao_silva@exemplo.com."]),
+        ("# Agenda\n**Amanhã** às _três_.", ["Agenda Amanhã às três."]),
+        ("Pronto.\n🎉\n—", ["Pronto."]),
+    ],
+)
+def test_as_frases_tiram_o_markdown_e_o_que_nao_se_diz(texto, esperado):
+    assert voz.frases(texto) == esperado
 
 
 def test_falar_com_erro_na_primeira_frase_e_status(cliente, monkeypatch):
@@ -353,8 +392,31 @@ def test_falar_frase_devolve_o_pcm(dado, tipo, esperado):
     cliente, roteiro = _cliente(_com_parte(parte))
     assert voz.falar_frase(cliente, "Oi.") == esperado
     (pedido,) = roteiro.pedidos
-    assert pedido["model"] == voz.MODELO_DE_FALAR and pedido["contents"] == "Oi."
+    assert pedido["model"] == voz.MODELO_DE_FALAR
+    (conteudo,) = pedido["contents"]
+    (parte_dita,) = conteudo.parts
+    assert parte_dita.text == "Oi."  # só a frase, sem instrução colada
     assert not pedido["config"].tools and not pedido["config"].system_instruction
+
+
+@pytest.mark.parametrize("estilo", [None, voz.ESTILO_BRASILEIRO])
+def test_o_estilo_vai_fora_do_texto_e_o_idioma_na_configuracao(monkeypatch, estilo):
+    """O sotaque (C6, 2026-11-22): o idioma no `SpeechConfig`, o estilo no `speech_metadata` da
+    parte, e o texto falado igual à frase (a página manda não pôr instrução no texto)."""
+    monkeypatch.setattr(voz, "ESTILO", estilo)
+    parte = types.Part(inline_data=types.Blob(data=b"\x01\x02", mime_type="audio/L16;rate=24000"))
+    cliente, roteiro = _cliente(_com_parte(parte))
+    voz.falar_frase(cliente, "Li o e-mail.")
+    (pedido,) = roteiro.pedidos
+    (conteudo,) = pedido["contents"]
+    (parte_dita,) = conteudo.parts
+    assert parte_dita.text == "Li o e-mail."
+    assert pedido["config"].speech_config.language_code == voz.IDIOMA == "pt-BR"
+    assert pedido["config"].speech_config.voice_config.prebuilt_voice_config.voice_name == voz.VOZ
+    if estilo:
+        assert parte_dita.speech_metadata.style == estilo
+    else:
+        assert parte_dita.speech_metadata is None
 
 
 @pytest.mark.parametrize(

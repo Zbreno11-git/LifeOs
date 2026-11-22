@@ -21,9 +21,9 @@
 | 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 17 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
-| 6 | Conserto que cobriu um ponto e não o vizinho | 20 | *onde mais esta falha pode nascer?* antes de dar por pronto |
+| 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 3 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
+| 8 | Comando que escreve com alcance maior que a mudança | 4 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
 
 ---
 
@@ -858,6 +858,17 @@ contado abaixo do que custa. Peguei ao rodar o teste da tarifa, que esperava (1,
 virou "a maior entrada e a maior saída, cada uma". **Antídoto:** ao acrescentar uma linha numa
 tabela, reler toda regra que escolhe "a maior" ou "a menor" dela.
 
+**2026-11-22 (H1) — o código fora da fala, mas a aprovação aberta sem a fala inteira.** Na voz, eu
+tinha tirado o código do que é falado e posto os dois toques no lugar (a D26 pelo canal físico).
+O vizinho, que a revisão do Sonnet achou: dois toques aprovavam o que o dono **não ouviu**. O
+texto se cortava em 2.000 caracteres e 12 frases sem aviso; um TTS que caía no meio terminava
+como fim normal (o motor fechava o streaming com `return`), e a janela abria antes da fala.
+Consertado: a fala de uma aprovação vai com `inteiro` (o motor recusa com 413 o que não cabe), o
+erro no meio derruba a conexão, o `aplay` que morre é erro, e a janela só abre depois do último
+pedaço tocado; em qualquer falha a proposta se fecha (`tests/test_casa.py`). **Antídoto:** numa
+aprovação, perguntar também *o dono viu (ou ouviu) inteiro o que está aprovando?*, além de *o
+modelo alcança o código?*.
+
 ### 7. Regra de reconhecimento desenhada pelo caso típico
 
 **2026-09-26 — `href` por substring (Sessão 4b).** A primeira versão do freio casava `sair`
@@ -998,4 +1009,8 @@ sobrando, e o ruff apagou 47 deles em 19 arquivos de `src/` e `tests/`. Olhei pr
 erros em `src/`, e só então vi o resto. Restaurado tudo do commit, e as duas linhas editadas à
 mão. O antídoto: `--fix` com a configuração do projeto, nunca com `--select` de uma regra só; e o
 `git status` **do repo inteiro** depois, não de uma pasta.
+
+**2026-11-22 (H1) — `ruff format src tests scripts firmware` de novo, por pressa.** Formatei as
+pastas em vez dos arquivos. Desta vez só arquivos que eu tinha editado mudaram (conferido no `git
+diff --stat`), mas foi sorte, não o antídoto.
 

@@ -1073,6 +1073,27 @@ nova da voz. Suíte 3324; mutações novas 14 de 14 mortas. **Pego na compilaç�
 `HTTPClient` do Arduino é `uint16_t` em ms (330 s viravam 2,3 s), e a ponte passou a responder
 na hora e o aparelho a perguntar o estado (erros, classe 3).
 
+**2026-11-22 (01:20–02:10Z), no VPS:**
+- **A voz:** o dono ouviu as 5 vozes no Mac e escolheu a **Charon** ("masculina e elegante").
+- **O sotaque** puxava para Portugal ("e-mail"):
+  - medido (US$ 0,004): a API aceita o `language_code="pt-BR"` e o estilo no `speech_metadata`,
+    fora do texto, como a página manda, e o estilo não é lido em voz alta;
+  - o dono escolhe ouvindo (`vozes.py --sotaque`).
+- **A revisão do Sonnet** achou que os dois toques aprovavam o que o dono podia **não ter ouvido**:
+  - o texto se cortava sem aviso;
+  - um TTS que caía no meio terminava como fim normal;
+  - a janela abria antes da fala.
+
+  Consertado com teste e mutação (erros, classe 6), junto com:
+  - o começo da fala, que o firmware perdia;
+  - o teto preso ou fecha;
+  - `frases()`;
+  - o `casa-chave` rodando do Mac;
+  - o aviso de vencimento da chave.
+- **A H1 passa para o Mac**, por decisão do dono: o firmware veio para `firmware/viking-voz/` e as
+  skills de hardware para `.claude/skills/`, e o `CLAUDE.md` ganhou as regras da sessão no Mac. O
+  deploy continua no VPS.
+
 ### 2026-11-21 — Sessão 14b fechada no Mac: a mini-auditoria e a manutenção
 
 **Por quê:** 43 dias sem push. A mini-auditoria (`docs/auditorias/mini-auditoria-2026-11-21.md`,
