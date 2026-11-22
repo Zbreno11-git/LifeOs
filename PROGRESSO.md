@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~15:10Z — a H1 segue **no Mac**; o laptop ✅ (C7), a placa nas camadas 1–3 ✅ e o filtro de silêncio no código; o próximo é o `segredos.h` (camadas 4–5)
+## ▶️ RETOMAR AQUI — 2026-11-22, ~16:50Z — a H1 segue **no Mac**; o laptop ✅ (C7), a placa nas camadas 1–4 ✅ (a rede), o filtro de silêncio no código; o próximo é a camada 5 (a fala inteira) e o deploy
 
 **Aberta no Mac em 2026-11-22 ~12:20Z (medido; o disco ganhou do bloco abaixo onde divergiu):**
 - HEAD `e4fe2dc`; `uv sync --locked --extra dev` ok (uv 0.11.24 do conda); `python -m pytest -q`
@@ -67,9 +67,21 @@
     baixo de longe deu 4; mexer na mesa deu 3 e passa à transcrição **de propósito** (perder uma
     fala custa mais). 7 testes com as sequências medidas, e 5 mutações em `scripts/mutacoes.py`
     (rodadas à mão: as 5 morreram). **Vai ao ar no deploy.**
-  - **Próximo:** o dono cria o `src/segredos.h` (as linhas que o `--preparar` imprimiu, mais a Wi-Fi
-    de casa) e grava a variante com rede (o ok); camadas 4 e 5 com a placa na USB do Mac (a mesma
-    Wi-Fi do laptop).
+  - **a antena U.FL encaixada** (a XIAO comum não tem antena na placa; nota no `ESQUEMA.md`);
+  - **o `segredos.h`** montado pelo dono com `firmware/viking-voz/montar_segredos.sh` (o token e o
+    certificado do laptop por `ssh home-server`, direto para o arquivo, 600; nada impresso). **Meu
+    erro:** a 1ª versão movia o antigo sempre para o mesmo nome, e rodada duas vezes perdeu o
+    `segredos.h` de 13:32 (o dono o tinha começado à mão); agora um nome por rodada e `mv -n`;
+  - revisado antes de gravar: o contrato do firmware com `casa/servidor.py` (rotas, métodos, o JSON
+    compacto do Starlette, o 202/`/estado`), o certificado autoassinado fixado; do Mac, `GET
+    /saude` sem token pelo `.local` com o certificado da ponte → 401; `test_casa` + `test_motor_voz`
+    129 passed; `pio run` com rede: RAM 15,5%, flash 33,6%;
+  - com o ok do dono, `serve` reiniciado (preso de novo pelo desplugar) e gravado ("Hash of data
+    verified"); **camada 4 ✅** às 16:49Z: `wifi: ok, sinal -35 dBm`, `hora: ok`, `ponte /saude:
+    HTTP 200, estado ok`;
+  - **Próximo:** a camada 5 (segurar, falar, soltar: `/falar` 202 → o estado final → a voz no
+    laptop). Gasta Gemini (o motor no ar é o `c65f765`: sem o filtro de silêncio, sem `pt-BR`, sem
+    os consertos da revisão), então só com o ok do dono; o E2E de verdade é depois do deploy.
 - **Portões no Mac (2026-11-22 ~13:10Z):** `pytest` 2879 passed / 466 skipped (os 7 do gitleaks
   agora rodam); `ruff` ok. Medidos e **não** meus: o `mypy` dá 13 `import-untyped` do
   `google.cloud.firestore` (o Mac tem o pacote sem o extra `nuvem`; os arquivos não foram tocados),

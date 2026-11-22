@@ -23,7 +23,7 @@
 | 5 | A ferramenta fez outra coisa do que eu li | 19 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 14 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 4 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois |
+| 8 | Comando que escreve com alcance maior que a mudança | 5 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
 
 ---
 
@@ -1033,3 +1033,11 @@ mão. O antídoto: `--fix` com a configuração do projeto, nunca com `--select`
 pastas em vez dos arquivos. Desta vez só arquivos que eu tinha editado mudaram (conferido no `git
 diff --stat`), mas foi sorte, não o antídoto.
 
+
+**2026-11-22 (H1, C4) — o `montar_segredos.sh` guardava o antigo sempre no mesmo nome.** O script
+movia um `src/segredos.h` existente para `~/viking-voz-segredos.antigo.h` com `mv` simples. O dono
+o rodou duas vezes: a 2ª rodada moveu o arquivo gerado na 1ª por cima da cópia, e o `segredos.h` que
+ele tinha começado à mão às 13:32 se perdeu (visto pelos horários e tamanhos no `ls -la`, sem abrir
+os arquivos). Uma cópia de segurança que se sobrescreve não é cópia. Agora: um nome por rodada (a
+data e a hora) e `mv -n`, e o script para se o arquivo não saiu do lugar. O antídoto: *o que
+acontece na segunda rodada?* antes de entregar um script que move ou grava.

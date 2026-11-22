@@ -73,4 +73,8 @@ mostrar ruído estranho, reabrir o datasheet antes.
   sem falar já se mede como "fala" fraca (3 trechos acima de 4× o fundo).
 - O MAX98357A (H1b): os pinos saem do datasheet dele e da tabela de pinos livres da XIAO (fora dos
   strapping GPIO0/3/45/46 e da USB 19/20), e entram aqui antes do código.
+- **A antena da Wi-Fi é parte do aparelho:** a XIAO ESP32S3 comum não tem antena na placa, só o
+  conector U.FL para a antena externa que vem com ela (lembrado da wiki da Seeed, não reconferido em
+  2026-11-22). Encaixa reto, com clique, sem a USB; tira-se levantando o conector, nunca pelo fio
+  (o U.FL aguenta poucos encaixes). Na caixa: longe dos fios do mic e de metal.
 - A caixa, o furo do mic e a fonte de 5 V: a medir quando o som do aparelho existir.

@@ -59,6 +59,8 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
 - **Comandos:** ver "No Mac" abaixo.
 - **Segredos:** `src/segredos.h`, que fica no `.gitignore`. Sem ele, o firmware roda só o
   diagnóstico: o botão, o LED e o mic, e nada vai à rede.
+  Monta-se no Mac com `bash firmware/viking-voz/montar_segredos.sh` (o token e o certificado vêm
+  do laptop por `ssh home-server`, a Wi-Fi é perguntada; nada se imprime; o arquivo sai 600).
 - **Recuperação:** se o firmware travar a USB, segure B (BOOT), aperte R (RESET), solte o B e rode
   `pio run -t upload`. Nunca apagar a flash de primeira.
 
@@ -78,8 +80,10 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
    esticado). Daí o filtro de silêncio do motor (`voz.tem_fala`, com as sequências medidas nos
    testes). O roteiro: o "gravado" mostra o pico e o RMS da fala a ~30 cm. Calibrar o `GANHO`: a meta é o pico
    da fala normal sem saturar (`saturadas=0`).
-4. [ ] Rede (com o `segredos.h`): "wifi: ok", "hora: ok" e "ponte: saude -> ok", com o certificado
-   fixado. Se o `.local` não resolver, usar o IP com `--nome IP` no `viking casa --preparar`.
+4. [x] Rede (2026-11-22 16:49Z, com a antena U.FL e o `segredos.h` montado por
+   `montar_segredos.sh`): `wifi: ok, sinal -35 dBm`, `hora: ok`, `ponte /saude: HTTP 200, estado
+   ok`, com o certificado fixado. O roteiro: "wifi: ok", "hora: ok" e "ponte: saude -> ok". Se o
+   nome não resolver, rodar o script de novo com o IP do laptop (está no certificado).
 5. [ ] A fala inteira: "ponte /falar: HTTP 202, estado pensando", depois o estado final, e a voz
    no laptop.
 
