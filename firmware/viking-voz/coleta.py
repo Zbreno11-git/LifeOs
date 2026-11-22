@@ -44,9 +44,10 @@ QUADRO_BYTES = len(MAGICO) + CABECALHO.size + BLOCO * 2 + 4
 US_POR_BLOCO = BLOCO * 1_000_000 // TAXA  # 32000
 
 # Um take: do "FALE" na tela, 0,5 s antes (a sala antes da frase, pedida pelo agente do Colab) até
-# 2,5 s depois (a reação e a frase cabem com folga).
+# 3,0 s depois. No piloto (2026-11-22) o dono começou a falar 0,7 a 1,4 s depois do "FALE", e com
+# 2,5 s um take ficou com só ~0,2 s de sala no fim; o agente do Colab pediu ~0,5 s de sala depois.
 ANTES_S = 0.5
-DEPOIS_S = 2.5
+DEPOIS_S = 3.0
 # O buraco que o seq não vê (o DMA do I2S transbordou com o laço parado) deixa o tempo do aparelho
 # **para sempre** adiantado em relação às amostras: um degrau no afastamento de uma reta (a taxa
 # real do I2S, medida pelo próprio arquivo). Uma reta só dividiria o degrau ao meio; a régua é a
@@ -216,7 +217,7 @@ def destino_seguro(raiz: Path, sessao: str, tipo: str) -> Path:
 
 
 def recorte_do_take(fale_em: int, total: int) -> tuple[int, int]:
-    """As amostras de um take: de 0,5 s antes do "FALE" até 2,5 s depois (fale_em = a amostra em
+    """As amostras de um take: de 0,5 s antes do "FALE" até 3,0 s depois (fale_em = a amostra em
     que a tela mostrou o "FALE")."""
     inicio = max(0, fale_em - int(ANTES_S * TAXA))
     fim = min(total, fale_em + int(DEPOIS_S * TAXA))
@@ -272,7 +273,7 @@ def _commit() -> str:
 
 class Placa:
     """A porta da XIAO (pelo servidor RFC2217 do Mac). Abrir reinicia a placa: o boot vem como
-    texto, e o `coleta: ganho=N` dele diz o ganho que está gravado."""
+    texto, e o `coleta: ganho=N` dele (repetido na linha de status) diz o ganho que está gravado."""
 
     def __init__(self, url: str):
         import serial  # type: ignore[import-not-found]
@@ -290,7 +291,9 @@ class Placa:
     def ler(self) -> list[Quadro]:
         quadros = self.leitor.alimentar(self.porta.read(8192))
         for linha in self.leitor.texto:
-            casou = re.search(r"coleta: ganho=(\d+)", linha)
+            # o boot diz o ganho, e a linha de status repete (a linha do boot se perde quando a porta
+            # abre depois dela: a sala do piloto saiu com "ganho": null)
+            casou = re.search(r"^coleta:.*\bganho=(\d+)", linha)
             if casou:
                 self.ganho = int(casou.group(1))
             if linha.startswith("coleta: status"):
@@ -323,6 +326,8 @@ def _veredito(resumo: dict) -> str:
         return (
             "❌ com lacuna, checksum errado ou buraco de tempo: esse arquivo não serve para teste"
         )
+    if resumo.get("ganho") is None:
+        return "⚠️ contínuo, mas a placa não disse o ganho: confira o firmware antes de usar"
     return "✅ contínuo: nenhum quadro perdido"
 
 

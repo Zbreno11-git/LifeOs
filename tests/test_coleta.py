@@ -143,9 +143,9 @@ def test_o_micros_que_da_a_volta_nao_vira_buraco():
     assert resumo["taxa_medida_hz"] == pytest.approx(16_000, rel=1e-6)
 
 
-def test_o_take_tem_meio_segundo_antes_do_fale_e_dois_e_meio_depois():
-    assert coleta.recorte_do_take(5 * 16_000, 10 * 16_000) == (72_000, 120_000)
-    assert coleta.recorte_do_take(1_000, 10 * 16_000) == (0, 41_000)  # no começo, corta no zero
+def test_o_take_tem_meio_segundo_antes_do_fale_e_tres_depois():
+    assert coleta.recorte_do_take(5 * 16_000, 10 * 16_000) == (72_000, 128_000)
+    assert coleta.recorte_do_take(1_000, 10 * 16_000) == (0, 49_000)  # no começo, corta no zero
 
 
 def test_o_wav_e_o_seq_json_saem_no_formato_combinado(tmp_path):
@@ -195,6 +195,24 @@ def test_o_quadro_do_coleta_py_e_o_do_firmware():
     assert bloco == [str(coleta.BLOCO)] and taxa == [str(coleta.TAXA)]
     # o Mac lê o ganho gravado na placa desta linha do boot
     assert 'Serial.printf("coleta: ganho=%d' in fonte
+
+
+def test_o_ganho_vem_do_boot_e_da_linha_de_status():
+    placa = object.__new__(coleta.Placa)
+    placa.leitor, placa.ganho, placa.firmware = coleta.Leitor(), None, {}
+    # a linha de status chega entre dois quadros, como na placa
+    dados = b"coleta: status ganho=2 seq=9\n" + _quadro(9, 0)
+    placa.porta = type("P", (), {"read": lambda self, n: dados})()
+    placa.ler()
+    assert placa.ganho == 2
+    fonte = FIRMWARE.read_text()
+    assert 'Serial.printf("\\ncoleta: status ganho=%d' in fonte
+
+
+def test_um_arquivo_sem_o_ganho_nao_sai_como_bom():
+    resumo = _sequencia(10).resumo(ganho=None)
+    assert not coleta._veredito(resumo).startswith("✅")
+    assert coleta._veredito(_sequencia(10).resumo(ganho=2)).startswith("✅")
 
 
 def test_o_ganho_esta_congelado_em_2():

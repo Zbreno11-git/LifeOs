@@ -3744,7 +3744,7 @@ MUTACOES = [
         "firmware/viking-voz/coleta.py",
         "    inicio = max(0, fale_em - int(ANTES_S * TAXA))",
         "    inicio = max(0, fale_em)",
-        "tests/test_coleta.py::test_o_take_tem_meio_segundo_antes_do_fale_e_dois_e_meio_depois",
+        "tests/test_coleta.py::test_o_take_tem_meio_segundo_antes_do_fale_e_tres_depois",
     ),
     Mutacao(
         "coleta: o ganho do firmware muda sem avisar",
@@ -3752,6 +3752,13 @@ MUTACOES = [
         "constexpr int GANHO = 2;",
         "constexpr int GANHO = 4;",
         "tests/test_coleta.py::test_o_ganho_esta_congelado_em_2",
+    ),
+    Mutacao(
+        "coleta: o arquivo sem o ganho sai como bom",
+        "firmware/viking-voz/coleta.py",
+        '    if resumo.get("ganho") is None:',
+        "    if False:",
+        "tests/test_coleta.py::test_um_arquivo_sem_o_ganho_nao_sai_como_bom",
     ),
     Mutacao(
         "casa: o token do aparelho comparado com ==",

@@ -444,8 +444,9 @@ void coletar() {
   if (volta > maiorVoltaUs) maiorVoltaUs = volta;
   if (millis() - ultimoStatus >= STATUS_A_CADA_MS) {
     ultimoStatus = millis();
-    Serial.printf("\ncoleta: status seq=%lu descartados=%lu curtas=%lu saturadas=%lu maior_volta_us=%lu\n",
-                  (unsigned long)seq, (unsigned long)descartados, (unsigned long)curtas,
+    Serial.printf("\ncoleta: status ganho=%d seq=%lu descartados=%lu curtas=%lu saturadas=%lu "
+                  "maior_volta_us=%lu\n",
+                  GANHO, (unsigned long)seq, (unsigned long)descartados, (unsigned long)curtas,
                   (unsigned long)saturadas, (unsigned long)maiorVoltaUs);
     maiorVoltaUs = 0;
   }

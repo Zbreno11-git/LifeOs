@@ -1046,6 +1046,37 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-22 — Sessão H2, primeira etapa: o ganho 2, o modo de coleta e o piloto da wake word
+
+**Decidido pelo dono:** o ganho **2**, congelado. O firmware trunca antes de multiplicar, então o
+ganho só desloca o volume, e com 4 a fala de perto saturava. Os takes são guiados pela tela do Mac,
+sem o botão. "Só o dono ativa" não é requisito.
+
+**Feito.**
+- O `converter()` é o caminho único do áudio, no uso e na coleta.
+- O env `xiao_s3_coleta` manda quadros `VKC1` pela USB, cada um com seq, tempo e FNV-1a.
+- O `firmware/viking-voz/coleta.py` tem `medir`, `sala` e `takes`. Ele recusa gravar dentro do
+  repo e nunca sobrescreve um arquivo.
+
+**Medido.**
+- **A USB:** 3.697 quadros em 2 min, com 0 lacunas, 0 checksums errados, 16000,01 Hz e o laço em
+  609 µs de 32 ms.
+- **O piloto,** em `~/viking-wakeword/` e no `piloto_2026-11-22.zip` para o Colab, fora do repo:
+  - **a sala:** 59,8 s, contínuos, com o ruído de fundo de 56 a 337 de RMS por 100 ms;
+  - **os takes:** 10 "Hey Viking" de 3 s, todos com `lacunas: []` e 0 saturadas. O RMS máximo foi
+    de 1499 a 3502 a ~50 cm, de 1012 a 2058 a ~1 m e de 941 a 2168 a ~1,5 m. A fala começou 0,7 a
+    1,4 s depois do "FALE".
+- **O uso de volta, com o ganho 2:** "o que eu tenho amanhã?" teve pico de 19414, 0 saturadas, e
+  a resposta certa nas caixas. Um aperto em silêncio deu `vazio`. Do soltar até o `ok` da ponte
+  foram 13 s, um número para a velocidade da H1h.
+
+**Ajustado depois do piloto.**
+- O take vai até 3,0 s depois do "FALE": com 2,5 s, o take 9 ficou com ~0,2 s de sala no fim.
+- O ganho vai também na linha de status. A linha do boot se perdeu na rodada da sala, e o arquivo
+  saiu com `"ganho": null`.
+- Um arquivo sem ganho não sai mais como ✅.
+- 19 testes de coleta; a mutação nova morreu.
+
 ### 2026-11-22 — Sessão H1 fechada no Mac: a voz do estúdio, da placa às caixas, com as 5 verificações
 
 **Onde:** no Mac do dono (a XIAO na USB dele, o laptop de casa por SSH na mesma Wi-Fi); o deploy

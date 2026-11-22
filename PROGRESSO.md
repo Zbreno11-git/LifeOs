@@ -5,7 +5,44 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~19:55Z — a **H2** no Mac: C1 (o código) e C2–C3 (o firmware de coleta gravado, a USB medida) ✅; o próximo é o piloto (C4)
+## ▶️ RETOMAR AQUI — 2026-11-22, ~22:50Z — a **H2** no Mac: C1–C6 ✅ (o piloto gravado e zipado, o firmware de uso de volta com o ganho 2); o próximo é a resposta do agente do Colab
+
+- **C4, o piloto (rodado por mim, com o "vai" do dono):**
+  - a sala: 59,8 s, "✅ contínuo", com o RMS de 56 a 337;
+  - os takes: 10 "Hey Viking" (1–4 a ~50 cm, 5–7 a ~1 m, 8–10 a ~1,5 m), todos com `lacunas: []`
+    e 0 saturadas, e o RMS máximo de 941 a 3502;
+  - o zip é `~/viking-wakeword/piloto_2026-11-22.zip`, com o LEIA-ME, os SHA256SUMS e os
+    `.seq.json`. O dono sobe para o Drive e cola a mensagem para o agente do Colab.
+
+  Os takes rodaram numa janela do Terminal aberta por `osascript`, que espera o Enter, com o `tee`
+  para um log que eu leio: assim o dono vê a contagem ao vivo.
+- **C5:**
+  - o firmware de uso foi gravado de volta (env `xiao_s3`, ganho 2, "Hash of data verified"), e o
+    boot chegou ao PRONTO;
+  - a fala de teste teve pico de 19414, 0 saturadas, e a resposta certa nas caixas. Do soltar até
+    o `ok` foram 13 s (para a velocidade da H1h);
+  - um aperto em silêncio deu `vazio`.
+
+  O `serve` estava travado ("Remote does not seem to support RFC2217"); o `kickstart`, com o ok
+  do dono, resolveu.
+- **Os ajustes depois do piloto:**
+  - o take com 3,0 s depois do FALE (o take 9 ficou com ~0,2 s de sala);
+  - `ganho=` também na linha `coleta: status` (a sala saiu com `"ganho": null`, porque a linha do
+    boot se perdeu antes de a porta abrir);
+  - um arquivo sem ganho sai ⚠️, não ✅.
+
+  O firmware de coleta novo **ainda não foi gravado**: vai na próxima coleta, com o ok.
+- **O próximo:** a resposta do agente do Colab sobre o piloto (o nível, o recorte, as distâncias).
+  Depois dela, a coleta grande em sessões:
+  - os positivos variados (a hora, o lugar, o tom, com ruído);
+  - os negativos do estúdio "normal": horas com o dono trabalhando ou com música. O dono pediu
+    para **não deixar gravando ainda**.
+- **No VPS, depois das 22:20Z:** `python scripts/nuvem.py --executar alertas` e as 3 mutações da
+  voz (o bloco anterior abaixo).
+
+### O bloco anterior (~19:55Z)
+
+# ▶️ RETOMAR AQUI — 2026-11-22, ~19:55Z — a **H2** no Mac: C1 (o código) e C2–C3 (o firmware de coleta gravado, a USB medida) ✅; o próximo é o piloto (C4)
 
 **Feito até aqui (2026-11-22):**
 - **C1 (`1ef92c4`):** o ganho 2; o `converter()` único; o env `xiao_s3_coleta`; o `coleta.py` com

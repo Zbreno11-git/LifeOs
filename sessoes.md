@@ -16,7 +16,7 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H2 — a palavra de ativação, em curso desde 2026-11-22** (o plano no `PROGRESSO.md`: o ganho 2, o modo de coleta, o piloto). Depois, a escolher com o dono entre a **H1h** (o reforço da voz: o endereço de e-mail
+- **Sessão:** **H2 — a palavra de ativação, em curso desde 2026-11-22** (a 1ª etapa fechada: o ganho 2, o modo de coleta e o piloto gravado; o próximo é a resposta do agente do Colab e a coleta grande). Depois, a escolher com o dono entre a **H1h** (o reforço da voz: o endereço de e-mail
   soletrado e achado pelo nome, a velocidade, o HA que reconheceu 1 de 2), a **H2** (a palavra de
   ativação: o modo de coleta primeiro, e o agente do Colab espera o piloto), a **H1b** (o som no
   aparelho, quando o MAX98357A chegar), a **H3** e a **15 — coach 1**. A H1 fechou no Mac em
@@ -1354,6 +1354,20 @@ O que estava escrito na abertura:
   pacote usa a fórmula do ESPHome (pedi um novo, com a regra de arredondamento); o firmware
   **trunca** e só então multiplica pelo ganho (as amostras são múltiplas de 4), o que a augmentation
   dele tem de imitar; distância até 4 m e outras vozes são extras que o dono decide.
+- **A primeira etapa (2026-11-22, no Mac):**
+  - o ganho 2 congelado; o modo de coleta (`env:xiao_s3_coleta`) e o `coleta.py`;
+  - a USB medida (0 lacunas em 3.697 quadros);
+  - **o piloto:** 1 min de sala e 10 takes de 0,5 a 1,5 m, todos contínuos, no
+    `~/viking-wakeword/piloto_2026-11-22.zip` para o Colab;
+  - o firmware de uso de volta com o ganho 2, conferido no ar.
+
+  **Falta:**
+  - a resposta do agente do Colab sobre o piloto;
+  - a coleta grande em sessões (150+ positivos variados, 16 h+ de negativos do estúdio normal, em
+    3–4 sessões; o dono decide quando deixa gravando);
+  - o TFLM e o micro_frontend no arduino-esp32 4.0.0, com o CSV de paridade do chip contra o
+    `parity_v2`;
+  - a voz do aparelho, com o ok do gasto.
 - **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
