@@ -20,7 +20,7 @@
 | 2 | Afirmei sem abrir o lugar onde estaria | 32 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
 | 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
-| 5 | A ferramenta fez outra coisa do que eu li | 19 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
+| 5 | A ferramenta fez outra coisa do que eu li | 20 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 15 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
 | 8 | Comando que escreve com alcance maior que a mudança | 5 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
@@ -737,6 +737,15 @@ sincronia funcionou, o que isolou o reset; sem o arquivo no cliente, conectou da
 dizia); e diante de uma falha nova, separar as metades (aqui: a sincronia sem reset) antes de repetir.
 No mesmo dia, um teste meu da ponte deu 400 em vez de 401: o `set -- $r` do zsh não divide palavras,
 e o método foi "GET /estado" inteiro. Refeito com o comando escrito por extenso: 401 em todas.
+
+**2026-11-22 (H2, C1) — o commit antes de ler a linha da suíte.** A suíte rodou em segundo plano;
+li o fim do arquivo com `tail -2`, que mostrou só `[exited with code 0]` (o `pytest` em segundo
+plano sai 0 do `tail` do comando, não dele), e fiz o commit e o push do C1. A linha era `1 failed,
+2904 passed`: o `test_entrada_gigante_nao_explode`, que mede crescimento de tempo e cai com o Mac
+ocupado (a rodada levou 154 s contra 70 s; sozinho, 3 de 3). Não era do C1, mas eu não sabia
+quando commitei. O que tem de novo: o resultado de um portão é a linha `N passed`/`failed`
+**procurada** (`grep -E "passed|failed"`), nunca o fim do arquivo nem o código de saída do
+invólucro.
 
 ### 6. Conserto que cobriu um ponto e não o vizinho
 

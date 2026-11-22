@@ -5,7 +5,23 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~19:25Z — a **H2 aberta** no Mac (a wake word): ganho 2 congelado, o modo de coleta e o piloto; em C0
+## ▶️ RETOMAR AQUI — 2026-11-22, ~19:55Z — a **H2** no Mac: C1 (o código) e C2–C3 (o firmware de coleta gravado, a USB medida) ✅; o próximo é o piloto (C4)
+
+**Feito até aqui (2026-11-22):**
+- **C1 (`1ef92c4`):** o ganho 2; o `converter()` único; o env `xiao_s3_coleta`; o `coleta.py` com
+  19 testes; 7 mutações novas e a do firmware, 8 de 8 mortas. Os dois envs compilam sem aviso (uso
+  RAM 15,5%/flash 33,6%; coleta 16,1%/32,2%). A suíte: `1 failed, 2904 passed, 466 skipped`, e o
+  que falhou é o `test_entrada_gigante_nao_explode` (crescimento de tempo; a rodada levou 154 s com
+  o Mac ocupado; sozinho, 3 de 3). **Meu erro:** commitei antes de ler essa linha (`docs/erros.md`,
+  classe 5);
+- **C2:** o firmware de coleta gravado com o ok do dono ("Hash of data verified" ×4); o boot `wifi:
+  ok, sinal -36 dBm`, `coleta: ganho=2 taxa=16000 bloco=512 quadro=1044`;
+- **C3:** `coleta.py medir --minutos 2` → 3.697 quadros, **0 lacunas, 0 checksums errados, 0
+  descartados, 0 leituras curtas**, a taxa real **16000,01 Hz**, o maior tempo de volta do laço
+  **609 µs** (de 32 ms: o DMA nunca transborda), o maior degrau 1,4 ms (o tremor, até 41 ms),
+  "✅ contínuo". 37 amostras saturaram perto de 1 min (um som forte; ganho 2).
+- **O próximo (C4):** o piloto, que o **dono roda no Terminal dele** (a contagem tem de ser vista
+  ao vivo): `sala` 1 min e `takes` 10; depois ele sobe as duas pastas para o Drive.
 
 **Aberta em 2026-11-22 ~19:18Z (medido):** `a055705`, CI `completed success`; `uv lock --upgrade
 --dry-run` → "No lockfile changes detected"; árvore limpa. **Decidido pelo dono:** o ganho **2**
