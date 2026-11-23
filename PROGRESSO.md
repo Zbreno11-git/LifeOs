@@ -37,7 +37,8 @@ placa.** O take agora tem 4,0 s depois do FALE.
 **Não esquecer:** puxar o ar no 3-2-1; não comitar durante a hora (cada parte anota o commit); rodar a
 hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condicionado; perguntar ao
 dono no fim de cada bloco se houve tosse, riso ou batida, e usar o `coleta.py anotar`; a régua do
-barulho é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`.
+barulho é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`; uma pasta por sessão, com a
+data do dia (o coletor recusa outra). O Colab analisa o conteúdo do zip, não a pasta.
 **Depende do dono:** confirmar as decisões que o Colab atribui a ele (o `sessoes.md`, a resposta à
 coleta 1, e "Depois do modelo na placa"); dizer se "Hey Viking" escapou na hora e se o ar-condicionado
 estava ligado; o dia da H2c2.

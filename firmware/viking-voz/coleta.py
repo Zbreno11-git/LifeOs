@@ -36,6 +36,7 @@ import wave
 import zipfile
 from array import array
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 from pathlib import Path
 
 URL = "rfc2217://127.0.0.1:4000?ign_set_control"
@@ -236,6 +237,22 @@ def destino_seguro(raiz: Path, sessao: str, tipo: str) -> Path:
     if pasta.is_relative_to(REPO):
         raise ValueError(f"recusado: {pasta} fica dentro do repo, que é público")
     return pasta
+
+
+def agora() -> datetime:
+    return datetime.now().astimezone()
+
+
+def conferir_dia(sessao: str) -> None:
+    """Uma pasta = uma sessão de um dia: o teste do treino é por sessão inteira (o agente do Colab,
+    2026-11-23), e um dia misturado no outro vazaria do treino para o teste. O dia vira às 6 h, para
+    uma sessão de noite poder passar da meia-noite."""
+    instante = agora()
+    dias = {d.strftime("%Y-%m-%d") for d in (instante, instante - timedelta(hours=6))}
+    if sessao[:10] not in dias:
+        raise ValueError(
+            f"a sessão {sessao!r} é de outro dia (hoje é {instante:%Y-%m-%d}): uma pasta por sessão"
+        )
 
 
 def recorte_do_take(fale_em: int, total: int) -> tuple[int, int]:
@@ -556,6 +573,7 @@ class Parte:
 
 def sala(args: argparse.Namespace) -> int:
     pasta = destino_seguro(Path(args.raiz), args.sessao, "real_negative")
+    conferir_dia(args.sessao)
     placa = abrir(args.url)
     parte, ruins, seq_anterior, checksums = None, 0, None, 0
 
@@ -618,6 +636,7 @@ def frases_da_rodada(frase: str, frases: str | None, n: int) -> list[str]:
 def takes(args: argparse.Namespace) -> int:
     tipo = "real_negative" if args.negativo else "real_positive"
     pasta = destino_seguro(Path(args.raiz), args.sessao, tipo)
+    conferir_dia(args.sessao)
     frases = frases_da_rodada(args.frase, args.frases, args.n)
     placa = abrir(args.url)
     amostras, cont = array("h"), Continuidade()

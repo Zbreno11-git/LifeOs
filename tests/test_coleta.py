@@ -380,7 +380,49 @@ def _rodada(monkeypatch, quadros, depois=None):
 
     placa = _Placa()
     monkeypatch.setattr(coleta, "abrir", lambda url: placa)
+    monkeypatch.setattr(coleta, "agora", lambda: _as("2026-11-23T15:00"))
     return placa
+
+
+def _as(texto):
+    from datetime import datetime
+
+    return datetime.fromisoformat(texto).astimezone()
+
+
+@pytest.mark.parametrize(
+    ("instante", "serve"),
+    [
+        ("2026-11-23T00:01", True),
+        ("2026-11-23T23:59", True),
+        ("2026-11-24T05:59", True),  # a sessão da noite que passou da meia-noite
+        ("2026-11-24T06:01", False),
+        ("2026-11-22T23:00", False),
+    ],
+)
+def test_a_pasta_de_outro_dia_e_recusada(monkeypatch, instante, serve):
+    monkeypatch.setattr(coleta, "agora", lambda: _as(instante))
+    if serve:
+        coleta.conferir_dia("2026-11-23_c9_takes")
+    else:
+        with pytest.raises(ValueError, match="outro dia"):
+            coleta.conferir_dia("2026-11-23_c9_takes")
+
+
+@pytest.mark.parametrize("modo", ["sala", "takes"])
+def test_gravar_na_pasta_de_outro_dia_nem_abre_a_placa(monkeypatch, tmp_path, modo):
+    _rodada(monkeypatch, [])
+    monkeypatch.setattr(coleta, "agora", lambda: _as("2026-11-25T15:00"))
+
+    def nunca(url):
+        raise AssertionError("abriu a placa")
+
+    monkeypatch.setattr(coleta, "abrir", nunca)
+    extra = ["--minutos", "1"] if modo == "sala" else ["--n", "1"]
+    comum = ["--sessao", "2026-11-23_c9_x", "--raiz", str(tmp_path)]
+    with pytest.raises(ValueError, match="outro dia"):
+        coleta.main([modo, *comum, *extra])
+    assert not list(tmp_path.iterdir())
 
 
 def _quadros(n, valor=1000, pular=()):

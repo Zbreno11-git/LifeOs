@@ -1084,6 +1084,8 @@ O dono ouviu os suspeitos: 004, 007 e 026 são bons, em cadência lenta, e o seg
 **tosse**, que o cortador do Colab guardava como "Hey Viking". Todos os 38 ficam. O meu "talvez
 dupla" e o "fui eu falando mais alto" do dono eram palpites; só ouvir resolveu. Do nosso lado, o take
 passou a 4,0 s depois do FALE (007 e 008 sem sala no fim) e o `anotar` guarda o que só o ouvido sabe.
+Na resposta final (notebook v2.2), o Colab passou a testar por sessão inteira: o `coleta.py` recusa a
+pasta de outro dia. Ele confirmou que o `parte_007` só existia na pasta, e que passa a ler o zip.
 
 **Erro meu:** um `sed` por `| C1 |` trocou o estado de 9 linhas de planos antigos (classe 8).
 

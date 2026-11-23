@@ -1422,7 +1422,9 @@ próprias:
 - `real_negative/AAAA-MM-DD_cN_parecidas`;
 - `real_negative/AAAA-MM-DD_cN_estudio`.
 
-A H2c4 inteira fica guardada para o teste (o agente do Colab confirma).
+A H2c4 inteira fica guardada para o teste. **O teste do treino é por sessão inteira** (o Colab,
+2026-11-23, notebook v2.2): uma pasta por sessão e nunca dois dias na mesma, e o `coleta.py` recusa a
+pasta de outro dia (o dia vira às 6 h). Um take duvidoso (o 007 da coleta 1) fica só no treino.
 
 **O que vale nas 4:**
 - **Antes de gravar, o roteiro na tela e o "vai" do dono.** Os takes rodam numa janela do
@@ -1502,9 +1504,15 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
   - 10 a ~1 m, mais baixo;
   - 10 a ~1,5 m, mais rápido;
   - 8 a ~2 m, normal.
-- **20 parecidas**, com a música: 10 frases, 2 vezes cada (o Colab, 2026-11-23: uma vez é pouco, e o
-  que falta é "Vi"; proposta minha, a confirmar no roteiro): Vinícius · Vitória · Vivian · Hey, Vi ·
-  Hey, vida · Hey, viu? · Hey, vi um negócio · Hey vizinho · Hey Vicky · Vi um viking na TV.
+- **22 parecidas**, com a música (proposta minha, com os ajustes do Colab de 2026-11-23, a confirmar
+  no roteiro): as 10 frases em duas distâncias, e "Hey, Vi" 4 vezes, porque é o começo exato da
+  palavra:
+  - 11 a ~1 m, voz normal: as 10 e mais um "Hey, Vi";
+  - 10 a ~2 m, voz normal: as 10;
+  - 1 a ~2 m, apressado: "Hey, Vi".
+
+  As 10: Vinícius · Vitória · Vivian · Hey, Vi · Hey, vida · Hey, viu? · Hey, vi um negócio · Hey
+  vizinho · Hey Vicky · Vi um viking na TV.
 - **1 h de estúdio normal com música:** os gêneros que o dono ouve, com grave (é onde o passa-alta
   pode aparecer). O dono trabalha junto.
 
@@ -1547,8 +1555,12 @@ O pedido dele, para o firmware que roda o modelo:
 **O que falta decidir ou desenhar (nosso):**
 - **o ok do dono, com a consequência dita:** o aparelho passa a guardar pedaços de voz no laptop de
   casa, inclusive de outras pessoas no estúdio;
-- **o log tem de guardar as horas ouvindo**, não só os cruzamentos: sem o denominador não há taxa por
-  dia. Com 0 falsas em 48 h o limite de 95% é 1 por dia de 16 h; com 1, já é ~1,6;
+- **o log guarda as horas ouvindo**, não só os cruzamentos: um contador acumulado de segundos com o
+  modelo rodando, gravado a cada minuto, que sobrevive a uma queda de energia e **para, sem zerar**,
+  quando o interruptor do HA desliga (o Colab aceitou e detalhou em 2026-11-23);
+- **as horas que provam "≤ 1 por dia de 16 h", a 95%:** 48 h com 0 falsas, 76 h com 1 e 101 h com 2
+  (Poisson, conferido aqui). A sessão de 1 h guardada para o teste, com 0 falsas, só dá 48 por dia:
+  quem mede é o uso (D71); a coleta serve para treinar;
 - o caminho é a ponte (`viking casa`), com o mesmo HTTPS e o token do aparelho, e não um serviço novo;
   o interruptor do HA desliga também o registro;
 - os clipes nunca vão ao repo nem à nuvem do Viking; saem do laptop só pelas mãos do dono;
