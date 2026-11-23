@@ -3744,7 +3744,7 @@ MUTACOES = [
         "firmware/viking-voz/coleta.py",
         "    inicio = max(0, fale_em - int(ANTES_S * TAXA))",
         "    inicio = max(0, fale_em)",
-        "tests/test_coleta.py::test_o_take_tem_meio_segundo_antes_do_fale_e_tres_depois",
+        "tests/test_coleta.py::test_o_take_tem_meio_segundo_antes_do_fale_e_quatro_depois",
     ),
     Mutacao(
         "coleta: o ganho do firmware muda sem avisar",
@@ -3899,6 +3899,13 @@ MUTACOES = [
         "    fala = _rms([t for t in trechos if t >= ATIVO * maior])",
         "    fala = fundo",
         "tests/test_coleta.py::test_a_respiracao_na_sala_quieta_nao_e_apontada",
+    ),
+    Mutacao(
+        "coleta: a nota nova apaga a anterior",
+        "firmware/viking-voz/coleta.py",
+        '(dados.get("nota"), args.texto.strip())',
+        "(args.texto.strip(),)",
+        "tests/test_coleta.py::test_a_nota_vai_ao_seq_json_e_ao_leia_me_e_se_soma",
     ),
     Mutacao(
         "coleta: a sala para pelo relógio e deixa um resto",

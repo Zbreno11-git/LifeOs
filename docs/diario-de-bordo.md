@@ -1080,6 +1080,10 @@ semana de uso, D71).
 **A resposta do Colab (no mesmo dia):** aprovada, com 3 takes para o dono ouvir. A régua do barulho
 antes da fala passou a ser sobre a fala do take (25%), e aqui não marca nenhum dos 63 arquivos das duas
 sessões. Ele pediu um registro das quase-ativações no uso (a confirmar com o dono; `sessoes.md`).
+O dono ouviu os suspeitos: 004, 007 e 026 são bons, em cadência lenta, e o segundo som do 015 era uma
+**tosse**, que o cortador do Colab guardava como "Hey Viking". Todos os 38 ficam. O meu "talvez
+dupla" e o "fui eu falando mais alto" do dono eram palpites; só ouvir resolveu. Do nosso lado, o take
+passou a 4,0 s depois do FALE (007 e 008 sem sala no fim) e o `anotar` guarda o que só o ouvido sabe.
 
 **Erro meu:** um `sed` por `| C1 |` trocou o estado de 9 linhas de planos antigos (classe 8).
 

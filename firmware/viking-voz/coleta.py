@@ -51,10 +51,11 @@ QUADRO_BYTES = len(MAGICO) + CABECALHO.size + BLOCO * 2 + 4
 US_POR_BLOCO = BLOCO * 1_000_000 // TAXA  # 32000
 
 # Um take: do "FALE" na tela, 0,5 s antes (a sala antes da frase, pedida pelo agente do Colab) até
-# 3,0 s depois. No piloto (2026-11-22) o dono começou a falar 0,7 a 1,4 s depois do "FALE", e com
-# 2,5 s um take ficou com só ~0,2 s de sala no fim; o agente do Colab pediu ~0,5 s de sala depois.
+# 4,0 s depois. Com 3,0 s, na H2c1 (2026-11-23), dois takes ficaram com menos de 0,3 s de sala no fim:
+# o dono começou a falar até 2,05 s depois do "FALE", e a cadência lenta dura 1,56 s (os takes são
+# reais; o agente do Colab pediu ~0,5 s de sala depois da frase).
 ANTES_S = 0.5
-DEPOIS_S = 3.0
+DEPOIS_S = 4.0
 # O buraco que o seq não vê (o DMA do I2S transbordou com o laço parado) deixa o tempo do aparelho
 # **para sempre** adiantado em relação às amostras: um degrau no afastamento de uma reta (a taxa
 # real do I2S, medida pelo próprio arquivo). Uma reta só dividiria o degrau ao meio; a régua é a
@@ -238,7 +239,7 @@ def destino_seguro(raiz: Path, sessao: str, tipo: str) -> Path:
 
 
 def recorte_do_take(fale_em: int, total: int) -> tuple[int, int]:
-    """As amostras de um take: de 0,5 s antes do "FALE" até 3,0 s depois (fale_em = a amostra em
+    """As amostras de um take: de 0,5 s antes do "FALE" até 4,0 s depois (fale_em = a amostra em
     que a tela mostrou o "FALE")."""
     inicio = max(0, fale_em - int(ANTES_S * TAXA))
     fim = min(total, fale_em + int(DEPOIS_S * TAXA))
@@ -701,7 +702,7 @@ SINAL_DO_LEIA_ME = (
 )
 COLUNAS_DO_LEIA_ME = (
     "| arquivo | s | lacunas | checksums ruins | ganho | pico | saturadas | p10 / p50 / p99 | frase "
-    "| dica | antes da fala |"
+    "| dica | antes da fala | nota |"
 )
 
 
@@ -767,7 +768,7 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
             f"{dados.get('checksums_errados')} | {dados.get('ganho')} | {dados.get('pico')} | "
             f"{dados.get('saturadas')} | {faixa['p10']} / {faixa['p50']} / {faixa['p99']} | "
             f"{dados.get('frase', '—')} | {dados.get('dica') or '—'} | "
-            f"{dados.get('pre_fala_sobre_a_fala', '—')} |"
+            f"{dados.get('pre_fala_sobre_a_fala', '—')} | {dados.get('nota') or '—'} |"
         )
     leia_me = "\n".join(
         [
@@ -785,7 +786,7 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
             "## Os arquivos (os níveis são RMS de 100 ms **na faixa**, acima de 125 Hz)",
             "",
             COLUNAS_DO_LEIA_ME,
-            "|---|---|---|---|---|---|---|---|---|---|---|",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|",
             *linhas,
             "",
         ]
@@ -806,6 +807,22 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
                 raise ValueError(f"o zip não devolveu o mesmo {nome}")
     parcial.rename(destino)
     return destino
+
+
+def anotar(args: argparse.Namespace) -> int:
+    """O que só o ouvido sabe de um arquivo (uma tosse, uma batida): vai para o campo `nota` do
+    `.seq.json` e para o LEIA-ME do pacote. Uma nota nova se soma à anterior; o áudio não muda."""
+    wav = Path(args.arquivo)
+    if not wav.is_absolute():
+        wav = Path(args.raiz) / wav
+    seq = wav.with_suffix(".seq.json")
+    if wav.suffix != ".wav" or not wav.exists() or not seq.exists():
+        raise ValueError(f"não é um WAV com o .seq.json: {wav}")
+    dados = json.loads(seq.read_text())
+    dados["nota"] = "; ".join(n for n in (dados.get("nota"), args.texto.strip()) if n)
+    gravar_seq(wav, dados)
+    print(f"{wav.name}: {dados['nota']}")
+    return 0
 
 
 def pacote(args: argparse.Namespace) -> int:
@@ -835,6 +852,10 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--dica", default="", help="a distância e o tom: na tela e no .seq.json")
     t.add_argument("--negativo", action="store_true", help="casos difíceis: vão para real_negative")
     t.add_argument("--raiz", default=str(RAIZ_PADRAO))
+    n = sub.add_parser("anotar", help="o que o ouvido sabe de um take (uma tosse, uma batida)")
+    n.add_argument("--arquivo", required=True, help="o WAV, relativo à raiz")
+    n.add_argument("--texto", required=True)
+    n.add_argument("--raiz", default=str(RAIZ_PADRAO))
     z = sub.add_parser("pacote", help="o zip da sessão para o Colab")
     z.add_argument("--prefixo", required=True)
     z.add_argument("--notas", help="um arquivo de texto com as observações da sessão")
@@ -846,7 +867,7 @@ def main(argv: list[str] | None = None) -> int:
 
     for sinal in (signal.SIGTERM, signal.SIGHUP):
         signal.signal(sinal, parar)
-    modos = {"medir": medir, "sala": sala, "takes": takes, "pacote": pacote}
+    modos = {"medir": medir, "sala": sala, "takes": takes, "anotar": anotar, "pacote": pacote}
     return modos[args.modo](args)
 
 

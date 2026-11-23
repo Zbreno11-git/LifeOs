@@ -143,9 +143,9 @@ def test_o_micros_que_da_a_volta_nao_vira_buraco():
     assert resumo["taxa_medida_hz"] == pytest.approx(16_000, rel=1e-6)
 
 
-def test_o_take_tem_meio_segundo_antes_do_fale_e_tres_depois():
-    assert coleta.recorte_do_take(5 * 16_000, 10 * 16_000) == (72_000, 128_000)
-    assert coleta.recorte_do_take(1_000, 10 * 16_000) == (0, 49_000)  # no começo, corta no zero
+def test_o_take_tem_meio_segundo_antes_do_fale_e_quatro_depois():
+    assert coleta.recorte_do_take(5 * 16_000, 10 * 16_000) == (72_000, 144_000)
+    assert coleta.recorte_do_take(1_000, 10 * 16_000) == (0, 65_000)  # no começo, corta no zero
 
 
 def test_o_wav_e_o_seq_json_saem_no_formato_combinado(tmp_path):
@@ -618,6 +618,26 @@ def test_o_resto_de_uma_gravacao_fica_fora_do_pacote_e_o_leia_me_diz(tmp_path):
     assert not any("parte_002" in n for n in nomes) and any("parte_001.wav" in n for n in nomes)
     assert "de fora, menores que 1 s" in leia_me and "parte_002" in leia_me
     assert "arquivos: 2;" in leia_me
+
+
+def test_a_nota_vai_ao_seq_json_e_ao_leia_me_e_se_soma(tmp_path):
+    import zipfile
+
+    _sessao_pronta(tmp_path)
+    take = "real_positive/2026-11-23_c9_takes/take_001.wav"
+    antes = (tmp_path / take).read_bytes()
+    comum = ["anotar", "--arquivo", take, "--raiz", str(tmp_path)]
+    assert coleta.main([*comum, "--texto", "tosse depois"]) == 0
+    assert coleta.main([*comum, "--texto", "cadência lenta"]) == 0
+    dados = json.loads((tmp_path / take).with_suffix(".seq.json").read_text())
+    assert dados["nota"] == "tosse depois; cadência lenta" and dados["ganho"] == 2
+    assert (tmp_path / take).read_bytes() == antes
+    with zipfile.ZipFile(coleta.montar_pacote(tmp_path, "2026-11-23_c9")) as z:
+        leia_me = z.read("2026-11-23_c9/LEIA-ME.md").decode()
+    (linha,) = [li for li in leia_me.splitlines() if take in li and li.startswith("|")]
+    assert linha.endswith("| tosse depois; cadência lenta |")
+    with pytest.raises(ValueError, match="não é um WAV"):
+        coleta.main(["anotar", "--arquivo", "x.wav", "--raiz", str(tmp_path), "--texto", "y"])
 
 
 def test_os_niveis_na_faixa_nao_ouvem_o_ronco():

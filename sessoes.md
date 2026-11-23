@@ -17,9 +17,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** **H2c2 — a coleta da wake word, 2 de 4, com música** (na seção "Sessões H2c1–H2c4";
-  D71). **A H2c1 foi aprovada pelo Colab em 2026-11-23**; antes da H2c2 o dono ouve 3 takes (004, 007 e
-  026), e os que não servirem se repõem no começo dela, antes da música. Não pede firmware nem
-  ferramenta nova. A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
+  D71). **A H2c1 fechou em 2026-11-23: o Colab ficou com os 38 takes**, e nada se repõe. A H2c2 não
+  pede firmware nem ferramenta nova. A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
   Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
   dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
   velocidade, com 13 s medidos do soltar ao `ok`, e o HA que reconheceu 1 de 2), a **H1b** (o som no
@@ -1401,6 +1400,12 @@ O que estava escrito na abertura:
   - **decisões que ele atribui ao dono (a confirmar com o dono):** "Rei Viking" e "Ei, Viking" ativam
     (gravadas, vão para `real_positive`); "Hey King" e "Vai, King" tanto faz; o aparelho em uso
     registra as quase-ativações (ver "Depois do modelo na placa");
+  - **os suspeitos, ouvidos pelo dono (a 2ª mensagem, notebook v2.1):** 004, 007 e 026 são um "Hey
+    Viking" só, em cadência lenta (1,53–1,56 s); o 015 é um "Hey Viking" e uma **tosse** 2× mais
+    alta, que o cortador dele guardava como positivo. Ele passou a só aceitar trechos vozeados;
+  - **nosso, a partir disso:** ele disse que os 3,0 s depois do FALE resolvem o fim do 007, mas o 007
+    foi gravado com eles. Medido: 007 e 008 com menos de 0,3 s de sala no fim, e o dono começou até
+    2,05 s depois do FALE. O take passou a ter **4,0 s** depois do FALE, e o `anotar` nasceu;
   - **divergências nossas:** o `parte_007` não está no zip que o dono recebeu (0 entradas), e o LEIA-ME
     dele o cita; ele leu outra cópia. E 4 h sem nenhuma falsa dão um limite de 12 por dia de 16 h (3/T),
     não 20.
@@ -1446,11 +1451,11 @@ A H2c4 inteira fica guardada para o teste (o agente do Colab confirma).
 - **A prova do "≤ 1 falsa por dia" não sai daqui.** Ela vem de uma semana de uso com a placa
   ouvindo, na sessão que põe o modelo na placa (D71).
 
-### H2c1 — o firmware único, as ferramentas e a coleta 1 (o estúdio quieto, de dia) — ✅ gravada em 2026-11-23
+### H2c1 — o firmware único, as ferramentas e a coleta 1 (o estúdio quieto, de dia) — ✅ fechada em 2026-11-23
 
 **O resultado (2026-11-23; o detalhe está no diário):** o firmware único na placa, com a volta ao uso
 provada (pelo pedido e por 30 s sem sinal). 38 takes, 15 parecidas e 3.600 s de estúdio, todos com
-`lacunas: []`, 0 checksums errados e ganho 2. **Falta:** o dono subir o zip ao Drive e o ok do Colab.
+`lacunas: []`, 0 checksums errados e ganho 2.
 **Mudou do plano abaixo:** a placa escuta o pedido sempre que está parada (não só 1,5 s no boot), e o
 estúdio sai em partes de 10 min. **Para as próximas:** puxar o ar durante o 3-2-1 (as parecidas
 saíram com 2 marcas em 15, contra 18 em 38 dos takes, com o fundo parecido, 13 contra 16); os
@@ -1503,8 +1508,8 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
 - **1 h de estúdio normal com música:** os gêneros que o dono ouve, com grave (é onde o passa-alta
   pode aparecer). O dono trabalha junto.
 
-- **Antes da música:** as reposições dos takes 004, 007 e 026 que o dono reprovar ao ouvir, na sala
-  quieta, na pasta da coleta 2 (`takes --dica "50 cm, reposição do c1/004"`).
+- **Se tossir, espirrar, rir ou bater em algo num take, não se refaz:** o dono me diz o número, e
+  eu anoto (`coleta.py anotar`; o Colab pediu, 2026-11-23).
 
 ### H2c3 — a coleta 3: de noite, com conversa
 

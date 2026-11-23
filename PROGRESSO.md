@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — H2c1 gravada e aprovada pelo Colab (2026-11-23); o dono ouve 3 takes; depois, a H2c2
+## ▶️ RETOMAR AQUI — H2c1 fechada (2026-11-23; o Colab ficou com os 38 takes); o próximo é a H2c2
 
 ### A H2c1, a coleta 1 de 4 da wake word (aberta em 2026-11-23, ~17:26Z; o plano aprovado pelo dono, com o ok para gravar a placa uma vez no C3)
 
@@ -31,16 +31,16 @@ porta); ela volta ao uso sozinha sem o sinal do Mac; a hora de estúdio vai para
 **A ordem do dono:** os takes e as parecidas com ele olhando; depois a 1 h com a janela minimizada.
 **Fora das parecidas:** "Rei Viking" e "Ei, Viking" (soam como a palavra).
 
-**O próximo passo:** o dono ouve os takes 004, 007 e 026 (`~/viking-wakeword/_roteiros/ouvir_c1.sh`,
-que anota a resposta); a decisão vai ao Colab. Depois, a H2c2 (com música), noutro dia: copiar os
-scripts de `~/viking-wakeword/_roteiros/`, trocar as dicas e as frases, o roteiro e o "vai" por parte.
-**Nada a gravar na placa.**
+**O próximo passo:** a H2c2 (com música), noutro dia: copiar os scripts de `~/viking-wakeword/_roteiros/`,
+trocar as dicas e as frases (`sessoes.md`, H2c2), o roteiro e o "vai" por parte. **Nada a gravar na
+placa.** O take agora tem 4,0 s depois do FALE.
 **Não esquecer:** puxar o ar no 3-2-1; não comitar durante a hora (cada parte anota o commit); rodar a
-hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condicionado; a régua do
-barulho agora é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`.
-**Depende do dono:** ouvir os 3 takes; confirmar as decisões que o Colab atribui a ele (o `sessoes.md`,
-a resposta à coleta 1, e "Depois do modelo na placa"); dizer se "Hey Viking" escapou na hora; o dia da
-H2c2.
+hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condicionado; perguntar ao
+dono no fim de cada bloco se houve tosse, riso ou batida, e usar o `coleta.py anotar`; a régua do
+barulho é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`.
+**Depende do dono:** confirmar as decisões que o Colab atribui a ele (o `sessoes.md`, a resposta à
+coleta 1, e "Depois do modelo na placa"); dizer se "Hey Viking" escapou na hora e se o ar-condicionado
+estava ligado; o dia da H2c2.
 
 ## (atendido) RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 

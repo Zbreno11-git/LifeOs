@@ -9,11 +9,11 @@
 
 **Última atualização: 2026-11-23 (a coleta 1 de 4 da palavra de ativação, gravada e aprovada).**
 
-`████████████░░░░░░░░ 27 de 44 sessões fechadas`
+`████████████░░░░░░░░ 28 de 44 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b e H1; parciais: a H2 (a palavra de ativação: a
-1ª etapa feita) e a H2c1 (a coleta 1: gravada e aprovada; faltam 3 takes para você ouvir); na fila: H2c2 a H2c4
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1 e H2c1; parciais: a H2 (a palavra de ativação: a
+1ª etapa feita); na fila: H2c2 a H2c4
 (as outras 3 coletas da palavra), H1b (o som no
 aparelho), H1h (o reforço da voz), H3 (o Viking mandando no Home
 Assistant), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total passou
@@ -30,8 +30,9 @@ estúdio normal. Nenhum pedaço de áudio se perdeu.
 - **A hora vai sendo salva aos poucos.** Se o computador cair, perde-se no máximo a parte de 10
   minutos que estava em curso.
 
-**O agente do Colab aprovou.** Serviram todas, menos 3 "Hey Viking" que você precisa ouvir e dizer
-se prestam. O aviso de "som antes da fala" era rigoroso demais e foi corrigido.
+**O agente do Colab aprovou tudo:** os 38 "Hey Viking" servem. Você ouviu os 4 duvidosos: 3 eram só
+ditos devagar, e num deles havia uma tosse sua que o treino ia confundir com a palavra. Ele corrigiu o
+lado dele. Do nosso, cada gravação agora tem 1 segundo a mais no fim.
 
 **O que vem:** a coleta 2, com música, outro dia. Não precisa de mais nada no aparelho.
 
