@@ -7,19 +7,30 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-11-23 (as coletas 1 e 2 de 4 da palavra de ativação, fechadas).**
+**Última atualização: 2026-11-23, de noite (o replanejamento da palavra de ativação).**
 
-`████████████░░░░░░░░ 29 de 44 sessões fechadas`
+`████████████░░░░░░░░ 29 de 48 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1, H2c1 e H2c2; parciais: a H2 (a palavra de ativação: a
-1ª etapa feita); na fila: H2c3 e H2c4
-(as outras 2 coletas da palavra), H1b (o som no
-aparelho), H1h (o reforço da voz), H3 (o Viking mandando no Home
-Assistant), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total passou
-de 36 para 40 em 2026-11-22: a H1b, a H2 e a H3 já estavam no roteiro desde 21/11 e não tinham
-entrado na conta, e a H1h nasceu hoje. Mais tarde no mesmo dia, de 40 para 44: as 4 coletas
-da palavra de ativação (H2c1 a H2c4).
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1, H2c1 e H2c2; parciais: a H2 (a palavra de ativação: as
+coletas 1 e 2 feitas); na fila: H2m1, H2c3, H2m2, H2m3, H2v1 e H2r (a palavra), H1b (o som no aparelho),
+H1h (o reforço da voz), H3 (o Viking mandando no Home Assistant), 15 a 21, 11b (formulários) e a sessão
+final (o repo privado de novo). O total passou de 36 para 40 em 2026-11-22 (a H1b, a H2 e a H3 já estavam
+no roteiro desde 21/11 e não tinham entrado na conta, e a H1h nasceu no dia); de 40 para 44 no mesmo dia
+(as 4 coletas); e de 44 para 48 em 2026-11-23: a coleta 4 saiu, e entraram H2m1, H2m2, H2m3, H2v1 e H2r.
+
+## 2026-11-23, de noite — o plano mudou: primeiro pôr no aparelho, depois afinar
+
+**O que mudou:** antes de gravar mais, vamos provar que o "cérebro" que reconhece a palavra roda na placa.
+Se não rodar, é melhor saber agora.
+1. **O modelo na placa** (a próxima): um teste, e a voz do estúdio de volta.
+2. **A coleta 3**, curta, amanhã à noite, e o aparelho gravando sozinho enquanto você dorme.
+3. **A placa ouvindo o tempo todo.**
+4. **"Hey Viking" abre a conversa**: um som, você fala, ele responde. Sem botão.
+5. **O modelo de verdade** e um dia de uso, para ajustar.
+6. **O registro do que quase ativou**, para ele melhorar.
+
+**O que você aceitou:** a primeira versão vai acordar sozinha umas 8 vezes por dia, até a gente ajustar.
 
 ## 2026-11-23 — a coleta 2 de 4: com música
 

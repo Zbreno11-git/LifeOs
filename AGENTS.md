@@ -496,6 +496,8 @@ hardware (pausado, como estava): `docs/arquitetura/wristband-hardware-pausado.md
 - `secrets/` (gitignored exceto `.gitkeep`) — `google_credentials.json` e `google_token.json` (OAuth
   real do Google Calendar).
 - **Regra fixa:** nunca commitar nada em `secrets/`, o `.env` da raiz, ou qualquer chave/token real.
+  Nem o modelo treinado com a voz do dono (`viking_v1/`, `*.tflite`, os cabeçalhos gerados): fora do
+  repo até ele voltar a ser privado (D73; o `.gitignore` recusa).
   Nem dado de voz: gravações, o dataset e os pacotes do treino da wake word ficam em
   `~/viking-wakeword/` (fora do repo) e no Drive do dono; o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` (desde 2026-11-22).

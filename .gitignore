@@ -33,3 +33,11 @@ jev-ultrafast/
 *.wav
 *.zip
 viking-wakeword/
+
+# O modelo treinado com a voz do dono, e as bibliotecas baixadas para ele (H2, D73): fora do repo
+# público por decisão do dono em 2026-11-23, até a Sessão final (o repo privado de novo).
+viking_v1/
+*.tflite
+firmware/viking-voz/lib/
+firmware/viking-voz/src/modelo.h
+firmware/viking-voz/src/teste_modelo/*.h

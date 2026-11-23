@@ -16,17 +16,14 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H2c3 — a coleta da wake word, 3 de 4, de noite, com conversa** (na seção "Sessões
-  H2c1–H2c4"; D71), **noutro dia**. A H2c1 e a H2c2 fecharam em 2026-11-23 (o Colab ficou com os 38
-  takes da 1 e com 27 da 2). Não pede firmware nem ferramenta nova.
-  A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
-  Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
-  dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
-  velocidade, com 13 s medidos do soltar ao `ok`, e o HA que reconheceu 1 de 2), a **H1b** (o som no
-  aparelho, quando o MAX98357A chegar), a **H3** e a **15 — coach 1**. A H1 fechou no Mac em
-  2026-11-22 (D70); a 14b, em 2026-11-21, e os alertas dela estão no ar desde 2026-11-22 ~22:55Z.
-  As 3 mutações da voz, no VPS, morreram 3 de 3 (2026-11-22 ~23:02Z). A 11b (formulários) segue na
-  fila, sem posição decidida.
+- **Sessão:** **H2m1 — o modelo na placa** (a seção "O novo roteiro da H2"; D73; o plano está aprovado
+  pelo dono em 2026-11-23). Depois, a **H2c3** (a coleta curta e a noite, em 2026-11-24, de noite), a H2m2,
+  a H2m3, a H2v1 e a H2r. A H2c1 e a H2c2 fecharam em 2026-11-23 (o Colab ficou com os 38 takes da 1 e com
+  27 da 2); a H2c4 foi cancelada. Em paralelo, a escolher com o dono: a **H1h** (o reforço da voz: o
+  endereço de e-mail soletrado e achado pelo nome, a velocidade, com 13 s medidos do soltar ao `ok`, e o HA
+  que reconheceu 1 de 2), a **H1b** (o som no aparelho, quando o MAX98357A chegar), a **H3** e a **15 —
+  coach 1**. A H1 fechou no Mac em 2026-11-22 (D70); a 14b, em 2026-11-21, e os alertas dela estão no ar
+  desde 2026-11-22 ~22:55Z. A 11b (formulários) segue na fila, sem posição decidida.
 - **Fora do repo, no estúdio:** o som do laptop sai pela Scarlett 2i2 (`~/.asoundrc` no laptop);
   sem ela plugada, a voz falha com erro no LED. A luz NEEWER RGB62 precisa de uma ESP32 com o
   ESPHome (o laptop não tem Bluetooth).
@@ -1313,7 +1310,8 @@ O que estava escrito na abertura:
   falsas ativações por hora como a métrica). Comparar com o microWakeWord do ESPHome antes de
   treinar do zero.
 - **Decidido pelo dono (2026-11-22, na H1):** a frase "Hey Viking", dita "VI-king" (à
-  portuguesa); só o dono ativa; **no máximo 1 ativação falsa por dia**; latência até ~1 s; a
+  portuguesa); só o dono ativa; **no máximo 1 ativação falsa por dia** (desde 2026-11-23, a **meta de
+  afinação**: o v1 nasce com ~8 por dia, D73); latência até ~1 s; a
   coleta só **depois de fechar a H1**. Ativar só começa a gravar, nunca aprova (D26/D70).
   **"Só o dono ativa" não é requisito** (decidido em 2026-11-22, depois de o agente do Colab
   explicar que o microWakeWord não reconhece quem fala: qualquer voz acorda, e isso só grava).
@@ -1433,16 +1431,113 @@ O que estava escrito na abertura:
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
 
+## O novo roteiro da H2 (replanejado em 2026-11-23, com o ok do dono; D73)
+
+**Por quê:** ninguém provou ainda que o motor do modelo (TFLM) o carrega no nosso firmware, e o dono quer
+**um produto para testar logo** e depois cortar os falsos. A ordem passou a ser: a placa primeiro.
+
+| # | Sessão | Entrega verificável | Precisa de |
+|---|---|---|---|
+| 1 | **H2m1 — o modelo na placa** | as 3 respostas ao Colab (carrega?, arena, paridade) e o firmware de uso de volta | o ok para gravar a placa 2 vezes |
+| 2 | **H2c3 — a coleta curta, e a noite** (2026-11-24, de noite) | tudo `lacunas: []`; dois zips; a voz de volta de manhã | o "vai" por parte |
+| 3 | **H2m2 — a escuta contínua** | o firmware de uso ouve sempre e diz no serial e no LED quando acordou; o botão segue igual | H2m1 "sim" |
+| 4 | **H2m3 — a palavra abre a conversa** | "Hey Viking" → som → fala → resposta, sem botão | H2m2 |
+| 5 | **H2v1 — o v1 de verdade, e um dia de uso** | o modelo do Colab na placa, o limiar ajustado, as falsas por **hora ouvindo** | o v1 do Colab |
+| 6 | **H2r — o registro das quase-ativações** | os clipes de 3 s, o log, "apaga tudo"; o v2 do Colab sai daqui | H2v1 |
+
+- **Se a H2m1 der "não"**, a ordem para: o Colab muda a arquitetura, e a H2c3 espera.
+- A H2c3 não depende da H2m1 para ser gravada: se a H2m1 não couber antes da noite de 2026-11-24, a coleta
+  vai do mesmo jeito.
+- Em paralelo, sem ordem: H1h, H1b (o MAX98357A), H3 e 15.
+
+**As respostas do dono (2026-11-23):**
+- o v1 com ~8 ativações falsas por dia (0,5 por hora × 16 h): aceito; "depois a gente melhora";
+- na ativação, **um som** por enquanto (do laptop: a placa não tem alto-falante até a H1b), um **LED**
+  externo que ele liga depois (o firmware já tem o D6, GPIO43), e uma tela bem para frente;
+- a coleta 3 curta, **só para o teste**, com **20 min** de estúdio; a noite gravando sozinha, junto dela;
+- a memória pela palavra **aprende igual ao botão** (o risco e o gatilho estão na D73);
+- o modelo treinado pode ir ao repo, "se quiser, barra por enquanto": **barrado** no `.gitignore` até a
+  Sessão final (o `viking_v1/` na raiz é dele, e fica só no Mac).
+
+**Medido (2026-11-23, só leitura):** o `viking_v1/hey_viking.tflite` tem 62.304 bytes, sha256
+`c96061bfded78ccd610e8ee246b4bb4f57f9ee9b1f318fd93598d564146e8672`, igual ao do Drive; as 13 operações que o
+Colab listou; 2 subgrafos (o principal com 55 operadores e 6 VAR_HANDLE; o que zera o estado com 6
+VAR_HANDLE e 6 ASSIGN): **6 variáveis**. O `hey_viking.json`: limiar 0,97, janela 5, arena estimada 11.161.
+O arduino-esp32 4.0.0 (IDF 6.1.1) não traz o TFLM. O `esp-tflite-micro` (lido no commit `3d0b461`, do main)
+tem as 4 operações de variável e o `micro_resource_variable.cc`, mas não o micro_frontend; a tag v1.4.3 é o
+`df87223` (por conferir). O README da Espressif lista o IDF até o 6.0: no 6.1.1 está **por provar**. Nada
+foi compilado. A compilação do teste de paridade no Mac foi negada pelo modo automático: não refazer.
+
+### H2m1 — o modelo na placa (a próxima; ~1h30; o plano está aprovado)
+
+**Não faz:** escuta ao vivo, ativação, Wi-Fi, ponte (H2m2 e H2m3). Nada do `src/main.cpp` muda.
+
+| C | Faz | ✅ Checkpoint | 🐞 Previsto → depurar |
+|---|---|---|---|
+| C0 | o plano no `PROGRESSO.md` | commit | — |
+| C1 | `firmware/viking-voz/buscar_libs.sh`: baixa as duas fontes **por commit fixo** (o TFLM v1.4.3 `df87223` e o frontend do `pymicro-features` v2.0.2 `96bd69c`), confere o commit e monta `lib/tflm` e `lib/microfrontend` (fora do git), só com os fontes usados, sem ESP-NN (kernels de referência) | o `git rev-parse` dos dois é o fixado; rodar 2 vezes dá o mesmo resultado; o `df87223` tem as 4 operações | o kissfft repetido nas duas → o TFLM entra sem `signal/` |
+| C2 | `gerar_modelo.py`: o `.tflite` vira `src/teste_modelo/modelo.h` (`alignas(16)`, o sha256 no arquivo), e o WAV e os CSV de paridade viram cabeçalhos; tudo fora do git; testes e mutações do gerador | `pytest` verde; a mutação "o sha não é conferido" morta | — |
+| C3 | o env `[env:xiao_s3_modelo]` (o padrão segue `xiao_s3`), com o `build_src_filter` só em `teste_modelo/`, sem `segredos.h` | `pio run -e xiao_s3_modelo` SUCCESS; o `pio run` (uso) segue SUCCESS | o TFLM não compila no IDF 6.1.1 → a mensagem exata; a tag anterior; só então o Colab |
+| C4 | o programa de teste, pelo serial: (a) o resolver com as 13 ops, `MicroResourceVariables` (6), `AllocateTensors`, `Invoke`; (b) o `arena_used_bytes()` e o mínimo que ainda aloca; (c) os 40 canais de 197 quadros, injetados em pedaços de 160, com o frontend zerado; (d) o int8 pela fórmula inteira (`(raw*1275-425984)/3328`, com saturação); (e) o modelo sobre os 197 quadros em passos de 3, **duas vezes com o estado zerado no meio**; (f) o tempo do frontend por quadro e do `Invoke` | compila | — |
+| C5 | **com o ok do dono:** gravar o teste e ler o serial; `conferir_paridade.py` compara no Mac (a saída fica fora do repo) | `carregou=sim invoke=ok`; a arena impressa; `frontend: 197x40, 0 diferentes`; `int8: 0 de 7880`; `estado zerado: iguais` | diferença de ±1 em poucos canais → a versão do frontend; maior → config, pedaços ou estado |
+| C6 | **com o ok:** gravar o firmware de uso de volta | PRONTO, e uma fala certa do dono | — |
+| C7 | a mensagem ao Colab (sim/não e o erro, a arena, o CSV, os tempos e a sequência de saídas `q`, para ele comparar com o Python), o diário, a barra, commit, push | CI `success` | — |
+
+**Se o (a) falhar:** para em C5, grava o uso de volta (C6), e a mensagem leva o erro literal. **A voz do
+estúdio fica desligada** entre C5 e C6.
+
+### H2m2 — a escuta contínua (o modelo de brinquedo basta)
+
+- O `loop()` deixa de só esperar o botão: lê o I2S por blocos de 512, pelo mesmo `converter()` (o passa-alta
+  contínuo, como no treino), guarda num anel da PSRAM, alimenta o frontend (160 amostras) e o modelo (a cada
+  3 quadros). A decisão é a média de 5 > limiar, com 2 s de espera. Um módulo à parte (`src/escuta.h`,
+  `.cpp`), com o `modelo.h` por `__has_include`: sem ele, o firmware é o de hoje.
+- O botão não perde nada: um aperto interrompe a escuta e grava como hoje. A coleta pela USB (`emColeta`)
+  desliga a escuta.
+- O limiar fica no NVS, com o valor inicial do `hey_viking.json`; muda pela serial (`VKC1 LIMIAR 0.90`).
+- **Medir, com a Wi-Fi e o TLS ligados:** os µs por passo de 30 ms (o limite anotado na H2 é 10 ms), a
+  arena, o heap livre, se a escuta perde blocos, e quantas vezes o modelo acorda numa gravação das coletas.
+
+### H2m3 — a palavra abre a conversa
+
+- A placa acorda → `POST /acordou` na ponte (`casa/servidor.py`, o token primeiro, como as outras rotas) →
+  a ponte confere o **interruptor do HA** (`Ponte._com_a_vez`) → toca um **som curto** pelo `Tocador`
+  (`casa/som.py`, um PCM gerado em código) → responde `ouvindo`, ou `desligado` (2 piscadas longas, nada
+  gravado). Sem chamada à nuvem. Depois, o mesmo `/falar`.
+- O fim da fala sem botão: o silêncio depois da fala, ninguém falou, ou o teto. Os três tempos saem das
+  gravações das coletas (não inventados), e o dono ajusta ouvindo. A música é o caso difícil: o silêncio
+  pode não chegar, e quem segura é o teto.
+- A resposta não acorda o aparelho: a placa já fica em "pensando" até o `/estado` sair dele (o turno
+  termina depois do `aplay`), e não escuta nesse tempo, mais 2 s.
+- O botão e os dois toques continuam: **a palavra nunca aprova** (D26, D70).
+- **As horas ouvindo e as ativações** (hora, probabilidade, desfecho) num log do laptop
+  (`~/.config/viking-casa/`, 600), sem áudio nem transcrição: é o denominador, e entra antes do v1.
+- Medir o tempo da palavra ao som (uma conexão TLS nova por pedido).
+
+### H2v1 — o v1 de verdade, e um dia de uso
+
+- O `.tflite` do Colab (o alvo interno dele é 0,5 falsa por hora) pelo mesmo `gerar_modelo.py`; a H2m1 se
+  repete nele (carrega, paridade); um dia de uso com o limiar de partida.
+- A taxa é ativações falsas ÷ horas ouvindo, **nunca** com as horas da noite vazia. O acerto sai do teste do
+  Colab na coleta 3, que ele não treinou.
+- O "no máximo 1 ativação falsa por dia" da H2 é a **meta de afinação**, não um portão do v1.
+
+### H2r — o registro das quase-ativações
+
+A seção "Depois do modelo na placa", mais abaixo (D72), com o teto por dia, o interruptor, o contador que
+para sem zerar e o comando que apaga tudo.
+
 ## Sessões H2c1–H2c4 — a coleta grande da wake word (planejadas em 2026-11-22; D71)
 
-**O total:** ~4 h do estúdio normal, 150 "Hey Viking" (38 + 38 + 37 + 37) e ~60 frases
-parecidas. São 4 sessões, **cada uma num dia e numa condição diferentes**, e cada uma em pastas
+**O total planejado em 2026-11-22:** ~4 h do estúdio normal, 150 "Hey Viking" (38 + 38 + 37 + 37) e ~60
+frases parecidas; **o de hoje:** 2 h e 20 min, 105 "Hey Viking" e 57 parecidas. Eram 4 sessões, **cada uma num dia e numa condição diferentes**, e cada uma em pastas
 próprias:
 - `real_positive/AAAA-MM-DD_cN_takes`;
 - `real_negative/AAAA-MM-DD_cN_parecidas`;
 - `real_negative/AAAA-MM-DD_cN_estudio`.
 
-A H2c4 inteira fica guardada para o teste. **O teste do treino é por sessão inteira** (o Colab,
+**Revisto em 2026-11-23 (D73):** a H2c4 foi cancelada, e a **H2c3 inteira é o teste**, fora do treino.
+**O teste do treino é por sessão inteira** (o Colab,
 2026-11-23, notebook v2.2): uma pasta por sessão e nunca dois dias na mesma, e o `coleta.py` recusa a
 pasta de outro dia (o dia vira às 6 h). Um take duvidoso (o 007 da coleta 1) fica só no treino.
 
@@ -1470,8 +1565,7 @@ pasta de outro dia (o dia vira às 6 h). Um take duvidoso (o 007 da coleta 1) fi
   - o zip com o LEIA-ME e os SHA256SUMS, que o dono sobe para o Drive com a mensagem ao Colab.
 - **A voz do estúdio fica desligada só enquanto a coleta roda** (o firmware único volta ao uso
   sozinho no fim).
-- **A prova do "≤ 1 falsa por dia" não sai daqui.** Ela vem de uma semana de uso com a placa
-  ouvindo, na sessão que põe o modelo na placa (D71).
+- **A prova do "≤ 1 falsa por dia" não sai daqui.** Ela vem do uso com a placa ouvindo (D71, D73).
 
 ### H2c1 — o firmware único, as ferramentas e a coleta 1 (o estúdio quieto, de dia) — ✅ fechada em 2026-11-23
 
@@ -1546,44 +1640,34 @@ e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4
 - **Se tossir, espirrar, rir ou bater em algo num take, não se refaz:** o dono me diz o número, e
   eu anoto (`coleta.py anotar`; o Colab pediu, 2026-11-23).
 
-### Replanejamento (o Colab, 2026-11-23 à noite, notebook v2.6; ele diz que o dono decidiu — a confirmar com o dono)
+### H2c3 — a coleta curta, só teste, e a noite (marcada pelo dono para 2026-11-24, de noite; D73)
 
-- **Fase 1, antes de tudo: o modelo na placa.** O `viking_v1` de brinquedo (61 KB, no Drive) responde três
-  perguntas: (1.1) as 4 operações de variável e os 2 subgrafos carregam e invocam (precisa de
-  `MicroResourceVariables`); (1.2) o `arena_used_bytes()` (o teto dele: ~10,9 KB); (1.3) o CSV do frontend
-  (197×40, igualdade exata com o `parity_v2`) e o int8. Se (1.1) for não, ele muda a arquitetura.
-  **Lido por nós (2026-11-23):** o arduino-esp32 4.0.0 (IDF 6.1.1) não traz o TFLM; a fonte
-  `espressif/esp-tflite-micro` (1.4.3, commit `3d0b461`) tem as 4 operações e o
-  `micro_resource_variable.cc`, mas não o micro_frontend; o do treino é a fonte do `pymicro-features`
-  v2.0.2 (`96bd69c`). Nada foi compilado nem executado ainda. O README da Espressif (1.4.0) lista o IDF
-  até o 6.0: no 6.1.1 está por provar.
-- **Fase 2:** a H2c4 cancelada; a H2c3 sem os 8 takes com podcast (29 takes, 20 parecidas, 1 h com
-  podcast), e o dono responde ao FALE em até ~1 s; uma noite inteira gravando sozinha (6 a 10 h).
-- **Fase 3:** o v1 com o alvo de 0,5 falsa por hora (8 por dia de 16 h) e o limiar ajustável na placa.
-- **Fase 4:** o registro das quase-ativações, depois da 1.
-- **Nossas ressalvas, ditas ao dono:** sem a H2c4 não sobra sessão de teste, a não ser que a H2c3 fique
-  de fora do treino; a noite vazia é negativo fácil, e as horas dela não podem entrar na mesma taxa das
-  horas de uso; nessa noite a voz do estúdio fica desligada.
+**Antes (a ferramenta):** o `montar_pacote` guarda tudo na memória (`conteudo`), e a noite tem ~1,2 GB: passa
+a escrever o zip em pedaços, com o sha calculado no caminho, e a conferir relendo em pedaços. Teste e
+mutação. O roteiro `estudio_c3.sh` já está em **20 min**; falta um `noite_c3.sh`.
 
-### H2c3 — a coleta 3: de noite, com conversa (marcada pelo dono para 2026-11-24)
+**O roteiro** (os scripts em `~/viking-wakeword/_roteiros/*_c3.sh`; o "vai" por parte; responder ao FALE em
+até ~1 s, porque a demora é metade do problema de recorte do Colab):
+- **29 takes** de noite: 8 a ~50 cm cansado ou rouco, 8 a ~1 m de lado para a placa, 8 a ~1,5 m normal, 5 de
+  outro canto do estúdio. Sem podcast de fundo (o Colab o sintetiza);
+- **20 parecidas**, sem fundo: as 10 da H2c2 a 1 m e a 2 m;
+- **20 min** de estúdio com podcast ou vídeo nas caixas e o dono falando. Outra pessoa **só com o ok dela**,
+  porque o áudio vai ao Drive e ao Colab;
+- **a noite**, quando o dono for dormir: 6 a 10 h, estúdio vazio, na pasta própria
+  (`AAAA-MM-DD_noite_sala`, a data em que começar), a tampa aberta, a tomada, a janela do Terminal; a voz do
+  Viking desligada, e de volta sozinha de manhã. ~1,2 GB (14 GB livres em 2026-11-23). As horas de sala
+  vazia são negativo fácil: nunca entram na taxa de falsas em uso.
 
+Dois zips: `…_c3` e `…_noite`. **A combinação:** o Colab separa treino e teste pela data da pasta, e a noite
+(para o treino) tem a data da coleta 3 (teste): a mensagem a ele pede a separação pelo nome nessa data.
 
-- **37 takes** de noite (proposta minha, com o pedido do Colab de 2026-11-23, a confirmar no roteiro):
-  - 8 a ~50 cm, cansado ou rouco;
-  - 8 a ~1 m, de lado para a placa;
-  - 8 a ~1,5 m, normal;
-  - 5 de outro canto do estúdio;
-  - **8 a ~1 m com um podcast ou vídeo falando** nas caixas (`takes --fundo "podcast"`, que desliga a
-    régua do barulho). É o caso mais difícil do uso, e o que mais pede **alguém ouvindo depois** e
-    anotando onde está a frase: a fala de fundo também é voz.
-- **20 parecidas**, sem fundo: as 10 da H2c2 em duas distâncias.
-- **1 h de estúdio com fala que não é a palavra:** podcast, vídeo ou série nas caixas e o dono falando
-  sozinho. São os negativos que mais valem: a maior parte das ativações falsas vem de fala. Uma ligação
-  ou outra pessoa **só com o ok dela**, porque o áudio vai ao Drive e ao Colab.
-- **Se o dono der o ok do gasto** (centavos): 10 min da voz do próprio Viking (o TTS) pelas caixas,
-  gravados pelo mic, para o aparelho não acordar com a própria voz.
+**Se o dono der o ok do gasto** (centavos): 10 min da voz do próprio Viking (o TTS) pelas caixas, para o
+aparelho não acordar com ela (perguntado, sem resposta em 2026-11-23).
 
-### H2c4 — a coleta 4: um dia comum, guardada para o teste
+### H2c4 — a coleta 4: um dia comum, guardada para o teste — ❌ cancelada em 2026-11-23 (D73)
+
+**Por quê:** o Colab a cancelou no replanejamento (a medida de falsas vem do uso), e o teste passou para a
+H2c3. O texto fica, para o caso de ela voltar.
 
 - Outro dia e outro horário, **tudo misturado** como num dia de uso:
   - **37 takes** em todas as condições de antes, sem ordem: a dica sorteada pelo `coleta.py`;

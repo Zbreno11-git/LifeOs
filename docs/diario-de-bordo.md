@@ -1046,6 +1046,23 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-23 — O replanejamento da H2: o modelo na placa primeiro (D73)
+
+**Por quê.** O agente do Colab (notebook v2.6) propôs inverter a ordem: nenhum artefato do treino tinha
+rodado na placa. O dono concordou e quer um produto para testar logo, com ~8 falsas por dia no v1.
+
+**Feito.** O modelo de brinquedo (`viking_v1`, 62.304 bytes) veio do Drive, com o conector (só leitura), e o
+dono o pôs na raiz do repo: está no `.gitignore` até o repo voltar a ser privado. As sessões novas: H2m1
+(a próxima), H2c3 curta com a noite, H2m2, H2m3, H2v1 e H2r; a H2c4 cancelada. O roteiro passou a 48.
+
+**Medido, só lendo o arquivo:** as 13 operações e os 2 subgrafos que o Colab descreveu, e 6 variáveis de
+estado. O toolchain não traz o TFLM.
+
+**Não medido:** se o TFLM compila e carrega no IDF 6.1.1 (é a H2m1).
+
+**Recusado pelo modo automático:** compilar o teste de paridade no Mac. Não foi contornado; a paridade que
+vale é a da placa.
+
 ### 2026-11-23 — Sessão H2c2: a coleta 2 da wake word (com música)
 
 **Feito (no mesmo dia da H2c1, por decisão do dono; as duas no treino).** 38 takes (50 cm a 2 m; normal,
