@@ -16,9 +16,9 @@ está vazio (a coleta não usa). O `gh` está em `/usr/local/bin`, fora do PATH 
 | C | Faz | Fecha quando | Estado |
 |---|---|---|---|
 | C0 | este plano | commit | ✅ |
-| C1 | o firmware único: no uso, o laço parado escuta `VKC1 COLETA`; na coleta, `VKC1 USO` ou 30 s sem sinal do Mac reiniciam no uso | `pio run` sem aviso; o env `xiao_s3_coleta` some | ⬜ |
-| C2 | `coleta.py`: pede e solta o modo (também no Ctrl-C e no SIGTERM), `takes --dica` e `--frases`, a gravação em partes de 10 min direto no disco, `pacote` | a suíte verde e as mutações novas mortas | ⬜ |
-| C3 | gravar a placa (ok dado) e conferir | PRONTO; `medir --minutos 1` com 0 lacunas e `ganho=2`; PRONTO de novo sozinha; 1 fala do dono | ⬜ |
+| C1 | o firmware único: no uso, o laço parado escuta `VKC1 COLETA`; na coleta, `VKC1 USO` ou 30 s sem sinal do Mac reiniciam no uso | `pio run` sem aviso; o env `xiao_s3_coleta` some | ✅ compila sem aviso |
+| C2 | `coleta.py`: pede e solta o modo (também no Ctrl-C e no SIGTERM), `takes --dica` e `--frases`, a gravação em partes de 10 min direto no disco, `pacote` | a suíte verde e as mutações novas mortas | ✅ `2930 passed`, 27 de 27 mutações mortas |
+| C3 | gravar a placa (ok dado) e conferir | PRONTO; `medir --minutos 1` com 0 lacunas e `ganho=2`; PRONTO de novo sozinha; 1 fala do dono | ✅ menos a fala do dono: 1874 quadros, 0 lacunas, `ganho=2`, e a volta sozinha (pedido e 30 s sem sinal) |
 | C4 | a coleta, com o "vai" por parte: 38 takes (10 a 50 cm, 10 a 1 m, 10 a 1,5 m, 8 a 2 m), 15 parecidas, 1 h de estúdio | `lacunas: []`, 0 checksums errados e ganho 2 em todo arquivo | ⬜ |
 | C5 | a revisão em duas passadas, os docs, commit, push, o zip e a mensagem ao Colab | CI `success`; o zip relido | ⬜ |
 
@@ -624,9 +624,9 @@ laptop de casa:
 |---|---|---|---|
 | P0 | a política do backup (pendência da 14b), depois de 2026-11-22 22:20Z | — | ⬜ |
 | C0 | H1 reescrita, H1b/H2/H3 escritas em `sessoes.md`; D70 em rascunho; o lock (google-auth) num commit próprio | — | ⬜ |
-| C1 | o motor: `/voz/*`, o canal "voz", o teto de áudio, com testes | C0 | ⬜ |
-| C2 | o `nuvem.py`: o passo `casa`, o upload do certificado, cortar e religar, as provas | C0 | ⬜ |
-| C3 | a ponte `lifeos/casa/` com testes offline | C1 | ⬜ |
+| C1 | o motor: `/voz/*`, o canal "voz", o teto de áudio, com testes | C0 | ✅ compila sem aviso |
+| C2 | o `nuvem.py`: o passo `casa`, o upload do certificado, cortar e religar, as provas | C0 | ✅ `2930 passed`, 27 de 27 mutações mortas |
+| C3 | a ponte `lifeos/casa/` com testes offline | C1 | ✅ menos a fala do dono: 1874 quadros, 0 lacunas, `ganho=2`, e a volta sozinha (pedido e 30 s sem sinal) |
 | C4 | o firmware `viking-voz`, camada por camada, visto no serial | C3 (o contrato da ponte) | ⬜ |
 | C5 | a nuvem no ar com o ok: a conta, o certificado e o deploy | C1, C2 | ⬜ |
 | C6 | as medições que gastam (com o ok): a transcrição e as vozes, ouvidas pelo dono | C5 | ⬜ |
@@ -1834,9 +1834,9 @@ só `guarda receita` digitado guarda; o código do envio a outra pessoa a cada r
 | C | Fecha quando | Depende de | Estado |
 |---|---|---|---|
 | C0 | lock em commit próprio (suíte depois, CI); plano no `PROGRESSO.md`; `sessoes.md` 13b com as respostas; D67 rascunho | — | ⬜ |
-| C1 | **ok do dono (< US$ 0,02)** → extrator com `receita` em ~14 mensagens inventadas; o chat com `_RECEITAS` em ~8 (diz "guardei"?); um turno `roda` com receita inventada (AFC desligado: só a 1ª chamada) | C0 | ⬜ |
-| C2 | `regras.recusa_receita`; `memoria/receitas.py` (store); backup v3 (`formato`) | C1 | ⬜ |
-| C3 | extrator com `receita`; `na_nuvem` (proposta, `guarda receita`, `roda`, nomes no prompt, `_RECEITAS`); `chat_cliente` | C2 | ⬜ |
+| C1 | **ok do dono (< US$ 0,02)** → extrator com `receita` em ~14 mensagens inventadas; o chat com `_RECEITAS` em ~8 (diz "guardei"?); um turno `roda` com receita inventada (AFC desligado: só a 1ª chamada) | C0 | ✅ compila sem aviso |
+| C2 | `regras.recusa_receita`; `memoria/receitas.py` (store); backup v3 (`formato`) | C1 | ✅ `2930 passed`, 27 de 27 mutações mortas |
+| C3 | extrator com `receita`; `na_nuvem` (proposta, `guarda receita`, `roda`, nomes no prompt, `_RECEITAS`); `chat_cliente` | C2 | ✅ menos a fala do dono: 1874 quadros, 0 lacunas, `ganho=2`, e a volta sozinha (pedido e 30 s sem sinal) |
 | C4 | rotas, `servico`, `terminal` (`--receitas`, esquecer/desfazer nas duas), `resumo`, backup v3 em `rodada`/`conferir`/`restaurar`/importar | C2 | ⬜ |
 | C5 | portões, mutações, duas passadas, docs, `nuvem.py` (TTL, provas); **ok** → TTL; **ok** → deploy; roteiro do Mac; fechamento 24 de 33 | C3, C4 | ⬜ |
 
@@ -3800,9 +3800,9 @@ hora**.
 |---|---|---|---|
 | C0 | o lock num commit próprio, com o CI pelo SHA; o plano no `PROGRESSO.md`; `sessoes.md` (a 11c com as respostas, a **11d nova**, o ▶️); D63 e a D51 com a medição; `docs/fontes/pluggy-open-finance.md` (a medição) | — | ⬜ |
 | C0b | a medição de 24 h do agendador, com data, comando e número (a partir de 2026-10-07 ~17:00Z) | o relógio | ⬜ |
-| C1 | `backup/formato.py`; os `importar` das ações (Firestore e SQLite) e o `todos` das coleções; os testes de ida e volta | C0 | ⬜ |
-| C2 | o token do Drive (`config`, `google_auth`, `viking backup --login`); `backup/drive.py`; a rodada `backup/rodada.py`; a rota `/tarefas/backup`; `estado/backup`; `/versao` | C1 | ⬜ |
-| C3 | `viking backup --conferir` e `--restaurar` (com a rota `/backup/importar`); o aviso na abertura do chat | C2 | ⬜ |
+| C1 | `backup/formato.py`; os `importar` das ações (Firestore e SQLite) e o `todos` das coleções; os testes de ida e volta | C0 | ✅ compila sem aviso |
+| C2 | o token do Drive (`config`, `google_auth`, `viking backup --login`); `backup/drive.py`; a rodada `backup/rodada.py`; a rota `/tarefas/backup`; `estado/backup`; `/versao` | C1 | ✅ `2930 passed`, 27 de 27 mutações mortas |
+| C3 | `viking backup --conferir` e `--restaurar` (com a rota `/backup/importar`); o aviso na abertura do chat | C2 | ✅ menos a fala do dono: 1874 quadros, 0 lacunas, `ganho=2`, e a volta sozinha (pedido e 30 s sem sinal) |
 | C4 | `scripts/nuvem.py`: o segredo `viking-drive`, o passo `backup`, as provas; os textos do Gmail | C2 | ⬜ |
 | C5 | portões, mutações, duas passadas, docs, commit, push, CI; **ok** → deploy; roteiro do Mac (o login, o segredo); **ok** → `--executar backup`; o `--conferir` no Mac; fechamento | C3, C4 | ⬜ |
 

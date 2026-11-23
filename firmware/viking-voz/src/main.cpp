@@ -32,11 +32,6 @@
 #ifndef TEM_SEGREDOS
 #define TEM_SEGREDOS 0
 #endif
-// O modo de coleta da wake word (H2): o env `xiao_s3_coleta` do `platformio.ini` liga. O áudio vai
-// sem parar pela USB ao `coleta.py` do Mac, pelo mesmo `converter` do uso; nada vai à ponte.
-#ifndef MODO_COLETA
-#define MODO_COLETA 0
-#endif
 
 constexpr int PIN_BCLK = 7;      // D8
 constexpr int PIN_WS = 8;        // D9
@@ -392,7 +387,39 @@ void mostrar(const String &estado) {
 
 // --- a coleta da wake word (H2) ----------------------------------------------------------------------
 
-#if MODO_COLETA
+// Um firmware só (D71): a placa liga sempre no uso. Com o laço parado, a linha PEDIDO_COLETA vinda
+// pela USB (o `coleta.py` do Mac) põe a placa na coleta: o áudio vai sem parar pela USB, pelo mesmo
+// `converter` do uso, e nada vai à ponte. Na coleta, a mesma linha repetida é o sinal de que o Mac
+// segue lá; PEDIDO_USO, ou SINAL_MS sem sinal (o Mac travou ou dormiu), reinicia a placa, e ela volta
+// no uso: a voz do estúdio nunca fica desligada à espera de alguém. Só quem tem o cabo USB pede.
+constexpr char PEDIDO_COLETA[] = "VKC1 COLETA";
+constexpr char PEDIDO_USO[] = "VKC1 USO";
+constexpr uint32_t SINAL_MS = 30000;
+constexpr int BLOCOS_VELHOS = 16;  // o áudio velho que o DMA guardou com o laço parado (~0,5 s)
+bool emColeta = false;
+uint32_t ultimoSinal = 0;
+
+enum class Pedido : uint8_t { Nenhum, Coleta, Uso };
+Pedido lerPedido() {
+  static char linha[24];
+  static size_t n = 0;
+  Pedido visto = Pedido::Nenhum;
+  while (Serial.available() > 0) {
+    char c = (char)Serial.read();
+    if (c == '\n') {
+      linha[n < sizeof(linha) ? n : sizeof(linha) - 1] = 0;
+      bool coube = n < sizeof(linha);  // uma linha comprida demais nunca é pedido
+      n = 0;
+      if (coube && strcmp(linha, PEDIDO_USO) == 0) return Pedido::Uso;
+      if (coube && strcmp(linha, PEDIDO_COLETA) == 0) visto = Pedido::Coleta;
+    } else if (c != '\r') {
+      if (n < sizeof(linha) - 1) linha[n] = c;
+      if (n < sizeof(linha)) n++;
+    }
+  }
+  return visto;
+}
+
 // Um quadro por bloco do I2S (32 ms), little-endian: "VKC1" | seq u32 | t_us u32 (micros() logo
 // depois da leitura) | n u16 | flags u16 (bit 0 = botão apertado) | n × int16 | FNV-1a 32 de tudo
 // entre o mágico e ele. O `coleta.py` do Mac confere o seq (buraco = quadro perdido), o checksum e o
@@ -451,15 +478,39 @@ void coletar() {
     maiorVoltaUs = 0;
   }
 }
-#endif
+
+void entrarNaColeta() {
+  emColeta = true;
+  ultimoSinal = millis();
+  led = Led::Ocioso;
+  Serial.printf("\ncoleta: ganho=%d taxa=%lu bloco=%d quadro=%d\n", GANHO, (unsigned long)TAXA, BLOCO,
+                QUADRO_BYTES);
+  for (int i = 0; i < BLOCOS_VELHOS; i++) {
+    i2s.readBytes((char *)bloco, sizeof(bloco));
+    esp_task_wdt_reset();
+  }
+}
+
+void voltarAoUso(const char *motivo) {
+  Serial.printf("\ncoleta: volta ao uso (%s)\n", motivo);
+  Serial.flush();
+  delay(200);
+  ESP.restart();  // pelo boot: o uso começa do mesmo estado de sempre
+}
+
+void lacoDaColeta() {
+  Pedido pedido = lerPedido();
+  if (pedido == Pedido::Uso) voltarAoUso("pedido do Mac");
+  if (pedido == Pedido::Coleta) ultimoSinal = millis();
+  if (millis() - ultimoSinal > SINAL_MS) voltarAoUso("sem sinal do Mac");
+  coletar();
+}
 
 // --- o laço ----------------------------------------------------------------------------------------
 
 void setup() {
-#if MODO_COLETA
-  Serial.setTxBufferSize(16384);  // ~15 quadros de folga para a USB
+  Serial.setTxBufferSize(16384);  // a coleta: ~15 quadros de folga para a USB
   Serial.setTxTimeoutMs(5);
-#endif
   Serial.begin(115200);
   delay(500);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -498,17 +549,6 @@ void setup() {
   xTaskCreatePinnedToCore(tarefaDoLed, "led", 2048, nullptr, 1, nullptr, 0);
   Serial.printf("botao: D1 (GPIO%d), %s\n", PIN_BOTAO, apertado() ? "APERTADO no boot?" : "solto");
 
-#if MODO_COLETA
-#if TEM_SEGREDOS
-  WiFi.mode(WIFI_STA);  // a Wi-Fi ligada e ociosa, como no uso: o mic grava o aparelho real
-  WiFi.setAutoReconnect(true);
-  garantirWifi();
-#endif
-  Serial.printf("coleta: ganho=%d taxa=%lu bloco=%d quadro=%d\n", GANHO, (unsigned long)TAXA, BLOCO,
-                QUADRO_BYTES);
-  Serial.println(">>> COLETA: o audio vai sem parar pela USB (o coleta.py do Mac) <<<");
-  return;
-#endif
 #if TEM_SEGREDOS
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
@@ -526,10 +566,14 @@ void setup() {
 }
 
 void loop() {
-#if MODO_COLETA
-  coletar();
-  return;
-#endif
+  if (emColeta) {
+    lacoDaColeta();
+    return;
+  }
+  if (lerPedido() == Pedido::Coleta) {
+    entrarNaColeta();
+    return;
+  }
   esp_task_wdt_reset();
   if (!esperarBotao(true, 1000)) return;  // nada apertado
   uint32_t apertouEm = millis();

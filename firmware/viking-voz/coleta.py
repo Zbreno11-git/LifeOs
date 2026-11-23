@@ -1,15 +1,18 @@
 """A coleta da wake word (H2): o áudio do aparelho, pela USB, vira WAVs no Mac, fora do repo.
 
-Com o firmware de coleta gravado (`pio run -e xiao_s3_coleta -t upload`), a XIAO manda sem parar um
-quadro por bloco de 32 ms (ver `coletar()` em `src/main.cpp`). Este programa confere cada quadro (o
-checksum, o seq e o tempo) e grava em `~/viking-wakeword/` (nunca dentro do repo, que é público),
-numa pasta por sessão, como o agente do Colab pediu:
+O firmware é um só (D71): a placa liga no uso, este programa pede a coleta ao abrir a porta
+(`VKC1 COLETA`, repetido como sinal de vida) e o uso ao fechar (`VKC1 USO`). Na coleta, a XIAO manda
+sem parar um quadro por bloco de 32 ms (ver `coletar()` em `src/main.cpp`). Este programa confere
+cada quadro (o checksum, o seq e o tempo) e grava em `~/viking-wakeword/` (nunca dentro do repo, que
+é público), numa pasta por sessão, como o agente do Colab pediu:
 
-    ~/esp32-mac/.venv/bin/python coleta.py medir --minutos 2
-    ~/esp32-mac/.venv/bin/python coleta.py sala  --sessao 2026-11-22_estudio_tarde --minutos 1
-    ~/esp32-mac/.venv/bin/python coleta.py takes --sessao 2026-11-22_piloto --n 10
-    ~/esp32-mac/.venv/bin/python coleta.py takes --sessao 2026-11-23_casos --n 20 \\
-        --frase "Hey King" --negativo
+    ~/esp32-mac/.venv/bin/python coleta.py medir --minutos 1
+    ~/esp32-mac/.venv/bin/python coleta.py takes --sessao 2026-11-23_c1_takes --n 10 \\
+        --dica "50 cm, voz normal"
+    ~/esp32-mac/.venv/bin/python coleta.py takes --sessao 2026-11-23_c1_parecidas --negativo \\
+        --frases "Hey King;Hey vizinho"
+    ~/esp32-mac/.venv/bin/python coleta.py sala  --sessao 2026-11-23_c1_estudio --minutos 60
+    ~/esp32-mac/.venv/bin/python coleta.py pacote --prefixo 2026-11-23_c1
 
 Cada WAV (PCM 16 bits, mono, 16 kHz) tem um `.seq.json` ao lado, com `lacunas` (vazio = nenhum
 quadro perdido). Um arquivo com lacuna não serve para teste. Só precisa do `pyserial` (a venv do
@@ -20,14 +23,17 @@ Um cliente por vez na porta: não rode junto com gravar nem com o `serial_log.py
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
+import signal
 import struct
 import subprocess
 import sys
 import time
 import wave
+import zipfile
 from array import array
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -57,7 +63,16 @@ DEPOIS_S = 3.0
 # do tremor medido e abaixo de um pedaço de fala (a medir no C3 da H2: o `medir` imprime os dois).
 TOLERANCIA_S = 0.12
 JANELA = 30  # blocos (~1 s)
-PARTE_S = 3600  # a sala vira um arquivo por hora
+# A sala vai para o disco a cada segundo, numa parte nova a cada 10 min: uma queda perde no máximo a
+# parte em curso (antes, a hora inteira ficava na memória até o fim).
+PARTE_S = 600
+# Os pedidos à placa (`lerPedido()` em `src/main.cpp`). Na coleta, o de coleta se repete a cada
+# SINAL_S: sem ele por 30 s a placa volta ao uso sozinha (o Mac travou ou dormiu).
+PEDIDO_COLETA = b"VKC1 COLETA\n"
+PEDIDO_USO = b"VKC1 USO\n"
+SINAL_S = 2.0
+ENTRAR_S = 45.0  # o boot (a Wi-Fi até 15 s, o NTP até 10 s) e a entrada na coleta
+VOLTAR_S = 45.0  # o reinício até o PRONTO do uso
 SESSAO = re.compile(r"^\d{4}-\d{2}-\d{2}_[a-z0-9_]+$")
 
 
@@ -104,8 +119,12 @@ class Leitor:
         while True:
             i = self.resto.find(MAGICO)
             if i < 0:
-                # guarda o fim, que pode ser o começo de um mágico
-                corte = max(0, len(self.resto) - (len(MAGICO) - 1))
+                # guarda o fim só se ele for o começo de um mágico: guardar sempre 3 bytes segurava
+                # o fim da última linha (o PRONTO, depois do qual a placa não manda mais nada)
+                guardar = next(
+                    (k for k in range(len(MAGICO) - 1, 0, -1) if self.resto.endswith(MAGICO[:k])), 0
+                )
+                corte = len(self.resto) - guardar
                 self._texto(bytes(self.resto[:corte]))
                 del self.resto[:corte]
                 return quadros
@@ -239,6 +258,18 @@ def niveis(amostras: array) -> dict:
     }
 
 
+def juntar_niveis(antes: dict | None, novo: dict) -> dict:
+    """Os níveis de um arquivo gravado aos pedaços, sem reler o arquivo."""
+    if antes is None:
+        return novo
+    return {
+        "pico": max(antes["pico"], novo["pico"]),
+        "rms_100ms_max": max(antes["rms_100ms_max"], novo["rms_100ms_max"]),
+        "rms_100ms_min": min(antes["rms_100ms_min"], novo["rms_100ms_min"]),
+        "saturadas": antes["saturadas"] + novo["saturadas"],
+    }
+
+
 # A faixa que o modelo ouve: o micro_frontend do treino vê de 125 a 7500 Hz. No piloto
 # (2026-11-22), 62% da energia da sala estava abaixo de 125 Hz (o ronco, medido pelo agente do
 # Colab), e um nível medido sem esse corte engana. O barulho antes da fala se mede na faixa.
@@ -319,28 +350,44 @@ def _commit() -> str:
 # --- a placa ------------------------------------------------------------------------------------
 
 
+def abrir_porta(url: str):
+    import serial  # type: ignore[import-not-found]
+
+    porta = serial.serial_for_url(url, baudrate=115200, timeout=0.05, do_not_open=True)
+    porta.dtr = False
+    porta.rts = False
+    porta.open()
+    return porta
+
+
 class Placa:
-    """A porta da XIAO (pelo servidor RFC2217 do Mac). Abrir reinicia a placa: o boot vem como
-    texto, e o `coleta: ganho=N` dele (repetido na linha de status) diz o ganho que está gravado."""
+    """A XIAO na porta (pelo servidor RFC2217 do Mac). Abrir a porta reinicia a placa no uso;
+    `entrar` pede a coleta e só volta com o ganho dito e um quadro recebido; `fechar` pede o uso e
+    espera o PRONTO. Se este programa morrer sem fechar, a placa volta ao uso sozinha (30 s)."""
 
-    def __init__(self, url: str):
-        import serial  # type: ignore[import-not-found]
-
-        self.porta = serial.serial_for_url(url, baudrate=115200, timeout=0.05, do_not_open=True)
-        self.porta.dtr = False
-        self.porta.rts = False
-        self.porta.open()
+    def __init__(self, porta):
+        self.porta = porta
         self.leitor = Leitor()
         self.ganho: int | None = None
+        self.pronta = False  # o PRONTO do uso
+        self.na_coleta = False
+        self.ultimo_sinal = 0.0
         # o que o próprio firmware conta (a linha `coleta: status`): o maior tempo de volta do laço
         # abaixo de 32 ms prova que o DMA do I2S nunca transbordou
         self.firmware: dict[str, int] = {}
 
+    def _pedir(self, pedido: bytes) -> None:
+        self.porta.write(pedido)
+        self.porta.flush()
+        self.ultimo_sinal = time.monotonic()
+
     def ler(self) -> list[Quadro]:
+        if self.na_coleta and time.monotonic() - self.ultimo_sinal >= SINAL_S:
+            self._pedir(PEDIDO_COLETA)
         quadros = self.leitor.alimentar(self.porta.read(8192))
         for linha in self.leitor.texto:
-            # o boot diz o ganho, e a linha de status repete (a linha do boot se perde quando a porta
-            # abre depois dela: a sala do piloto saiu com "ganho": null)
+            # a entrada na coleta diz o ganho, e a linha de status repete (a sala do piloto saiu com
+            # "ganho": null porque a linha única se perdeu)
             casou = re.search(r"^coleta:.*\bganho=(\d+)", linha)
             if casou:
                 self.ganho = int(casou.group(1))
@@ -349,13 +396,59 @@ class Placa:
                     if nome == "maior_volta_us":
                         valor = max(int(valor), self.firmware.get(nome, 0))
                     self.firmware[nome] = int(valor)
-            if linha.startswith("coleta:") or "wifi" in linha or "ERRO" in linha:
+            if "PRONTO" in linha:
+                self.pronta = True
+            if not linha.startswith("coleta: status") and (
+                linha.startswith("coleta:") or "wifi" in linha or "ERRO" in linha
+            ):
                 print(f"  [placa] {linha}", flush=True)
         self.leitor.texto.clear()
         return quadros
 
-    def fechar(self) -> None:
-        self.porta.close()
+    def entrar(self, prazo_s: float = ENTRAR_S) -> None:
+        fim = time.monotonic() + prazo_s
+        while time.monotonic() < fim:
+            if time.monotonic() - self.ultimo_sinal >= 0.5:
+                self._pedir(PEDIDO_COLETA)
+            if self.ler() and self.ganho is not None:
+                self.na_coleta = True
+                # o que se perdeu ou veio torto antes daqui (o boot) não é do arquivo
+                self.leitor.checksums_errados = 0
+                return
+        raise SystemExit(
+            f"a placa não entrou na coleta em {prazo_s:.0f} s: o firmware é o único (D71)? Outro "
+            "programa está na porta? (`lsof -nP -iTCP:4000`)"
+        )
+
+    def fechar(self) -> bool:
+        """Pede o uso, espera o PRONTO e fecha a porta; True se a placa confirmou a volta."""
+        self.na_coleta, self.pronta = False, False
+        try:
+            fim = time.monotonic() + VOLTAR_S
+            self._pedir(PEDIDO_USO)
+            while not self.pronta and time.monotonic() < fim:
+                self.ler()
+        except OSError as e:  # o serial.SerialException é um OSError (a USB saiu)
+            print(f"  [placa] a porta caiu ao fechar: {e}", flush=True)
+        finally:
+            self.porta.close()
+        print(
+            "  [placa] de volta ao uso (PRONTO): a voz do estúdio está ligada"
+            if self.pronta
+            else "  [placa] ⚠️ não vi o PRONTO: confira a placa (sem sinal ela reinicia em 30 s)",
+            flush=True,
+        )
+        return self.pronta
+
+
+def abrir(url: str) -> Placa:
+    placa = Placa(abrir_porta(url))
+    try:
+        placa.entrar()
+    except BaseException:
+        placa.porta.close()
+        raise
+    return placa
 
 
 def _extra(placa: Placa) -> dict:
@@ -380,7 +473,7 @@ def _veredito(resumo: dict) -> str:
 
 
 def medir(args: argparse.Namespace) -> int:
-    placa = Placa(args.url)
+    placa = abrir(args.url)
     cont = Continuidade()
     fim = time.time() + args.minutos * 60
     try:
@@ -395,51 +488,128 @@ def medir(args: argparse.Namespace) -> int:
     return 0 if _veredito(resumo).startswith("✅") else 1
 
 
+class Parte:
+    """Um arquivo da sala, escrito no disco a cada segundo: o cabeçalho do WAV vale a qualquer
+    momento (o `writeframes` o corrige a cada pedaço), e o `.seq.json` nasce ao fechar."""
+
+    def __init__(self, pasta: Path, numero: int, seq_anterior: int | None):
+        pasta.mkdir(parents=True, exist_ok=True)
+        self.caminho = pasta / f"parte_{numero:03d}.wav"
+        while self.caminho.exists():  # nunca sobrescreve uma parte de outra rodada na mesma sessão
+            numero += 1
+            self.caminho = pasta / f"parte_{numero:03d}.wav"
+        self.numero = numero
+        self.seq_anterior = seq_anterior
+        self.cont, self.pendente, self.niveis = Continuidade(), array("h"), None
+        self.escritas = 0
+        self.saturou_em: list[int] = []  # os segundos do arquivo com amostra saturada
+        self._wav = wave.open(str(self.caminho), "wb")  # noqa: SIM115 - fecha em `fechar`
+        self._wav.setnchannels(1)
+        self._wav.setsampwidth(2)
+        self._wav.setframerate(TAXA)
+
+    def anotar(self, q: Quadro) -> None:
+        self.cont.anotar(q)
+        self.pendente.extend(q.amostras)
+        while len(self.pendente) >= TAXA:
+            self._escrever(self.pendente[:TAXA])
+            del self.pendente[:TAXA]
+
+    def _escrever(self, pedaco: array) -> None:
+        nv = niveis(pedaco)
+        if nv["saturadas"]:
+            self.saturou_em.append(self.escritas // TAXA)
+        if len(pedaco) >= TAXA // 10:  # menos que um quadro não tem RMS (viraria um mínimo 0)
+            self.niveis = juntar_niveis(self.niveis, nv)
+        elif self.niveis:
+            self.niveis["pico"] = max(self.niveis["pico"], nv["pico"])
+            self.niveis["saturadas"] += nv["saturadas"]
+        dados = array("h", pedaco)
+        if sys.byteorder == "big":
+            dados.byteswap()
+        self._wav.writeframes(dados.tobytes())
+        self.escritas += len(pedaco)
+
+    def fechar(self, extra: dict) -> dict:
+        if self.pendente:
+            self._escrever(self.pendente)
+            self.pendente = array("h")
+        self._wav.close()
+        seguida = None
+        if self.seq_anterior is not None and self.cont.primeiro_seq is not None:
+            seguida = self.cont.primeiro_seq == (self.seq_anterior + 1) & 0xFFFFFFFF
+        resumo = self.cont.resumo(
+            **extra,
+            **(self.niveis or niveis(array("h"))),
+            saturou_em_s=self.saturou_em,
+            segue_a_parte_anterior=seguida,
+        )
+        gravar_seq(self.caminho, resumo)
+        return resumo
+
+
 def sala(args: argparse.Namespace) -> int:
     pasta = destino_seguro(Path(args.raiz), args.sessao, "real_negative")
-    placa = Placa(args.url)
-    fim = time.time() + args.minutos * 60
-    parte, ruins = 0, 0
+    placa = abrir(args.url)
+    parte, ruins, seq_anterior, checksums = None, 0, None, 0
 
-    def fechar_parte(amostras: array, cont: Continuidade) -> None:
-        nonlocal parte, ruins
-        parte += 1
-        wav = pasta / f"parte_{parte:03d}.wav"
-        while wav.exists():  # nunca sobrescreve uma parte de outra rodada na mesma sessão
-            parte += 1
-            wav = pasta / f"parte_{parte:03d}.wav"
-        gravar_wav(wav, amostras)
-        resumo = cont.resumo(**_extra(placa), **niveis(amostras))
-        gravar_seq(wav, resumo)
+    def fechar_parte() -> None:
+        nonlocal parte, ruins, seq_anterior, checksums
+        extra = _extra(placa)
+        # os errados desta parte, não os da rodada inteira
+        extra["checksums_errados"], checksums = (
+            placa.leitor.checksums_errados - checksums,
+            placa.leitor.checksums_errados,
+        )
+        resumo = parte.fechar(extra)
         veredito = _veredito(resumo)
+        if resumo["segue_a_parte_anterior"] is False:
+            veredito += " (⚠️ perdeu quadros na emenda com a parte anterior)"
         ruins += not veredito.startswith("✅")
-        print(f"  {wav.name}: {len(amostras) / TAXA:.1f} s · {veredito}", flush=True)
+        print(
+            f"  {parte.caminho.name}: {parte.escritas / TAXA:.1f} s · saturadas "
+            f"{resumo['saturadas']} · {veredito}",
+            flush=True,
+        )
+        seq_anterior, parte = parte.cont.ultimo_seq, None
 
-    amostras, cont = array("h"), Continuidade()
     print(
-        f"gravando a sala em {pasta} por {args.minutos} min (Ctrl-C para parar antes)", flush=True
+        f"gravando a sala em {pasta} por {args.minutos:g} min (Ctrl-C para parar antes)", flush=True
     )
+    numero, fim = 1, time.time() + args.minutos * 60
     try:
         while time.time() < fim:
             for q in placa.ler():
-                cont.anotar(q)
-                amostras.extend(q.amostras)
-                if len(amostras) >= PARTE_S * TAXA:
-                    fechar_parte(amostras, cont)
-                    amostras, cont = array("h"), Continuidade()
+                if parte is None:
+                    parte = Parte(pasta, numero, seq_anterior)
+                    numero = parte.numero + 1
+                parte.anotar(q)
+                if parte.cont.blocos * BLOCO >= PARTE_S * TAXA:
+                    fechar_parte()
     except KeyboardInterrupt:
         print("\n(parado)")
     finally:
+        if parte is not None:
+            fechar_parte()
         placa.fechar()
-        if amostras:
-            fechar_parte(amostras, cont)
     return 1 if ruins else 0
+
+
+def frases_da_rodada(frase: str, frases: str | None, n: int) -> list[str]:
+    """Uma frase por take: a lista separada por `;`, ou a mesma frase `n` vezes."""
+    if frases is None:
+        return [frase] * n
+    lista = [f.strip() for f in frases.split(";") if f.strip()]
+    if not lista:
+        raise ValueError("--frases veio sem nenhuma frase")
+    return lista
 
 
 def takes(args: argparse.Namespace) -> int:
     tipo = "real_negative" if args.negativo else "real_positive"
     pasta = destino_seguro(Path(args.raiz), args.sessao, tipo)
-    placa = Placa(args.url)
+    frases = frases_da_rodada(args.frase, args.frases, args.n)
+    placa = abrir(args.url)
     amostras, cont = array("h"), Continuidade()
     ruins, feitos, barulhentos = 0, 0, []
 
@@ -452,17 +622,20 @@ def takes(args: argparse.Namespace) -> int:
 
     # uma rodada nova na mesma sessão continua a numeração (nunca apaga a anterior)
     base = len(list(pasta.glob("take_*.wav"))) if pasta.exists() else 0
-    print(f"takes de «{args.frase}» em {pasta}: olhe para a tela; fale quando aparecer FALE.")
-    esperar(3.0)  # o boot e a sala antes do primeiro
+    if args.dica:
+        print(f"\n   ===  {args.dica}  ===", flush=True)
+    print(f"{len(frases)} takes em {pasta}: olhe para a tela; fale quando aparecer FALE.")
     try:
-        for i in range(1, args.n + 1):
-            print(f"\ntake {i}/{args.n} — prepare-se…", flush=True)
+        esperar(1.0)  # a sala antes do primeiro
+        for i, frase in enumerate(frases, 1):
+            dica = f" · {args.dica}" if args.dica else ""
+            print(f"\ntake {i}/{len(frases)}{dica} — prepare-se… «{frase}»", flush=True)
             esperar(1.5)
             for contagem in ("3", "2", "1"):
                 print(f"   {contagem}", flush=True)
                 esperar(1.0)
             fale_em = len(amostras)
-            print(f"   >>>>>>>>>>  FALE AGORA: {args.frase}  <<<<<<<<<<", flush=True)
+            print(f"   >>>>>>>>>>  FALE AGORA: {frase}  <<<<<<<<<<", flush=True)
             esperar(DEPOIS_S + 0.3)
             inicio, fim = recorte_do_take(fale_em, len(amostras))
             take = array("h", amostras[inicio:fim])
@@ -477,7 +650,8 @@ def takes(args: argparse.Namespace) -> int:
                 "lacunas": [[s, a - inicio] for s, a in lacunas],
                 "blocos": (fim - inicio + BLOCO - 1) // BLOCO,
                 "primeiro_bloco_da_sessao": primeiro_bloco,
-                "frase": args.frase,
+                "frase": frase,
+                "dica": args.dica,
                 "antes_s": ANTES_S,
                 "depois_s": DEPOIS_S,
                 **niveis(take),
@@ -507,6 +681,128 @@ def takes(args: argparse.Namespace) -> int:
     return 1 if ruins else 0
 
 
+# --- o pacote para o Colab ------------------------------------------------------------------------
+
+
+SINAL_DO_LEIA_ME = (
+    "PCM 16 bits, mono, 16 kHz, do microfone do aparelho (INMP441 na XIAO ESP32-S3), pela USB, pelo "
+    "mesmo `converter()` do uso: `>> 8`, passa-alta 0,995, `(int)(y/256)*GANHO`, corte em int16. "
+    "**GANHO = 2, congelado.**"
+)
+COLUNAS_DO_LEIA_ME = (
+    "| arquivo | s | lacunas | checksums ruins | ganho | pico | saturadas | p10 / p50 / p99 | frase "
+    "| dica | antes da fala |"
+)
+
+
+def _ler_wav(caminho: Path) -> array:
+    with wave.open(str(caminho), "rb") as w:
+        if (w.getnchannels(), w.getsampwidth(), w.getframerate()) != (1, 2, TAXA):
+            raise ValueError(f"{caminho}: não é PCM 16 bits, mono, 16 kHz")
+        amostras = array("h")
+        amostras.frombytes(w.readframes(w.getnframes()))
+    if sys.byteorder == "big":
+        amostras.byteswap()
+    return amostras
+
+
+def niveis_na_faixa(amostras) -> dict:
+    """O RMS de 100 ms na faixa do modelo (p10, p50 e p99): é assim que se trocam níveis com o
+    Colab (a sala tem 62% da energia abaixo de 125 Hz, que o modelo não vê)."""
+    banda, quadro = na_banda(amostras), TAXA // 10
+    rms = sorted(_rms(banda[i : i + quadro]) for i in range(0, len(banda) - quadro + 1, quadro))
+    if not rms:
+        return {"p10": 0.0, "p50": 0.0, "p99": 0.0}
+    return {f"p{p}": round(rms[min(len(rms) - 1, len(rms) * p // 100)], 1) for p in (10, 50, 99)}
+
+
+def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
+    """O zip de uma sessão (as pastas `<prefixo>_*`), com o LEIA-ME e os SHA256SUMS, relido e
+    conferido antes de valer. Um WAV sem `.seq.json` recusa o pacote: ninguém sabe se ele presta."""
+    if not SESSAO.match(prefixo):
+        raise ValueError(f"o prefixo tem de ser AAAA-MM-DD_cN: {prefixo!r}")
+    raiz = raiz.resolve()
+    if raiz.is_relative_to(REPO):
+        raise ValueError(f"recusado: {raiz} fica dentro do repo, que é público")
+    destino = raiz / f"{prefixo}.zip"
+    if destino.exists():
+        raise ValueError(f"recusado: {destino} já existe (nada sobrescreve um pacote)")
+    wavs = sorted(
+        w
+        for tipo in ("real_positive", "real_negative")
+        for pasta in (raiz / tipo).glob(f"{prefixo}_*")
+        for w in pasta.glob("*.wav")
+    )
+    if not wavs:
+        raise ValueError(f"nenhum WAV de {prefixo} em {raiz}")
+    linhas, ruins, barulhentos, estudio_s = [], [], [], 0.0
+    for w in wavs:
+        seq = w.with_suffix(".seq.json")
+        if not seq.exists():
+            raise ValueError(f"{w} não tem o .seq.json (a gravação caiu?): não entra no pacote")
+        dados, amostras = json.loads(seq.read_text()), _ler_wav(w)
+        rel = w.relative_to(raiz).as_posix()
+        if not _veredito(dados).startswith("✅"):
+            ruins.append(rel)
+        if dados.get("pre_fala_barulho"):
+            barulhentos.append(rel)
+        if "frase" not in dados:
+            estudio_s += len(amostras) / TAXA
+        faixa = niveis_na_faixa(amostras)
+        linhas.append(
+            f"| `{rel}` | {len(amostras) / TAXA:.2f} | {len(dados['lacunas'])} | "
+            f"{dados.get('checksums_errados')} | {dados.get('ganho')} | {dados.get('pico')} | "
+            f"{dados.get('saturadas')} | {faixa['p10']} / {faixa['p50']} / {faixa['p99']} | "
+            f"{dados.get('frase', '—')} | {dados.get('dica') or '—'} | "
+            f"{dados.get('pre_fala_razao', '—')} |"
+        )
+    leia_me = "\n".join(
+        [
+            f"# Coleta da wake word «Hey Viking» — {prefixo}",
+            "",
+            SINAL_DO_LEIA_ME,
+            f"Cada take: o «FALE» em {ANTES_S:.2f} s, e mais {DEPOIS_S:.1f} s depois dele.",
+            "",
+            f"- arquivos: {len(wavs)}; estúdio normal: {estudio_s / 60:.1f} min",
+            f"- com lacuna, checksum errado, buraco de tempo ou sem o ganho: {ruins or 'nenhum'}",
+            f"- com barulho antes da fala (> {PRE_FALA_LIMITE}× o fundo): {barulhentos or 'nenhum'}",
+            *(["", "## Observações", "", notas.strip()] if notas.strip() else []),
+            "",
+            "## Os arquivos (os níveis são RMS de 100 ms **na faixa**, acima de 125 Hz)",
+            "",
+            COLUNAS_DO_LEIA_ME,
+            "|---|---|---|---|---|---|---|---|---|---|---|",
+            *linhas,
+            "",
+        ]
+    )
+    conteudo = {"LEIA-ME.md": leia_me.encode()}
+    for w in wavs:
+        for arquivo in (w, w.with_suffix(".seq.json")):
+            conteudo[arquivo.relative_to(raiz).as_posix()] = arquivo.read_bytes()
+    somas = {nome: hashlib.sha256(dados).hexdigest() for nome, dados in conteudo.items()}
+    conteudo["SHA256SUMS"] = "".join(f"{s}  {n}\n" for n, s in sorted(somas.items())).encode()
+    parcial = destino.with_suffix(".zip.parcial")
+    with zipfile.ZipFile(parcial, "w", zipfile.ZIP_DEFLATED) as z:
+        for nome, dados in conteudo.items():
+            z.writestr(f"{prefixo}/{nome}", dados)
+    with zipfile.ZipFile(parcial) as z:  # relido do disco: o que vale é o que está no zip
+        for nome, soma in somas.items():
+            if hashlib.sha256(z.read(f"{prefixo}/{nome}")).hexdigest() != soma:
+                raise ValueError(f"o zip não devolveu o mesmo {nome}")
+    parcial.rename(destino)
+    return destino
+
+
+def pacote(args: argparse.Namespace) -> int:
+    notas = Path(args.notas).read_text() if args.notas else ""
+    destino = montar_pacote(Path(args.raiz), args.prefixo, notas)
+    with zipfile.ZipFile(destino) as z:
+        print(z.read(f"{args.prefixo}/LEIA-ME.md").decode())
+    print(f"✅ {destino} ({destino.stat().st_size / 1e6:.1f} MB), relido e conferido")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     leitor = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     leitor.add_argument("--url", default=URL)
@@ -521,10 +817,23 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--sessao", required=True)
     t.add_argument("--n", type=int, default=10)
     t.add_argument("--frase", default="Hey Viking")
+    t.add_argument("--frases", help="uma por take, separadas por ; (no lugar de --frase e --n)")
+    t.add_argument("--dica", default="", help="a distância e o tom: na tela e no .seq.json")
     t.add_argument("--negativo", action="store_true", help="casos difíceis: vão para real_negative")
     t.add_argument("--raiz", default=str(RAIZ_PADRAO))
+    z = sub.add_parser("pacote", help="o zip da sessão para o Colab")
+    z.add_argument("--prefixo", required=True)
+    z.add_argument("--notas", help="um arquivo de texto com as observações da sessão")
+    z.add_argument("--raiz", default=str(RAIZ_PADRAO))
     args = leitor.parse_args(argv)
-    return {"medir": medir, "sala": sala, "takes": takes}[args.modo](args)
+
+    def parar(*_):  # fechar a janela ou matar o processo salva o que há, como o Ctrl-C
+        raise KeyboardInterrupt
+
+    for sinal in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sinal, parar)
+    modos = {"medir": medir, "sala": sala, "takes": takes, "pacote": pacote}
+    return modos[args.modo](args)
 
 
 if __name__ == "__main__":

@@ -218,20 +218,361 @@ def test_o_quadro_do_coleta_py_e_o_do_firmware():
     bloco = re.findall(r"constexpr int BLOCO = (\d+);", fonte)
     taxa = re.findall(r"constexpr uint32_t TAXA = (\d+);", fonte)
     assert bloco == [str(coleta.BLOCO)] and taxa == [str(coleta.TAXA)]
-    # o Mac lê o ganho gravado na placa desta linha do boot
-    assert 'Serial.printf("coleta: ganho=%d' in fonte
+    # o Mac lê o ganho gravado na placa desta linha, na entrada da coleta
+    assert 'Serial.printf("\\ncoleta: ganho=%d' in fonte
 
 
-def test_o_ganho_vem_do_boot_e_da_linha_de_status():
-    placa = object.__new__(coleta.Placa)
-    placa.leitor, placa.ganho, placa.firmware = coleta.Leitor(), None, {}
-    # a linha de status chega entre dois quadros, como na placa
-    dados = b"coleta: status ganho=2 seq=9\n" + _quadro(9, 0)
-    placa.porta = type("P", (), {"read": lambda self, n: dados})()
-    placa.ler()
-    assert placa.ganho == 2
+class _PortaFalsa:
+    """A porta da placa: cada `read` devolve o próximo pedaço; guarda o que foi pedido. `reage` pode
+    devolver bytes novos quando um pedido chega, como o firmware faz."""
+
+    def __init__(self, pedacos=(), reage=None):
+        self.pedacos, self.pedidos, self.reage, self.fechada = list(pedacos), [], reage, False
+
+    def read(self, n):
+        return self.pedacos.pop(0) if self.pedacos else b""
+
+    def write(self, dados):
+        self.pedidos.append(dados)
+        if self.reage:
+            self.pedacos += self.reage(dados)
+
+    def flush(self):
+        pass
+
+    def close(self):
+        self.fechada = True
+
+
+def test_o_ganho_vem_da_entrada_e_da_linha_de_status():
+    # sem nada depois da linha: o leitor não pode segurar o fim dela
+    for linha in (b"coleta: ganho=2 taxa=16000\r\n", b"coleta: status ganho=2 seq=9\r\n"):
+        placa = coleta.Placa(_PortaFalsa([linha]))
+        placa.ler()
+        assert placa.ganho == 2
     fonte = FIRMWARE.read_text()
     assert 'Serial.printf("\\ncoleta: status ganho=%d' in fonte
+
+
+def test_os_pedidos_sao_os_do_firmware_e_o_sinal_cabe_com_folga_no_prazo_dele():
+    fonte = FIRMWARE.read_text()
+    assert re.findall(r'PEDIDO_COLETA\[\] = "([^"]+)"', fonte) == ["VKC1 COLETA"]
+    assert re.findall(r'PEDIDO_USO\[\] = "([^"]+)"', fonte) == ["VKC1 USO"]
+    assert coleta.PEDIDO_COLETA == b"VKC1 COLETA\n" and coleta.PEDIDO_USO == b"VKC1 USO\n"
+    (sinal_ms,) = re.findall(r"constexpr uint32_t SINAL_MS = (\d+);", fonte)
+    assert coleta.SINAL_S * 1000 * 5 <= int(sinal_ms)  # perder 4 sinais seguidos não derruba
+
+
+def _funcao(nome: str) -> str:
+    """O corpo de uma função do firmware, da assinatura à chave que a fecha na coluna 0."""
+    forma = re.compile(rf"^void {nome}\([^\n]*\{{\n(.*?)^\}}", re.MULTILINE | re.DOTALL)
+    achados = forma.findall(FIRMWARE.read_text())
+    assert len(achados) == 1, f"{nome}: {len(achados)}"
+    return achados[0]
+
+
+def test_o_firmware_liga_no_uso_e_so_o_pedido_o_poe_na_coleta():
+    fonte = FIRMWARE.read_text()
+    assert "bool emColeta = false;" in fonte and fonte.count("emColeta = true;") == 1
+    assert "emColeta = true;" in _funcao("entrarNaColeta")
+    assert fonte.count("entrarNaColeta();") == 1
+    assert "if (lerPedido() == Pedido::Coleta) {\n    entrarNaColeta();" in _funcao("loop")
+    # o boot do uso não espera por pedido nenhum, e não existe mais um firmware só de coleta
+    assert "lerPedido" not in _funcao("setup")
+    assert "MODO_COLETA" not in fonte
+    assert "coleta" not in (FIRMWARE.parents[1] / "platformio.ini").read_text()
+
+
+def test_a_coleta_volta_ao_uso_pelo_pedido_e_sem_o_sinal_do_mac():
+    laco = _funcao("lacoDaColeta")
+    assert 'if (pedido == Pedido::Uso) voltarAoUso("pedido do Mac");' in laco
+    assert 'if (millis() - ultimoSinal > SINAL_MS) voltarAoUso("sem sinal do Mac");' in laco
+    assert "ESP.restart();" in _funcao("voltarAoUso")
+
+
+def test_entrar_insiste_no_pedido_e_so_volta_com_o_ganho_e_um_quadro():
+    porta = _PortaFalsa([b"== Viking voz (H1) ==\n", b"", b"coleta: ganho=2 taxa=16000\n"])
+    placa = coleta.Placa(porta)
+    with pytest.raises(SystemExit, match="não entrou na coleta"):
+        placa.entrar(prazo_s=0.1)  # o ganho sem nenhum quadro ainda não é coleta
+    assert porta.pedidos[0] == coleta.PEDIDO_COLETA and placa.na_coleta is False
+    porta.pedacos = [_quadro(0, 0)]
+    placa.entrar(prazo_s=1)
+    assert placa.na_coleta is True
+
+
+def test_o_lixo_do_boot_nao_conta_como_checksum_errado_do_arquivo():
+    ruim = bytearray(_quadro(0, 0))
+    ruim[50] ^= 0xFF
+    placa = coleta.Placa(_PortaFalsa([b"coleta: ganho=2\n" + bytes(ruim) + _quadro(1, 32_000)]))
+    placa.entrar(prazo_s=1)
+    assert placa.leitor.checksums_errados == 0
+
+
+def test_na_coleta_o_sinal_se_repete_e_fora_dela_nao(monkeypatch):
+    agora = [100.0]
+    monkeypatch.setattr(coleta.time, "monotonic", lambda: agora[0])
+    porta = _PortaFalsa()
+    placa = coleta.Placa(porta)
+    placa.ler()
+    assert porta.pedidos == []
+    placa.na_coleta, placa.ultimo_sinal = True, 100.0
+    for _ in range(7):  # 7 leituras, 1 s entre elas: um sinal a cada 2 s
+        placa.ler()
+        agora[0] += 1.0
+    assert porta.pedidos == [coleta.PEDIDO_COLETA] * 3
+
+
+def test_fechar_pede_o_uso_e_espera_o_pronto(monkeypatch):
+    monkeypatch.setattr(coleta, "VOLTAR_S", 1.0)
+
+    def reage(pedido):
+        return [_quadro(9, 0), b">>> PRONTO: segure <<<\r\n"] if b"USO" in pedido else []
+
+    porta = _PortaFalsa(reage=reage)
+    placa = coleta.Placa(porta)
+    placa.na_coleta = True
+    assert placa.fechar() is True
+    assert porta.pedidos == [coleta.PEDIDO_USO] and porta.fechada
+
+
+def test_fechar_sem_o_pronto_nao_diz_que_a_voz_voltou(monkeypatch, capsys):
+    monkeypatch.setattr(coleta, "VOLTAR_S", 0.05)
+    porta = _PortaFalsa()
+    assert coleta.Placa(porta).fechar() is False
+    assert porta.fechada and "não vi o PRONTO" in capsys.readouterr().out
+
+
+def _rodada(monkeypatch, quadros, depois=None):
+    """Um `coleta.abrir` falso: a placa já na coleta, com os quadros dados, um por leitura. Depois
+    deles, `depois` é levantado (o Ctrl-C ou a queda da porta)."""
+
+    class _Placa(coleta.Placa):
+        def __init__(self):
+            super().__init__(_PortaFalsa())
+            self.ganho, self.na_coleta, self.fila, self.fechou = 2, True, list(quadros), 0
+
+        def ler(self):
+            if self.fila:
+                return [self.fila.pop(0)]
+            raise depois or KeyboardInterrupt
+
+        def fechar(self):
+            self.fechou += 1
+            return True
+
+    placa = _Placa()
+    monkeypatch.setattr(coleta, "abrir", lambda url: placa)
+    return placa
+
+
+def _quadros(n, valor=1000, pular=()):
+    return [
+        coleta.Quadro(k, k * coleta.US_POR_BLOCO, 0, array("h", [valor] * coleta.BLOCO))
+        for k in range(n)
+        if k not in pular
+    ]
+
+
+def _sala(tmp_path):
+    comum = ["--minutos", "60", "--raiz", str(tmp_path)]
+    codigo = coleta.main(["sala", "--sessao", "2026-11-23_c9_estudio", *comum])
+    return codigo, tmp_path / "real_negative" / "2026-11-23_c9_estudio"
+
+
+def test_a_sala_sai_em_partes_contiguas_sem_perder_amostra(monkeypatch, tmp_path):
+    monkeypatch.setattr(coleta, "PARTE_S", 2)
+    placa = _rodada(monkeypatch, _quadros(150))
+    codigo, pasta = _sala(tmp_path)
+    assert codigo == 0 and placa.fechou == 1
+    partes = sorted(pasta.glob("*.wav"))
+    assert [p.name for p in partes] == ["parte_001.wav", "parte_002.wav", "parte_003.wav"]
+    resumos = [json.loads(p.with_suffix(".seq.json").read_text()) for p in partes]
+    assert sum(len(coleta._ler_wav(p)) for p in partes) == 150 * coleta.BLOCO
+    assert [r["segue_a_parte_anterior"] for r in resumos] == [None, True, True]
+    assert all(r["lacunas"] == [] and r["ganho"] == 2 for r in resumos)
+    assert all(r["rms_100ms_min"] == 1000 for r in resumos)  # o resto < 100 ms não vira mínimo 0
+
+
+def test_o_quadro_perdido_na_emenda_das_partes_aparece(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(coleta, "PARTE_S", 2)
+    na_emenda = -(-2 * coleta.TAXA // coleta.BLOCO)  # o 1º quadro da 2ª parte
+    _rodada(monkeypatch, _quadros(100, pular={na_emenda}))
+    _, pasta = _sala(tmp_path)
+    segunda = json.loads((pasta / "parte_002.seq.json").read_text())
+    assert segunda["segue_a_parte_anterior"] is False and segunda["lacunas"] == []
+    assert "emenda" in capsys.readouterr().out
+
+
+def test_a_queda_no_meio_guarda_o_que_ja_veio(monkeypatch, tmp_path):
+    placa = _rodada(monkeypatch, _quadros(100), depois=OSError("a USB saiu"))
+    with pytest.raises(OSError):
+        _sala(tmp_path)
+    (wav,) = (tmp_path / "real_negative" / "2026-11-23_c9_estudio").glob("*.wav")
+    assert len(coleta._ler_wav(wav)) == 100 * coleta.BLOCO and wav.with_suffix(".seq.json").exists()
+    assert placa.fechou == 1
+
+
+def test_o_wav_no_disco_vale_antes_de_a_parte_fechar(tmp_path):
+    parte = coleta.Parte(tmp_path, 1, None)
+    for q in _quadros(100):
+        parte.anotar(q)
+    parte._wav._file.flush()  # o que um kill -9 deixaria já escrito pelo sistema
+    assert len(coleta._ler_wav(parte.caminho)) == 3 * coleta.TAXA  # 3 dos 3,2 s
+
+
+def test_o_sigterm_salva_como_o_ctrl_c(monkeypatch, tmp_path):
+    import os
+    import signal
+
+    antes = {s: signal.getsignal(s) for s in (signal.SIGTERM, signal.SIGHUP)}
+
+    def ninguem_tratou(*_):  # sem o tratador do `main`, o SIGTERM derrubaria o próprio pytest
+        raise AssertionError("o coleta.py não tratou o SIGTERM")
+
+    signal.signal(signal.SIGTERM, ninguem_tratou)
+    placa = _rodada(monkeypatch, _quadros(40))
+    original = placa.ler
+
+    def ler():
+        if not placa.fila:
+            os.kill(os.getpid(), signal.SIGTERM)
+            return []
+        return original()
+
+    placa.ler = ler
+    try:
+        codigo, pasta = _sala(tmp_path)
+    finally:
+        for s, tratador in antes.items():
+            signal.signal(s, tratador)
+    assert codigo == 0 and placa.fechou == 1 and (pasta / "parte_001.seq.json").exists()
+
+
+def test_as_saturadas_dizem_em_que_segundo(monkeypatch, tmp_path):
+    quadros = _quadros(100)
+    quadros[50].amostras[0] = 32767  # a amostra 25.600: o segundo 1
+    _rodada(monkeypatch, quadros)
+    _, pasta = _sala(tmp_path)
+    resumo = json.loads((pasta / "parte_001.seq.json").read_text())
+    assert resumo["saturadas"] == 1 and resumo["saturou_em_s"] == [1]
+
+
+def test_os_niveis_juntados_sao_os_do_arquivo_inteiro():
+    a, b = array("h", [100] * 16_000), array("h", [0] * 8_000 + [32767] * 8_000)
+    junto = coleta.juntar_niveis(coleta.juntar_niveis(None, coleta.niveis(a)), coleta.niveis(b))
+    assert junto == coleta.niveis(a + b)
+
+
+def test_as_frases_da_rodada_uma_por_take():
+    assert coleta.frases_da_rodada("Hey Viking", None, 3) == ["Hey Viking"] * 3
+    assert coleta.frases_da_rodada("x", " Hey King ; ei, Vi;", 10) == ["Hey King", "ei, Vi"]
+    with pytest.raises(ValueError, match="nenhuma frase"):
+        coleta.frases_da_rodada("x", " ; ", 10)
+
+
+def test_o_take_leva_a_dica_e_a_frase_e_continua_a_numeracao(monkeypatch, tmp_path, capsys):
+    relogio = [0.0]
+    monkeypatch.setattr(coleta.time, "time", lambda: relogio[0])
+
+    def rodar(*extra):
+        placa = _rodada(monkeypatch, _quadros(2_000))
+        original = placa.ler
+
+        def ler():
+            relogio[0] += 0.032
+            return original()
+
+        placa.ler = ler
+        comum = ["--sessao", "2026-11-23_c9_takes", "--raiz", str(tmp_path)]
+        assert coleta.main(["takes", *comum, *extra]) == 0
+
+    rodar("--n", "2", "--dica", "50 cm, voz normal")
+    rodar("--frases", "Hey King", "--dica", "1 m")
+    pasta = tmp_path / "real_positive" / "2026-11-23_c9_takes"
+    lidos = [json.loads(p.read_text()) for p in sorted(pasta.glob("*.seq.json"))]
+    assert [(r["frase"], r["dica"]) for r in lidos] == [
+        ("Hey Viking", "50 cm, voz normal"),
+        ("Hey Viking", "50 cm, voz normal"),
+        ("Hey King", "1 m"),
+    ]
+    saida = capsys.readouterr().out
+    assert "50 cm, voz normal" in saida and "FALE AGORA: Hey King" in saida
+
+
+def _sessao_pronta(raiz: Path) -> None:
+    pares = [("real_positive", "2026-11-23_c9_takes", "take_001", {"frase": "Hey Viking"})]
+    pares.append(("real_negative", "2026-11-23_c9_estudio", "parte_001", {}))
+    pares.append(("real_positive", "2026-11-22_piloto", "take_001", {"frase": "de outra sessão"}))
+    for tipo, sessao, nome, extra in pares:
+        wav = raiz / tipo / sessao / f"{nome}.wav"
+        coleta.gravar_wav(wav, array("h", [100, -100] * 16_000))
+        coleta.gravar_seq(wav, _sequencia(62).resumo(ganho=2, checksums_errados=0, **extra))
+
+
+def test_o_pacote_leva_so_a_sessao_com_somas_que_batem(tmp_path):
+    import hashlib
+    import zipfile
+
+    _sessao_pronta(tmp_path)
+    destino = coleta.montar_pacote(tmp_path, "2026-11-23_c9", "o take 1 foi de pé")
+    with zipfile.ZipFile(destino) as z:
+        nomes = {n.removeprefix("2026-11-23_c9/") for n in z.namelist()}
+        assert nomes == {
+            "LEIA-ME.md",
+            "SHA256SUMS",
+            "real_positive/2026-11-23_c9_takes/take_001.wav",
+            "real_positive/2026-11-23_c9_takes/take_001.seq.json",
+            "real_negative/2026-11-23_c9_estudio/parte_001.wav",
+            "real_negative/2026-11-23_c9_estudio/parte_001.seq.json",
+        }
+        somas = z.read("2026-11-23_c9/SHA256SUMS").decode().splitlines()
+        assert len(somas) == 5
+        for linha in somas:
+            soma, nome = linha.split("  ")
+            assert hashlib.sha256(z.read(f"2026-11-23_c9/{nome}")).hexdigest() == soma
+        leia_me = z.read("2026-11-23_c9/LEIA-ME.md").decode()
+    assert "o take 1 foi de pé" in leia_me and "estúdio normal: 0.0 min" in leia_me
+    assert "sem o ganho: nenhum" in leia_me
+    with pytest.raises(ValueError, match="já existe"):
+        coleta.montar_pacote(tmp_path, "2026-11-23_c9")
+
+
+def test_o_pacote_aponta_o_arquivo_ruim_e_o_barulho_antes_da_fala(tmp_path):
+    import zipfile
+
+    _sessao_pronta(tmp_path)
+    take = tmp_path / "real_positive" / "2026-11-23_c9_takes" / "take_001.wav"
+    ruim = _sequencia(62, pular_seq={10}).resumo(ganho=2, frase="x", pre_fala_barulho=True)
+    coleta.gravar_seq(take, ruim)
+    with zipfile.ZipFile(coleta.montar_pacote(tmp_path, "2026-11-23_c9")) as z:
+        linhas = z.read("2026-11-23_c9/LEIA-ME.md").decode().splitlines()
+    (com_lacuna,) = [li for li in linhas if li.startswith("- com lacuna")]
+    (barulho,) = [li for li in linhas if li.startswith("- com barulho")]
+    assert "take_001" in com_lacuna and "take_001" in barulho
+
+
+def test_o_pacote_recusa_o_wav_sem_seq_o_repo_e_o_prefixo_torto(tmp_path):
+    _sessao_pronta(tmp_path)
+    (tmp_path / "real_negative" / "2026-11-23_c9_estudio" / "parte_001.seq.json").unlink()
+    with pytest.raises(ValueError, match=r"não tem o \.seq\.json"):
+        coleta.montar_pacote(tmp_path, "2026-11-23_c9")
+    assert not list(tmp_path.glob("*.zip*"))
+    with pytest.raises(ValueError, match="dentro do repo"):
+        coleta.montar_pacote(RAIZ / "data", "2026-11-23_c9")
+    with pytest.raises(ValueError, match="AAAA-MM-DD"):
+        coleta.montar_pacote(tmp_path, "../c9")
+
+
+def test_os_niveis_na_faixa_nao_ouvem_o_ronco():
+    import math
+
+    def tom(hz):
+        n = range(2 * coleta.TAXA)
+        return [1000 * math.sin(2 * math.pi * hz * i / coleta.TAXA) for i in n]
+
+    assert coleta.niveis_na_faixa(tom(20))["p50"] < 40
+    assert coleta.niveis_na_faixa(tom(1_000))["p50"] == pytest.approx(707, rel=0.02)
 
 
 def test_um_arquivo_sem_o_ganho_nao_sai_como_bom():

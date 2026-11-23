@@ -86,12 +86,15 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
    nome não resolver, rodar o script de novo com o IP do laptop (está no certificado).
 5. [x] A fala inteira (o E2E da H1, 2026-11-22): `ponte /falar: HTTP 202, estado pensando`, o
    estado final e a voz nas caixas (pela Scarlett do laptop; ver `CLAUDE.md`).
-6. [ ] A coleta da wake word (H2): o env `xiao_s3_coleta` (`pio run -e xiao_s3_coleta -t upload`)
-   manda o áudio sem parar pela USB; no Mac, `~/esp32-mac/.venv/bin/python coleta.py medir
-   --minutos 2` tem de dar 0 lacunas, 0 checksums errados e nenhuma suspeita de buraco; depois
-   `coleta.py sala …` e `coleta.py takes …` gravam em `~/viking-wakeword/` (fora do repo), numa
-   pasta por sessão (`AAAA-MM-DD_descricao`). O de uso volta com `pio run -t upload`. O ganho é 2,
-   congelado (o comentário do `GANHO`).
+6. [x] A coleta da wake word (H2, D71), com o **firmware único** (2026-11-23 ~17:45Z): a placa liga
+   no uso; `coleta.py` pede a coleta ao abrir a porta e o uso ao fechar. Visto:
+   - `~/esp32-mac/.venv/bin/python coleta.py medir --minutos 1`: 1874 quadros, 0 lacunas, 0
+     checksums errados, 16000,0 Hz, `maior_volta_us=661`, `ganho=2`; depois `coleta: volta ao uso
+     (pedido do Mac)` e o PRONTO;
+   - sem o sinal do Mac, `coleta: volta ao uso (sem sinal do Mac)` depois de 30 s, e o PRONTO.
+
+   `coleta.py takes …`, `sala …` e `pacote …` gravam em `~/viking-wakeword/` (fora do repo), numa
+   pasta por sessão (`AAAA-MM-DD_descricao`). O ganho é 2, congelado (o comentário do `GANHO`).
 
 ## No Mac (desde 2026-11-22)
 
