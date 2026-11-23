@@ -7,18 +7,33 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-11-22, à noite (a 1ª etapa da H2, a palavra de ativação, e as 4 coletas planejadas).**
+**Última atualização: 2026-11-23 (a coleta 1 de 4 da palavra de ativação, gravada).**
 
 `████████████░░░░░░░░ 27 de 44 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
 10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b e H1; parciais: a H2 (a palavra de ativação: a
-1ª etapa feita); na fila: H2c1 a H2c4 (as 4 coletas da palavra), H1b (o som no
+1ª etapa feita) e a H2c1 (a coleta 1: gravada, falta o ok do agente do Colab); na fila: H2c2 a H2c4
+(as outras 3 coletas da palavra), H1b (o som no
 aparelho), H1h (o reforço da voz), H3 (o Viking mandando no Home
 Assistant), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total passou
 de 36 para 40 em 2026-11-22: a H1b, a H2 e a H3 já estavam no roteiro desde 21/11 e não tinham
 entrado na conta, e a H1h nasceu hoje. Mais tarde no mesmo dia, de 40 para 44: as 4 coletas
 da palavra de ativação (H2c1 a H2c4).
+
+## 2026-11-23 — a coleta 1 de 4: o estúdio quieto
+
+**O que aconteceu:** você gravou 38 "Hey Viking" de 50 cm a 2 m, 15 frases parecidas e 1 hora do
+estúdio normal. Nenhum pedaço de áudio se perdeu.
+- **A placa agora tem um programa só.** Ela é a voz do estúdio; quando o Mac pede, vira gravador, e
+  volta sozinha no fim. Se o Mac travar no meio, ela volta em 30 segundos. Não precisa mais regravar.
+- **A hora vai sendo salva aos poucos.** Se o computador cair, perde-se no máximo a parte de 10
+  minutos que estava em curso.
+
+**O que falta:** você subir o arquivo ao Drive, e o agente do Colab dizer se serve. Ele também decide
+sobre 18 gravações em que há um som fraco antes da sua voz.
+
+**O que vem:** a coleta 2, com música, outro dia. Não precisa de mais nada no aparelho.
 
 ## 2026-11-22, à noite — a palavra de ativação "Hey Viking": o piloto gravado e aprovado
 

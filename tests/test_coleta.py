@@ -404,6 +404,19 @@ def test_o_quadro_perdido_na_emenda_das_partes_aparece(monkeypatch, tmp_path, ca
     assert "emenda" in capsys.readouterr().out
 
 
+def test_a_placa_que_reinicia_no_meio_reprova_a_parte_e_so_ela(monkeypatch, tmp_path):
+    # o Mac dormiu mais de 30 s (ou a placa caiu): ela volta à coleta com o seq e o tempo do zero
+    monkeypatch.setattr(coleta, "PARTE_S", 2)
+    antes, depois = _quadros(80), _quadros(100)
+    _rodada(monkeypatch, antes + depois)
+    codigo, pasta = _sala(tmp_path)
+    resumos = [json.loads(p.read_text()) for p in sorted(pasta.glob("*.seq.json"))]
+    vereditos = [coleta._veredito(r) for r in resumos]
+    assert codigo == 1 and len(resumos) == 3
+    assert vereditos[0].startswith("✅") and vereditos[1].startswith("❌")  # o reinício é na 2ª
+    assert vereditos[2].startswith("✅")
+
+
 def test_a_queda_no_meio_guarda_o_que_ja_veio(monkeypatch, tmp_path):
     placa = _rodada(monkeypatch, _quadros(100), depois=OSError("a USB saiu"))
     with pytest.raises(OSError):
@@ -562,6 +575,32 @@ def test_o_pacote_recusa_o_wav_sem_seq_o_repo_e_o_prefixo_torto(tmp_path):
         coleta.montar_pacote(RAIZ / "data", "2026-11-23_c9")
     with pytest.raises(ValueError, match="AAAA-MM-DD"):
         coleta.montar_pacote(tmp_path, "../c9")
+
+
+def test_a_sala_para_na_amostra_certa_sem_deixar_um_resto(monkeypatch, tmp_path):
+    monkeypatch.setattr(coleta, "PARTE_S", 2)
+    placa = _rodada(monkeypatch, _quadros(500))  # 16 s de quadros, e o pedido é de 4 s
+    # vários quadros por leitura, como na porta de verdade: o corte tem de ser no meio de uma
+    placa.ler = lambda: [placa.fila.pop(0) for _ in range(min(7, len(placa.fila)))]
+    comum = ["--minutos", str(4 / 60), "--raiz", str(tmp_path)]
+    assert coleta.main(["sala", "--sessao", "2026-11-23_c9_estudio", *comum]) == 0
+    partes = sorted((tmp_path / "real_negative" / "2026-11-23_c9_estudio").glob("*.wav"))
+    tamanhos = [len(coleta._ler_wav(p)) for p in partes]
+    assert sum(tamanhos) == 125 * coleta.BLOCO and len(partes) == 2
+
+
+def test_o_resto_de_uma_gravacao_fica_fora_do_pacote_e_o_leia_me_diz(tmp_path):
+    import zipfile
+
+    _sessao_pronta(tmp_path)
+    resto = tmp_path / "real_negative" / "2026-11-23_c9_estudio" / "parte_002.wav"
+    coleta.gravar_wav(resto, array("h", [0] * coleta.BLOCO))
+    coleta.gravar_seq(resto, _sequencia(1).resumo(ganho=2))
+    with zipfile.ZipFile(coleta.montar_pacote(tmp_path, "2026-11-23_c9")) as z:
+        nomes, leia_me = z.namelist(), z.read("2026-11-23_c9/LEIA-ME.md").decode()
+    assert not any("parte_002" in n for n in nomes) and any("parte_001.wav" in n for n in nomes)
+    assert "de fora, menores que 1 s" in leia_me and "parte_002" in leia_me
+    assert "arquivos: 2;" in leia_me
 
 
 def test_os_niveis_na_faixa_nao_ouvem_o_ronco():

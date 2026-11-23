@@ -5,7 +5,9 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ EM CURSO — H2c1, a coleta 1 de 4 da wake word (aberta em 2026-11-23, ~17:26Z; o plano aprovado pelo dono, com o ok para gravar a placa uma vez no C3)
+## ▶️ RETOMAR AQUI — H2c1 gravada (2026-11-23); falta o dono subir o zip e o ok do Colab; depois, a H2c2
+
+### A H2c1, a coleta 1 de 4 da wake word (aberta em 2026-11-23, ~17:26Z; o plano aprovado pelo dono, com o ok para gravar a placa uma vez no C3)
 
 **Medido na abertura (2026-11-23 ~17:26Z):** HEAD `85c26f1` com o CI `success`; árvore limpa; a placa
 em `/dev/cu.usbmodem*` e o boot de uso até o PRONTO (`saude -> ok`), depois de o dono replugar a
@@ -18,9 +20,9 @@ está vazio (a coleta não usa). O `gh` está em `/usr/local/bin`, fora do PATH 
 | C0 | este plano | commit | ✅ |
 | C1 | o firmware único: no uso, o laço parado escuta `VKC1 COLETA`; na coleta, `VKC1 USO` ou 30 s sem sinal do Mac reiniciam no uso | `pio run` sem aviso; o env `xiao_s3_coleta` some | ✅ compila sem aviso |
 | C2 | `coleta.py`: pede e solta o modo (também no Ctrl-C e no SIGTERM), `takes --dica` e `--frases`, a gravação em partes de 10 min direto no disco, `pacote` | a suíte verde e as mutações novas mortas | ✅ `2930 passed`, 27 de 27 mutações mortas |
-| C3 | gravar a placa (ok dado) e conferir | PRONTO; `medir --minutos 1` com 0 lacunas e `ganho=2`; PRONTO de novo sozinha; 1 fala do dono | ✅ menos a fala do dono: 1874 quadros, 0 lacunas, `ganho=2`, e a volta sozinha (pedido e 30 s sem sinal) |
-| C4 | a coleta, com o "vai" por parte: 38 takes (10 a 50 cm, 10 a 1 m, 10 a 1,5 m, 8 a 2 m), 15 parecidas, 1 h de estúdio | `lacunas: []`, 0 checksums errados e ganho 2 em todo arquivo | ⬜ |
-| C5 | a revisão em duas passadas, os docs, commit, push, o zip e a mensagem ao Colab | CI `success`; o zip relido | ⬜ |
+| C3 | gravar a placa (ok dado) e conferir | PRONTO; `medir --minutos 1` com 0 lacunas e `ganho=2`; PRONTO de novo sozinha; 1 fala do dono | ✅ (a fala do dono respondeu certo, dito por ele): 1874 quadros, 0 lacunas, `ganho=2`, e a volta sozinha (pedido e 30 s sem sinal) |
+| C4 | a coleta, com o "vai" por parte: 38 takes (10 a 50 cm, 10 a 1 m, 10 a 1,5 m, 8 a 2 m), 15 parecidas, 1 h de estúdio | `lacunas: []`, 0 checksums errados e ganho 2 em todo arquivo | ✅ 38 + 15 + 3.600 s; 0 lacunas, 0 checksums errados, ganho 2 |
+| C5 | a revisão em duas passadas, os docs, commit, push, o zip e a mensagem ao Colab | CI `success`; o zip relido | ✅ menos o zip no Drive e o ok do Colab (dependem do dono) |
 
 **Mudou do plano-base (dito ao dono):** a placa escuta o comando a qualquer momento em que está
 parada (não só 1,5 s depois do boot, que atrasaria o uso e disputaria com o reset da abertura da
@@ -28,6 +30,14 @@ porta); ela volta ao uso sozinha sem o sinal do Mac; a hora de estúdio vai para
 **Risco sem medida:** o Mac **escrever** na placa pela porta RFC2217 (o C3 mede antes da gravação).
 **A ordem do dono:** os takes e as parecidas com ele olhando; depois a 1 h com a janela minimizada.
 **Fora das parecidas:** "Rei Viking" e "Ei, Viking" (soam como a palavra).
+
+**O próximo passo:** o dono sobe `~/viking-wakeword/2026-11-23_c1.zip` ao Drive e cola a mensagem ao
+Colab. Com o ok dele, abrir a H2c2 (com música): copiar os 3 scripts de
+`~/viking-wakeword/_roteiros/` e trocar as dicas, o roteiro e o "vai" por parte. **Nada a gravar na placa.**
+**Não esquecer:** puxar o ar no 3-2-1; não comitar durante a hora (cada parte anota o commit); rodar a
+hora numa janela do Terminal com `caffeinate -is`; a marca do barulho é relativa ao fundo da sala.
+**Depende do dono:** subir o zip; dizer se "Hey Viking" escapou na hora; o que foi o barulho forte das
+~15h24 de São Paulo (parte 2, 78–85 s); o dia da H2c2.
 
 ## (atendido) RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 

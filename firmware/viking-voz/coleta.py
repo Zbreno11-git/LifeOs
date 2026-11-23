@@ -71,6 +71,7 @@ PARTE_S = 600
 PEDIDO_COLETA = b"VKC1 COLETA\n"
 PEDIDO_USO = b"VKC1 USO\n"
 SINAL_S = 2.0
+FOLGA_S = 30.0  # quanto a sala espera além do pedido, se a placa emudecer no meio
 ENTRAR_S = 45.0  # o boot (a Wi-Fi até 15 s, o NTP até 10 s) e a entrada na coleta
 VOLTAR_S = 45.0  # o reinício até o PRONTO do uso
 SESSAO = re.compile(r"^\d{4}-\d{2}-\d{2}_[a-z0-9_]+$")
@@ -576,10 +577,14 @@ def sala(args: argparse.Namespace) -> int:
     print(
         f"gravando a sala em {pasta} por {args.minutos:g} min (Ctrl-C para parar antes)", flush=True
     )
-    numero, fim = 1, time.time() + args.minutos * 60
+    # para pelas amostras, não pelo relógio: a parte seguinte nasceria com o bloco que sobrasse (a 1ª
+    # hora, em 2026-11-23, deixou uma parte_007 de 32 ms). O relógio só limita uma placa muda.
+    faltam = math.ceil(args.minutos * 60 * TAXA / BLOCO)
+    numero, limite = 1, time.time() + args.minutos * 60 + FOLGA_S
     try:
-        while time.time() < fim:
-            for q in placa.ler():
+        while faltam > 0 and time.time() < limite:
+            for q in placa.ler()[:faltam]:
+                faltam -= 1
                 if parte is None:
                     parte = Parte(pasta, numero, seq_anterior)
                     numero = parte.numero + 1
@@ -684,6 +689,7 @@ def takes(args: argparse.Namespace) -> int:
 # --- o pacote para o Colab ------------------------------------------------------------------------
 
 
+CURTO_S = 1
 SINAL_DO_LEIA_ME = (
     "PCM 16 bits, mono, 16 kHz, do microfone do aparelho (INMP441 na XIAO ESP32-S3), pela USB, pelo "
     "mesmo `converter()` do uso: `>> 8`, passa-alta 0,995, `(int)(y/256)*GANHO`, corte em int16. "
@@ -735,13 +741,16 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
     )
     if not wavs:
         raise ValueError(f"nenhum WAV de {prefixo} em {raiz}")
-    linhas, ruins, barulhentos, estudio_s = [], [], [], 0.0
+    linhas, ruins, barulhentos, curtos, estudio_s = [], [], [], [], 0.0
     for w in wavs:
         seq = w.with_suffix(".seq.json")
         if not seq.exists():
             raise ValueError(f"{w} não tem o .seq.json (a gravação caiu?): não entra no pacote")
         dados, amostras = json.loads(seq.read_text()), _ler_wav(w)
         rel = w.relative_to(raiz).as_posix()
+        if len(amostras) < CURTO_S * TAXA:  # o resto de uma gravação: não é dado de treino
+            curtos.append(rel)
+            continue
         if not _veredito(dados).startswith("✅"):
             ruins.append(rel)
         if dados.get("pre_fala_barulho"):
@@ -763,9 +772,10 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
             SINAL_DO_LEIA_ME,
             f"Cada take: o «FALE» em {ANTES_S:.2f} s, e mais {DEPOIS_S:.1f} s depois dele.",
             "",
-            f"- arquivos: {len(wavs)}; estúdio normal: {estudio_s / 60:.1f} min",
+            f"- arquivos: {len(linhas)}; estúdio normal: {estudio_s / 60:.1f} min",
             f"- com lacuna, checksum errado, buraco de tempo ou sem o ganho: {ruins or 'nenhum'}",
             f"- com barulho antes da fala (> {PRE_FALA_LIMITE}× o fundo): {barulhentos or 'nenhum'}",
+            *([f"- de fora, menores que {CURTO_S} s: {curtos}"] if curtos else []),
             *(["", "## Observações", "", notas.strip()] if notas.strip() else []),
             "",
             "## Os arquivos (os níveis são RMS de 100 ms **na faixa**, acima de 125 Hz)",
@@ -777,7 +787,7 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
         ]
     )
     conteudo = {"LEIA-ME.md": leia_me.encode()}
-    for w in wavs:
+    for w in (w for w in wavs if w.relative_to(raiz).as_posix() not in curtos):
         for arquivo in (w, w.with_suffix(".seq.json")):
             conteudo[arquivo.relative_to(raiz).as_posix()] = arquivo.read_bytes()
     somas = {nome: hashlib.sha256(dados).hexdigest() for nome, dados in conteudo.items()}

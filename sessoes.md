@@ -16,8 +16,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H2c1 — a coleta da wake word, 1 de 4** (o plano abaixo, na seção "Sessões H2c1–H2c4";
-  D71). A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
+- **Sessão:** **H2c2 — a coleta da wake word, 2 de 4, com música** (na seção "Sessões H2c1–H2c4";
+  D71), **depois do ok do Colab à H2c1** (gravada em 2026-11-23; o pacote espera o dono subir). Não
+  pede firmware nem ferramenta nova: é só gravar. A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
   Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
   dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
   velocidade, com 13 s medidos do soltar ao `ok`, e o HA que reconheceu 1 de 2), a **H1b** (o som no
@@ -1353,7 +1354,8 @@ O que estava escrito na abertura:
   **trunca** e só então multiplica pelo ganho (as amostras são múltiplas de 4), o que a augmentation
   dele tem de imitar; distância até 4 m e outras vozes são extras que o dono decide.
 - **A primeira etapa (2026-11-22, no Mac):**
-  - o ganho 2 congelado; o modo de coleta (`env:xiao_s3_coleta`) e o `coleta.py`;
+  - o ganho 2 congelado; o modo de coleta (na época, `env:xiao_s3_coleta`; desde 2026-11-23, o
+    firmware único) e o `coleta.py`;
   - a USB medida (0 lacunas em 3.697 quadros);
   - **o piloto:** 1 min de sala e 10 takes de 0,5 a 1,5 m, todos contínuos, no
     `~/viking-wakeword/piloto_2026-11-22.zip` para o Colab;
@@ -1422,7 +1424,16 @@ A H2c4 inteira fica guardada para o teste (o agente do Colab confirma).
 - **A prova do "≤ 1 falsa por dia" não sai daqui.** Ela vem de uma semana de uso com a placa
   ouvindo, na sessão que põe o modelo na placa (D71).
 
-### H2c1 — o firmware único, as ferramentas e a coleta 1 (o estúdio quieto, de dia)
+### H2c1 — o firmware único, as ferramentas e a coleta 1 (o estúdio quieto, de dia) — ✅ gravada em 2026-11-23
+
+**O resultado (2026-11-23; o detalhe está no diário):** o firmware único na placa, com a volta ao uso
+provada (pelo pedido e por 30 s sem sinal). 38 takes, 15 parecidas e 3.600 s de estúdio, todos com
+`lacunas: []`, 0 checksums errados e ganho 2. **Falta:** o dono subir o zip ao Drive e o ok do Colab.
+**Mudou do plano abaixo:** a placa escuta o pedido sempre que está parada (não só 1,5 s no boot), e o
+estúdio sai em partes de 10 min. **Para as próximas:** puxar o ar durante o 3-2-1 (as parecidas
+saíram com 2 marcas em 15, contra 18 em 38 dos takes, com o fundo parecido, 13 contra 16); os
+roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar e trocar as dicas).
+
 
 1. **O firmware único** (~30 min):
    - a placa liga no modo de uso de sempre. Nos primeiros ~1,5 s depois do boot, se chegar a linha

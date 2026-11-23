@@ -1046,6 +1046,39 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-23 — Sessão H2c1: o firmware único e a coleta 1 da wake word (o estúdio quieto)
+
+**Feito.**
+- **Um firmware só (D71), gravado uma vez:** a placa liga no uso, e o `coleta.py` pede a coleta ao
+  abrir a porta e o uso ao fechar. O plano-base escutava o pedido só 1,5 s depois do boot; agora a
+  placa o escuta quando está parada, e o boot do uso não espera nada. Sem o sinal do Mac por 30 s ela
+  volta ao uso sozinha. O env `xiao_s3_coleta` saiu.
+- **O `coleta.py`:** a hora de estúdio vai para o disco a cada segundo, em partes de 10 min (antes,
+  ficava na memória até o fim, e uma queda perdia tudo); o SIGTERM e a janela fechada salvam; a perda
+  na emenda de duas partes aparece; `takes --dica` e `--frases`; `pacote`, que relê o zip e confere
+  cada sha256.
+- **O leitor** segurava os últimos 3 bytes do texto, e a linha PRONTO, a última que a placa manda,
+  nunca se completaria. Achado antes dos testes.
+
+**Medido na placa (2026-11-23).**
+- `medir --minutos 1`: 1874 quadros, 0 lacunas, 0 checksums errados, 16000,0 Hz, `ganho=2`.
+- A volta pelo pedido e a volta sem sinal (937 quadros, 30 s, e o PRONTO).
+- A fala de teste do dono respondeu certo (dito por ele).
+- **A coleta:** 38 takes (50 cm a 2 m), 15 parecidas e 3.600 s de estúdio em 6 partes emendadas. Todos
+  com `lacunas: []`, 0 checksums errados e ganho 2. 0 saturadas nos takes e nas parecidas; 1.350 no
+  estúdio, em 9 instantes, 8 deles com 1% a 5% da energia abaixo de 125 Hz (o gatilho do passa-alta
+  não disparou). O pacote: 59 arquivos, 68 MB.
+
+**Aprendido.** A marca do barulho antes da fala é relativa ao fundo. O fundo na faixa caiu de 51 (o
+piloto) para 12–22, e a marca subiu de 1 em 10 para 18 em 38; em nível absoluto, só 2 dos 20 marcados
+passariam pela régua do piloto. Fica com o Colab decidir. A 1ª leitura, "respiração ou cadeira", é
+hipótese: ninguém ouviu.
+
+**Não medido:** o que saturou o estúdio; por que a sala estava mais quieta; se a palavra acorda (é a
+semana de uso, D71).
+
+**Erro meu:** um `sed` por `| C1 |` trocou o estado de 9 linhas de planos antigos (classe 8).
+
 ### 2026-11-22 — Sessão H2, primeira etapa: o ganho 2, o modo de coleta e o piloto da wake word
 
 **Decidido pelo dono:** o ganho **2**, congelado. O firmware trunca antes de multiplicar, então o

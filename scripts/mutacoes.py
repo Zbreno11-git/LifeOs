@@ -3894,6 +3894,20 @@ MUTACOES = [
         "tests/test_coleta.py::test_o_pacote_leva_so_a_sessao_com_somas_que_batem",
     ),
     Mutacao(
+        "coleta: a sala para pelo relógio e deixa um resto",
+        "firmware/viking-voz/coleta.py",
+        "            for q in placa.ler()[:faltam]:",
+        "            for q in placa.ler()[: faltam + 1]:",
+        "tests/test_coleta.py::test_a_sala_para_na_amostra_certa_sem_deixar_um_resto",
+    ),
+    Mutacao(
+        "coleta: o resto de 32 ms vai no pacote",
+        "firmware/viking-voz/coleta.py",
+        "        if len(amostras) < CURTO_S * TAXA:",
+        "        if False:",
+        "tests/test_coleta.py::test_o_resto_de_uma_gravacao_fica_fora_do_pacote_e_o_leia_me_diz",
+    ),
+    Mutacao(
         "casa: o token do aparelho comparado com ==",
         "src/lifeos/casa/servidor.py",
         "not hmac.compare_digest(dado.encode(), esperado.encode())",
