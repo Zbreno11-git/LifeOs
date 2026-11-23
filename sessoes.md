@@ -1546,6 +1546,25 @@ e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4
 - **Se tossir, espirrar, rir ou bater em algo num take, não se refaz:** o dono me diz o número, e
   eu anoto (`coleta.py anotar`; o Colab pediu, 2026-11-23).
 
+### Replanejamento (o Colab, 2026-11-23 à noite, notebook v2.6; ele diz que o dono decidiu — a confirmar com o dono)
+
+- **Fase 1, antes de tudo: o modelo na placa.** O `viking_v1` de brinquedo (61 KB, no Drive) responde três
+  perguntas: (1.1) as 4 operações de variável e os 2 subgrafos carregam e invocam (precisa de
+  `MicroResourceVariables`); (1.2) o `arena_used_bytes()` (o teto dele: ~10,9 KB); (1.3) o CSV do frontend
+  (197×40, igualdade exata com o `parity_v2`) e o int8. Se (1.1) for não, ele muda a arquitetura.
+  **Lido por nós (2026-11-23):** o arduino-esp32 4.0.0 (IDF 6.1.1) não traz o TFLM; a fonte
+  `espressif/esp-tflite-micro` (1.4.3, commit `3d0b461`) tem as 4 operações e o
+  `micro_resource_variable.cc`, mas não o micro_frontend; o do treino é a fonte do `pymicro-features`
+  v2.0.2 (`96bd69c`). Nada foi compilado nem executado ainda. O README da Espressif (1.4.0) lista o IDF
+  até o 6.0: no 6.1.1 está por provar.
+- **Fase 2:** a H2c4 cancelada; a H2c3 sem os 8 takes com podcast (29 takes, 20 parecidas, 1 h com
+  podcast), e o dono responde ao FALE em até ~1 s; uma noite inteira gravando sozinha (6 a 10 h).
+- **Fase 3:** o v1 com o alvo de 0,5 falsa por hora (8 por dia de 16 h) e o limiar ajustável na placa.
+- **Fase 4:** o registro das quase-ativações, depois da 1.
+- **Nossas ressalvas, ditas ao dono:** sem a H2c4 não sobra sessão de teste, a não ser que a H2c3 fique
+  de fora do treino; a noite vazia é negativo fácil, e as horas dela não podem entrar na mesma taxa das
+  horas de uso; nessa noite a voz do estúdio fica desligada.
+
 ### H2c3 — a coleta 3: de noite, com conversa (marcada pelo dono para 2026-11-24)
 
 

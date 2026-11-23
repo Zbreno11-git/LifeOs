@@ -42,6 +42,11 @@ prontos, com a data dela: `~/viking-wakeword/_roteiros/{takes,parecidas,estudio}
 o `serve` e a tomada; mostrar o roteiro; o "vai" por parte; a prova de som do podcast (20 s) antes do
 bloco 5. Se for depois da meia-noite, o coletor aceita a pasta até as 6 h; se mudar de dia, trocar a data
 nos 3 scripts. **Nada a gravar na placa.**
+**Novo em 2026-11-23, ~20:30 de São Paulo: o replanejamento do Colab** (`sessoes.md`, "Replanejamento"): o
+modelo na placa vem antes da coleta. O `hey_viking.tflite` não está no Mac (só no Drive). O `takes_c3.sh`
+já está sem o bloco do podcast (29 takes). **Espera:** o ok do dono ao replanejamento, o arquivo do modelo
+e o ok para gravar um firmware de teste e voltar ao de uso (2 gravações). O teste de paridade do frontend
+no Mac foi negado pelo modo automático e não foi refeito.
 **Não esquecer:** puxar o ar no 3-2-1; não comitar durante a hora (cada parte anota o commit); rodar a
 hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condicionado; perguntar ao
 dono no fim de cada bloco se houve tosse, riso ou batida, e usar o `coleta.py anotar`; a régua do
