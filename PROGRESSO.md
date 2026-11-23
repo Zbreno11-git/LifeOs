@@ -39,9 +39,9 @@ hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condic
 dono no fim de cada bloco se houve tosse, riso ou batida, e usar o `coleta.py anotar`; a régua do
 barulho é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`; uma pasta por sessão, com a
 data do dia (o coletor recusa outra). O Colab analisa o conteúdo do zip, não a pasta.
-**Depende do dono:** confirmar as decisões que o Colab atribui a ele (o `sessoes.md`, a resposta à
-coleta 1, e "Depois do modelo na placa"); dizer se "Hey Viking" escapou na hora e se o ar-condicionado
-estava ligado; o dia da H2c2.
+**Confirmado pelo dono (2026-11-23):** nenhum "Hey Viking" escapou na hora da H2c1; a ventoinha do Mac
+estava ligada no piloto; as três decisões da D72; a H2c2 hoje, com música na caixa.
+**Depende do dono:** o "vai" de cada parte da H2c2.
 
 ## (atendido) RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 

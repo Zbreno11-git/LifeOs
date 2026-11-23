@@ -1387,7 +1387,7 @@ O que estava escrito na abertura:
   - **a sessão 1 está aprovada**, com 3 takes para o dono ouvir: 004, 007 e 026. Se saírem, 2
     reposições a 50 cm e 1 a 1,5 m;
   - **a sala mais quieta** perdeu chiado agudo (−11 dB em 4–7,5 kHz, −0,6 dB em 250–500 Hz): ele lê
-    como ventoinha (hipótese). MIC_NOISE_RMS 8–60, e a calibração dele virou por sessão. Anotar no
+    como ventoinha; o dono disse que a ventoinha do Mac estava ligada no piloto (não medido). MIC_NOISE_RMS 8–60, e a calibração dele virou por sessão. Anotar no
     LEIA-ME se o ar-condicionado estava ligado;
   - **a régua do barulho antes da fala** era sobre o fundo; a nova é sobre a fala do take (25%).
     **Feito no `coleta.py` em 2026-11-23**; conferido por nós nos dados: 0 marcados em 38, 15 e 10
@@ -1397,7 +1397,7 @@ O que estava escrito na abertura:
   - **as parecidas:** fora do treino, sem apagar, as da coleta 1 "Hey King" (take_001) e "Vai, King"
     (take_010): a lista está em `~/viking-wakeword/fora_do_treino.md`. Nas próximas, palavras com "Vi"
     e 2 a 3 repetições de cada frase;
-  - **decisões que ele atribui ao dono (a confirmar com o dono):** "Rei Viking" e "Ei, Viking" ativam
+  - **decisões do dono (confirmadas por ele em 2026-11-23, D72):** "Rei Viking" e "Ei, Viking" ativam
     (gravadas, vão para `real_positive`); "Hey King" e "Vai, King" tanto faz; o aparelho em uso
     registra as quase-ativações (ver "Depois do modelo na placa");
   - **os suspeitos, ouvidos pelo dono (a 2ª mensagem, notebook v2.1):** 004, 007 e 026 são um "Hey
@@ -1497,7 +1497,10 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
 7. **O pacote, o Drive e a mensagem ao Colab.** Pedir a ele o ok da 1ª sessão antes da 2ª, porque
    ela é a primeira com a 2 m e as parecidas.
 
-### H2c2 — a coleta 2: com música
+### H2c2 — a coleta 2: com música (no mesmo dia da H2c1, por decisão do dono em 2026-11-23)
+
+**O cuidado:** a H2c1 e a H2c2 ficam no mesmo lado do treino (o Colab separa treino e teste por sessão,
+e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4 ficam noutros dias.
 
 - **38 takes** com música tocando nas caixas da Scarlett, em volume de fundo a médio:
   - 10 a ~50 cm, normal;
@@ -1544,7 +1547,7 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
 - **No fim, a conta da coleta inteira:** as horas, os takes por distância e tom, as saturadas, e a
   lista do que o Colab descartou.
 
-### Depois do modelo na placa — o registro das quase-ativações (pedido do Colab, 2026-11-23; a confirmar com o dono)
+### Depois do modelo na placa — o registro das quase-ativações (pedido do Colab, confirmado pelo dono em 2026-11-23, D72)
 
 O pedido dele, para o firmware que roda o modelo:
 - dois limiares na média deslizante de 5: o de ativar e um bem mais baixo (`T_registro`, 0,5);
@@ -1553,8 +1556,8 @@ O pedido dele, para o firmware que roda o modelo:
 - um jeito simples de apagar tudo.
 
 **O que falta decidir ou desenhar (nosso):**
-- **o ok do dono, com a consequência dita:** o aparelho passa a guardar pedaços de voz no laptop de
-  casa, inclusive de outras pessoas no estúdio;
+- **a consequência, dita ao dono e aceita (D72):** o aparelho guarda pedaços de voz no laptop de casa,
+  inclusive de outras pessoas no estúdio;
 - **o log guarda as horas ouvindo**, não só os cruzamentos: um contador acumulado de segundos com o
   modelo rodando, gravado a cada minuto, que sobrevive a uma queda de energia e **para, sem zerar**,
   quando o interruptor do HA desliga (o Colab aceitou e detalhou em 2026-11-23);
