@@ -5,7 +5,94 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — H2c1 e H2c2 fechadas (2026-11-23); o próximo é a H2c3, em 2026-11-24, de noite
+## ▶️ RETOMAR AQUI — 2026-11-23, ~23:40Z (20:40 de São Paulo) — antes de um compact — o próximo é **abrir a H2m1** (o modelo na placa; o plano está aprovado)
+
+**Estado do repositório:** árvore limpa · HEAD `8b05c1f` (igual ao remoto) mais o commit deste bloco · travas:
+nenhuma · nada em segundo plano. Portões em 2026-11-23 ~23:35Z: `2944 passed, 466 skipped`, ruff limpo, `216
+files already formatted`. O `viking_v1/` na raiz é do dono e está no `.gitignore`: não é mudança pendente.
+
+**Estado do mundo (2026-11-23 ~23:33Z):** a placa em `/dev/cu.usbmodem14401` com o **firmware de uso único**
+(gravado em 2026-11-23 ~17:44Z, do código de `d2a0d76`; o `main.cpp` não mudou desde então), e o último
+fechamento da coleta 2 chegou ao PRONTO (~22:00Z). O `serve` ouve na 4000, sem cliente. O VPS não tem nada
+pendente além do `voz.py` com uma mudança só de comentário, que vai no próximo deploy.
+
+**Objetivo em curso:** responder ao Colab, medido na placa: o modelo carrega e invoca? quanta arena? o
+frontend dá a paridade? E devolver o firmware de uso.
+
+**Próximo passo exato:** H2m1, C0 → C4, do `sessoes.md` ("### H2m1 — o modelo na placa"), **sem pedir plano
+novo** (o dono o aprovou em 2026-11-23): começar por `firmware/viking-voz/buscar_libs.sh`; esperado, o
+`git rev-parse` das duas fontes igual ao fixado (`df87223` e `96bd69c`). Parar no C5, que pede o ok para
+gravar, e no C6, que pede o ok e a fala do dono.
+
+| C | Fecha quando | Estado |
+|---|---|---|
+| C0 | o plano (a tabela do `sessoes.md`) anotado aqui como "em curso", commit | ⬜ |
+| C1 | `buscar_libs.sh`: os dois commits conferidos; 2 rodadas iguais; as 4 operações no `df87223` | ⬜ |
+| C2 | `gerar_modelo.py` com testes e mutações | ⬜ |
+| C3 | `pio run -e xiao_s3_modelo` e `pio run` SUCCESS | ⬜ |
+| C4 | o programa de teste (a–f) compila | ⬜ |
+| C5 | **ok do dono** → gravar o teste: `carregou=sim invoke=ok`, arena, `197x40, 0 diferentes`, `int8: 0 de 7880`, `estado zerado: iguais` | ⬜ |
+| C6 | **ok do dono** → o firmware de uso de volta: PRONTO e uma fala certa | ⬜ |
+| C7 | a mensagem ao Colab, diário, barra, sessoes, commit, push, CI | ⬜ |
+
+**Reler, nesta ordem:**
+1. `CLAUDE.md` e `AGENTS.md` — as regras e as fronteiras;
+2. este bloco;
+3. `sessoes.md`: "▶️ Começar a próxima sessão por aqui" e "O novo roteiro da H2" inteiro (até a H2r);
+4. `docs/decisoes.md`: D73, D72, D71 e D70;
+5. `docs/erros.md`, o índice (a classe 8: editar o `PROGRESSO` só pelo trecho; a conferência num comando
+   antes do commit, nunca na mesma corrente);
+6. as skills `software-build`, `esp32-development` e `testes-que-provam`;
+7. `firmware/viking-voz/src/main.cpp` (o `converter()` e a coleta), `platformio.ini` e `BRINGUP.md`;
+8. `~/viking-wakeword/parity_v2/README_paridade.md` (o contrato da paridade) e `viking_v1/hey_viking.json`;
+9. a memória `testes-com-o-dono-no-hardware`.
+
+**Decisões desta conversa (e onde ficaram):** D71 revista, D72 e **D73** em `docs/decisoes.md`; o roteiro em
+`sessoes.md`; o modelo fora do repo no `.gitignore` e no `AGENTS.md`. Nenhuma ficou só no chat.
+
+**Não pode ser esquecido:**
+- **O TFLM:** o arduino-esp32 4.0.0 (IDF 6.1.1) não o traz. O `esp-tflite-micro` lido foi o `main`
+  (`3d0b461`, com as 4 operações); a **tag v1.4.3 é `df87223`**, por conferir. O README lista o IDF até o
+  6.0. O micro_frontend não vem nele: é o do `pymicro-features` v2.0.2 (`96bd69c`), compilado com
+  `-DFIXED_POINT=16`; as configurações estão no `src/micro_features.cpp` dele (30 ms, 10 ms, 40 canais,
+  125–7500 Hz, PCAN e log ligados).
+- **O modelo (2026-11-23):** 62.304 bytes, sha256 `c96061bf…e8672`; 13 ops; 2 subgrafos; 6 variáveis;
+  entrada `[1,3,40]` int8 (escala 26/255, zp −128); saída uint8; probabilidade = `q/255`, não `/256`.
+- **O vetor:** pedaços de 160 amostras; só entra enquanto `idx + 320 < total de bytes` (o último fica
+  fora, por isso 197 quadros); o frontend recém-zerado.
+- **Compilar e rodar o frontend no Mac foi negado** pelo modo automático em 2026-11-23: não refazer. As
+  fontes baixadas para ler estão no scratchpad da sessão e podem sumir.
+- **A porta:** um cliente por vez; `env -u ESPTOOL_CFGFILE` em todo `pio` e Python da placa; o `pio` é
+  `~/.platformio/penv/bin/pio`; o Python da placa é `~/esp32-mac/.venv/bin/python`. Se o `serve` travar
+  ("Remote does not seem to support RFC2217"), o `launchctl kickstart -k gui/$UID/com.esp32.serve` só com o
+  ok do dono. Abrir a porta reinicia a placa. O `main.cpp` não lê comando com a placa no meio de uma fala.
+- **O ambiente:** o `gh` está em `/usr/local/bin`; o `uv` não está no PATH; o mypy no Mac acusa 13 erros dos
+  stubs do Firestore (o CI passa). O SSH do laptop é recusado (a chave tem senha e o `ssh-agent` está
+  vazio): religar é do dono, e a H2m1 não usa.
+- **Testes de tempo** falham às vezes com o Mac ocupado e passam sozinhos: `test_texto_gigante_nao_explode`,
+  `test_entrada_gigante_nao_explode` e, em 2026-11-23 com carga 19, `test_o_corte_cresce_linear[palavras]`.
+- **Um achado do Colab se confere antes de aceitar** (várias vezes foi o contrário do que parecia), e uma
+  nota minha tirada do desenho de energia **não é de ouvido**.
+- **A H2c3 é em 2026-11-24, de noite:** se a H2m1 não couber antes, a coleta vai do mesmo jeito. Os scripts
+  estão em `~/viking-wakeword/_roteiros/*_c3.sh` (o estúdio em 20 min); faltam o `noite_c3.sh` e o zip em
+  pedaços (H2c3). Puxar o ar no 3-2-1; não comitar durante uma gravação; `caffeinate -is` numa janela do
+  Terminal; perguntar por tosse no fim de cada bloco e usar o `coleta.py anotar`; "Rei Viking" e "Ei,
+  Viking" nunca em `real_negative`; uma pasta por sessão, com a data do dia.
+
+**Depende do dono:** o ok do C5 e do C6 e a fala de teste; colar a mensagem do replanejamento no Colab; se
+quer os 10 min da voz do Viking na H2c3 (TTS, centavos); o "vai" da H2c3.
+
+**Riscos do próximo passo:** C5 e C6 gravam a placa (reversível: o firmware de uso se regrava, e a flash
+nunca se apaga). Sem gasto. A voz do estúdio fica desligada entre os dois.
+
+**Antes de confiar neste bloco, confira:**
+- `git status --short` vazio, e o HEAD é o commit deste bloco, logo depois de `8b05c1f`;
+- `/usr/local/bin/gh run list --limit 1`: o SHA do HEAD com `success`;
+- `git check-ignore viking_v1/hey_viking.tflite` casa, e `shasum -a 256 viking_v1/hey_viking.tflite` começa com
+  `c96061bfded78ccd`;
+- `ls /dev/cu.usbmodem*` e `lsof -nP -iTCP:4000` (o `serve` ouvindo, sem cliente).
+
+## (antes) A H2c1 e a H2c2, fechadas em 2026-11-23
 
 ### A H2c1, a coleta 1 de 4 da wake word (aberta em 2026-11-23, ~17:26Z; o plano aprovado pelo dono, com o ok para gravar a placa uma vez no C3)
 
@@ -37,26 +124,9 @@ lacunas, 0 checksums errados, ganho 2; `~/viking-wakeword/2026-11-23_c2.zip` (87
 
 **O Colab ficou com 27 dos 38 takes da H2c2, as parecidas e a hora; nada se repõe.**
 
-**O próximo passo:** a **H2c3**, em **2026-11-24**, de noite (marcada pelo dono). Os scripts de tela estão
-prontos, com a data dela: `~/viking-wakeword/_roteiros/{takes,parecidas,estudio}_c3.sh`. Conferir a placa,
-o `serve` e a tomada; mostrar o roteiro; o "vai" por parte; a prova de som do podcast (20 s) antes do
-bloco 5. Se for depois da meia-noite, o coletor aceita a pasta até as 6 h; se mudar de dia, trocar a data
-nos 3 scripts. **Nada a gravar na placa.**
-**Novo em 2026-11-23, ~20:30 de São Paulo: o replanejamento do Colab** (`sessoes.md`, "Replanejamento"): o
-modelo na placa vem antes da coleta. O `hey_viking.tflite` não está no Mac (só no Drive). O `takes_c3.sh`
-já está sem o bloco do podcast (29 takes). **Espera:** o ok do dono ao replanejamento, o arquivo do modelo
-e o ok para gravar um firmware de teste e voltar ao de uso (2 gravações). O teste de paridade do frontend
-no Mac foi negado pelo modo automático e não foi refeito.
-**Não esquecer:** puxar o ar no 3-2-1; não comitar durante a hora (cada parte anota o commit); rodar a
-hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condicionado; perguntar ao
-dono no fim de cada bloco se houve tosse, riso ou batida, e usar o `coleta.py anotar`; a régua do
-barulho é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`; uma pasta por sessão, com a
-data do dia (o coletor recusa outra). O Colab analisa o conteúdo do zip, não a pasta.
 **Confirmado pelo dono (2026-11-23):** nenhum "Hey Viking" escapou na hora da H2c1; a ventoinha do Mac
 estava ligada no piloto; as três decisões da D72; a H2c2 hoje, com música na caixa.
 **Dito pelo dono (2026-11-23):** nenhum "Hey Viking" escapou na hora com música; a H2c3 amanhã.
-**Depende do dono:** se quer os 10 min da voz do próprio Viking (TTS, centavos; criar o áudio gasta) e o
-"vai" de cada parte da H2c3.
 
 ## (atendido) RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 
