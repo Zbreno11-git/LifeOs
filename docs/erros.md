@@ -23,7 +23,7 @@
 | 5 | A ferramenta fez outra coisa do que eu li | 20 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 15 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 5 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
+| 8 | Comando que escreve com alcance maior que a mudança | 6 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
 
 ---
 
@@ -1067,3 +1067,11 @@ ele tinha começado à mão às 13:32 se perdeu (visto pelos horários e tamanho
 os arquivos). Uma cópia de segurança que se sobrescreve não é cópia. Agora: um nome por rodada (a
 data e a hora) e `mv -n`, e o script para se o arquivo não saiu do lugar. O antídoto: *o que
 acontece na segunda rodada?* antes de entregar um script que move ou grava.
+
+**2026-11-23 (H2c1, C3) — um `sed` por `| C1 |` trocou o estado de planos antigos.** Marquei os
+checkpoints da H2c1 com `sed 's/^| C1 (…)| ⬜ |$/…/'` no `PROGRESSO.md` inteiro, que guarda os planos
+de várias sessões com os mesmos nomes: 9 linhas antigas (H1, 13b, 11c) receberam o estado desta. O
+`grep` de conferência mostrou a lista, mas o commit estava na mesma corrente de comandos e saiu
+(`d2a0d76`) antes de eu ler. Restaurado do commit anterior, com o diff conferido (3 linhas). O
+antídoto: editar pelo trecho (o bloco da sessão), e a conferência num comando **antes** do commit,
+nunca na mesma corrente.
