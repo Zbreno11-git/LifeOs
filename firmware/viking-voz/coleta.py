@@ -681,6 +681,10 @@ def takes(args: argparse.Namespace) -> int:
                 "primeiro_bloco_da_sessao": primeiro_bloco,
                 "frase": frase,
                 "dica": args.dica,
+                # em que segundo do arquivo o FALE apareceu (pedido do agente do Colab, 2026-11-23). As
+                # amostras chegam um pouco depois do som: no áudio o FALE é aqui ou logo depois, nunca
+                # antes, e a fala não pode começar antes dele
+                "fale_s": round((fale_em - inicio) / TAXA, 3),
                 "antes_s": ANTES_S,
                 "depois_s": DEPOIS_S,
                 **niveis(take),

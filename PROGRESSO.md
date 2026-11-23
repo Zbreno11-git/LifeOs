@@ -5,7 +5,7 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — H2c1 e H2c2 fechadas (2026-11-23); o próximo é a H2c3, noutro dia, de noite
+## ▶️ RETOMAR AQUI — H2c1 e H2c2 fechadas (2026-11-23); o próximo é a H2c3, em 2026-11-24, de noite
 
 ### A H2c1, a coleta 1 de 4 da wake word (aberta em 2026-11-23, ~17:26Z; o plano aprovado pelo dono, com o ok para gravar a placa uma vez no C3)
 
@@ -37,10 +37,11 @@ lacunas, 0 checksums errados, ganho 2; `~/viking-wakeword/2026-11-23_c2.zip` (87
 
 **O Colab ficou com 27 dos 38 takes da H2c2, as parecidas e a hora; nada se repõe.**
 
-**O próximo passo:** a **H2c3** (de noite, com fala de fundo), **noutro dia**: copiar os scripts de
-`~/viking-wakeword/_roteiros/*_c2.sh`, trocar as dicas, as frases e a data (`sessoes.md`, H2c3), usar
-`--fundo "podcast"` nos 8 takes com fala, o roteiro e o "vai" por parte. Antes dela, perguntar ao dono se
-quer os 10 min da voz do próprio Viking (TTS, centavos). **Nada a gravar na placa.**
+**O próximo passo:** a **H2c3**, em **2026-11-24**, de noite (marcada pelo dono). Os scripts de tela estão
+prontos, com a data dela: `~/viking-wakeword/_roteiros/{takes,parecidas,estudio}_c3.sh`. Conferir a placa,
+o `serve` e a tomada; mostrar o roteiro; o "vai" por parte; a prova de som do podcast (20 s) antes do
+bloco 5. Se for depois da meia-noite, o coletor aceita a pasta até as 6 h; se mudar de dia, trocar a data
+nos 3 scripts. **Nada a gravar na placa.**
 **Não esquecer:** puxar o ar no 3-2-1; não comitar durante a hora (cada parte anota o commit); rodar a
 hora numa janela do Terminal com `caffeinate -is`; anotar no LEIA-ME o ar-condicionado; perguntar ao
 dono no fim de cada bloco se houve tosse, riso ou batida, e usar o `coleta.py anotar`; a régua do
@@ -48,8 +49,9 @@ barulho é 25% da fala; "Rei Viking" e "Ei, Viking" nunca em `real_negative`; um
 data do dia (o coletor recusa outra). O Colab analisa o conteúdo do zip, não a pasta.
 **Confirmado pelo dono (2026-11-23):** nenhum "Hey Viking" escapou na hora da H2c1; a ventoinha do Mac
 estava ligada no piloto; as três decisões da D72; a H2c2 hoje, com música na caixa.
-**Depende do dono:** dizer se "Hey Viking" escapou na hora da H2c2; se quer ouvir os takes marcados para dar ao Colab um
-gabarito de verdade; o dia da H2c3.
+**Dito pelo dono (2026-11-23):** nenhum "Hey Viking" escapou na hora com música; a H2c3 amanhã.
+**Depende do dono:** se quer os 10 min da voz do próprio Viking (TTS, centavos; criar o áudio gasta) e o
+"vai" de cada parte da H2c3.
 
 ## (atendido) RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 

@@ -1423,7 +1423,12 @@ O que estava escrito na abertura:
   - o grupo do teste é pela **data** do nome da pasta: sessão sem data pode cair no teste por engano;
   - **nosso, a partir disso:** as notas do 014 e do 030, que ele usou como "gabarito de ouvido", saíram
     do desenho de energia, **não de ouvido**. A do 015 também (o dono só disse que tossiu). O teste dele
-    contra elas é, em parte, circular; o gabarito de verdade é alguém ouvir e anotar onde está a frase.
+    contra elas é, em parte, circular; o gabarito de verdade é alguém ouvir e anotar onde está a frase;
+  - **depois (a v2.5, só o item 8 da mensagem chegou aqui):** o dono ouviu o 014 e há um comando, que ele
+    demorou a dizer e entra junto com a música; o 014 segue fora. O teto da janela (FALE + 2,60 s) que o
+    Colab ia usar caiu, e ficou só o limite inferior. Ele pediu o `fale_s` no `.seq.json`. **Feito:** o
+    segundo do arquivo em que o FALE apareceu. O áudio chega um pouco depois do som, então o FALE de
+    verdade está ali ou logo depois (não antes). Nos takes já gravados é 0,5 em todos (o `antes_s`).
 - **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
@@ -1541,7 +1546,8 @@ e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4
 - **Se tossir, espirrar, rir ou bater em algo num take, não se refaz:** o dono me diz o número, e
   eu anoto (`coleta.py anotar`; o Colab pediu, 2026-11-23).
 
-### H2c3 — a coleta 3: de noite, com conversa
+### H2c3 — a coleta 3: de noite, com conversa (marcada pelo dono para 2026-11-24)
+
 
 - **37 takes** de noite (proposta minha, com o pedido do Colab de 2026-11-23, a confirmar no roteiro):
   - 8 a ~50 cm, cansado ou rouco;

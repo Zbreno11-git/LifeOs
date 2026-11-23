@@ -568,6 +568,7 @@ def test_o_take_leva_a_dica_e_a_frase_e_continua_a_numeracao(monkeypatch, tmp_pa
         ("Hey Viking", "50 cm, voz normal"),
         ("Hey King", "1 m"),
     ]
+    assert [r["fale_s"] for r in lidos] == [0.5, 0.5, 0.5]
     saida = capsys.readouterr().out
     assert "50 cm, voz normal" in saida and "FALE AGORA: Hey King" in saida
 
@@ -599,6 +600,29 @@ def test_com_um_fundo_tocando_a_regua_do_barulho_nao_vale(monkeypatch, tmp_path)
     assert sem["pre_fala_barulho"] is True and "fundo" not in sem
     assert com["pre_fala_barulho"] is None and com["fundo"] == "música"
     assert com["pre_fala_sobre_a_fala"] == sem["pre_fala_sobre_a_fala"]  # a medida fica
+
+
+def test_o_fale_s_diz_onde_o_aviso_caiu_mesmo_sem_meio_segundo_antes(monkeypatch, tmp_path):
+    # só chegou 0,1 s de áudio até o FALE: o recorte começa no zero, e o aviso não está em 0,5 s
+    relogio, entregues = [0.0], []
+    monkeypatch.setattr(coleta.time, "time", lambda: relogio[0])
+    placa = _rodada(monkeypatch, _quadros(1_000))
+    original = placa.ler
+
+    def ler():
+        relogio[0] += 0.032
+        if len(entregues) >= 3 and relogio[0] < 5.7:  # a placa emudece até depois do FALE (5,6 s)
+            return []
+        entregues.append(1)
+        return original()
+
+    placa.ler = ler
+    comum = ["--n", "1", "--sessao", "2026-11-23_c9_takes", "--raiz", str(tmp_path)]
+    coleta.main(["takes", *comum])
+    (seq,) = (tmp_path / "real_positive" / "2026-11-23_c9_takes").glob("*.seq.json")
+    assert json.loads(seq.read_text())["fale_s"] == pytest.approx(
+        3 * coleta.BLOCO / coleta.TAXA, abs=1e-3
+    )
 
 
 def _sessao_pronta(raiz: Path) -> None:

@@ -3943,6 +3943,13 @@ MUTACOES = [
         "tests/test_coleta.py::test_com_um_fundo_tocando_a_regua_do_barulho_nao_vale",
     ),
     Mutacao(
+        "coleta: o fale_s é um número fixo",
+        "firmware/viking-voz/coleta.py",
+        '"fale_s": round((fale_em - inicio) / TAXA, 3),',
+        '"fale_s": ANTES_S,',
+        "tests/test_coleta.py::test_o_fale_s_diz_onde_o_aviso_caiu_mesmo_sem_meio_segundo_antes",
+    ),
+    Mutacao(
         "coleta: a sala para pelo relógio e deixa um resto",
         "firmware/viking-voz/coleta.py",
         "            for q in placa.ler()[:faltam]:",
