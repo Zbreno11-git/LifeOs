@@ -572,6 +572,35 @@ def test_o_take_leva_a_dica_e_a_frase_e_continua_a_numeracao(monkeypatch, tmp_pa
     assert "50 cm, voz normal" in saida and "FALE AGORA: Hey King" in saida
 
 
+def test_com_um_fundo_tocando_a_regua_do_barulho_nao_vale(monkeypatch, tmp_path):
+    relogio = [0.0]
+    monkeypatch.setattr(coleta.time, "time", lambda: relogio[0])
+
+    def rodar(sessao, *extra):
+        # 1000 constante não tem fala nenhuma: a janela antes do FALE é igual ao resto, e a régua marca
+        quadros = _quadros(1_000)
+        for q in quadros:
+            for i in range(0, coleta.BLOCO, 2):
+                q.amostras[i] = -1000
+        placa = _rodada(monkeypatch, quadros)
+        original = placa.ler
+
+        def ler():
+            relogio[0] += 0.032
+            return original()
+
+        placa.ler = ler
+        comum = ["--n", "1", "--sessao", sessao, "--raiz", str(tmp_path)]
+        assert coleta.main(["takes", *comum, *extra]) == 0
+        return json.loads((tmp_path / "real_positive" / sessao / "take_001.seq.json").read_text())
+
+    sem = rodar("2026-11-23_c8_takes")
+    com = rodar("2026-11-23_c9_takes", "--fundo", "música")
+    assert sem["pre_fala_barulho"] is True and "fundo" not in sem
+    assert com["pre_fala_barulho"] is None and com["fundo"] == "música"
+    assert com["pre_fala_sobre_a_fala"] == sem["pre_fala_sobre_a_fala"]  # a medida fica
+
+
 def _sessao_pronta(raiz: Path) -> None:
     pares = [("real_positive", "2026-11-23_c9_takes", "take_001", {"frase": "Hey Viking"})]
     pares.append(("real_negative", "2026-11-23_c9_estudio", "parte_001", {}))

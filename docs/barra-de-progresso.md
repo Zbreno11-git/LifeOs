@@ -7,13 +7,13 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-11-23 (as coletas 1 e 2 de 4 da palavra de ativação; a 1 aprovada).**
+**Última atualização: 2026-11-23 (as coletas 1 e 2 de 4 da palavra de ativação, fechadas).**
 
-`████████████░░░░░░░░ 28 de 44 sessões fechadas`
+`████████████░░░░░░░░ 29 de 44 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1 e H2c1; parciais: a H2 (a palavra de ativação: a
-1ª etapa feita) e a H2c2 (a coleta 2: gravada, falta o ok do agente do Colab); na fila: H2c3 e H2c4
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1, H2c1 e H2c2; parciais: a H2 (a palavra de ativação: a
+1ª etapa feita); na fila: H2c3 e H2c4
 (as outras 2 coletas da palavra), H1b (o som no
 aparelho), H1h (o reforço da voz), H3 (o Viking mandando no Home
 Assistant), 15 a 21, 11b (formulários) e a sessão final (o repo privado de novo). O total passou
@@ -26,8 +26,9 @@ da palavra de ativação (H2c1 a H2c4).
 **O que aconteceu:** você gravou mais 38 "Hey Viking", 22 frases parecidas e 1 hora de estúdio, tudo com
 a música tocando. Nenhum pedaço se perdeu, e quase nada estourou.
 
-**O que falta:** você subir o arquivo ao Drive e o agente do Colab dizer se consegue separar a sua voz
-da música. **O que vem:** a coleta 3, de noite e com conversa, em outro dia.
+**O agente do Colab** ficou com 27 das 38 gravações da palavra, e não é preciso repor: nas outras ele não
+consegue separar a sua voz da música com certeza. **O que vem:** a coleta 3, de noite e com gente falando
+no fundo (podcast ou vídeo), em outro dia.
 
 ## 2026-11-23 — a coleta 1 de 4: o estúdio quieto
 

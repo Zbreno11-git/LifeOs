@@ -1061,8 +1061,12 @@ faixa, o p50 ficou em 329–391, contra 25–44 na H2c1. O pacote: 66 arquivos, 
 periodicidade 0,48, contra 0,27 da tosse da H2c1 (foi avisado nas notas do pacote). Com música, a régua
 de 25% da fala marca muitos takes, por causa dela: não é defeito.
 
-**Não medido:** se o Colab consegue recortar a fala sob a música; se algum "Hey Viking" escapou na hora
-(perguntado ao dono).
+**A resposta do Colab (no mesmo dia):** ficou com 27 dos 38 takes, as parecidas e a hora. O corte dele
+pegava a música (no 030, 1,45 s dela como "Hey Viking") e passou a decidir pela novidade espectral. Ele
+conferiu contra as minhas notas, mas as do 014, 030 e 015 saíram do desenho de energia, não de ouvido:
+o gabarito é, em parte, circular, e isso foi dito a ele. O `takes --fundo` desliga a régua do barulho.
+
+**Não medido:** se algum "Hey Viking" escapou na hora (perguntado ao dono).
 
 ### 2026-11-23 — Sessão H2c1: o firmware único e a coleta 1 da wake word (o estúdio quieto)
 

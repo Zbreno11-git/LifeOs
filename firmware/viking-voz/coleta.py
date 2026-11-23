@@ -686,6 +686,10 @@ def takes(args: argparse.Namespace) -> int:
                 **niveis(take),
                 **pre_fala(take),
             }
+            if args.fundo:
+                # com música ou TV, o que vem antes da fala é o próprio fundo: a régua marcou 34 de 38
+                # takes da H2c2, que é o mesmo que não marcar (combinado com o Colab, 2026-11-23)
+                resumo.update(fundo=args.fundo, pre_fala_barulho=None)
             gravar_seq(wav, resumo)
             nv = niveis(take)
             if resumo["pre_fala_barulho"]:
@@ -869,6 +873,7 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--frase", default="Hey Viking")
     t.add_argument("--frases", help="uma por take, separadas por ; (no lugar de --frase e --n)")
     t.add_argument("--dica", default="", help="a distância e o tom: na tela e no .seq.json")
+    t.add_argument("--fundo", default="", help="o que toca (música, TV): vai ao .seq.json")
     t.add_argument("--negativo", action="store_true", help="casos difíceis: vão para real_negative")
     t.add_argument("--raiz", default=str(RAIZ_PADRAO))
     n = sub.add_parser("anotar", help="o que o ouvido sabe de um take (uma tosse, uma batida)")

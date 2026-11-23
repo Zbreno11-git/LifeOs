@@ -3936,6 +3936,13 @@ MUTACOES = [
         "tests/test_coleta.py::test_gravar_na_pasta_de_outro_dia_nem_abre_a_placa",
     ),
     Mutacao(
+        "coleta: a régua do barulho vale com música tocando",
+        "firmware/viking-voz/coleta.py",
+        "resumo.update(fundo=args.fundo, pre_fala_barulho=None)",
+        "resumo.update(fundo=args.fundo)",
+        "tests/test_coleta.py::test_com_um_fundo_tocando_a_regua_do_barulho_nao_vale",
+    ),
+    Mutacao(
         "coleta: a sala para pelo relógio e deixa um resto",
         "firmware/viking-voz/coleta.py",
         "            for q in placa.ler()[:faltam]:",

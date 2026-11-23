@@ -17,8 +17,8 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** **H2c3 — a coleta da wake word, 3 de 4, de noite, com conversa** (na seção "Sessões
-  H2c1–H2c4"; D71), **noutro dia**. A H2c1 fechou em 2026-11-23 (o Colab ficou com os 38 takes) e a H2c2
-  foi gravada no mesmo dia (o pacote espera o ok do Colab). Não pede firmware nem ferramenta nova.
+  H2c1–H2c4"; D71), **noutro dia**. A H2c1 e a H2c2 fecharam em 2026-11-23 (o Colab ficou com os 38
+  takes da 1 e com 27 da 2). Não pede firmware nem ferramenta nova.
   A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
   Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
   dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
@@ -1410,6 +1410,20 @@ O que estava escrito na abertura:
   - **divergências nossas:** o `parte_007` não está no zip que o dono recebeu (0 entradas), e o LEIA-ME
     dele o cita; ele leu outra cópia. E 4 h sem nenhuma falsa dão um limite de 12 por dia de 16 h (3/T),
     não 20.
+- **A resposta do agente do Colab à coleta 2 (notebook v2.3, 2026-11-23; medido por ele, salvo onde dito):**
+  - **27 dos 38 takes entram**, as 22 parecidas e a hora inteiras; nada se repõe. Marcados, sem apagar:
+    na C2, 012, 014, 016, 017, 018, 021, 025, 026, 027, 028 e 035; na C1, 007, 010 e 024 (lista em
+    `~/viking-wakeword/fora_do_treino.md`);
+  - o corte dele por energia pegava a música (no 030, 0,00–1,45 s); agora decide pela novidade
+    espectral (o quanto o quadro destoa do espectro mediano do take);
+  - positivo com música é quase o que a augmentation dele já faz; o que a gravação dá a mais é o
+    efeito Lombard (a fala muda com o barulho). Não gravar outra sessão de música;
+  - a régua de 25% vale **só sem fundo** (combinado). **Feito:** `takes --fundo TEXTO` a desliga e grava
+    o que tocava no `.seq.json`;
+  - o grupo do teste é pela **data** do nome da pasta: sessão sem data pode cair no teste por engano;
+  - **nosso, a partir disso:** as notas do 014 e do 030, que ele usou como "gabarito de ouvido", saíram
+    do desenho de energia, **não de ouvido**. A do 015 também (o dono só disse que tossiu). O teste dele
+    contra elas é, em parte, circular; o gabarito de verdade é alguém ouvir e anotar onde está a frase.
 - **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
@@ -1498,10 +1512,11 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
 7. **O pacote, o Drive e a mensagem ao Colab.** Pedir a ele o ok da 1ª sessão antes da 2ª, porque
    ela é a primeira com a 2 m e as parecidas.
 
-### H2c2 — a coleta 2: com música (no mesmo dia da H2c1, por decisão do dono em 2026-11-23) — ✅ gravada
+### H2c2 — a coleta 2: com música (no mesmo dia da H2c1, por decisão do dono em 2026-11-23) — ✅ fechada em 2026-11-23
 
 **O resultado (2026-11-23; o detalhe no diário):** 38 takes, 22 parecidas e 3.600 s com música, todos
-com `lacunas: []`, 0 checksums errados e ganho 2. **Falta:** o dono subir o zip e o ok do Colab.
+com `lacunas: []`, 0 checksums errados e ganho 2. **O Colab ficou com 27 takes, as parecidas e a hora;
+nada se repõe.**
 
 **O cuidado:** a H2c1 e a H2c2 ficam no mesmo lado do treino (o Colab separa treino e teste por sessão,
 e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4 ficam noutros dias.
@@ -1528,15 +1543,18 @@ e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4
 
 ### H2c3 — a coleta 3: de noite, com conversa
 
-- **37 takes** de noite:
-  - 10 a ~50 cm, cansado ou rouco;
-  - 10 a ~1 m, de lado para a placa;
-  - 10 a ~1,5 m, normal;
-  - 7 de outro canto do estúdio.
-- **15 parecidas.**
-- **1 h de estúdio com fala que não é a palavra:** uma ligação ou chamada de vídeo, um vídeo ou
-  podcast nas caixas, o dono falando. São os negativos que mais valem: a maior parte das ativações
-  falsas vem de fala.
+- **37 takes** de noite (proposta minha, com o pedido do Colab de 2026-11-23, a confirmar no roteiro):
+  - 8 a ~50 cm, cansado ou rouco;
+  - 8 a ~1 m, de lado para a placa;
+  - 8 a ~1,5 m, normal;
+  - 5 de outro canto do estúdio;
+  - **8 a ~1 m com um podcast ou vídeo falando** nas caixas (`takes --fundo "podcast"`, que desliga a
+    régua do barulho). É o caso mais difícil do uso, e o que mais pede **alguém ouvindo depois** e
+    anotando onde está a frase: a fala de fundo também é voz.
+- **20 parecidas**, sem fundo: as 10 da H2c2 em duas distâncias.
+- **1 h de estúdio com fala que não é a palavra:** podcast, vídeo ou série nas caixas e o dono falando
+  sozinho. São os negativos que mais valem: a maior parte das ativações falsas vem de fala. Uma ligação
+  ou outra pessoa **só com o ok dela**, porque o áudio vai ao Drive e ao Colab.
 - **Se o dono der o ok do gasto** (centavos): 10 min da voz do próprio Viking (o TTS) pelas caixas,
   gravados pelo mic, para o aparelho não acordar com a própria voz.
 
