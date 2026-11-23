@@ -184,29 +184,46 @@ def test_os_niveis_contam_a_saturacao_e_o_rms_por_100_ms():
     )
 
 
-def _take(barulho=None) -> array:
-    """3 s de um fundo fraco (ruído determinístico na faixa), com um barulho opcional somado em
-    0,45–0,70 s, a janela antes da fala."""
+def _take(barulho=None, forca=400) -> array:
+    """3,5 s de um fundo fraco (ruído determinístico na faixa) com uma fala (um tom de 500 Hz) em
+    1,2–1,9 s, e um barulho opcional somado em 0,45–0,70 s, a janela antes da fala."""
     import math
     import random
 
     sorteio = random.Random(7)
-    amostras = [sorteio.gauss(0, 50) for _ in range(3 * coleta.TAXA)]
+    amostras = [sorteio.gauss(0, 15) for _ in range(int(3.5 * coleta.TAXA))]
+
+    def somar(de, ate, hz, amplitude):
+        for i in range(int(de * coleta.TAXA), int(ate * coleta.TAXA)):
+            amostras[i] += amplitude * math.sin(2 * math.pi * hz * i / coleta.TAXA)
+
+    somar(1.2, 1.9, 500, 3_000)
     if barulho is not None:
-        for i in range(int(0.45 * coleta.TAXA), int(0.70 * coleta.TAXA)):
-            amostras[i] += 400 * math.sin(2 * math.pi * barulho * i / coleta.TAXA)
+        somar(0.45, 0.70, barulho, forca)
     return array("h", (int(a) for a in amostras))
 
 
-def test_o_barulho_antes_da_fala_e_apontado():
+def test_o_barulho_que_atrapalha_a_frase_e_apontado():
     assert coleta.pre_fala(_take())["pre_fala_barulho"] is False
-    com_barulho = coleta.pre_fala(_take(barulho=1_000))
-    assert com_barulho["pre_fala_barulho"] is True and com_barulho["pre_fala_razao"] > 2
+    com_barulho = coleta.pre_fala(_take(barulho=1_000, forca=1_500))
+    assert com_barulho["pre_fala_barulho"] is True
+    # metade da amplitude da fala. O barulho ocupa 3 dos 10 trechos ativos (um pela metade) e puxa a
+    # média deles: sqrt((7 + 2 x 0,25 + 0,125) / 10) = 0,873; 0,5 / 0,873 = 0,573
+    assert com_barulho["pre_fala_sobre_a_fala"] == pytest.approx(0.573, abs=0.01)
+
+
+def test_a_respiracao_na_sala_quieta_nao_e_apontada():
+    # a H2c1: o fundo caiu de 51 para 16, e a régua sobre o fundo (1,4×) acusou 18 de 38 takes por um
+    # som muito abaixo da fala. Este está a mais de 5× o fundo, e a ~8% da fala (o pior dos 38, dele)
+    medida = coleta.pre_fala(_take(barulho=1_000, forca=240))
+    assert medida["pre_fala_sobre_a_fala"] * medida["fala_na_banda"] > 5 * medida["fundo_na_banda"]
+    assert medida["pre_fala_sobre_a_fala"] == pytest.approx(0.08, abs=0.02)
+    assert medida["pre_fala_barulho"] is False
 
 
 def test_o_ronco_abaixo_da_faixa_do_modelo_nao_conta_como_barulho():
     # 20 Hz: o ronco que o piloto mostrou, que o frontend do treino (125–7500 Hz) não vê
-    assert coleta.pre_fala(_take(barulho=20))["pre_fala_barulho"] is False
+    assert coleta.pre_fala(_take(barulho=20, forca=3_000))["pre_fala_barulho"] is False
 
 
 def test_o_quadro_do_coleta_py_e_o_do_firmware():

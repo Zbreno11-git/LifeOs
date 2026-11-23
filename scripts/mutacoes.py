@@ -3772,7 +3772,7 @@ MUTACOES = [
         "firmware/viking-voz/coleta.py",
         '        "pre_fala_barulho": razao > PRE_FALA_LIMITE,',
         '        "pre_fala_barulho": False,',
-        "tests/test_coleta.py::test_o_barulho_antes_da_fala_e_apontado",
+        "tests/test_coleta.py::test_o_barulho_que_atrapalha_a_frase_e_apontado",
     ),
     Mutacao(
         "coleta: a placa não volta ao uso pelo pedido",
@@ -3892,6 +3892,13 @@ MUTACOES = [
         "    if destino.exists():",
         "    if False:",
         "tests/test_coleta.py::test_o_pacote_leva_so_a_sessao_com_somas_que_batem",
+    ),
+    Mutacao(
+        "coleta: o barulho antes da fala medido sobre o fundo",
+        "firmware/viking-voz/coleta.py",
+        "    fala = _rms([t for t in trechos if t >= ATIVO * maior])",
+        "    fala = fundo",
+        "tests/test_coleta.py::test_a_respiracao_na_sala_quieta_nao_e_apontada",
     ),
     Mutacao(
         "coleta: a sala para pelo relógio e deixa um resto",

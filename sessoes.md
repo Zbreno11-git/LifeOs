@@ -17,8 +17,9 @@ com o freio de clique destrutivo — ver Sessão 4b).
 ## ▶️ Começar a próxima sessão por aqui
 
 - **Sessão:** **H2c2 — a coleta da wake word, 2 de 4, com música** (na seção "Sessões H2c1–H2c4";
-  D71), **depois do ok do Colab à H2c1** (gravada em 2026-11-23; o pacote espera o dono subir). Não
-  pede firmware nem ferramenta nova: é só gravar. A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
+  D71). **A H2c1 foi aprovada pelo Colab em 2026-11-23**; antes da H2c2 o dono ouve 3 takes (004, 007 e
+  026), e os que não servirem se repõem no começo dela, antes da música. Não pede firmware nem
+  ferramenta nova. A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
   Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
   dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
   velocidade, com 13 s medidos do soltar ao `ok`, e o HA que reconheceu 1 de 2), a **H1b** (o som no
@@ -1382,6 +1383,27 @@ O que estava escrito na abertura:
     10, como ele mediu;
   - **as sessões:** as 16 h de negativos em 3–4 sessões (dias, horários e condições
     diferentes) e os 150 takes em vários dias, uma subpasta datada por sessão.
+- **A resposta do agente do Colab à coleta 1 (notebook v1.8, 2026-11-23; medido por ele, salvo onde
+  dito):**
+  - **a sessão 1 está aprovada**, com 3 takes para o dono ouvir: 004, 007 e 026. Se saírem, 2
+    reposições a 50 cm e 1 a 1,5 m;
+  - **a sala mais quieta** perdeu chiado agudo (−11 dB em 4–7,5 kHz, −0,6 dB em 250–500 Hz): ele lê
+    como ventoinha (hipótese). MIC_NOISE_RMS 8–60, e a calibração dele virou por sessão. Anotar no
+    LEIA-ME se o ar-condicionado estava ligado;
+  - **a régua do barulho antes da fala** era sobre o fundo; a nova é sobre a fala do take (25%).
+    **Feito no `coleta.py` em 2026-11-23**; conferido por nós nos dados: 0 marcados em 38, 15 e 10
+    (maior 12,8%, o take 010 do piloto). O limite novo também não marca mais esse take;
+  - o cortador dele (do primeiro ao último som) dava 2,55 s de mediana; agora corta no segmento
+    dominante: 0,64–1,53 s;
+  - **as parecidas:** fora do treino, sem apagar, as da coleta 1 "Hey King" (take_001) e "Vai, King"
+    (take_010): a lista está em `~/viking-wakeword/fora_do_treino.md`. Nas próximas, palavras com "Vi"
+    e 2 a 3 repetições de cada frase;
+  - **decisões que ele atribui ao dono (a confirmar com o dono):** "Rei Viking" e "Ei, Viking" ativam
+    (gravadas, vão para `real_positive`); "Hey King" e "Vai, King" tanto faz; o aparelho em uso
+    registra as quase-ativações (ver "Depois do modelo na placa");
+  - **divergências nossas:** o `parte_007` não está no zip que o dono recebeu (0 entradas), e o LEIA-ME
+    dele o cita; ele leu outra cópia. E 4 h sem nenhuma falsa dão um limite de 12 por dia de 16 h (3/T),
+    não 20.
 - **O pacote de paridade** está em `~/viking-wakeword/parity/` no Mac (fora do repo; o WAV é
   sintético, o SHA-256 confere com o README); o `.gitignore` recusa `*.wav`, `*.zip` e
   `viking-wakeword/` desde que um `parity.zip` caiu solto na raiz do repo.
@@ -1475,9 +1497,14 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
   - 10 a ~1 m, mais baixo;
   - 10 a ~1,5 m, mais rápido;
   - 8 a ~2 m, normal.
-- **15 parecidas**, com a música.
+- **20 parecidas**, com a música: 10 frases, 2 vezes cada (o Colab, 2026-11-23: uma vez é pouco, e o
+  que falta é "Vi"; proposta minha, a confirmar no roteiro): Vinícius · Vitória · Vivian · Hey, Vi ·
+  Hey, vida · Hey, viu? · Hey, vi um negócio · Hey vizinho · Hey Vicky · Vi um viking na TV.
 - **1 h de estúdio normal com música:** os gêneros que o dono ouve, com grave (é onde o passa-alta
   pode aparecer). O dono trabalha junto.
+
+- **Antes da música:** as reposições dos takes 004, 007 e 026 que o dono reprovar ao ouvir, na sala
+  quieta, na pasta da coleta 2 (`takes --dica "50 cm, reposição do c1/004"`).
 
 ### H2c3 — a coleta 3: de noite, com conversa
 
@@ -1503,6 +1530,24 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
   em que dá para confiar (com os limites da D71).
 - **No fim, a conta da coleta inteira:** as horas, os takes por distância e tom, as saturadas, e a
   lista do que o Colab descartou.
+
+### Depois do modelo na placa — o registro das quase-ativações (pedido do Colab, 2026-11-23; a confirmar com o dono)
+
+O pedido dele, para o firmware que roda o modelo:
+- dois limiares na média deslizante de 5: o de ativar e um bem mais baixo (`T_registro`, 0,5);
+- cada cruzamento de `T_registro` vai ao log, sempre (o horário, o pico e se ativou), e um clipe de
+  ~3 s (2 s antes e 1 s depois) vai ao laptop de casa, com teto de 200 por dia;
+- um jeito simples de apagar tudo.
+
+**O que falta decidir ou desenhar (nosso):**
+- **o ok do dono, com a consequência dita:** o aparelho passa a guardar pedaços de voz no laptop de
+  casa, inclusive de outras pessoas no estúdio;
+- **o log tem de guardar as horas ouvindo**, não só os cruzamentos: sem o denominador não há taxa por
+  dia. Com 0 falsas em 48 h o limite de 95% é 1 por dia de 16 h; com 1, já é ~1,6;
+- o caminho é a ponte (`viking casa`), com o mesmo HTTPS e o token do aparelho, e não um serviço novo;
+  o interruptor do HA desliga também o registro;
+- os clipes nunca vão ao repo nem à nuvem do Viking; saem do laptop só pelas mãos do dono;
+- a contagem continua exata com a Wi-Fi caída e depois de um reinício.
 
 ## Sessão H3 — o Viking mandando no Home Assistant (criada em 2026-11-21, na abertura da H1)
 

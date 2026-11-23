@@ -1077,6 +1077,10 @@ hipótese: ninguém ouviu.
 **Não medido:** o que saturou o estúdio; por que a sala estava mais quieta; se a palavra acorda (é a
 semana de uso, D71).
 
+**A resposta do Colab (no mesmo dia):** aprovada, com 3 takes para o dono ouvir. A régua do barulho
+antes da fala passou a ser sobre a fala do take (25%), e aqui não marca nenhum dos 63 arquivos das duas
+sessões. Ele pediu um registro das quase-ativações no uso (a confirmar com o dono; `sessoes.md`).
+
 **Erro meu:** um `sed` por `| C1 |` trocou o estado de 9 linhas de planos antigos (classe 8).
 
 ### 2026-11-22 — Sessão H2, primeira etapa: o ganho 2, o modo de coleta e o piloto da wake word

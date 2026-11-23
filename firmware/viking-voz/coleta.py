@@ -278,8 +278,11 @@ BANDA_HZ = 125
 # a janela do take em volta do "FALE" (que aparece em 0,5 s), antes da reação de quem fala; a
 # mesma que o agente do Colab mediu
 PRE_FALA_S = (0.45, 0.70)
-# a janela sobre o fundo do take: no piloto, 9 takes deram 1,00 e o com barulho, 1,67 (pelo Colab)
-PRE_FALA_LIMITE = 1.4
+# a janela sobre a fala do próprio take (a régua do agente do Colab, 2026-11-23). A anterior era sobre
+# o fundo (1,4×), e com a sala mais quieta (p10 de 51 para 16) acusou 18 de 38 takes por uma
+# respiração 20 dB abaixo da fala; a augmentation dele mistura ruído muito mais forte que isso
+PRE_FALA_LIMITE = 0.25
+ATIVO = 0.1  # a fala: os trechos de 100 ms a até 20 dB do mais forte
 
 
 def na_banda(amostras) -> list[float]:
@@ -303,17 +306,18 @@ def _rms(valores) -> float:
 
 
 def pre_fala(take) -> dict:
-    """O barulho antes da fala, para o agente do Colab descartar o take sem ouvir: a janela
-    PRE_FALA_S sobre o fundo do take (o p10 dos trechos de 100 ms), os dois na faixa do modelo."""
+    """O barulho antes da fala que atrapalharia a frase: a janela PRE_FALA_S sobre a fala do próprio
+    take (o RMS dos trechos ativos), os dois na faixa do modelo."""
     banda, quadro = na_banda(take), TAXA // 10
     trechos = sorted(_rms(banda[i : i + quadro]) for i in range(0, len(banda) - quadro + 1, quadro))
-    fundo = trechos[len(trechos) // 10] if trechos else 0.0
+    fundo, maior = (trechos[len(trechos) // 10], trechos[-1]) if trechos else (0.0, 0.0)
+    fala = _rms([t for t in trechos if t >= ATIVO * maior])
     inicio, fim = (int(s * TAXA) for s in PRE_FALA_S)
-    janela = _rms(banda[inicio:fim])
-    razao = janela / fundo if fundo else math.inf
+    razao = _rms(banda[inicio:fim]) / fala if fala else math.inf
     return {
         "fundo_na_banda": round(fundo, 1),
-        "pre_fala_razao": round(razao, 2),
+        "fala_na_banda": round(fala, 1),
+        "pre_fala_sobre_a_fala": round(razao, 3),
         "pre_fala_barulho": razao > PRE_FALA_LIMITE,
     }
 
@@ -671,7 +675,7 @@ def takes(args: argparse.Namespace) -> int:
             feitos += 1
             print(
                 f"   {wav.name}: pico {nv['pico']} · rms100 máx {nv['rms_100ms_max']} · "
-                f"saturadas {nv['saturadas']} · antes da fala {resumo['pre_fala_razao']}× o fundo · "
+                f"saturadas {nv['saturadas']} · antes da fala {resumo['pre_fala_sobre_a_fala']:.0%} dela · "
                 f"{veredito}",
                 flush=True,
             )
@@ -681,7 +685,7 @@ def takes(args: argparse.Namespace) -> int:
         placa.fechar()
     print(f"\n{feitos} takes em {pasta}; {ruins} com problema.")
     if barulhentos:
-        # o agente do Colab descarta estes sem ouvir (a janela antes da fala acima do fundo)
+        # o agente do Colab confere estes (o som antes da frase perto do nível dela)
         print(f"com barulho antes da fala: {', '.join(barulhentos)}")
     return 1 if ruins else 0
 
@@ -763,7 +767,7 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
             f"{dados.get('checksums_errados')} | {dados.get('ganho')} | {dados.get('pico')} | "
             f"{dados.get('saturadas')} | {faixa['p10']} / {faixa['p50']} / {faixa['p99']} | "
             f"{dados.get('frase', '—')} | {dados.get('dica') or '—'} | "
-            f"{dados.get('pre_fala_razao', '—')} |"
+            f"{dados.get('pre_fala_sobre_a_fala', '—')} |"
         )
     leia_me = "\n".join(
         [
@@ -774,7 +778,7 @@ def montar_pacote(raiz: Path, prefixo: str, notas: str = "") -> Path:
             "",
             f"- arquivos: {len(linhas)}; estúdio normal: {estudio_s / 60:.1f} min",
             f"- com lacuna, checksum errado, buraco de tempo ou sem o ganho: {ruins or 'nenhum'}",
-            f"- com barulho antes da fala (> {PRE_FALA_LIMITE}× o fundo): {barulhentos or 'nenhum'}",
+            f"- com barulho antes da fala (> {PRE_FALA_LIMITE:.0%} da fala): {barulhentos or 'nenhum'}",
             *([f"- de fora, menores que {CURTO_S} s: {curtos}"] if curtos else []),
             *(["", "## Observações", "", notas.strip()] if notas.strip() else []),
             "",
