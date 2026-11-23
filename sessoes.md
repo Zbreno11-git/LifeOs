@@ -16,9 +16,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H2c2 — a coleta da wake word, 2 de 4, com música** (na seção "Sessões H2c1–H2c4";
-  D71). **A H2c1 fechou em 2026-11-23: o Colab ficou com os 38 takes**, e nada se repõe. A H2c2 não
-  pede firmware nem ferramenta nova. A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
+- **Sessão:** **H2c3 — a coleta da wake word, 3 de 4, de noite, com conversa** (na seção "Sessões
+  H2c1–H2c4"; D71), **noutro dia**. A H2c1 fechou em 2026-11-23 (o Colab ficou com os 38 takes) e a H2c2
+  foi gravada no mesmo dia (o pacote espera o ok do Colab). Não pede firmware nem ferramenta nova.
+  A H2 abriu em 2026-11-22: o ganho 2, o modo de coleta e o piloto, aprovado pelo agente do
   Colab. As 4 coletas vão uma por dia, quando o dono quiser. Entre elas, ou depois, a escolher com o
   dono: a **H1h** (o reforço da voz: o endereço de e-mail soletrado e achado pelo nome, a
   velocidade, com 13 s medidos do soltar ao `ok`, e o HA que reconheceu 1 de 2), a **H1b** (o som no
@@ -1497,7 +1498,10 @@ roteiros de tela desta sessão estão em `~/viking-wakeword/_roteiros/` (copiar 
 7. **O pacote, o Drive e a mensagem ao Colab.** Pedir a ele o ok da 1ª sessão antes da 2ª, porque
    ela é a primeira com a 2 m e as parecidas.
 
-### H2c2 — a coleta 2: com música (no mesmo dia da H2c1, por decisão do dono em 2026-11-23)
+### H2c2 — a coleta 2: com música (no mesmo dia da H2c1, por decisão do dono em 2026-11-23) — ✅ gravada
+
+**O resultado (2026-11-23; o detalhe no diário):** 38 takes, 22 parecidas e 3.600 s com música, todos
+com `lacunas: []`, 0 checksums errados e ganho 2. **Falta:** o dono subir o zip e o ok do Colab.
 
 **O cuidado:** a H2c1 e a H2c2 ficam no mesmo lado do treino (o Colab separa treino e teste por sessão,
 e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4 ficam noutros dias.

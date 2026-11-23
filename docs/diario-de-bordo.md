@@ -1046,6 +1046,24 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-23 — Sessão H2c2: a coleta 2 da wake word (com música)
+
+**Feito (no mesmo dia da H2c1, por decisão do dono; as duas no treino).** 38 takes (50 cm a 2 m; normal,
+mais baixo e mais rápido), 22 parecidas em duas distâncias e 3.600 s com a música tocando. Sem firmware
+nem ferramenta nova; uma prova de som de 20 s antes.
+
+**Medido.** Todos com `lacunas: []`, 0 checksums errados e ganho 2; 0 saturadas nos takes e nas
+parecidas, 5 na hora (num instante, 10% da energia abaixo de 125 Hz). A hora saiu em 6 partes exatas,
+sem o resto da H2c1. A música tocou a hora toda (122 s de 3.600 com RMS na faixa abaixo de 60). Na
+faixa, o p50 ficou em 329–391, contra 25–44 na H2c1. O pacote: 66 arquivos, 87 MB.
+
+**Aprendido.** Com música, o corte por vozeamento do Colab pode errar: a tosse do take 015 tem
+periodicidade 0,48, contra 0,27 da tosse da H2c1 (foi avisado nas notas do pacote). Com música, a régua
+de 25% da fala marca muitos takes, por causa dela: não é defeito.
+
+**Não medido:** se o Colab consegue recortar a fala sob a música; se algum "Hey Viking" escapou na hora
+(perguntado ao dono).
+
 ### 2026-11-23 — Sessão H2c1: o firmware único e a coleta 1 da wake word (o estúdio quieto)
 
 **Feito.**
