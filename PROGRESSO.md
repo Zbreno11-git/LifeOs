@@ -5,7 +5,31 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
+## ▶️ EM CURSO — H2c1, a coleta 1 de 4 da wake word (aberta em 2026-11-23, ~17:26Z; o plano aprovado pelo dono, com o ok para gravar a placa uma vez no C3)
+
+**Medido na abertura (2026-11-23 ~17:26Z):** HEAD `85c26f1` com o CI `success`; árvore limpa; a placa
+em `/dev/cu.usbmodem*` e o boot de uso até o PRONTO (`saude -> ok`), depois de o dono replugar a
+USB; o `serve` ouvindo, sem cliente e sem precisar de kickstart; a ponte do laptop responde (401 sem
+token) e o HA também (200). O SSH do laptop foi recusado: a chave do Mac tem senha e o `ssh-agent`
+está vazio (a coleta não usa). O `gh` está em `/usr/local/bin`, fora do PATH da sessão.
+
+| C | Faz | Fecha quando | Estado |
+|---|---|---|---|
+| C0 | este plano | commit | ✅ |
+| C1 | o firmware único: no uso, o laço parado escuta `VKC1 COLETA`; na coleta, `VKC1 USO` ou 30 s sem sinal do Mac reiniciam no uso | `pio run` sem aviso; o env `xiao_s3_coleta` some | ⬜ |
+| C2 | `coleta.py`: pede e solta o modo (também no Ctrl-C e no SIGTERM), `takes --dica` e `--frases`, a gravação em partes de 10 min direto no disco, `pacote` | a suíte verde e as mutações novas mortas | ⬜ |
+| C3 | gravar a placa (ok dado) e conferir | PRONTO; `medir --minutos 1` com 0 lacunas e `ganho=2`; PRONTO de novo sozinha; 1 fala do dono | ⬜ |
+| C4 | a coleta, com o "vai" por parte: 38 takes (10 a 50 cm, 10 a 1 m, 10 a 1,5 m, 8 a 2 m), 15 parecidas, 1 h de estúdio | `lacunas: []`, 0 checksums errados e ganho 2 em todo arquivo | ⬜ |
+| C5 | a revisão em duas passadas, os docs, commit, push, o zip e a mensagem ao Colab | CI `success`; o zip relido | ⬜ |
+
+**Mudou do plano-base (dito ao dono):** a placa escuta o comando a qualquer momento em que está
+parada (não só 1,5 s depois do boot, que atrasaria o uso e disputaria com o reset da abertura da
+porta); ela volta ao uso sozinha sem o sinal do Mac; a hora de estúdio vai para o disco aos poucos.
+**Risco sem medida:** o Mac **escrever** na placa pela porta RFC2217 (o C3 mede antes da gravação).
+**A ordem do dono:** os takes e as parecidas com ele olhando; depois a 1 h com a janela minimizada.
+**Fora das parecidas:** "Rei Viking" e "Ei, Viking" (soam como a palavra).
+
+## (atendido) RETOMAR AQUI — 2026-11-22, ~23:20Z (checkpoint para o compact) — o próximo é **abrir a H2c1** (a coleta 1 de 4 da wake word)
 
 **Estado, medido em 2026-11-22 ~23:20Z:** HEAD `7f5c3f1` no `origin/master`, com o CI `completed
 success`; árvore limpa; nada em segundo plano; nenhuma trava. **A placa tem o firmware de uso**
