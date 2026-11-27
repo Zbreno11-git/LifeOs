@@ -1503,6 +1503,27 @@ estúdio fica desligada** entre C5 e C6.
 
 ### H2m2 — a escuta contínua (o modelo de brinquedo basta)
 
+**O plano (2026-11-27, aberto logo depois da H2m1; as respostas do dono no mesmo dia):** quando ouvir a
+palavra, o **LED acende 1 s** (o da placa e o do D6), e o serial diz a probabilidade; nada vai ao laptop
+ainda. O teste é **ao vivo**: 10 "Hey Viking" a ~1 m, e 30 min do estúdio normal sem a palavra. Se o ESP-NN não
+compilar ou der mais de 3 de diferença nas 65 saídas, **segue com os kernels de referência**. A versão do
+pacote de compilação fica **fixa** (a 61.04.00, a instalada). Não faz: abrir a conversa (H2m3), o som, o log
+no laptop.
+
+| C | Faz | ✅ Checkpoint | 🐞 Previsto → depurar |
+|---|---|---|---|
+| C0 | o plano no `PROGRESSO.md`; o `platform` do `platformio.ini` fixo na 61.04.00 | o uso compila com o mesmo RAM e flash, e só os bytes da hora da compilação mudam | a 61.04.00 baixa outro Arduino → voltar o "stable" e perguntar |
+| C1 | `buscar_libs.sh` com o `esp-nn` v1.5.0 (`ace42ac`) e duas variantes do TFLM: `tflm` (referência, a de hoje) e `tflm_nn` (os kernels `esp_nn/` e o `esp-nn` do S3) | os commits conferidos, 2 rodadas iguais; a impressão de `tflm` igual à de hoje | o multicore do esp-nn pede o FreeRTOS → fica de fora |
+| C2 | o env `xiao_s3_modelo_nn` (o mesmo teste da H2m1, com o ESP-NN) | compila | as definições do alvo não chegam ao `esp_nn.h` → os flags do env |
+| C3 | `src/escuta.h/.cpp`: o I2S por blocos de 512 pelo mesmo `converter()`, o frontend em pedaços de 160, o modelo a cada 3 quadros, a média de 5 > limiar, 2 s de espera depois de acordar e 1 s de aquecimento depois de cada recomeço; o limiar no NVS (`VKC1 LIMIAR 0.90`); o LED de 1 s; uma linha de status por minuto (µs por passo, o maior, blocos perdidos, heap). O botão interrompe a escuta e grava como hoje; a coleta pela USB a desliga. Tudo atrás de `__has_include("modelo.h")`, com o `gerar_modelo.py gerar --so-modelo` escrevendo o `src/modelo.h` | sem o `modelo.h`, o uso sai igual ao de hoje (o critério dos 69 bytes); com ele, compila | o LDF segue `#include` dentro de `#if` → `lib_ldf_mode = chain+` |
+| C4 | os testes: o gerador (`--so-modelo`), a régua dos envs, e o limiar fora de [0,50; 0,999] recusado | `pytest` verde; mutações mortas | — |
+| C5 | **com o ok do dono:** gravar o `xiao_s3_modelo_nn` | a **maior diferença** entre as 65 saídas e as da H2m1 (até 2 esperado; acima de 3, avisar o Colab) e o `Invoke` | diferença > 3 → os de referência (a resposta do dono) |
+| C6 | **com o ok:** gravar o uso com a escuta (os kernels que o C5 escolher) | o PRONTO; uma fala pelo botão certa; os 10 "Hey Viking" contados; 30 min sem a palavra, com as falsas contadas; com a Wi-Fi ligada: µs por passo (médio e maior), blocos perdidos, heap | blocos perdidos → o I2S com mais DMA, ou a escuta numa tarefa própria |
+| C7 | o fechamento: a revisão em duas passadas, diário, barra, sessoes, PROGRESSO, a mensagem ao Colab, commit, push, CI | CI `success` | — |
+
+**A voz do estúdio fica desligada entre o C5 e o C6.** O modelo vai dentro do firmware de uso (o binário fica
+na placa e no `.pio/`, fora do git).
+
 - O `loop()` deixa de só esperar o botão: lê o I2S por blocos de 512, pelo mesmo `converter()` (o passa-alta
   contínuo, como no treino), guarda num anel da PSRAM, alimenta o frontend (160 amostras) e o modelo (a cada
   3 quadros). A decisão é a média de 5 > limiar, com 2 s de espera. Um módulo à parte (`src/escuta.h`,

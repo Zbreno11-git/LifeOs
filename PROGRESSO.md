@@ -5,7 +5,28 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-27, ~22:15Z (19:15 de São Paulo) — a **H2m1 fechou**; o próximo é a H2m2 (a escuta contínua) ou a H2c3 (a coleta 3), no dia que o dono marcar
+## ▶️ H2m2 EM CURSO — a escuta contínua (aberta em 2026-11-27, ~22:45Z, logo depois da H2m1; o plano está no `sessoes.md`, "### H2m2", com as respostas do dono)
+
+**Medido na abertura (2026-11-27 ~22:40Z):** HEAD `ea5414f`, igual ao remoto, CI `success`; a placa com o uso
+(PRONTO), o SSH ao laptop ok. O `esp-nn` não vem no Arduino 4.0.0 (só o `esp-dsp` e o `esp-sr`): a v1.5.0 é o
+`ace42ac7721119cd543fc40ffe719e601fa8f20f`. O pacote de compilação instalado é o pioarduino 61.04.00
+(publicado em 2026-11-19), e o `platformio.ini` pedia o "stable", que muda sozinho.
+
+**As respostas do dono (2026-11-27):** o LED aceso 1 s ao acordar; o teste ao vivo (10 vezes e 30 min); sem o
+ESP-NN se ele não compilar ou passar de 3 de diferença; a versão do pacote fixa.
+
+| C | Fecha quando | Estado |
+|---|---|---|
+| C0 | o plano aqui; o `platform` fixo na 61.04.00; o uso igual (o critério dos 69 bytes) | ✅ 2026-11-27: o mesmo RAM/flash (52.812 / 1.125.036) e só os 69 bytes da hora diferentes do binário gravado às 22:00Z |
+| C1 | `buscar_libs.sh` com o `esp-nn` e o `tflm_nn`; 2 rodadas iguais; o `tflm` igual ao de hoje | ⬜ |
+| C2 | `pio run -e xiao_s3_modelo_nn` SUCCESS | ⬜ |
+| C3 | a escuta: sem o `modelo.h` o uso sai igual; com ele, compila | ⬜ |
+| C4 | os testes e as mutações | ⬜ |
+| C5 | **ok do dono** → o teste com o ESP-NN: a maior diferença nas 65 saídas e o tempo | ⬜ |
+| C6 | **ok do dono** → o uso com a escuta: PRONTO, a fala, 10 "Hey Viking", 30 min, os tempos com a Wi-Fi | ⬜ |
+| C7 | o fechamento, a mensagem ao Colab, commit, push, CI | ⬜ |
+
+## (antes) 2026-11-27, ~22:15Z (19:15 de São Paulo) — a **H2m1 fechou**; o próximo é a H2m2 (a escuta contínua) ou a H2c3 (a coleta 3), no dia que o dono marcar
 
 **Estado no fechamento (2026-11-27 ~22:10Z):** a placa com o **firmware de uso** de volta (gravado às
 ~22:00Z do `xiao_s3`, o mesmo `src/main.cpp` de `d2a0d76`), no PRONTO, com a ponte ok; uma fala do dono
