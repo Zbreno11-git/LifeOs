@@ -254,7 +254,10 @@ a auditoria que saiu dele estão em `docs/historico/` (entregues e respondidos; 
   com versão e sha256 fixados; `scripts/instalar_hooks.sh` liga o scanner no commit.
 - `firmware/viking-voz/` — o firmware do aparelho do estúdio (XIAO ESP32-S3, Arduino-ESP32 3.x pelo
   pioarduino; Sessão H1, D70): `src/main.cpp` (um firmware só, D71: liga no uso, e a coleta da wake
-  word é pedida pela USB pelo `coleta.py`, que grava fora do repo e devolve a placa ao uso), o `segredos.exemplo.h` (o `segredos.h` de verdade
+  word é pedida pela USB pelo `coleta.py`, que grava fora do repo e devolve a placa ao uso), o
+  teste do modelo da wake word (H2m1, D73: `src/teste_modelo/main.cpp` no env `xiao_s3_modelo`, que o
+  uso não compila; as libs do TFLM e do frontend por commit fixo em `buscar_libs.sh`, e os cabeçalhos
+  do modelo e do vetor por `gerar_modelo.py`, tudo fora do git), o `segredos.exemplo.h` (o `segredos.h` de verdade
   fica fora do git), o `BRINGUP.md` (pinos, camadas, os comandos no Mac) e o `serial_log.py`.
   Skills do hardware em `.claude/skills/esp32-development` e `electronics` (MIT, copiadas do
   workspace do VPS).

@@ -16,9 +16,10 @@ com o freio de clique destrutivo — ver Sessão 4b).
 
 ## ▶️ Começar a próxima sessão por aqui
 
-- **Sessão:** **H2m1 — o modelo na placa** (a seção "O novo roteiro da H2"; D73; o plano está aprovado
-  pelo dono em 2026-11-23). Depois, a **H2c3** (a coleta curta e a noite, em 2026-11-24, de noite), a H2m2,
-  a H2m3, a H2v1 e a H2r. A H2c1 e a H2c2 fecharam em 2026-11-23 (o Colab ficou com os 38 takes da 1 e com
+- **Sessão:** **H2c3 — a coleta curta e a noite** (a data é do dono: a de 2026-11-24 não aconteceu, e os
+  roteiros `_c3.sh` precisam da data nova) e a **H2m2 — a escuta contínua**, que não depende dela. A **H2m1**
+  fechou em 2026-11-27: o modelo carrega e invoca na placa, e o frontend dá os mesmos 197x40 do Python.
+  Depois, a H2m3, a H2v1 e a H2r. A H2c1 e a H2c2 fecharam em 2026-11-23 (o Colab ficou com os 38 takes da 1 e com
   27 da 2); a H2c4 foi cancelada. Em paralelo, a escolher com o dono: a **H1h** (o reforço da voz: o
   endereço de e-mail soletrado e achado pelo nome, a velocidade, com 13 s medidos do soltar ao `ok`, e o HA
   que reconheceu 1 de 2), a **H1b** (o som no aparelho, quando o MAX98357A chegar), a **H3** e a **15 —
@@ -1438,8 +1439,8 @@ O que estava escrito na abertura:
 
 | # | Sessão | Entrega verificável | Precisa de |
 |---|---|---|---|
-| 1 | **H2m1 — o modelo na placa** | as 3 respostas ao Colab (carrega?, arena, paridade) e o firmware de uso de volta | o ok para gravar a placa 2 vezes |
-| 2 | **H2c3 — a coleta curta, e a noite** (2026-11-24, de noite) | tudo `lacunas: []`; dois zips; a voz de volta de manhã | o "vai" por parte |
+| 1 | **H2m1 — o modelo na placa** ✅ 2026-11-27 | as 3 respostas ao Colab (carrega?, arena, paridade) e o firmware de uso de volta | o ok para gravar a placa 2 vezes |
+| 2 | **H2c3 — a coleta curta, e a noite** (a de 2026-11-24 não aconteceu; data nova do dono) | tudo `lacunas: []`; dois zips; a voz de volta de manhã | o "vai" por parte |
 | 3 | **H2m2 — a escuta contínua** | o firmware de uso ouve sempre e diz no serial e no LED quando acordou; o botão segue igual | H2m1 "sim" |
 | 4 | **H2m3 — a palavra abre a conversa** | "Hey Viking" → som → fala → resposta, sem botão | H2m2 |
 | 5 | **H2v1 — o v1 de verdade, e um dia de uso** | o modelo do Colab na placa, o limiar ajustado, as falsas por **hora ouvindo** | o v1 do Colab |
@@ -1466,9 +1467,20 @@ VAR_HANDLE e 6 ASSIGN): **6 variáveis**. O `hey_viking.json`: limiar 0,97, jane
 O arduino-esp32 4.0.0 (IDF 6.1.1) não traz o TFLM. O `esp-tflite-micro` (lido no commit `3d0b461`, do main)
 tem as 4 operações de variável e o `micro_resource_variable.cc`, mas não o micro_frontend; a tag v1.4.3 é o
 `df87223` (por conferir). O README da Espressif lista o IDF até o 6.0: no 6.1.1 está **por provar**. Nada
-foi compilado. A compilação do teste de paridade no Mac foi negada pelo modo automático: não refazer.
+foi compilado. **Respondido na H2m1 (2026-11-27):** a v1.4.3 é o `df87223`, e compila e roda no IDF 6.1.1. A compilação do teste de paridade no Mac foi negada pelo modo automático: não refazer.
 
-### H2m1 — o modelo na placa (a próxima; ~1h30; o plano está aprovado)
+### H2m1 — o modelo na placa — ✅ fechada em 2026-11-27
+
+**O resultado, medido na XIAO (2026-11-27 ~21:55Z):** `carregou=sim invoke=ok`, as 13 operações que o
+arquivo pede, nenhuma faltando; arena usada **20.988 bytes** (a menor que serve, 20.992; o Colab estimou
+11.161); o frontend deu os **197x40 iguais** ao Python (o CSV da placa é igual byte a byte ao da
+referência); `int8: 0 de 7880`; as três rodadas do modelo (novo, depois do `Reset()`, novo de novo) iguais;
+o frontend em 607 µs por quadro (maior 711) e o `Invoke` em **13,8 ms** (maior 14,8), a 240 MHz, com os
+kernels de referência. O firmware de uso voltou (PRONTO, a ponte ok) e uma fala do dono respondeu, ouvida
+por ele. O que ficou: `buscar_libs.sh`, `gerar_modelo.py` (19 testes, 8 mutações mortas), o env
+`xiao_s3_modelo` e `src/teste_modelo/main.cpp`; a saída para o Colab, em `~/viking-wakeword/h2m1/`.
+
+O plano, como foi aprovado:
 
 **Não faz:** escuta ao vivo, ativação, Wi-Fi, ponte (H2m2 e H2m3). Nada do `src/main.cpp` muda.
 
@@ -1497,6 +1509,11 @@ estúdio fica desligada** entre C5 e C6.
 - O limiar fica no NVS, com o valor inicial do `hey_viking.json`; muda pela serial (`VKC1 LIMIAR 0.90`).
 - **Medir, com a Wi-Fi e o TLS ligados:** os µs por passo de 30 ms (o limite anotado na H2 é 10 ms), a
   arena, o heap livre, se a escuta perde blocos, e quantas vezes o modelo acorda numa gravação das coletas.
+- **O ponto de partida (H2m1, 2026-11-27, sem Wi-Fi):** o `Invoke` leva 13,8 ms, acima dos 10 ms anotados
+  (cabe nos 30 ms, mas sobra pouco com o TLS), com os kernels de referência; o ESP-NN da Espressif troca 14
+  deles, entre eles o CONV_2D, o DEPTHWISE_CONV_2D e o FULLY_CONNECTED, e é a primeira coisa a medir. A
+  arena é de ~21 KB, não 11 KB. O que medir com ele: o tempo, e a paridade das saídas contra as de
+  referência (as 65 de `~/viking-wakeword/h2m1/placa_saidas_q.txt`).
 
 ### H2m3 — a palavra abre a conversa
 
@@ -1640,7 +1657,7 @@ e as duas têm o mesmo dia, a mesma voz e o mic no mesmo lugar). A H2c3 e a H2c4
 - **Se tossir, espirrar, rir ou bater em algo num take, não se refaz:** o dono me diz o número, e
   eu anoto (`coleta.py anotar`; o Colab pediu, 2026-11-23).
 
-### H2c3 — a coleta curta, só teste, e a noite (marcada pelo dono para 2026-11-24, de noite; D73)
+### H2c3 — a coleta curta, só teste, e a noite (marcada pelo dono para 2026-11-24, de noite; D73; não aconteceu nesse dia, e a data nova é dele)
 
 **Antes (a ferramenta):** o `montar_pacote` guarda tudo na memória (`conteudo`), e a noite tem ~1,2 GB: passa
 a escrever o zip em pedaços, com o sha calculado no caminho, e a conferir relendo em pedaços. Teste e

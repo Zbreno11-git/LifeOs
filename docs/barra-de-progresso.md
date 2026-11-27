@@ -7,17 +7,30 @@
 > **Como contar:** uma sessão só está "fechada" quando funcionou no Mac do dono, não quando o
 > código foi enviado. Se parte dela ainda não foi testada lá, ela conta como parcial.
 
-**Última atualização: 2026-11-23, de noite (o replanejamento da palavra de ativação).**
+**Última atualização: 2026-11-27 (o modelo da palavra de ativação rodou no aparelho).**
 
-`████████████░░░░░░░░ 29 de 48 sessões fechadas`
+`████████████▌░░░░░░░ 30 de 48 sessões fechadas`
 
 Contagem (em `sessoes.md`): fechadas 1, 2, 3, 3b, 4, 4b, Gmail, Gmail 2, Pluggy, 5, 6, 7, 8, 8b, 9,
-10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1, H2c1 e H2c2; parciais: a H2 (a palavra de ativação: as
-coletas 1 e 2 feitas); na fila: H2m1, H2c3, H2m2, H2m3, H2v1 e H2r (a palavra), H1b (o som no aparelho),
+10, 10b, 10c, 11, 11c, 11d, 12, 13, 13b, 14, 14b, H1, H2c1, H2c2 e H2m1; parciais: a H2 (a palavra de ativação:
+as coletas 1 e 2 e o modelo no aparelho feitos); na fila: H2c3, H2m2, H2m3, H2v1 e H2r (a palavra), H1b (o som no aparelho),
 H1h (o reforço da voz), H3 (o Viking mandando no Home Assistant), 15 a 21, 11b (formulários) e a sessão
 final (o repo privado de novo). O total passou de 36 para 40 em 2026-11-22 (a H1b, a H2 e a H3 já estavam
 no roteiro desde 21/11 e não tinham entrado na conta, e a H1h nasceu no dia); de 40 para 44 no mesmo dia
 (as 4 coletas); e de 44 para 48 em 2026-11-23: a coleta 4 saiu, e entraram H2m1, H2m2, H2m3, H2v1 e H2r.
+
+## 2026-11-27 — o "cérebro" da palavra roda no aparelho
+
+**O que aconteceu:** pusemos o modelo do "Hey Viking" na placa por alguns minutos, num programa de teste, e
+ela fez a mesma conta que o computador do treino, número por número: nenhuma diferença em 7.880 valores. O
+modelo carrega, responde, e sabe "zerar" entre uma escuta e outra. Depois a voz do estúdio voltou, e você
+conferiu com uma fala.
+
+**Dois números para o próximo passo:** o modelo usa ~21 KB de memória (o Colab esperava 11; cabe com folga) e
+leva 14 milésimos de segundo para cada pedaço de 30 milésimos de áudio. Dá conta, mas com pouca sobra quando
+a Wi-Fi estiver ligada: a próxima sessão testa a versão mais rápida da Espressif.
+
+**O que vem:** a placa ouvindo o tempo todo (H2m2), e a coleta 3 no dia que você marcar.
 
 ## 2026-11-23, de noite — o plano mudou: primeiro pôr no aparelho, depois afinar
 

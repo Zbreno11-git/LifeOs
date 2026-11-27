@@ -95,7 +95,9 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
 
    `coleta.py takes …`, `sala …` e `pacote …` gravam em `~/viking-wakeword/` (fora do repo), numa
    pasta por sessão (`AAAA-MM-DD_descricao`). O ganho é 2, congelado (o comentário do `GANHO`).
-7. [ ] O modelo da wake word na placa (H2m1, D73): um firmware à parte, `src/teste_modelo/main.cpp`
+7. [x] O modelo da wake word na placa (H2m1, D73; **visto em 2026-11-27 ~21:55Z**: `carregou=sim
+   invoke=ok`, arena 20.988, `frontend: 197x40, 0 diferentes`, `int8: 0 de 7880`, A=B=C, o `Invoke` em
+   13,8 ms; o uso de volta às ~22:00Z, com o PRONTO e uma fala certa): um firmware à parte, `src/teste_modelo/main.cpp`
    no env `xiao_s3_modelo`, sem o microfone e sem a rede (a voz do estúdio fica desligada até o
    `xiao_s3` voltar). Ele carrega e invoca o modelo, mede a arena, passa o WAV de referência pelo
    frontend do treino e compara com o Python. Os passos (os dois primeiros escrevem fora do git):

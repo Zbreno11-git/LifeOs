@@ -5,7 +5,20 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ H2m1 EM CURSO — aberta em 2026-11-27, ~21:30Z (18:30 de São Paulo), depois de um compact; o plano é o de 2026-11-23, aprovado
+## ▶️ RETOMAR AQUI — 2026-11-27, ~22:15Z (19:15 de São Paulo) — a **H2m1 fechou**; o próximo é a H2m2 (a escuta contínua) ou a H2c3 (a coleta 3), no dia que o dono marcar
+
+**Estado no fechamento (2026-11-27 ~22:10Z):** a placa com o **firmware de uso** de volta (gravado às
+~22:00Z do `xiao_s3`, o mesmo `src/main.cpp` de `d2a0d76`), no PRONTO, com a ponte ok; uma fala do dono
+respondeu (`fala: ok viking` na ponte, ouvida por ele). O SSH ao laptop funciona (a chave está no
+`ssh-agent`); a Scarlett está lá (`card 1`). Nada em segundo plano. A saída para o Colab em
+`~/viking-wakeword/h2m1/` (o CSV da placa, as 65 saídas de cada rodada, o relatório do serial).
+
+**Próximo passo exato:** perguntar ao dono a data da H2c3 (os roteiros `~/viking-wakeword/_roteiros/*_c3.sh`
+trazem 2026-11-24, e o `coleta.py` recusa pasta de outro dia: trocar a data antes de gravar, e escrever o
+`noite_c3.sh` e o zip em pedaços, como diz a seção H2c3 do `sessoes.md`). A H2m2 não depende dela: abrir com
+o plano da seção "### H2m2", começando por medir o `Invoke` com o ESP-NN (13,8 ms com os de referência).
+
+### A H2m1 (aberta em 2026-11-27, ~21:30Z, depois de um compact; o plano era o de 2026-11-23, aprovado)
 
 **Medido na abertura (2026-11-27 ~21:26Z):** HEAD `5336f81`, igual ao remoto, CI `success`; árvore limpa; o
 `viking_v1/hey_viking.tflite` ignorado pelo git, sha256 `c96061bfded78ccd…`; a placa em `/dev/cu.usbmodem14301`
@@ -26,7 +39,7 @@ pendente além do `voz.py` com uma mudança só de comentário, que vai no próx
 **Objetivo em curso:** responder ao Colab, medido na placa: o modelo carrega e invoca? quanta arena? o
 frontend dá a paridade? E devolver o firmware de uso.
 
-**Próximo passo exato:** H2m1, C0 → C4, do `sessoes.md` ("### H2m1 — o modelo na placa"), **sem pedir plano
+**Próximo passo (o da abertura, feito):** H2m1, C0 → C4, do `sessoes.md` ("### H2m1 — o modelo na placa"), **sem pedir plano
 novo** (o dono o aprovou em 2026-11-23): começar por `firmware/viking-voz/buscar_libs.sh`; esperado, o
 `git rev-parse` das duas fontes igual ao fixado (`df87223` e `96bd69c`). Parar no C5, que pede o ok para
 gravar, e no C6, que pede o ok e a fala do dono.
@@ -39,8 +52,8 @@ gravar, e no C6, que pede o ok e a fala do dono.
 | C3 | `pio run -e xiao_s3_modelo` e `pio run` SUCCESS | ✅ 2026-11-27: os dois SUCCESS, sem aviso; o TFLM v1.4.3 compila no IDF 6.1.1 (a dúvida do README); o uso com o mesmo RAM/flash (52.812 / 1.125.036) e só os 69 bytes da hora da compilação diferentes, como numa recompilação sem mudança |
 | C4 | o programa de teste (a–f) compila | ✅ 2026-11-27: 105.012 de RAM, 545.293 de flash; 19 testes e 8 mutações (todas mortas) no gerador e nos dois envs |
 | C5 | **ok do dono** → gravar o teste: `carregou=sim invoke=ok`, arena, `197x40, 0 diferentes`, `int8: 0 de 7880`, `estado zerado: iguais` | ✅ 2026-11-27 ~21:55Z (ok do dono): `carregou=sim invoke=ok`, 0 ops faltando; arena usada 20.988 (a menor que serve, 20.992; o Colab estimou 11.161); `197x40, 0 diferentes`, e o CSV da placa igual byte a byte ao da referência; `int8: 0 de 7880`; A=B e A=C iguais; frontend 607 µs/quadro (maior 711), Invoke 13,8 ms (maior 14,8) a 240 MHz, kernels de referência. A saída em `~/viking-wakeword/h2m1/`. **A voz do estúdio está desligada até o C6** |
-| C6 | **ok do dono** → o firmware de uso de volta: PRONTO e uma fala certa | ⬜ |
-| C7 | a mensagem ao Colab, diário, barra, sessoes, commit, push, CI | ⬜ |
+| C6 | **ok do dono** → o firmware de uso de volta: PRONTO e uma fala certa | ✅ 2026-11-27 ~22:00Z (ok do dono): PRONTO, `ponte: saude -> ok`; a fala de 2,4 s às 19:05:31 (São Paulo) deu `estado ok` em 13 s e a resposta nas caixas |
+| C7 | a mensagem ao Colab, diário, barra, sessoes, commit, push, CI | ✅ 2026-11-27: `2963 passed, 466 skipped`; a mensagem ao Colab entregue ao dono no chat |
 
 **Reler, nesta ordem:**
 1. `CLAUDE.md` e `AGENTS.md` — as regras e as fronteiras;

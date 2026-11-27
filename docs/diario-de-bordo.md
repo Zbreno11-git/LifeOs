@@ -1046,6 +1046,36 @@ calendário passaram a fixar Brasília no dublê. 5 mutações novas, 5 mortas; 
 **Erro meu:** a rodada de mutações do conserto foi com o `timeout` da ferramenta (classe 6,
 segunda vez; terminou sem estrago).
 
+### 2026-11-27 — Sessão H2m1: o modelo da wake word roda na placa
+
+**Por quê.** A pergunta do Colab desde 23/11: o TFLM carrega o `viking_v1` no nosso firmware? O plano era o
+de 23/11, aprovado; esta sessão abriu depois de um compact.
+
+**Feito.** `buscar_libs.sh` baixa o `esp-tflite-micro` v1.4.3 (`df87223`) e o frontend do `pymicro-features`
+v2.0.2 (`96bd69c`) por commit fixo e monta `lib/` (fora do git): os kernels de referência das 13 operações,
+sem o ESP-NN e sem o `signal/` (só os cabeçalhos, que o resolver inclui). `gerar_modelo.py` faz os
+cabeçalhos do modelo e do vetor (fora do git) e confere de novo o que a placa respondeu; recusa o sha
+errado, a referência que não cumpre a própria fórmula e a saída que o git não ignora. O env
+`xiao_s3_modelo` compila `src/teste_modelo/main.cpp`; o uso não o compila (`build_src_filter`,
+`lib_ignore`), e o binário de uso sai com os mesmos tamanhos e só os 69 bytes da hora da compilação
+diferentes, o mesmo que numa recompilação sem mudança (medido antes). O log do TFLM sai pela USB, porque o
+`stderr` do Arduino não vai para lá.
+
+**Medido na placa (2026-11-27 ~21:55Z, com o ok do dono):** `carregou=sim invoke=ok`; arena de 20.988
+bytes (o Colab estimou 11.161); os 197x40 do frontend iguais aos do Python, byte a byte no CSV; `int8: 0 de
+7880`; as três rodadas do modelo iguais (o `Reset()` zera o estado); 607 µs por quadro no frontend e 13,8
+ms por `Invoke`, acima dos 10 ms anotados na H2. O uso voltou (~22:00Z, com o ok) e uma fala do dono
+respondeu, `fala: ok viking` na ponte, ouvida por ele.
+
+**Medido na abertura:** a H2c3 de 2026-11-24 não aconteceu; os roteiros dela trazem essa data. O SSH ao
+laptop voltou a funcionar (a chave está no `ssh-agent`, que estava vazio em 23/11).
+
+**Não medido:** o tempo com o ESP-NN e com a Wi-Fi ligada (é a H2m2); se as 65 saídas do modelo batem com
+as do Python (é do Colab, com a mensagem).
+
+**Erro meu (classe 8):** a mutação da guarda de escrita do gerador fez o arquivo de teste nascer no repo, e o
+teste não o apagava; visto no `git status` antes do commit. O teste agora limpa num `finally`.
+
 ### 2026-11-23 — O replanejamento da H2: o modelo na placa primeiro (D73)
 
 **Por quê.** O agente do Colab (notebook v2.6) propôs inverter a ordem: nenhum artefato do treino tinha
