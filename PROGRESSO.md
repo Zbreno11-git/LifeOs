@@ -5,9 +5,16 @@
 > sessão fecha, o que era narrativa vai para o diário, lição para `docs/erros.md`, decisão para
 > `docs/decisoes.md`, e este bloco passa a apontar para a próxima sessão.
 
-## ▶️ RETOMAR AQUI — 2026-11-23, ~23:40Z (20:40 de São Paulo) — antes de um compact — o próximo é **abrir a H2m1** (o modelo na placa; o plano está aprovado)
+## ▶️ H2m1 EM CURSO — aberta em 2026-11-27, ~21:30Z (18:30 de São Paulo), depois de um compact; o plano é o de 2026-11-23, aprovado
 
-**Estado do repositório:** árvore limpa · HEAD `8b05c1f` (igual ao remoto) mais o commit deste bloco · travas:
+**Medido na abertura (2026-11-27 ~21:26Z):** HEAD `5336f81`, igual ao remoto, CI `success`; árvore limpa; o
+`viking_v1/hey_viking.tflite` ignorado pelo git, sha256 `c96061bfded78ccd…`; a placa em `/dev/cu.usbmodem14301`
+(o nome mudou desde 23/11) e o `serve` de pé desde 2026-11-27 18:21Z com esse mesmo dispositivo aberto, sem
+cliente (não precisa de kickstart). **Divergência:** a H2c3, marcada para 2026-11-24, não aconteceu (nada da c3
+em `~/viking-wakeword/`); os roteiros `_c3.sh` trazem a data 2026-11-24 e o `coleta.py` recusa pasta de outro
+dia: a data nova é do dono.
+
+**Estado do repositório (o de 2026-11-23, abaixo, segue de referência):** HEAD `8b05c1f` (igual ao remoto) mais o commit deste bloco · travas:
 nenhuma · nada em segundo plano. Portões em 2026-11-23 ~23:35Z: `2944 passed, 466 skipped`, ruff limpo, `216
 files already formatted`. O `viking_v1/` na raiz é do dono e está no `.gitignore`: não é mudança pendente.
 
@@ -26,7 +33,7 @@ gravar, e no C6, que pede o ok e a fala do dono.
 
 | C | Fecha quando | Estado |
 |---|---|---|
-| C0 | o plano (a tabela do `sessoes.md`) anotado aqui como "em curso", commit | ⬜ |
+| C0 | o plano (a tabela do `sessoes.md`) anotado aqui como "em curso", commit | ✅ 2026-11-27 |
 | C1 | `buscar_libs.sh`: os dois commits conferidos; 2 rodadas iguais; as 4 operações no `df87223` | ⬜ |
 | C2 | `gerar_modelo.py` com testes e mutações | ⬜ |
 | C3 | `pio run -e xiao_s3_modelo` e `pio run` SUCCESS | ⬜ |
