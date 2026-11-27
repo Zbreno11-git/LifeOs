@@ -6,12 +6,14 @@
 #     kernels das 13 operações do modelo, os de **referência** (sem o ESP-NN, que troca 14 deles), e
 #     sem o `signal/` (só os cabeçalhos: o `micro_mutable_op_resolver.h` os inclui) nem o
 #     `debug_log.cc` (o programa de teste escreve o log pela USB);
+#   - (H2m2) a mesma base com os kernels do ESP-NN (`lib/tflm_nn`) e o `esp-nn` v1.5.0 da Espressif
+#     (Apache-2.0), com o assembly do S3 (`lib/esp-nn`);
 #   - o frontend de áudio do treino, o do `pymicro-features` v2.0.2 (Apache-2.0; o kissfft dentro
 #     dele é BSD), com os 16 fontes que o `setup.py` dele compila e o `-DFIXED_POINT=16` dele.
 #
 # Cada rodada baixa de novo, confere o commit, monta numa pasta nova e só então troca a velha; a
 # impressão de cada lib (o sha256 dos caminhos e dos conteúdos) sai no fim, e duas rodadas têm de
-# dar a mesma. Não grava nada fora de lib/tflm e lib/microfrontend.
+# dar a mesma. Não grava nada fora de lib/tflm, lib/tflm_nn, lib/esp-nn e lib/microfrontend.
 #
 #   bash firmware/viking-voz/buscar_libs.sh
 set -euo pipefail  # roda no bash 3.2 do macOS (sem mapfile)
@@ -20,6 +22,8 @@ TFLM_URL=https://github.com/espressif/esp-tflite-micro
 TFLM_COMMIT=df8722334a80ceabc609c1e72968f417cd9437f1  # a tag v1.4.3 (git ls-remote, 2026-11-27)
 MF_URL=https://github.com/rhasspy/pymicro-features
 MF_COMMIT=96bd69cfad79aa67697e176570d3dd87052c3def  # a tag v2.0.2 (git ls-remote, 2026-11-27)
+NN_URL=https://github.com/espressif/esp-nn
+NN_COMMIT=ace42ac7721119cd543fc40ffe719e601fa8f20f  # a tag v1.5.0 (git ls-remote, 2026-11-27)
 
 AQUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB="$AQUI/lib"
@@ -53,6 +57,7 @@ impressao() {  # o sha256 dos caminhos e dos conteúdos, sem a hora dos arquivos
 
 baixar tflm "$TFLM_URL" "$TFLM_COMMIT"
 baixar mf "$MF_URL" "$MF_COMMIT"
+baixar nn "$NN_URL" "$NN_COMMIT"
 
 # --- o TFLM ------------------------------------------------------------------------------------
 T="$TMP/tflm"
@@ -70,24 +75,40 @@ KERNELS=(call_once var_handle read_variable assign_variable reshape reshape_comm
   strided_slice strided_slice_common conv conv_common depthwise_conv depthwise_conv_common split_v
   fully_connected fully_connected_common logistic logistic_common quantize quantize_common
   kernel_util)
-FONTES_TFLM=("$M/esp/micro_time.cc")
-for f in "${NUCLEO[@]}"; do FONTES_TFLM+=("$M/$f.cc"); done
-for f in "${KERNELS[@]}"; do FONTES_TFLM+=("$K/$f.cc"); done
-for f in common portable_tensor_utils quantization_util tensor_ctypes; do
-  FONTES_TFLM+=("$K/internal/$f.cc")
-done
-for f in greedy_memory_planner linear_memory_planner; do FONTES_TFLM+=("$M/memory_planner/$f.cc"); done
-for f in non_persistent_arena_buffer_allocator persistent_arena_buffer_allocator \
-  recording_single_arena_buffer_allocator single_arena_buffer_allocator; do
-  FONTES_TFLM+=("$M/arena_allocator/$f.cc")
-done
+# O ESP-NN troca estes 5 dos nossos kernels pelos de `kernels/esp_nn/` (os `_common` ficam).
+TROCADOS_PELO_NN=(conv depthwise_conv fully_connected logistic quantize)
 CABECALHOS_TFLM=()
 while IFS= read -r f; do CABECALHOS_TFLM+=("$f"); done < <(cd "$T" && find tensorflow signal -name '*.h' | LC_ALL=C sort)
+
+montar_tflm() {  # destino [nn]: sem o 2º argumento, os kernels de referência
+  local destino="$1" variante="${2:-}" f
+  local fontes=("$M/esp/micro_time.cc")
+  for f in "${NUCLEO[@]}"; do fontes+=("$M/$f.cc"); done
+  for f in "${KERNELS[@]}"; do
+    if [[ "$variante" == nn && " ${TROCADOS_PELO_NN[*]} " == *" $f "* ]]; then
+      fontes+=("$K/esp_nn/$f.cc")
+    else
+      fontes+=("$K/$f.cc")
+    fi
+  done
+  for f in common portable_tensor_utils quantization_util tensor_ctypes; do
+    fontes+=("$K/internal/$f.cc")
+  done
+  for f in greedy_memory_planner linear_memory_planner; do fontes+=("$M/memory_planner/$f.cc"); done
+  for f in non_persistent_arena_buffer_allocator persistent_arena_buffer_allocator \
+    recording_single_arena_buffer_allocator single_arena_buffer_allocator; do
+    fontes+=("$M/arena_allocator/$f.cc")
+  done
+  copiar "$T" "$destino" "${fontes[@]}" "${CABECALHOS_TFLM[@]}" LICENSE
+  copiar "$T/third_party/flatbuffers/include" "$destino" flatbuffers
+  cp "$T/third_party/flatbuffers/LICENSE" "$destino/LICENSE.flatbuffers"
+  printf '%s\n' "$TFLM_URL @ $TFLM_COMMIT (v1.4.3)" >"$destino/FONTE.txt"
+  N_FONTES_TFLM=${#fontes[@]}
+}
+
 NOVO_TFLM="$TMP/lib_tflm"
-copiar "$T" "$NOVO_TFLM" "${FONTES_TFLM[@]}" "${CABECALHOS_TFLM[@]}" LICENSE
-copiar "$T/third_party/flatbuffers/include" "$NOVO_TFLM" flatbuffers
-cp "$T/third_party/flatbuffers/LICENSE" "$NOVO_TFLM/LICENSE.flatbuffers"
-printf '%s\n' "$TFLM_URL @ $TFLM_COMMIT (v1.4.3)" >"$NOVO_TFLM/FONTE.txt"
+montar_tflm "$NOVO_TFLM"
+FONTES_TFLM=$N_FONTES_TFLM
 cat >"$NOVO_TFLM/library.json" <<'JSON'
 {
   "name": "tflm",
@@ -101,6 +122,55 @@ cat >"$NOVO_TFLM/library.json" <<'JSON'
   }
 }
 JSON
+
+# A variante com o ESP-NN (H2m2): os mesmos fontes, com os 5 kernels de `esp_nn/`. O `ESP_NN` e as
+# definições do S3 vêm do env (`platformio.ini`), para o `esp_nn.h` escolher a mesma versão aqui e na
+# lib `esp-nn`.
+NOVO_TFLM_NN="$TMP/lib_tflm_nn"
+montar_tflm "$NOVO_TFLM_NN" nn
+FONTES_TFLM_NN=$N_FONTES_TFLM
+cat >"$NOVO_TFLM_NN/library.json" <<'JSON'
+{
+  "name": "tflm_nn",
+  "version": "1.4.3",
+  "description": "esp-tflite-micro v1.4.3 com os kernels do ESP-NN para conv, depthwise_conv, fully_connected, logistic e quantize (buscar_libs.sh)",
+  "build": {
+    "srcDir": ".",
+    "includeDir": ".",
+    "srcFilter": ["+<tensorflow/>"],
+    "flags": ["-O3", "-Wno-unused-parameter", "-Wno-missing-field-initializers"]
+  }
+}
+JSON
+
+# --- o esp-nn -------------------------------------------------------------------------------------
+# Os fontes saem do próprio CMakeLists.txt dele (as listas `c_srcs` e `s3_srcs`), não de uma lista
+# escrita aqui: uma versão nova que acrescente um arquivo o traz junto.
+fontes_do_cmake() {  # o nome da lista
+  awk -v nome="$1" '
+    $0 ~ ("set\\(" nome "[ \t]*$") { f = 1; next }
+    f { linha = $0
+        while (match(linha, /"[^"]+"/)) {
+          print substr(linha, RSTART + 1, RLENGTH - 2); linha = substr(linha, RSTART + RLENGTH)
+        }
+        if (linha ~ /\)/) exit }' "$TMP/nn/CMakeLists.txt"
+}
+FONTES_NN=()
+while IFS= read -r f; do FONTES_NN+=("$f"); done < <(fontes_do_cmake c_srcs; fontes_do_cmake s3_srcs)
+[[ ${#FONTES_NN[@]} -ge 40 ]] || { echo "ERRO: só ${#FONTES_NN[@]} fontes lidos do CMakeLists do esp-nn" >&2; exit 1; }
+for f in "${FONTES_NN[@]}"; do
+  [[ -f "$TMP/nn/$f" ]] || { echo "ERRO: o CMakeLists do esp-nn cita $f, que não existe" >&2; exit 1; }
+done
+NOVO_NN="$TMP/lib_nn"
+copiar "$TMP/nn" "$NOVO_NN" include src LICENSE
+printf '%s\n' "$NN_URL @ $NN_COMMIT (v1.5.0)" >"$NOVO_NN/FONTE.txt"
+{
+  printf '{\n  "name": "esp-nn",\n  "version": "1.5.0",\n'
+  printf '  "description": "o esp-nn v1.5.0 da Espressif, o ANSI-C e o assembly do S3 do CMakeLists dele (buscar_libs.sh)",\n'
+  printf '  "build": {\n    "srcDir": ".",\n    "includeDir": "include",\n    "srcFilter": ["-<*>"'
+  for f in "${FONTES_NN[@]}"; do printf ', "+<%s>"' "$f"; done
+  printf '],\n    "flags": ["-Isrc/common", "-mlongcalls", "-fno-unroll-loops", "-O2", "-Wno-unused-function", "-Werror=vla"]\n  }\n}\n'
+} >"$NOVO_NN/library.json"
 
 # --- o frontend ----------------------------------------------------------------------------------
 F=tensorflow/lite/experimental/microfrontend/lib
@@ -135,8 +205,12 @@ JSON
 
 # --- a troca: a pasta nova só entra inteira ----------------------------------------------------
 mkdir -p "$LIB"
-rm -rf "$LIB/tflm" "$LIB/microfrontend"
+rm -rf "$LIB/tflm" "$LIB/tflm_nn" "$LIB/esp-nn" "$LIB/microfrontend"
 mv "$NOVO_TFLM" "$LIB/tflm"
+mv "$NOVO_TFLM_NN" "$LIB/tflm_nn"
+mv "$NOVO_NN" "$LIB/esp-nn"
 mv "$NOVO_MF" "$LIB/microfrontend"
-echo "lib/tflm: ${#FONTES_TFLM[@]} fontes, ${#CABECALHOS_TFLM[@]} cabeçalhos; impressão $(impressao "$LIB/tflm")"
+echo "lib/tflm: $FONTES_TFLM fontes, ${#CABECALHOS_TFLM[@]} cabeçalhos; impressão $(impressao "$LIB/tflm")"
+echo "lib/tflm_nn: $FONTES_TFLM_NN fontes; impressão $(impressao "$LIB/tflm_nn")"
+echo "lib/esp-nn: ${#FONTES_NN[@]} fontes; impressão $(impressao "$LIB/esp-nn")"
 echo "lib/microfrontend: ${#FONTES_MF[@]} fontes; impressão $(impressao "$LIB/microfrontend")"

@@ -18,8 +18,8 @@ ESP-NN se ele não compilar ou passar de 3 de diferença; a versão do pacote fi
 | C | Fecha quando | Estado |
 |---|---|---|
 | C0 | o plano aqui; o `platform` fixo na 61.04.00; o uso igual (o critério dos 69 bytes) | ✅ 2026-11-27: o mesmo RAM/flash (52.812 / 1.125.036) e só os 69 bytes da hora diferentes do binário gravado às 22:00Z |
-| C1 | `buscar_libs.sh` com o `esp-nn` e o `tflm_nn`; 2 rodadas iguais; o `tflm` igual ao de hoje | ⬜ |
-| C2 | `pio run -e xiao_s3_modelo_nn` SUCCESS | ⬜ |
+| C1 | `buscar_libs.sh` com o `esp-nn` e o `tflm_nn`; 2 rodadas iguais; o `tflm` igual ao de hoje | ✅ 2026-11-27: o `tflm` com a mesma impressão da H2m1 (`f0d1618f…`); `tflm_nn` `5e4cdbd5…`; `esp-nn` com 56 fontes lidos do CMakeLists dele, `00ed23cc…`; 2 rodadas iguais |
+| C2 | `pio run -e xiao_s3_modelo_nn` SUCCESS | ✅ 2026-11-27: SUCCESS sem aviso, 105.092 de RAM e 586.085 de flash; as versões do S3 ligadas no ELF (`esp_nn_conv_s8_esp32s3`…); o teste de referência segue com a `tflm` |
 | C3 | a escuta: sem o `modelo.h` o uso sai igual; com ele, compila | ⬜ |
 | C4 | os testes e as mutações | ⬜ |
 | C5 | **ok do dono** → o teste com o ESP-NN: a maior diferença nas 65 saídas e o tempo | ⬜ |

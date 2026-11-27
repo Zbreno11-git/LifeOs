@@ -203,10 +203,11 @@ def test_as_saidas_do_modelo_saem_por_rodada():
 
 def test_as_bibliotecas_vem_de_commits_fixos():
     script = (FIRMWARE / "buscar_libs.sh").read_text()
-    commits = dict(re.findall(r"^(TFLM|MF)_COMMIT=(\S+)", script, re.MULTILINE))
+    commits = dict(re.findall(r"^(TFLM|MF|NN)_COMMIT=(\S+)", script, re.MULTILINE))
     assert commits == {
         "TFLM": "df8722334a80ceabc609c1e72968f417cd9437f1",  # a tag v1.4.3
         "MF": "96bd69cfad79aa67697e176570d3dd87052c3def",  # a tag v2.0.2
+        "NN": "ace42ac7721119cd543fc40ffe719e601fa8f20f",  # a tag v1.5.0 do esp-nn
     }
     assert 'if [[ "$visto" != "$3" ]]' in script  # e o commit baixado é conferido
 
@@ -225,9 +226,30 @@ def test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao():
     assert ini["platformio"]["default_envs"].strip() == "xiao_s3"  # um `pio run` solto é o uso
     uso = ini["env:xiao_s3"]
     assert "-<teste_modelo/>" in uso["build_src_filter"].split()
-    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {"tflm", "microfrontend"}
-    modelo = ini["env:xiao_s3_modelo"]
-    assert modelo["build_src_filter"].split() == ["+<teste_modelo/>"]
+    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {
+        "tflm",
+        "tflm_nn",
+        "esp-nn",
+        "microfrontend",
+    }
+    for env in ("env:xiao_s3_modelo", "env:xiao_s3_modelo_nn"):
+        assert ini[env]["build_src_filter"].split() == ["+<teste_modelo/>"]
+
+
+def test_cada_teste_do_modelo_usa_uma_variante_do_tflm_so():
+    # As duas libs dão os mesmos cabeçalhos: sem o lib_ignore, o LDF escolheria uma qualquer.
+    ini = _ini()
+    ignora = {
+        env: {x.strip() for x in ini[env]["lib_ignore"].split(",")}
+        for env in ("env:xiao_s3_modelo", "env:xiao_s3_modelo_nn")
+    }
+    assert ignora == {
+        "env:xiao_s3_modelo": {"tflm_nn", "esp-nn"},
+        "env:xiao_s3_modelo_nn": {"tflm"},
+    }
+    flags = set(ini["env:xiao_s3_modelo_nn"]["build_flags"].split())
+    # o esp_nn.h escolhe a versão do S3 por estas duas, e o TFLM entra nos kernels esp_nn pelo ESP_NN
+    assert {"-DESP_NN", "-DCONFIG_NN_OPTIMIZED", "-DCONFIG_IDF_TARGET_ESP32S3=1"} <= flags
 
 
 def test_o_teste_do_modelo_leva_as_definicoes_do_tflm_no_env_inteiro():
