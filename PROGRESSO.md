@@ -17,11 +17,11 @@ ESP-NN se ele não compilar ou passar de 3 de diferença; a versão do pacote fi
 
 | C | Fecha quando | Estado |
 |---|---|---|
-| C0 | o plano aqui; o `platform` fixo na 61.04.00; o uso igual (o critério dos 69 bytes) | ✅ 2026-11-27: o mesmo RAM/flash (52.812 / 1.125.036) e só os 69 bytes da hora diferentes do binário gravado às 22:00Z |
+| C0 | o plano aqui; o `platform` fixo na 61.04.00; o uso igual (o critério dos 69 bytes) | ✅ 2026-11-27, **com uma correção**: a comparação foi entre duas compilações incrementais (os objetos de 23/11), e não separava. Do zero, o HEAD dá 1.125.028 de flash, 8 bytes a menos que o que está na placa (1.125.036): a diferença é compilar do zero, não a versão (os dois pacotes de plataforma instalados são a mesma 61.04.00, sem um arquivo diferente) |
 | C1 | `buscar_libs.sh` com o `esp-nn` e o `tflm_nn`; 2 rodadas iguais; o `tflm` igual ao de hoje | ✅ 2026-11-27: o `tflm` com a mesma impressão da H2m1 (`f0d1618f…`); `tflm_nn` `5e4cdbd5…`; `esp-nn` com 56 fontes lidos do CMakeLists dele, `00ed23cc…`; 2 rodadas iguais |
 | C2 | `pio run -e xiao_s3_modelo_nn` SUCCESS | ✅ 2026-11-27: SUCCESS sem aviso, 105.092 de RAM e 586.085 de flash; as versões do S3 ligadas no ELF (`esp_nn_conv_s8_esp32s3`…); o teste de referência segue com a `tflm` |
-| C3 | a escuta: sem o `modelo.h` o uso sai igual; com ele, compila | ⬜ |
-| C4 | os testes e as mutações | ⬜ |
+| C3 | a escuta: sem o `modelo.h` o uso sai igual; com ele, compila | ✅ 2026-11-27: sem o `modelo.h`, os 9.572 símbolos do ELF com o mesmo tamanho que o HEAD compilado do zero (num worktree); com a `lib/`, só a ordem do link muda (o `lib_archive` desligado pelo pacote). Com ele: SUCCESS sem aviso, 87.996 de RAM e 1.313.836 de flash, o `MODELO` uma vez só (62.304) e a arena de 32 KB |
+| C4 | os testes e as mutações | ✅ 2026-11-27: 24 testes no gerador e nos envs (o `--so-modelo`, o json, a escuta com a mesma conta que o teste provado); 12 de 12 mutações mortas |
 | C5 | **ok do dono** → o teste com o ESP-NN: a maior diferença nas 65 saídas e o tempo | ⬜ |
 | C6 | **ok do dono** → o uso com a escuta: PRONTO, a fala, 10 "Hey Viking", 30 min, os tempos com a Wi-Fi | ⬜ |
 | C7 | o fechamento, a mensagem ao Colab, commit, push, CI | ⬜ |

@@ -137,7 +137,7 @@ static uint16_t placa[PARIDADE_QUADROS][PARIDADE_CANAIS];
 void configurar(FrontendConfig &c) {
   c.window.size_ms = 30;
   c.window.step_size_ms = 10;
-  c.filterbank.num_channels = PARIDADE_CANAIS;
+  c.filterbank.num_channels = 40;
   c.filterbank.lower_band_limit = 125.0f;
   c.filterbank.upper_band_limit = 7500.0f;
   c.noise_reduction.smoothing_bits = 10;

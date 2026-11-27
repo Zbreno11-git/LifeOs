@@ -3981,8 +3981,8 @@ MUTACOES = [
     Mutacao(
         "gerar_modelo: só a primeira saída é conferida antes de escrever",
         "firmware/viking-voz/gerar_modelo.py",
-        "    for caminho in feitos:  # confere os dois antes de escrever o primeiro",
-        "    for caminho in feitos[:1]:  # confere os dois antes de escrever o primeiro",
+        "    for caminho in feitos:  # confere todos antes de escrever o primeiro",
+        "    for caminho in feitos[:1]:  # confere todos antes de escrever o primeiro",
         "tests/test_gerar_modelo.py::test_gerar_confere_as_duas_saidas_antes_de_escrever_a_primeira",
     ),
     Mutacao(
@@ -4012,6 +4012,35 @@ MUTACOES = [
         "    return texto[marcas[-1].end() :] if marcas else texto",
         "    return texto",
         "tests/test_gerar_modelo.py::test_a_conferencia_le_o_log_do_serial_log_so_pela_ultima_captura",
+    ),
+    # --- Sessão H2m2: a escuta contínua (a mesma conta que o teste provado igual ao Python) -------
+    Mutacao(
+        "escuta: o frontend do uso com outra banda que o do teste",
+        "firmware/viking-voz/src/escuta.cpp",
+        "  c.filterbank.upper_band_limit = 7500.0f;",
+        "  c.filterbank.upper_band_limit = 8000.0f;",
+        "tests/test_gerar_modelo.py::test_a_escuta_faz_a_mesma_conta_que_o_teste_provado_igual_ao_python",
+    ),
+    Mutacao(
+        "escuta: o int8 do uso com outra conta que o do teste",
+        "firmware/viking-voz/src/escuta.cpp",
+        "  int32_t q = ((int32_t)raw * 1275 - 425984) / 3328;",
+        "  int32_t q = ((int32_t)raw * 1275 - 425984) / 3327;",
+        "tests/test_gerar_modelo.py::test_a_escuta_faz_a_mesma_conta_que_o_teste_provado_igual_ao_python",
+    ),
+    Mutacao(
+        "escuta: uma operação a menos no resolver do uso",
+        "firmware/viking-voz/src/escuta.cpp",
+        "      resolver.AddQuantize()};",
+        "      resolver.AddLogistic()};",
+        "tests/test_gerar_modelo.py::test_a_escuta_faz_a_mesma_conta_que_o_teste_provado_igual_ao_python",
+    ),
+    Mutacao(
+        "escuta: o uso com o TFLM do ESP-NN sem ter sido escolhido",
+        "firmware/viking-voz/platformio.ini",
+        "build_src_filter = +<*> -<teste_modelo/>\nlib_ignore = tflm_nn, esp-nn",
+        "build_src_filter = +<*> -<teste_modelo/>\nlib_ignore = tflm",
+        "tests/test_gerar_modelo.py::test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao",
     ),
     Mutacao(
         "gerar_modelo: o firmware de uso compila o teste do modelo",

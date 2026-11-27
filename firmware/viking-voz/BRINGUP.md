@@ -112,9 +112,19 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
      última captura do log, comparada de novo, e o CSV e as saídas para o Colab, fora do repo);
    - `pio run -e xiao_s3 -t upload`: o uso de volta, com o ok do dono.
 
-   O `pio run` do uso não compila o teste nem as libs (`build_src_filter` e `lib_ignore`); medido em
-   2026-11-27, o binário de uso sai com os mesmos tamanhos, e só os 69 bytes da hora da compilação
-   (e dos dois hashes que dependem dela) mudam, como numa compilação sem mudança nenhuma.
+   Na H2m1 o `pio run` do uso não compilava o teste (`build_src_filter`) nem as libs (`lib_ignore`);
+   desde a H2m2 ele usa as libs da escuta, quando há o `src/modelo.h` (a camada 8).
+8. [ ] A escuta contínua (H2m2, D73): com o `src/modelo.h` (`python3 gerar_modelo.py gerar --tflite
+   ../../viking_v1/hey_viking.tflite --sha256 <o do Colab> --so-modelo`, fora do git), o firmware de
+   uso ouve sempre que está parado: o boot diz `escuta: ligada, limiar 0.970 (do modelo), arena …`;
+   ao ouvir a palavra, `escuta: acordou (media …)` e o LED aceso 1 s; uma linha `escuta: status …`
+   por minuto (µs por invocação, a maior volta sem ler o I2S, contra os 90 ms que ele guarda, e o
+   heap). O botão interrompe a escuta e grava como sempre; `VKC1 LIMIAR 0.95` pela USB muda o limiar
+   (no NVS, ligado ao modelo). Sem o `modelo.h`, nada disso compila: medido em 2026-11-27, os mesmos
+   9.572 símbolos, cada um do mesmo tamanho; com a `lib/` presente, só a ordem do link muda (o pacote
+   da Espressif desliga o `lib_archive`, e os objetos das libs entram soltos e saem pelo
+   `--gc-sections`).
+
 
 ## No Mac (desde 2026-11-22)
 

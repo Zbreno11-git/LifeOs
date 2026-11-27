@@ -25,6 +25,8 @@
 #include <esp_task_wdt.h>
 #include <time.h>
 
+#include "escuta.h"
+
 #if __has_include("segredos.h")
 #include "segredos.h"
 #define TEM_SEGREDOS 1
@@ -68,7 +70,12 @@ I2SClass i2s;
 int32_t bloco[BLOCO];
 int16_t *gravacao = nullptr;  // na PSRAM
 
+#if TEM_ESCUTA
+// Acordou: o LED aceso 1 s quando a escuta ouve a palavra (H2m2; o dono escolheu em 2026-11-27).
+enum class Led : uint8_t { Ocioso, Gravando, Esperando, Aguardando, Ok, Desligado, Erro, Acordou };
+#else
 enum class Led : uint8_t { Ocioso, Gravando, Esperando, Aguardando, Ok, Desligado, Erro };
+#endif
 volatile Led led = Led::Ocioso;
 volatile uint32_t aguardandoAte = 0;
 volatile uint32_t gravandoDesde = 0;  // o aperto em curso (0 = nenhum): o LED acende passado o toque
@@ -148,6 +155,14 @@ void tarefaDoLed(void *) {
         }
         voltarAoOcioso(Led::Erro);
         break;
+#if TEM_ESCUTA
+      case Led::Acordou:
+        ledFisico(true);
+        delay(1000);
+        ledFisico(false);
+        voltarAoOcioso(Led::Acordou);
+        break;
+#endif
     }
   }
 }
@@ -399,6 +414,13 @@ constexpr int BLOCOS_VELHOS = 16;  // o áudio velho que o DMA guardou com o la�
 bool emColeta = false;
 uint32_t ultimoSinal = 0;
 
+#if TEM_ESCUTA
+// O limiar da escuta pela USB: `VKC1 LIMIAR 0.95` (gravado no NVS, ligado a este modelo). Não é um
+// Pedido: o laço o trata depois (`limiarPendente`), e a coleta o ignora.
+constexpr char PEDIDO_LIMIAR[] = "VKC1 LIMIAR ";
+float limiarPedido = -1;  // < 0: o número não se leu
+bool limiarPendente = false;
+#endif
 enum class Pedido : uint8_t { Nenhum, Coleta, Uso };
 Pedido lerPedido() {
   static char linha[24];
@@ -412,6 +434,15 @@ Pedido lerPedido() {
       n = 0;
       if (coube && strcmp(linha, PEDIDO_USO) == 0) return Pedido::Uso;
       if (coube && strcmp(linha, PEDIDO_COLETA) == 0) visto = Pedido::Coleta;
+#if TEM_ESCUTA
+      if (coube && strncmp(linha, PEDIDO_LIMIAR, sizeof(PEDIDO_LIMIAR) - 1) == 0) {
+        const char *numero = linha + sizeof(PEDIDO_LIMIAR) - 1;
+        char *fim = nullptr;
+        float v = strtof(numero, &fim);
+        limiarPedido = (fim != numero && *fim == 0) ? v : -1;
+        limiarPendente = true;
+      }
+#endif
     } else if (c != '\r') {
       if (n < sizeof(linha) - 1) linha[n] = c;
       if (n < sizeof(linha)) n++;
@@ -506,6 +537,76 @@ void lacoDaColeta() {
   coletar();
 }
 
+#if TEM_ESCUTA
+// --- a escuta contínua (H2m2) ----------------------------------------------------------------------
+
+// Com a placa parada, um bloco do I2S por volta do laço, pelo mesmo `converter()`. O I2S guarda 6 x
+// 240 amostras (90 ms; o padrão do ESP_I2S): uma volta do laço mais longa que isso perde áudio, e a
+// linha de status diz a maior.
+constexpr uint32_t DMA_US = 6 * 240 * 1000000ull / TAXA;
+constexpr uint32_t STATUS_ESCUTA_MS = 60000;
+bool escutaLigada = false;
+bool escutaRecomeca = false;  // depois de um aperto ou de um turno: o áudio velho não conta
+int16_t blocoEscuta[BLOCO];
+
+void ouvirUmBloco() {
+  static uint32_t fimDaLeitura = 0, maiorVolta = 0, voltasLongas = 0, curtas = 0, saturadas = 0;
+  static uint32_t ultimoStatus = millis();
+  if (escutaRecomeca) {
+    escutaRecomeca = false;
+    escutaRecomecar();
+    for (int i = 0; i < BLOCOS_VELHOS; i++) {
+      i2s.readBytes((char *)bloco, sizeof(bloco));
+      esp_task_wdt_reset();
+    }
+    fimDaLeitura = 0;
+  }
+  uint32_t comeco = micros();
+  if (fimDaLeitura) {
+    uint32_t volta = comeco - fimDaLeitura;  // o tempo em que ninguém leu o I2S
+    if (volta > maiorVolta) maiorVolta = volta;
+    if (volta > DMA_US - 32000) voltasLongas++;  // perto de transbordar
+  }
+  size_t lidos = i2s.readBytes((char *)bloco, sizeof(bloco));
+  fimDaLeitura = micros();
+  if (lidos < sizeof(bloco)) {
+    curtas++;
+    return;
+  }
+  converter(bloco, BLOCO, blocoEscuta, saturadas);
+  uint8_t media = 0;
+  if (escutaOuvir(blocoEscuta, BLOCO, media)) {
+    led = Led::Acordou;
+    Serial.printf("escuta: acordou (media %u/255 = %.3f; limiar %.3f %s)\n", media, media / 255.0f,
+                  escutaLimiar() / 1000.0f, escutaOrigemDoLimiar());
+  }
+  if (millis() - ultimoStatus >= STATUS_ESCUTA_MS) {
+    ultimoStatus = millis();
+    EstadoDaEscuta e = escutaEstado();
+    Serial.printf("escuta: status invocacoes=%lu media_us=%lu maior_us=%lu maior_volta_us=%lu "
+                  "voltas_longas=%lu curtas=%lu acordou=%lu maior_media=%u heap=%u\n",
+                  (unsigned long)e.invocacoes,
+                  (unsigned long)(e.invocacoes ? e.somaUs / e.invocacoes : 0),
+                  (unsigned long)e.maiorUs, (unsigned long)maiorVolta, (unsigned long)voltasLongas,
+                  (unsigned long)curtas, (unsigned long)e.acordou, e.maiorMedia,
+                  (unsigned)ESP.getFreeHeap());
+    maiorVolta = voltasLongas = curtas = 0;
+  }
+}
+
+void tratarLimiar() {
+  float v = limiarPedido;
+  uint16_t m = v > 0 ? (uint16_t)(v * 1000.0f + 0.5f) : 0;
+  if (v > 0 && escutaMudarLimiar(m)) {
+    Serial.printf("escuta: limiar %.3f (gravado)\n", m / 1000.0f);
+  } else {
+    Serial.printf("escuta: limiar recusado (entre %.3f e %.3f; segue %.3f)\n",
+                  ESCUTA_LIMIAR_MIN / 1000.0f, ESCUTA_LIMIAR_MAX / 1000.0f,
+                  escutaLimiar() / 1000.0f);
+  }
+}
+#endif
+
 // --- o laço ----------------------------------------------------------------------------------------
 
 void setup() {
@@ -562,6 +663,16 @@ void setup() {
 #else
   Serial.println("sem src/segredos.h: só o diagnóstico (botão, LED e microfone), nada vai à rede");
 #endif
+#if TEM_ESCUTA
+  escutaLigada = escutaComecar();
+  if (escutaLigada) {
+    EstadoDaEscuta e = escutaEstado();
+    Serial.printf("escuta: ligada, limiar %.3f (%s), arena %u bytes, modelo %s\n",
+                  escutaLimiar() / 1000.0f, escutaOrigemDoLimiar(), (unsigned)e.arena,
+                  escutaMarcaDoModelo());
+  }
+  escutaRecomeca = true;
+#endif
   Serial.println(">>> PRONTO: segure o botão para falar; dois toques para aprovar <<<");
 }
 
@@ -575,7 +686,20 @@ void loop() {
     return;
   }
   esp_task_wdt_reset();
+#if TEM_ESCUTA
+  if (limiarPendente) {
+    limiarPendente = false;
+    tratarLimiar();
+  }
+  if (escutaLigada && !apertado()) {
+    ouvirUmBloco();
+    return;
+  }
+  if (!esperarBotao(true, escutaLigada ? 100 : 1000)) return;  // nada apertado (ou um soluço)
+  escutaRecomeca = true;  // o aperto e o turno: a escuta recomeça do zero depois
+#else
   if (!esperarBotao(true, 1000)) return;  // nada apertado
+#endif
   uint32_t apertouEm = millis();
   // Grava já; depois decide: segurou (>= SEGURAR_MS) é fala, soltou antes é toque (talvez o
   // primeiro de dois). O LED só acende de "gravando" se passou do toque.

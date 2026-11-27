@@ -3,11 +3,14 @@ que a placa respondeu.
 
     python firmware/viking-voz/gerar_modelo.py gerar --tflite viking_v1/hey_viking.tflite \\
         --sha256 c96061bf... --paridade ~/viking-wakeword/parity_v2
+    python firmware/viking-voz/gerar_modelo.py gerar --tflite viking_v1/hey_viking.tflite \\
+        --sha256 c96061bf... --so-modelo
     python firmware/viking-voz/gerar_modelo.py conferir LOG_DO_SERIAL --paridade ... --saida PASTA
 
 `gerar` escreve `src/teste_modelo/modelo.h` (o `.tflite` em bytes, `alignas(16)`, com o sha256) e
 `src/teste_modelo/paridade.h` (o WAV de referência e os quadros esperados do frontend, crus e em
-int8). Recusa: um `.tflite` com outro sha256 que o combinado (o modelo errado na placa responderia
+int8). Com `--so-modelo`, só o `src/modelo.h` do firmware de uso (a escuta da H2m2), com o limiar e a
+janela do `hey_viking.json` que o Colab manda ao lado do `.tflite`. Recusa: um `.tflite` com outro sha256 que o combinado (o modelo errado na placa responderia
 a pergunta errada), um arquivo sem a marca `TFL3`, um vetor de paridade fora do contrato do
 `README_paridade.md`, e uma saída que o git não ignora: o modelo foi treinado com a voz do dono e o
 repo é público (D73).
@@ -25,6 +28,7 @@ import argparse
 import csv
 import hashlib
 import io
+import json
 import re
 import subprocess
 import sys
@@ -163,7 +167,31 @@ def _bytes_em_linhas(dados: bytes, por_linha: int = 16) -> str:
     )
 
 
-def cabecalho_modelo(dados: bytes, sha256: str, origem: str) -> str:
+@dataclass(frozen=True)
+class Config:
+    """O que o `hey_viking.json` do Colab diz da decisão: o limiar (em milésimos, na convenção q/255)
+    e quantas saídas a média leva."""
+
+    limiar_milesimos: int
+    janela: int
+
+
+def ler_config(texto: str) -> Config:
+    try:
+        micro = json.loads(texto)["micro"]
+        limiar, janela = micro["probability_cutoff"], micro["sliding_window_size"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise ErroDoGerador(
+            f"o json do modelo não tem micro.probability_cutoff e a janela ({exc})"
+        ) from exc
+    if isinstance(limiar, bool) or not isinstance(limiar, (int, float)) or not 0.5 <= limiar < 1:
+        raise ErroDoGerador(f"o limiar do json é {limiar!r}: fora de [0,5; 1)")
+    if isinstance(janela, bool) or not isinstance(janela, int) or not 1 <= janela <= 20:
+        raise ErroDoGerador(f"a janela do json é {janela!r}: fora de 1 a 20")
+    return Config(round(limiar * 1000), janela)
+
+
+def cabecalho_modelo(dados: bytes, sha256: str, origem: str, config: Config) -> str:
     return (
         "// Gerado por firmware/viking-voz/gerar_modelo.py: não editar, não comitar (o .gitignore\n"
         "// recusa; o modelo foi treinado com a voz do dono e o repo é público, D73).\n"
@@ -171,6 +199,9 @@ def cabecalho_modelo(dados: bytes, sha256: str, origem: str) -> str:
         "#pragma once\n#include <stddef.h>\n#include <stdint.h>\n\n"
         f'constexpr char MODELO_SHA256[] = "{sha256}";\n'
         f"constexpr size_t MODELO_TAMANHO = {len(dados)};\n"
+        "// Do json do Colab: o limiar de partida (milésimos de q/255) e a janela da média.\n"
+        f"constexpr uint16_t MODELO_LIMIAR_MILESIMOS = {config.limiar_milesimos};\n"
+        f"constexpr int MODELO_JANELA = {config.janela};\n"
         "// O TFLM lê o modelo no lugar: o flatbuffer pede o alinhamento.\n"
         f"alignas(16) const uint8_t MODELO[{len(dados)}] = {{\n{_bytes_em_linhas(dados)}\n}};\n"
     )
@@ -221,15 +252,29 @@ def escrever(caminho: Path, texto: str) -> None:
     temporario.replace(caminho)
 
 
-def gerar(tflite: Path, sha256: str, paridade: Path, saida: Path) -> list[Path]:
+def gerar(
+    tflite: Path, sha256: str, paridade: Path | None, saida: Path, *, so_modelo: bool = False
+) -> list[Path]:
+    """O teste da H2m1 (o modelo e o vetor) ou, com `so_modelo`, só o `modelo.h` do firmware de uso
+    (H2m2). O json do Colab fica ao lado do `.tflite`, com o mesmo nome."""
     dados = tflite.read_bytes()
     sha = conferir_modelo(dados, sha256)
-    p = ler_paridade(paridade)
-    feitos = [saida / "modelo.h", saida / "paridade.h"]
-    for caminho in feitos:  # confere os dois antes de escrever o primeiro
+    config = ler_config(tflite.with_suffix(".json").read_text())
+    if so_modelo:
+        feitos = [saida / "modelo.h"]
+        textos = [cabecalho_modelo(dados, sha, tflite.name, config)]
+    else:
+        if paridade is None:
+            raise ErroDoGerador("o teste do modelo precisa do --paridade (ou use --so-modelo)")
+        feitos = [saida / "modelo.h", saida / "paridade.h"]
+        textos = [
+            cabecalho_modelo(dados, sha, tflite.name, config),
+            cabecalho_paridade(ler_paridade(paridade)),
+        ]
+    for caminho in feitos:  # confere todos antes de escrever o primeiro
         conferir_ignorado(caminho)
-    escrever(feitos[0], cabecalho_modelo(dados, sha, tflite.name))
-    escrever(feitos[1], cabecalho_paridade(p))
+    for caminho, texto in zip(feitos, textos, strict=True):
+        escrever(caminho, texto)
     return feitos
 
 
@@ -325,8 +370,9 @@ def main(argv: list[str] | None = None) -> int:
     g = sub.add_parser("gerar")
     g.add_argument("--tflite", type=Path, required=True)
     g.add_argument("--sha256", required=True)
-    g.add_argument("--paridade", type=Path, required=True)
-    g.add_argument("--saida", type=Path, default=SAIDA_PADRAO)
+    g.add_argument("--paridade", type=Path)
+    g.add_argument("--so-modelo", action="store_true", help="só o src/modelo.h do uso (H2m2)")
+    g.add_argument("--saida", type=Path)
     c = sub.add_parser("conferir")
     c.add_argument("log", type=Path)
     c.add_argument("--paridade", type=Path, required=True)
@@ -334,7 +380,9 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     try:
         if a.comando == "gerar":
-            for caminho in gerar(a.tflite, a.sha256, a.paridade.expanduser(), a.saida):
+            saida = a.saida or (AQUI / "src" if a.so_modelo else SAIDA_PADRAO)
+            paridade = a.paridade.expanduser() if a.paridade else None
+            for caminho in gerar(a.tflite, a.sha256, paridade, saida, so_modelo=a.so_modelo):
                 print(f"escrito: {caminho} ({caminho.stat().st_size} bytes)")
         else:
             r = conferir(a.log, a.paridade.expanduser(), a.saida.expanduser())

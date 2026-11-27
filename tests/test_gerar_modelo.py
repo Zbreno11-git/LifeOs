@@ -69,13 +69,49 @@ def test_um_arquivo_sem_a_marca_tfl3_e_recusado():
 def test_o_cabecalho_do_modelo_volta_aos_mesmos_bytes_e_alinhado():
     dados = _modelo(1000)
     sha = hashlib.sha256(dados).hexdigest()
-    texto = gm.cabecalho_modelo(dados, sha, "teste.tflite")
+    texto = gm.cabecalho_modelo(dados, sha, "teste.tflite", gm.Config(970, 5))
     corpo = re.search(r"alignas\(16\) const uint8_t MODELO\[(\d+)\] = \{(.*?)\};", texto, re.DOTALL)
     assert corpo, "o MODELO tem de nascer com alignas(16)"
     de_volta = bytes(int(b, 16) for b in re.findall(r"0x([0-9a-f]{2})", corpo.group(2)))
     assert de_volta == dados and int(corpo.group(1)) == len(dados)
     assert f'MODELO_SHA256[] = "{sha}"' in texto
     assert f"MODELO_TAMANHO = {len(dados)};" in texto
+    assert "MODELO_LIMIAR_MILESIMOS = 970;" in texto and "MODELO_JANELA = 5;" in texto
+
+
+_JSON = '{"micro": {"probability_cutoff": 0.97, "sliding_window_size": 5}}'
+
+
+def test_o_limiar_e_a_janela_vem_do_json_do_colab():
+    assert gm.ler_config(_JSON) == gm.Config(970, 5)
+    for errado, motivo in (
+        ('{"micro": {"probability_cutoff": 1.2, "sliding_window_size": 5}}', "limiar"),
+        ('{"micro": {"probability_cutoff": 0.3, "sliding_window_size": 5}}', "limiar"),
+        ('{"micro": {"probability_cutoff": true, "sliding_window_size": 5}}', "limiar"),
+        ('{"micro": {"probability_cutoff": 0.97, "sliding_window_size": 0}}', "janela"),
+        ('{"micro": {"probability_cutoff": 0.97}}', "não tem"),
+        ("não é json", "não tem"),
+    ):
+        with pytest.raises(gm.ErroDoGerador, match=motivo):
+            gm.ler_config(errado)
+
+
+def test_so_o_modelo_do_uso_sai_com_o_limiar_do_json(tmp_path):
+    dados = _modelo()
+    (tmp_path / "m.tflite").write_bytes(dados)
+    (tmp_path / "m.json").write_text(_JSON.replace("0.97", "0.93"))
+    feitos = gm.gerar(
+        tmp_path / "m.tflite",
+        hashlib.sha256(dados).hexdigest(),
+        None,
+        tmp_path / "src",
+        so_modelo=True,
+    )
+    assert feitos == [tmp_path / "src" / "modelo.h"]
+    assert sorted(x.name for x in (tmp_path / "src").iterdir()) == ["modelo.h"]
+    assert "MODELO_LIMIAR_MILESIMOS = 930;" in feitos[0].read_text()
+    with pytest.raises(gm.ErroDoGerador, match="--paridade"):
+        gm.gerar(tmp_path / "m.tflite", hashlib.sha256(dados).hexdigest(), None, tmp_path)
 
 
 # --- a referência -------------------------------------------------------------------------------
@@ -135,6 +171,7 @@ def test_a_saida_que_o_git_nao_ignora_e_recusada_antes_de_escrever():
 def test_gerar_confere_as_duas_saidas_antes_de_escrever_a_primeira(tmp_path, monkeypatch):
     dados = _modelo()
     (tmp_path / "m.tflite").write_bytes(dados)
+    (tmp_path / "m.json").write_text(_JSON)
     escritos = []
     monkeypatch.setattr(gm, "ler_paridade", lambda pasta: gm.Paridade(array("h"), [], []))
     monkeypatch.setattr(gm, "escrever", lambda caminho, texto: escritos.append(caminho))
@@ -226,12 +263,11 @@ def test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao():
     assert ini["platformio"]["default_envs"].strip() == "xiao_s3"  # um `pio run` solto é o uso
     uso = ini["env:xiao_s3"]
     assert "-<teste_modelo/>" in uso["build_src_filter"].split()
-    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {
-        "tflm",
-        "tflm_nn",
-        "esp-nn",
-        "microfrontend",
-    }
+    # a escuta (H2m2) usa o TFLM de referência, o provado igual ao Python na H2m1
+    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {"tflm_nn", "esp-nn"}
+    assert {"-DTF_LITE_STATIC_MEMORY", "-DFLATBUFFERS_PREFER_PRINTF=1"} <= set(
+        uso["build_flags"].split()
+    )
     for env in ("env:xiao_s3_modelo", "env:xiao_s3_modelo_nn"):
         assert ini[env]["build_src_filter"].split() == ["+<teste_modelo/>"]
 
@@ -288,3 +324,50 @@ def test_a_conferencia_le_o_log_do_serial_log_so_pela_ultima_captura():
     assert (r["quadros"], r["diferentes"]) == (3, 0)
     with pytest.raises(gm.ErroDoGerador, match="duas vezes"):  # sem o corte, as duas se somariam
         gm.ler_log(arquivo)
+
+
+# --- a escuta do uso e o teste da H2m1 fazem a mesma conta -------------------------------------
+
+
+def _funcao(fonte: str, assinatura: str) -> str:
+    """O corpo de uma função C++ (da assinatura até a chave que fecha no começo da linha)."""
+    i = fonte.index(assinatura)
+    return fonte[i : fonte.index("\n}\n", i) + 2]
+
+
+def _sem_espacos(texto: str) -> str:
+    return re.sub(r"\s+", "", re.sub(r"//[^\n]*", "", texto))
+
+
+def test_a_escuta_faz_a_mesma_conta_que_o_teste_provado_igual_ao_python():
+    # O teste da H2m1 deu 7.880 de 7.880 no frontend e 65 de 65 no modelo (o Colab, 2026-11-27).
+    # A escuta do uso é outra cópia: se uma mudar sem a outra, a prova deixa de valer para o uso.
+    teste = (FIRMWARE / "src" / "teste_modelo" / "main.cpp").read_text()
+    escuta = (FIRMWARE / "src" / "escuta.cpp").read_text()
+    for funcao in ("void configurar(FrontendConfig &c)", "int8_t int8DoRaw(uint16_t raw)"):
+        assert _sem_espacos(_funcao(teste, funcao)) == _sem_espacos(_funcao(escuta, funcao)), funcao
+    ops = [sorted(re.findall(r"resolver\.(Add\w+)\(\)", f)) for f in (teste, escuta)]
+    assert ops[0] == ops[1] and len(ops[0]) == 13
+    # a configuração é a do pymicro-features 2.0.2 (README_paridade.md), escrita à mão aqui
+    corpo = _sem_espacos(_funcao(escuta, "void configurar(FrontendConfig &c)"))
+    for linha in (
+        "c.window.size_ms=30;",
+        "c.window.step_size_ms=10;",
+        "c.filterbank.num_channels=40;",
+        "c.filterbank.lower_band_limit=125.0f;",
+        "c.filterbank.upper_band_limit=7500.0f;",
+        "c.pcan_gain_control.strength=0.95f;",
+        "c.log_scale.scale_shift=6;",
+    ):
+        assert linha in corpo, linha
+
+
+def test_o_firmware_de_uso_so_ouve_com_o_modelo():
+    # Sem o src/modelo.h, nada da escuta compila (medido em 2026-11-27: os mesmos 9.572 símbolos,
+    # cada um do mesmo tamanho, que o firmware de antes).
+    escuta_h = (FIRMWARE / "src" / "escuta.h").read_text()
+    assert '#if __has_include("modelo.h")\n#define TEM_ESCUTA 1' in escuta_h
+    escuta = (FIRMWARE / "src" / "escuta.cpp").read_text()
+    assert escuta.index("#if TEM_ESCUTA") < escuta.index('#include "modelo.h"')
+    principal = (FIRMWARE / "src" / "main.cpp").read_text()
+    assert '#include "modelo.h"' not in principal  # o modelo (62 KB) entra uma vez, pela escuta

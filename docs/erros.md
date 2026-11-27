@@ -19,7 +19,7 @@
 | 1 | Comando para o Mac que não roda como escrito | 10 | cada linha só roda se a anterior deu certo (`&&`, ou `cd … || return`); caminho real `~/Desktop/LifeOs` (medido em 2026-11-21; antes estava anotado `~/LifeOs`), `git pull && git log --oneline -1` antes de tudo, URL com `?` entre aspas, `which python` depois do `source`, sem `#` na linha, `python -m`, nunca imprimir segredo |
 | 2 | Afirmei sem abrir o lugar onde estaria | 32 | *quem mediu isto, quando, com qual comando?* — e `grep`/`git log` antes de afirmar |
 | 3 | Estimei em vez de medir | 13 | medir no mesmo processo; nunca régua de caractere por token; medir a linha antes de quebrar; limite do terceiro lido antes de desenhar; medir o que um campo quer dizer, não só a forma |
-| 4 | Teste que não separava o certo do errado | 30 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
+| 4 | Teste que não separava o certo do errado | 31 | desfazer o conserto e ver **o** teste cair; dimensionar a entrada pela diferença, não pelo caso; `or` numa asserção = separar em dois testes; asserção de ausência só nos campos que poderiam carregar o dado |
 | 5 | A ferramenta fez outra coisa do que eu li | 20 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 15 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
@@ -610,6 +610,16 @@ temporário) achou a segunda: o teste da cota do forte presumia US$ 0,15 por cha
 forte dobra em 2027-01-01 (`custos.TARIFAS`). O que tem de novo: um teste com data fixa contra um
 código que lê o relógio é uma bomba com data; a pergunta é "o que este teste compara com o agora?",
 e a prova é rodar a suíte com o relógio adiantado (+120 e +400 dias, verdes depois do conserto).
+
+**2026-11-27 (H2m2, C0) — comparei dois binários incrementais e chamei de "igual".** Fixei a versão do
+pacote de compilação e comparei o firmware de uso com o que estava na placa: o mesmo tamanho, só os
+bytes da hora. Mas as duas compilações reaproveitaram os objetos de 23/11 (o `pio` só religa o que não
+mudou), então a régua não separava "a versão nova compila igual" de "nada foi recompilado". Achado no
+C3, quando uma compilação do zero deu 8 bytes a menos; um `git worktree` do HEAD, compilado do zero,
+deu o mesmo número, e os dois pacotes de plataforma eram a mesma 61.04.00. O antídoto: uma
+comparação de binário é entre duas compilações **do zero** (um worktree limpo, ou a mudança de
+configuração que força), e a régua de "igual" é o tamanho de cada símbolo do ELF (`nm -S`), não o
+tamanho do arquivo.
 
 ### 5. A ferramenta fez outra coisa do que eu li
 
