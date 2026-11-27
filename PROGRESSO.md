@@ -34,8 +34,8 @@ gravar, e no C6, que pede o ok e a fala do dono.
 | C | Fecha quando | Estado |
 |---|---|---|
 | C0 | o plano (a tabela do `sessoes.md`) anotado aqui como "em curso", commit | ✅ 2026-11-27 |
-| C1 | `buscar_libs.sh`: os dois commits conferidos; 2 rodadas iguais; as 4 operações no `df87223` | ⬜ |
-| C2 | `gerar_modelo.py` com testes e mutações | ⬜ |
+| C1 | `buscar_libs.sh`: os dois commits conferidos; 2 rodadas iguais; as 4 operações no `df87223` | ✅ 2026-11-27: v1.4.3 = `df8722334a80…`, v2.0.2 = `96bd69cfad79…` (`git ls-remote`); 2 rodadas com as impressões `f0d1618f…` (tflm, 49 fontes) e `79dd472d…` (frontend, 16); os 4 kernels de variável presentes |
+| C2 | `gerar_modelo.py` com testes e mutações | ✅ 2026-11-27: `15 passed`; 6 de 6 mutações mortas; os cabeçalhos gerados do modelo e do vetor real (o int8 do CSV bate com a fórmula nos 7.880 valores) |
 | C3 | `pio run -e xiao_s3_modelo` e `pio run` SUCCESS | ⬜ |
 | C4 | o programa de teste (a–f) compila | ⬜ |
 | C5 | **ok do dono** → gravar o teste: `carregou=sim invoke=ok`, arena, `197x40, 0 diferentes`, `int8: 0 de 7880`, `estado zerado: iguais` | ⬜ |

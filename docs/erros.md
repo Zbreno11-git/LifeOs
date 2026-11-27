@@ -23,7 +23,7 @@
 | 5 | A ferramenta fez outra coisa do que eu li | 20 | escapes gerados por script; varredura de caracteres de controle antes do commit; conferir a mudança no disco antes de ler um verde |
 | 6 | Conserto que cobriu um ponto e não o vizinho | 21 | *onde mais esta falha pode nascer?* antes de dar por pronto |
 | 7 | Regra de reconhecimento desenhada pelo caso típico | 15 | antes da regra, listar por escrito os vizinhos legítimos e os disfarces, e testar os dois |
-| 8 | Comando que escreve com alcance maior que a mudança | 6 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
+| 8 | Comando que escreve com alcance maior que a mudança | 7 | formatador e afins só nos arquivos que eu editei, nomeados um a um; `--fix` nunca com `--select` de uma regra só; conferir com `git status` do repo inteiro depois; script que move ou grava: *e na segunda rodada?* |
 
 ---
 
@@ -1075,3 +1075,11 @@ de várias sessões com os mesmos nomes: 9 linhas antigas (H1, 13b, 11c) receber
 (`d2a0d76`) antes de eu ler. Restaurado do commit anterior, com o diff conferido (3 linhas). O
 antídoto: editar pelo trecho (o bloco da sessão), e a conferência num comando **antes** do commit,
 nunca na mesma corrente.
+
+**2026-11-27 (H2m1, C2) — a mutação de uma guarda de escrita escreveu no repo, e o teste não limpava.**
+O `gerar_modelo.py` recusa escrever no repo o que o git não ignora, e o teste confere a recusa com
+um arquivo de verdade (`src/nao_ignorado_pelo_git.h`). Com a guarda mutada, o arquivo nasceu (era o
+que a mutação devia provar), o teste caiu como esperado, e o arquivo ficou no repo: o `mutacoes.py`
+restaura o código, não o que o código mutado escreveu. Visto no `git status` antes do commit, e
+apagado. Agora o teste apaga o alvo num `finally`. O antídoto: um teste de uma guarda de escrita
+limpa o que a escrita **deixaria** se a guarda falhasse, porque a mutação vai fazê-la falhar.
