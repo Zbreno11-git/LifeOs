@@ -2,6 +2,7 @@
 word, e a conferência do que ela respondeu. O que decide se a resposta ao Colab vale é o modelo
 certo, a referência que se cumpre e a saída fora do repo público."""
 
+import configparser
 import hashlib
 import importlib.util
 import re
@@ -208,3 +209,60 @@ def test_as_bibliotecas_vem_de_commits_fixos():
         "MF": "96bd69cfad79aa67697e176570d3dd87052c3def",  # a tag v2.0.2
     }
     assert 'if [[ "$visto" != "$3" ]]' in script  # e o commit baixado é conferido
+
+
+# --- os dois firmwares --------------------------------------------------------------------------
+
+
+def _ini() -> configparser.ConfigParser:
+    ini = configparser.ConfigParser()
+    ini.read(FIRMWARE / "platformio.ini")
+    return ini
+
+
+def test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao():
+    ini = _ini()
+    assert ini["platformio"]["default_envs"].strip() == "xiao_s3"  # um `pio run` solto é o uso
+    uso = ini["env:xiao_s3"]
+    assert "-<teste_modelo/>" in uso["build_src_filter"].split()
+    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {"tflm", "microfrontend"}
+    modelo = ini["env:xiao_s3_modelo"]
+    assert modelo["build_src_filter"].split() == ["+<teste_modelo/>"]
+
+
+def test_o_teste_do_modelo_leva_as_definicoes_do_tflm_no_env_inteiro():
+    # Elas mudam o tamanho das estruturas do TFLM: na lib só, o programa e a lib discordariam.
+    flags = _ini()["env:xiao_s3_modelo"]["build_flags"].split()
+    assert {
+        "-DTF_LITE_STATIC_MEMORY",
+        "-DFLATBUFFERS_LOCALE_INDEPENDENT=0",
+        "-DFLATBUFFERS_PREFER_PRINTF=1",
+    } <= set(flags)
+
+
+def test_o_programa_de_teste_registra_uma_operacao_por_vaga_do_resolver():
+    fonte = (FIRMWARE / "src" / "teste_modelo" / "main.cpp").read_text()
+    vagas = re.findall(r"constexpr int OPERACOES = (\d+);", fonte)
+    assert vagas == ["13"]  # as 13 do viking_v1, lidas do .tflite em 2026-11-23 e 2026-11-27
+    adicionadas = re.findall(r"resolver\.(Add\w+)\(\)", fonte)
+    assert len(adicionadas) == len(set(adicionadas)) == 13
+
+
+def test_a_conferencia_le_o_log_do_serial_log_so_pela_ultima_captura():
+    p = _paridade()
+    velho = [linha[:] for linha in p.raw]
+    velho[0][0] += 1  # uma captura antiga, com um quadro diferente, fica para trás
+
+    def com_hora(texto: str) -> str:
+        return "\n".join(f"18:44:{k % 60:02d} {x}" for k, x in enumerate(texto.split("\n")))
+
+    arquivo = (
+        "--- 2026-11-27 18:40:00 captura 40s ---\n"
+        + com_hora(_log(velho))
+        + "\n--- 2026-11-27 18:45:00 captura 40s ---\n"
+        + com_hora(_log(p.raw))
+    )
+    r = gm.comparar(gm.ler_log(gm.ultima_captura(arquivo)), p)
+    assert (r["quadros"], r["diferentes"]) == (3, 0)
+    with pytest.raises(gm.ErroDoGerador, match="duas vezes"):  # sem o corte, as duas se somariam
+        gm.ler_log(arquivo)

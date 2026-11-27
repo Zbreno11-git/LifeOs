@@ -243,14 +243,26 @@ class Resposta:
     linhas: list[str]
 
 
+_CAPTURA = re.compile(r"^--- .* captura \d+s ---$", re.MULTILINE)
+_HORA = re.compile(r"^\d{2}:\d{2}:\d{2} ")
+
+
+def ultima_captura(texto: str) -> str:
+    """O `serial_log.py` acrescenta cada captura ao mesmo `logs/serial.log`, com uma linha
+    `--- AAAA-MM-DD HH:MM:SS captura Ns ---` no começo: só a última conta."""
+    marcas = list(_CAPTURA.finditer(texto))
+    return texto[marcas[-1].end() :] if marcas else texto
+
+
 def ler_log(texto: str) -> Resposta:
     """As linhas `FE,k,v0..v39` (os quadros da placa) e `SAIDAS,R,q0 q1 ...` (as saídas do modelo
-    numa rodada R) do serial. Um quadro repetido ou fora da forma é erro, não se ignora."""
+    numa rodada R) do serial, com ou sem a hora que o `serial_log.py` põe na frente. Um quadro
+    repetido ou fora da forma é erro, não se ignora."""
     quadros: dict[int, list[int]] = {}
     saidas: dict[str, list[int]] = {}
     linhas = []
     for linha in texto.splitlines():
-        linha = linha.strip()
+        linha = _HORA.sub("", linha.strip())
         if linha.startswith("FE,"):
             partes = linha.split(",")
             if len(partes) != 2 + CANAIS or not all(re.fullmatch(r"\d+", v) for v in partes[1:]):
@@ -293,7 +305,7 @@ def comparar(resposta: Resposta, p: Paridade) -> dict[str, int]:
 
 
 def conferir(log: Path, paridade: Path, saida: Path) -> dict[str, int]:
-    resposta = ler_log(log.read_text(errors="replace"))
+    resposta = ler_log(ultima_captura(log.read_text(errors="replace")))
     resultado = comparar(resposta, ler_paridade(paridade))
     conferir_ignorado(saida / "x")
     saida.mkdir(parents=True, exist_ok=True)

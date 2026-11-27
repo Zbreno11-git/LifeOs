@@ -95,6 +95,24 @@ A fonte única da pinagem, com o desenho e as regras para soldar, é o `ESQUEMA.
 
    `coleta.py takes …`, `sala …` e `pacote …` gravam em `~/viking-wakeword/` (fora do repo), numa
    pasta por sessão (`AAAA-MM-DD_descricao`). O ganho é 2, congelado (o comentário do `GANHO`).
+7. [ ] O modelo da wake word na placa (H2m1, D73): um firmware à parte, `src/teste_modelo/main.cpp`
+   no env `xiao_s3_modelo`, sem o microfone e sem a rede (a voz do estúdio fica desligada até o
+   `xiao_s3` voltar). Ele carrega e invoca o modelo, mede a arena, passa o WAV de referência pelo
+   frontend do treino e compara com o Python. Os passos (os dois primeiros escrevem fora do git):
+   - `bash buscar_libs.sh` (o TFLM v1.4.3 e o frontend do pymicro-features v2.0.2, por commit
+     fixo, em `lib/`);
+   - `python3 gerar_modelo.py gerar --tflite ../../viking_v1/hey_viking.tflite --sha256 <o do Colab>
+     --paridade ~/viking-wakeword/parity_v2` (os cabeçalhos em `src/teste_modelo/`);
+   - `pio run -e xiao_s3_modelo` compila (2026-11-27: 105.012 bytes de RAM, 545.293 de flash);
+     `-t upload` grava, **só com o ok do dono**;
+   - `~/esp32-mac/.venv/bin/python serial_log.py 40 --reset` e `python3 gerar_modelo.py conferir
+     logs/serial.log --paridade ~/viking-wakeword/parity_v2 --saida ~/viking-wakeword/h2m1` (a
+     última captura do log, comparada de novo, e o CSV e as saídas para o Colab, fora do repo);
+   - `pio run -e xiao_s3 -t upload`: o uso de volta, com o ok do dono.
+
+   O `pio run` do uso não compila o teste nem as libs (`build_src_filter` e `lib_ignore`); medido em
+   2026-11-27, o binário de uso sai com os mesmos tamanhos, e só os 69 bytes da hora da compilação
+   (e dos dois hashes que dependem dela) mudam, como numa compilação sem mudança nenhuma.
 
 ## No Mac (desde 2026-11-22)
 

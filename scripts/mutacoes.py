@@ -4007,6 +4007,20 @@ MUTACOES = [
         "tests/test_gerar_modelo.py::test_um_quadro_repetido_ou_faltando_no_serial_e_erro",
     ),
     Mutacao(
+        "gerar_modelo: a conferência lê todas as capturas do log",
+        "firmware/viking-voz/gerar_modelo.py",
+        "    return texto[marcas[-1].end() :] if marcas else texto",
+        "    return texto",
+        "tests/test_gerar_modelo.py::test_a_conferencia_le_o_log_do_serial_log_so_pela_ultima_captura",
+    ),
+    Mutacao(
+        "gerar_modelo: o firmware de uso compila o teste do modelo",
+        "firmware/viking-voz/platformio.ini",
+        "build_src_filter = +<*> -<teste_modelo/>",
+        "build_src_filter = +<*>",
+        "tests/test_gerar_modelo.py::test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao",
+    ),
+    Mutacao(
         "casa: o token do aparelho comparado com ==",
         "src/lifeos/casa/servidor.py",
         "not hmac.compare_digest(dado.encode(), esperado.encode())",

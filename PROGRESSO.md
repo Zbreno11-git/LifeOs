@@ -36,8 +36,8 @@ gravar, e no C6, que pede o ok e a fala do dono.
 | C0 | o plano (a tabela do `sessoes.md`) anotado aqui como "em curso", commit | ✅ 2026-11-27 |
 | C1 | `buscar_libs.sh`: os dois commits conferidos; 2 rodadas iguais; as 4 operações no `df87223` | ✅ 2026-11-27: v1.4.3 = `df8722334a80…`, v2.0.2 = `96bd69cfad79…` (`git ls-remote`); 2 rodadas com as impressões `f0d1618f…` (tflm, 49 fontes) e `79dd472d…` (frontend, 16); os 4 kernels de variável presentes |
 | C2 | `gerar_modelo.py` com testes e mutações | ✅ 2026-11-27: `15 passed`; 6 de 6 mutações mortas; os cabeçalhos gerados do modelo e do vetor real (o int8 do CSV bate com a fórmula nos 7.880 valores) |
-| C3 | `pio run -e xiao_s3_modelo` e `pio run` SUCCESS | ⬜ |
-| C4 | o programa de teste (a–f) compila | ⬜ |
+| C3 | `pio run -e xiao_s3_modelo` e `pio run` SUCCESS | ✅ 2026-11-27: os dois SUCCESS, sem aviso; o TFLM v1.4.3 compila no IDF 6.1.1 (a dúvida do README); o uso com o mesmo RAM/flash (52.812 / 1.125.036) e só os 69 bytes da hora da compilação diferentes, como numa recompilação sem mudança |
+| C4 | o programa de teste (a–f) compila | ✅ 2026-11-27: 105.012 de RAM, 545.293 de flash; 19 testes e 8 mutações (todas mortas) no gerador e nos dois envs |
 | C5 | **ok do dono** → gravar o teste: `carregou=sim invoke=ok`, arena, `197x40, 0 diferentes`, `int8: 0 de 7880`, `estado zerado: iguais` | ⬜ |
 | C6 | **ok do dono** → o firmware de uso de volta: PRONTO e uma fala certa | ⬜ |
 | C7 | a mensagem ao Colab, diário, barra, sessoes, commit, push, CI | ⬜ |
