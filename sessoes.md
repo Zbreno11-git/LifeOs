@@ -1479,6 +1479,9 @@ o frontend em 607 µs por quadro (maior 711) e o `Invoke` em **13,8 ms** (maior 
 kernels de referência. O firmware de uso voltou (PRONTO, a ponte ok) e uma fala do dono respondeu, ouvida
 por ele. O que ficou: `buscar_libs.sh`, `gerar_modelo.py` (19 testes, 8 mutações mortas), o env
 `xiao_s3_modelo` e `src/teste_modelo/main.cpp`; a saída para o Colab, em `~/viking-wakeword/h2m1/`.
+**O Colab conferiu (2026-11-27):** as 65 saídas da placa são iguais às do Python, uma a uma, com os kernels
+de referência do lado dele (com o XNNPACK, diz ele, 63 de 65, por 1 LSB; não medido aqui). A cadeia WAV →
+frontend → int8 → modelo → q está igual bit a bit. Ele retirou o "limite superior" da arena: era estimativa.
 
 O plano, como foi aprovado:
 
@@ -1513,7 +1516,9 @@ estúdio fica desligada** entre C5 e C6.
   (cabe nos 30 ms, mas sobra pouco com o TLS), com os kernels de referência; o ESP-NN da Espressif troca 14
   deles, entre eles o CONV_2D, o DEPTHWISE_CONV_2D e o FULLY_CONNECTED, e é a primeira coisa a medir. A
   arena é de ~21 KB, não 11 KB. O que medir com ele: o tempo, e a paridade das saídas contra as de
-  referência (as 65 de `~/viking-wakeword/h2m1/placa_saidas_q.txt`).
+  referência (as 65 de `~/viking-wakeword/h2m1/placa_saidas_q.txt`). Reportar a **maior diferença** entre as
+  65, não só se bate: até 1 ou 2 é o esperado da aritmética otimizada (o Colab, 2026-11-27); acima de 3,
+  avisar o Colab, porque não é arredondamento.
 
 ### H2m3 — a palavra abre a conversa
 

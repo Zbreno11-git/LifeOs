@@ -1070,8 +1070,9 @@ respondeu, `fala: ok viking` na ponte, ouvida por ele.
 **Medido na abertura:** a H2c3 de 2026-11-24 não aconteceu; os roteiros dela trazem essa data. O SSH ao
 laptop voltou a funcionar (a chave está no `ssh-agent`, que estava vazio em 23/11).
 
-**Não medido:** o tempo com o ESP-NN e com a Wi-Fi ligada (é a H2m2); se as 65 saídas do modelo batem com
-as do Python (é do Colab, com a mensagem).
+**Não medido aqui:** o tempo com o ESP-NN e com a Wi-Fi ligada (é a H2m2). **O Colab conferiu, no mesmo
+dia:** as 65 saídas do modelo iguais às do Python, uma a uma, com os kernels de referência dele (com o
+XNNPACK, 63 de 65 por 1 LSB, dito por ele); a fase 1 dele fechou.
 
 **Erro meu (classe 8):** a mutação da guarda de escrita do gerador fez o arquivo de teste nascer no repo, e o
 teste não o apagava; visto no `git status` antes do commit. O teste agora limpa num `finally`.
