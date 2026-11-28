@@ -263,9 +263,10 @@ def test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao():
     assert ini["platformio"]["default_envs"].strip() == "xiao_s3"  # um `pio run` solto é o uso
     uso = ini["env:xiao_s3"]
     assert "-<teste_modelo/>" in uso["build_src_filter"].split()
-    # a escuta (H2m2) usa o TFLM de referência, o provado igual ao Python na H2m1
-    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {"tflm_nn", "esp-nn"}
-    assert {"-DTF_LITE_STATIC_MEMORY", "-DFLATBUFFERS_PREFER_PRINTF=1"} <= set(
+    # a escuta (H2m2) usa os kernels do ESP-NN, os que o C5 provou iguais aos de referência na placa;
+    # as mesmas definições do teste que os provou (sem elas, o esp_nn.h escolheria a versão genérica)
+    assert {x.strip() for x in uso["lib_ignore"].split(",")} == {"tflm"}
+    assert set(_ini()["env:xiao_s3_modelo_nn"]["build_flags"].split()) <= set(
         uso["build_flags"].split()
     )
     for env in ("env:xiao_s3_modelo", "env:xiao_s3_modelo_nn"):

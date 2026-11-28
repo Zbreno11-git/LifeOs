@@ -4036,10 +4036,17 @@ MUTACOES = [
         "tests/test_gerar_modelo.py::test_a_escuta_faz_a_mesma_conta_que_o_teste_provado_igual_ao_python",
     ),
     Mutacao(
-        "escuta: o uso com o TFLM do ESP-NN sem ter sido escolhido",
+        "escuta: o uso volta aos kernels de referência sem ter sido escolhido",
         "firmware/viking-voz/platformio.ini",
-        "build_src_filter = +<*> -<teste_modelo/>\nlib_ignore = tflm_nn, esp-nn",
-        "build_src_filter = +<*> -<teste_modelo/>\nlib_ignore = tflm",
+        "build_src_filter = +<*> -<teste_modelo/>\nlib_ignore = tflm\n",
+        "build_src_filter = +<*> -<teste_modelo/>\nlib_ignore = tflm_nn, esp-nn\n",
+        "tests/test_gerar_modelo.py::test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao",
+    ),
+    Mutacao(
+        "escuta: o uso com o ESP-NN sem a definição do S3 (a versão genérica, não a provada)",
+        "firmware/viking-voz/platformio.ini",
+        "    -DCONFIG_IDF_TARGET_ESP32S3=1\n\n; H2m1 (D73)",
+        "\n; H2m1 (D73)",
         "tests/test_gerar_modelo.py::test_o_firmware_de_uso_nao_leva_o_teste_do_modelo_e_segue_o_padrao",
     ),
     Mutacao(
